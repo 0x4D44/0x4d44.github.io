@@ -200,8 +200,8 @@ M = [
     ("bogie maker: the style not passed to the bogie", ", style: BOGIE_STYLE[spec.family] });", " });"),
     ("crew door counted among the passenger doors", "      marker.name = crew ? 'crew-door' : 'door';", "      marker.name = 'door';"),
     ("cluster: the Azuma's window as short as the face is deep", "sFront0: 0.45, sBack0: 0.95, sFront1: 0.85, sBack1: 1.6, colour: POD }", "sFront0: 0.45, sBack0: 0.95, sFront1: 0.85, sBack1: 0.6, colour: POD }"),
-    ("cluster: the Hull Trains cab has the Azuma's own", "cabSideSurround: CAB_SWOOSH, cluster: { ...AT300_CLUSTER, window: { ...AT300_CLUSTER.window, colour: HULL_POD }, rim: { colour: 0x4a5160, width: 0.025 }, chord: 0.05 } },", "cabSideSurround: CAB_SWOOSH },"),
-    ("cluster: the Hull Trains cab's window in the Azuma's black", "window: { ...AT300_CLUSTER.window, colour: HULL_POD }", "window: { ...AT300_CLUSTER.window, colour: POD }"),
+    ("cluster: the Hull Trains cab has the Azuma's own", "cabSideSurround: CAB_SWOOSH, cluster: { ...AT300_CLUSTER, window: { ...AT300_CLUSTER.window, colour: HULL_POD, teardrop: AT300_TEARDROP }, rim: { colour: 0x4a5160, width: 0.025 }, chord: 0.035 } },", "cabSideSurround: CAB_SWOOSH },"),
+    ("cluster: the Hull Trains cab's window in the Azuma's black", "window: { ...AT300_CLUSTER.window, colour: HULL_POD, teardrop: AT300_TEARDROP }", "window: { ...AT300_CLUSTER.window, colour: POD, teardrop: AT300_TEARDROP }"),
     ("cluster: the window starts at the face's plane", "window: { y0: 1.53, y1: 2.1, sFront0: 0.45,", "window: { y0: 1.53, y1: 2.1, sFront0: 0,"),
     ("cluster: the Lumo cab with the Azuma's pale rim", "lumo5: { cabSideSurround: CAB_SWOOSH, cluster: { ...AT300_CLUSTER, rim: undefined } },", "lumo5: { cabSideSurround: CAB_SWOOSH, cluster: { ...AT300_CLUSTER } },"),
     ("cluster: the Azuma's window at the foot of the nose", "window: { y0: 1.53, y1: 2.1,", "window: { y0: 0.7, y1: 1.0,"),
@@ -985,7 +985,8 @@ M = [
     ("B14c: the flank's stop follows the cheek out (the unit's inner edge off the yellow)", "const plain = halfAt(sec, norm, egg, { ...ringAt(spec.nose, Math.max(0, s)), cheek: undefined });", "const plain = h;"),
     ("B14c: the lenses re-aimed by the cheek (the far-side halos show from the halo-close eye)", "const n = flankNormal(side, s, y, true);", "const n = flankNormal(side, s, y);"),
     ("B14c: the cheek past the body's side", "const CHEEK_CLEAR = 0.995;", "const CHEEK_CLEAR = 1.2;", N),
-    ("B14c: the Hull Trains housing's columns crowding again (its grid dips into the cheek)", "colour: 0x4a5160, width: 0.025 }, chord: 0.05 } },", "colour: 0x4a5160, width: 0.025 } } },"),
+    # (CHANGED round B16: the Hull Trains housing is a teardrop, its lines across its axis `chord` apart, 3.5 cm (5 cm without its own); the mutant widens them to 20 cm)
+    ("B14c: the Hull Trains housing's columns crowding again (its grid dips into the cheek)", "colour: 0x4a5160, width: 0.025 }, chord: 0.035 } },", "colour: 0x4a5160, width: 0.025 }, chord: 0.2 } },"),
     ("B14c: the Lumo housing's columns crowding again (its grid dips into the cheek)", "foot: -0.001 }, chord: 0.03 } },", "foot: -0.001 } } },"),
     # --- round B15: the LNER yellow's edge smooth at the cover's top corners (the band's normals off the side's width field), the cheek blending back in without a crease
     ("B15: the band's normals from the height field alone again (its rows sink under the red: a nick and a dent at the cover's corners)", "        if (spec.nose.rake) return fromHeight;", "        return fromHeight;"),
@@ -1526,7 +1527,14 @@ M = [
     ("cluster: the window a rim's width over the stop", "flankTop(s) - reserve + grow + reach,", "flankTop(s) + reserve + grow + reach,"),
     ("cluster: the housing's edge left standing its lift (round B3's proud plate)", "return Math.min(lerp(foot, lift, clamp01(side / bevel)), lerp(topFoot(grow, lift, foot), lift, clamp01((top - Math.min(y, top)) / topBevel)));", "return lift;"),
     ("cluster: the AT300's edge back to the shared 6 cm bevel (round B4's white fringe, round B5's jagged Hull rim)", "  edge: { bevel: 0.02, top: 0.008, foot: -0.003 },", ""),
-    ("cluster: the edge without its own rows and columns", "        if (cluster.edge) ys.splice(0, ys.length, ...withLines(ys, [yLo + bevel, yHi - topBevel]));", ""),
+    ("cluster: the edge without its own rows and columns", "        if (cluster.edge && !drop) ys.splice(0, ys.length, ...withLines(ys, [yLo + bevel, yHi - topBevel]));", ""),
+    # round B16: the Hull Trains and Lumo housings are swept teardrops (AT300_TEARDROP), laid on a grid across their axis
+    ("B16: the Lumo housing a parallelogram again (the B15 box)", "window: { ...AT300_CLUSTER.window, teardrop: AT300_TEARDROP }, rim: undefined,", "window: { ...AT300_CLUSTER.window }, rim: undefined,"),
+    ("B16: the Hull Trains housing a parallelogram again (the B15 box)", "colour: HULL_POD, teardrop: AT300_TEARDROP }", "colour: HULL_POD }"),
+    ("B16: the teardrop's circles drawn as squares (corners)", "const TEARDROP_SIDES = 96;", "const TEARDROP_SIDES = 4;"),
+    ("B16: the teardrop's foot a flat edge, not a round lobe", "  { s: 0.6, y: 1.615, r: 0.095 },\n", "  { s: 0.6, y: 1.615, r: 0.095 },\n  { s: 0.55, y: 1.52, r: 0 },\n  { s: 1.0, y: 1.52, r: 0 },\n"),
+    ("B16: the teardrop's grid not refined where the shoulder rolls over (its chords dip into it)", "Math.hypot(...sub(onFlank(q0), onFlank(q1))) > 0.025;", "Math.hypot(...sub(onFlank(q0), onFlank(q1))) > 1;"),
+    ("B16: the teardrop's lines not added round the lobe and the tip", "Math.max(Math.abs(p0[0] - p1[0]), Math.abs(p0[1] - p1[1])) > 0.008) as.splice", "Math.max(Math.abs(p0[0] - p1[0]), Math.abs(p0[1] - p1[1])) > 1) as.splice"),
     # --- round B5: the housing's rows close enough that its chords follow the shoulder; Lumo's rimless window its own gentler edge ----------------
     ("cluster: the housing's rows 72 mm apart again (round B5's jagged outline)", "export const CLUSTER_ROW = 0.015;", "export const CLUSTER_ROW = 0.072;"),
     ("cluster: Lumo's window on the shared 6 cm bevel", "rim: undefined, edge: { bevel: 0.045, top: 0.02, foot: -0.001 }, chord", "rim: undefined, chord"),

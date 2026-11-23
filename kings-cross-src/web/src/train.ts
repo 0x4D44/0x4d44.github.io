@@ -440,6 +440,81 @@ interface FlankPatch {
 }
 
 /**
+ * A swept teardrop outline for a lamp housing, in the nose's (s, y): the convex hull of a few circles (centre `s`, `y`, radius `r`), the first a round lobe low and near the face,
+ * the last a small round back tip, so the outline runs back from the lobe in near-straight tangents to the tip, with no corner. The layer grown `grow` out from it (a rim) is the hull
+ * of the same circles each `grow` larger (a radius never under zero).
+ */
+export type Teardrop = { s: number; y: number; r: number }[];
+
+const TEARDROP_SIDES = 96;
+const teardropHulls = new WeakMap<Teardrop, Map<number, [number, number][]>>();
+
+/** The teardrop grown `grow` out as a convex polygon in (s, y), anticlockwise: the hull of each circle's TEARDROP_SIDES points. */
+export function teardropOutline(t: Teardrop, grow = 0): [number, number][] {
+  const memo = teardropHulls.get(t) ?? new Map<number, [number, number][]>();
+  teardropHulls.set(t, memo);
+  const known = memo.get(grow);
+  if (known) return known;
+  const pts = t
+    .flatMap((c) => Array.from({ length: TEARDROP_SIDES }, (_, k): [number, number] => {
+      const a = (2 * Math.PI * k) / TEARDROP_SIDES;
+      const r = Math.max(0, c.r + grow);
+      return [c.s + r * Math.cos(a), c.y + r * Math.sin(a)];
+    }))
+    .sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  // (Andrew's monotone chain)
+  const turn = (o: [number, number], a: [number, number], b: [number, number]): number => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const half = (list: [number, number][]): [number, number][] => {
+    const out: [number, number][] = [];
+    for (const q of list) {
+      while (out.length >= 2 && turn(out[out.length - 2] as [number, number], out[out.length - 1] as [number, number], q) <= 0) out.pop();
+      out.push(q);
+    }
+    out.pop();
+    return out;
+  };
+  const hull = [...half(pts), ...half([...pts].reverse())];
+  memo.set(grow, hull);
+  return hull;
+}
+
+/** The signed distance (negative inside) from (s, y) to the teardrop grown `grow` out. */
+export function teardropDistance(t: Teardrop, s: number, y: number, grow = 0): number {
+  const hull = teardropOutline(t, grow);
+  let best = Infinity;
+  let inside = true;
+  for (let k = 0; k < hull.length; k++) {
+    const a = hull[k] as [number, number];
+    const b = hull[(k + 1) % hull.length] as [number, number];
+    const es = b[0] - a[0];
+    const ey = b[1] - a[1];
+    if (es * (y - a[1]) - ey * (s - a[0]) < 0) inside = false;
+    const u = clamp01(((s - a[0]) * es + (y - a[1]) * ey) / (es * es + ey * ey));
+    best = Math.min(best, Math.hypot(s - a[0] - es * u, y - a[1] - ey * u));
+  }
+  return inside ? -best : best;
+}
+
+/**
+ * Where a line crosses the teardrop grown `grow` out, or null where it misses: the line of the points whose (s, y) dotted with `across` is `level`, and the span the range of their
+ * (s, y) dotted with `along`. By default the level line at the height `level`, its span from front to back.
+ */
+export function teardropSpan(t: Teardrop, level: number, grow = 0, along: [number, number] = [1, 0], across: [number, number] = [0, 1]): [number, number] | null {
+  const hull = teardropOutline(t, grow).map((q): [number, number] => [q[0] * along[0] + q[1] * along[1], q[0] * across[0] + q[1] * across[1]]);
+  let lo = Infinity;
+  let hi = -Infinity;
+  for (let k = 0; k < hull.length; k++) {
+    const a = hull[k] as [number, number];
+    const b = hull[(k + 1) % hull.length] as [number, number];
+    if ((a[1] - level) * (b[1] - level) > 0 || a[1] === b[1]) continue;
+    const s = lerp(a[0], b[0], (level - a[1]) / (b[1] - a[1]));
+    lo = Math.min(lo, s);
+    hi = Math.max(hi, s);
+  }
+  return lo <= hi ? [lo, hi] : null;
+}
+
+/**
  * The AT300's lamp cluster, one each side of the nose: not two lenses on the face but a slim, dark, smoked-glass housing that slants up the nose's shoulder beside
  * the corner of the yellow band under the windscreen, with in it a headlamp (a long bright lens up the slant) and, lower and nearer the face, a round dark disc
  * holding a honeycomb of seven small lenses (the marker or tail lamp: white at the leading end, red at the trailing end, dark when its end shows neither). Photographs lner-801-214-2025 and
@@ -449,9 +524,10 @@ interface FlankPatch {
  */
 export interface ClusterSpec {
   /** The window: rows climb from `y0` (its foot) to `y1`, the row at each height running from its front edge to its back edge (distances from the tip, the foot's pair then the top's). */
-  window: { y0: number; y1: number; sFront0: number; sBack0: number; sFront1: number; sBack1: number; colour: number; frontFoot?: { s: number; y: number } };
+  window: { y0: number; y1: number; sFront0: number; sBack0: number; sFront1: number; sBack1: number; colour: number; frontFoot?: { s: number; y: number }; teardrop?: Teardrop };
   // (`frontFoot`, a kind's own: under the height `y` the front edge leaves the straight line from `sFront0` to `sFront1` and runs straight down to `s` at the foot instead. The lenses'
   // slant is still the straight line's. Round B10: on the LNER, where the nose rounds over under the shoulder, the straight edge stood up to 10 cm outboard of the yellow below 1.65 m.)
+  // (`teardrop`, a kind's own: the outline is that teardrop's, not the four straight edges; the lenses' slant is still the edges' numbers', see Teardrop)
   /**
    * The headlamp: a strip of `cells` small lenses in a row up the window's slant (the photographs show a slim slanted multi-lens strip, not one round eye), its centre (s, y), the
    * half-length `a` of the whole strip along the slant and the half-width `b` of each lens across it. Each lens is an ellipse HEAD_FILL of its pitch long.
@@ -722,6 +798,23 @@ export const AT300_CLUSTER: ClusterSpec = {
   // edge, and the outline drawn is the one seen (hull-802-doncaster-2024: an even grey bezel round a smooth teardrop). ASSUMED, by eye, as the LNER's.
   edge: { bevel: 0.02, top: 0.008, foot: -0.003 },
 };
+
+/**
+ * The Hull Trains and Lumo housings' outline (round B16; was the AT300 window's four straight edges, a slanted parallelogram): the B15 score saw both as angular boxes, where
+ * hull-802-doncaster-2024, hull-802-paragon-2025, LUMO-05 and LUMO-06-803005-FPK show a long swept teardrop of glazing, a round lobe low and near the face round the big round lens,
+ * tapering back and up along the cheek to a rounded point under the screen's corner, with no corner anywhere. Read off the photographs by eye (no published drawing):
+ * hull-802-doncaster-2024 (about 350 to 400 px to the metre at the near unit, from the two headlamps about 1.8 m apart, 630 px), the unit 160 px tall at its inboard end
+ * (0.40 to 0.46 m), its lowest point there, its top edge near level and its foot rising back to the outboard end; LUMO-05 side on, the unit about three times as long as its lobe is
+ * tall, its back tip its highest point. On this nose the shoulder's stop (FLANK_FRACTION) is only 0.1 to 0.2 m above the window's foot at the front, so the lobe cannot be the
+ * photographs' 0.4 m: it is the hull of three circles, the lobe 0.19 m across round the marker array (its foot 1.52 m up, its front 0.505 m back), a fuller middle 0.28 m across
+ * that holds the headlamp's strip, and the tip 0.1 m across (its back 1.6 m back, its top 2.08 m up): 1.1 m long, its top along the stop, the rim under it, the lenses where they
+ * were (the array 6 mm and the strip 2 cm inside it). ASSUMED: the figures, to about 0.05 m.
+ */
+export const AT300_TEARDROP: Teardrop = [
+  { s: 0.6, y: 1.615, r: 0.095 },
+  { s: 1.02, y: 1.76, r: 0.14 },
+  { s: 1.55, y: 2.03, r: 0.05 },
+];
 
 /**
  * The LNER's cluster: the AT300's lamps in a shorter housing with a steep edge. CHANGED (round B4; was carried back to 1.35 m at its foot and 2.05 m at its top, to read 0.38 m across
@@ -1398,14 +1491,14 @@ const FRONT_OVERRIDES: Readonly<Partial<Record<TrainKind, Partial<FrontSpec>>>> 
   lner9: { mask: LNER_MASK, cluster: LNER_CLUSTER },
   // CHANGED (round B14; was the AT300's columns crowding to the front edge, the widest 0.12 m): the nose's fuller cheek (AT300 `cheek`) curves the flank under the housing's back half more,
   // and a 15 cm chord of its grid 2.14 m up dipped 1.5 mm into the nose (1.4 mm before): its columns are spaced evenly, each `chord` across at most (as the LNER's are).
-  hull5: { mask: HULL_MASK, cabSideSurround: CAB_SWOOSH, cluster: { ...AT300_CLUSTER, window: { ...AT300_CLUSTER.window, colour: HULL_POD }, rim: { colour: 0x4a5160, width: 0.025 }, chord: 0.05 } },
+  hull5: { mask: HULL_MASK, cabSideSurround: CAB_SWOOSH, cluster: { ...AT300_CLUSTER, window: { ...AT300_CLUSTER.window, colour: HULL_POD, teardrop: AT300_TEARDROP }, rim: { colour: 0x4a5160, width: 0.025 }, chord: 0.035 } },
   // Lumo: the same dark swoosh round the cab side window (LUMO-04-Lumo-803003-at-Edinburgh-Waverley, LUMO-02-803-001-Lumo-Trains-at-Offord-Cluny), and a
   // black window in the cluster (LUMO-04: smoked glass in a body-coloured rim)
   // (with no rim its window is the layer that meets the nose, 26 mm up where a rim stands 14 mm: it comes down over 4.5 cm (2 cm in height under its top) to 1 mm under the loft, so the outline stays clean and the
   // housing still reads 0.28 m across head on, not widened by a 26 mm wall at its outboard edge; LUMO-04 and LUMO-05: an almond flush with the body. ASSUMED, by eye.)
   // CHANGED (round B14; was the AT300's columns): the fuller cheek, as for the Hull Trains housing above: a 6 cm chord of its grid's top edge 2.12 m up dipped 3.2 mm into the
   // nose (1.1 mm before), so its columns are even, each `chord` across at most
-  lumo5: { cabSideSurround: CAB_SWOOSH, cluster: { ...AT300_CLUSTER, rim: undefined, edge: { bevel: 0.045, top: 0.02, foot: -0.001 }, chord: 0.03 } },
+  lumo5: { cabSideSurround: CAB_SWOOSH, cluster: { ...AT300_CLUSTER, window: { ...AT300_CLUSTER.window, teardrop: AT300_TEARDROP }, rim: undefined, edge: { bevel: 0.045, top: 0.02, foot: -0.001 }, chord: 0.03 } },
 };
 
 /**
@@ -2200,7 +2293,9 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
       // seen from the side); a rim, or a window with no rim, comes down to `foot` there too. Along its top the layer reaches as much further up as its edge came down (`topAt`),
       // so its outline seen from the side stays put, but never more than CLUSTER_EDGE.overStop inboard of the stop: on the flat of the shoulder a few millimetres up is a long way in.
       const topFoot = (grow: number, lift: number, foot: number): number => (grow === 0 && cluster.rim ? lift : foot);
-      const topReach = (grow: number, lift: number, foot: number): number => win.y1 + grow + lift - topFoot(grow, lift, foot);
+      // (a teardrop's top is its outline's highest point, its back tip: no layer reaches past it)
+      const drop = win.teardrop;
+      const topReach = (grow: number, lift: number, foot: number): number => (drop ? Math.max(...teardropOutline(drop, grow).map((q) => q[1])) : win.y1 + grow + lift - topFoot(grow, lift, foot));
       const topAt = (s: number, grow: number, lift: number, foot: number): number => {
         const reach = lift - topFoot(grow, lift, foot);
         return Math.min(topReach(grow, lift, foot), flankTop(s) - reserve + grow + reach, reach > 0 ? flankTop(s, cluster.edge?.overStop ?? CLUSTER_EDGE.overStop) : Infinity);
@@ -2213,7 +2308,8 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
       const taperedLift = (s: number, y: number, grow: number, lift: number, foot: number): number => {
         const f = (y - win.y0) / (win.y1 - win.y0);
         const top = topAt(s, grow, lift, foot);
-        const side = Math.min(s - (frontAt(y) - frontGrow(grow)), lerp(win.sBack0, win.sBack1, f) + grow - s, y - (win.y0 - footGrow(grow)));
+        // (a teardrop's distance to its outline is the true one, the shortest way across the flank's (s, y))
+        const side = drop ? -teardropDistance(drop, s, y, grow) : Math.min(s - (frontAt(y) - frontGrow(grow)), lerp(win.sBack0, win.sBack1, f) + grow - s, y - (win.y0 - footGrow(grow)));
         return Math.min(lerp(foot, lift, clamp01(side / bevel)), lerp(topFoot(grow, lift, foot), lift, clamp01((top - Math.min(y, top)) / topBevel)));
       };
       const lifts = cluster.lift ?? CLUSTER_LIFT;
@@ -2229,14 +2325,71 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
         // (the lowest layer comes down to the loft at its edge; a window over a rim comes down onto the rim)
         const foot = grow > 0 || !cluster.rim ? (cluster.edge?.foot ?? CLUSTER_EDGE.foot) : windowFoot;
         const grid: { p: V3; n: V3 }[][] = [];
+        // A teardrop's grid is laid across its axis (from the lobe's centre to the tip's), not in level rows: its outline is long and shallow, so level rows would lengthen fast
+        // near its edges, and their columns, spread along each row, would run diagonally a long way from one row to the next and cut into the shoulder. Lines across the axis, a
+        // column's chord apart (and one a bevel inside each end), each from the outline's foot to its top in steps of CLUSTER_ROW or less (and three over the bevel inside each), with a line
+        // added halfway wherever either end moves more than 8 mm from one line to the next (round the lobe and the tip).
+        if (drop) {
+          const first = drop[0] as { s: number; y: number };
+          const last = drop[drop.length - 1] as { s: number; y: number };
+          const length = Math.hypot(last.s - first.s, last.y - first.y);
+          const u: [number, number] = [(last.s - first.s) / length, (last.y - first.y) / length];
+          const w: [number, number] = [-u[1], u[0]];
+          const extent = (grow2: number): [number, number] => {
+            const a = teardropOutline(drop, grow2).map((q) => q[0] * u[0] + q[1] * u[1]);
+            return [Math.min(...a), Math.max(...a)];
+          };
+          const [aLo, aHi] = extent(grow);
+          // (the span across the axis of the line at `a` along it, of the layer grown `g` out)
+          const across = (a: number, g: number): [number, number] | null => teardropSpan(drop, -a, g, w, [-u[0], -u[1]]);
+          const ends = (a: number): [number, number] => across(a, grow) ?? [0, 0];
+          const count = Math.max(rows, Math.ceil((aHi - aLo) / (cluster.chord ?? 0.05)));
+          const as = withLines(Array.from({ length: count + 1 }, (_, q) => lerp(aLo, aHi, q / count)), [aLo + bevel, aHi - bevel]);
+          for (let q = 0; q + 1 < as.length; q++) {
+            const p0 = ends(as[q] as number);
+            const p1 = ends(as[q + 1] as number);
+            if ((as[q + 1] as number) - (as[q] as number) > 0.002 && Math.max(Math.abs(p0[0] - p1[0]), Math.abs(p0[1] - p1[1])) > 0.008) as.splice(q + 1, 0, ((as[q] as number) + (as[q + 1] as number)) / 2), q--;
+          }
+          const widestAcross = Math.max(...as.map((a) => ends(a)[1] - ends(a)[0]));
+          const steps = Math.max(rows, Math.ceil(widestAcross / CLUSTER_ROW));
+          const lines = as.map((a) => {
+            const [bLo, bHi] = ends(a);
+            const bs = Array.from({ length: steps + 1 }, (_, q) => lerp(bLo, bHi, q / steps));
+            // (its fall: lines where it crosses the outline drawn a third, two thirds and a whole bevel further in, so the fall follows the shoulder where it rolls over, or its
+            // middle twice where it does not, so every line keeps as many points)
+            const fall = [1, 2, 3].flatMap((k) => across(a, grow - (k * bevel) / 3) ?? [(bLo + bHi) / 2, (bLo + bHi) / 2]);
+            return withLines(bs, fall).map((b): [number, number] => [a * u[0] + b * w[0], a * u[1] + b * w[1]]);
+          });
+          // (where the shoulder rolls over onto the roof a step of a few millimetres in height is centimetres across the nose: a step is halved, on every line, wherever on any
+          // line its two ends lie more than 2.5 cm apart on the flank)
+          const onFlank = (q: [number, number]): V3 => flank(side, q[0], Math.min(q[1], topAt(q[0], grow, lift, foot)));
+          for (let k = 0; k + 1 < (lines[0] as unknown[]).length; k++) {
+            const long = lines.some((l) => {
+              const q0 = l[k] as [number, number];
+              const q1 = l[k + 1] as [number, number];
+              return Math.hypot(q1[0] - q0[0], q1[1] - q0[1]) > 0.002 && Math.hypot(...sub(onFlank(q0), onFlank(q1))) > 0.025;
+            });
+            if (!long) continue;
+            for (const l of lines) l.splice(k + 1, 0, [((l[k] as [number, number])[0] + (l[k + 1] as [number, number])[0]) / 2, ((l[k] as [number, number])[1] + (l[k + 1] as [number, number])[1]) / 2]);
+            k--;
+          }
+          for (const line of lines) {
+            grid.push(
+              line.map(([s, y]) => {
+                const yy = Math.min(y, topAt(s, grow, lift, foot));
+                return lifted(side, s, yy, taperedLift(s, yy, grow, lift, foot));
+              }),
+            );
+          }
+        }
         // (at least eight rows, and as many more as keep them CLUSTER_ROW apart, so no chord of the layer dips into the shoulder's curve)
-        const rowCount = Math.max(rows, Math.ceil((topReach(grow, lift, foot) - (win.y0 - footGrow(grow))) / CLUSTER_ROW));
+        const yLo = win.y0 - footGrow(grow);
+        const rowCount = Math.max(rows, Math.ceil((topReach(grow, lift, foot) - yLo) / CLUSTER_ROW));
         // (the rim is the window's own outline pushed out by `grow` all round: the rows reach `grow` past each end and the edges `grow` out to each side; a kind's own `edge` adds
         // a row a bevel inside the foot and the top, and a column a bevel inside the front and back edges)
-        const yLo = win.y0 - footGrow(grow);
         const yHi = topReach(grow, lift, foot);
-        const ys = Array.from({ length: rowCount + 1 }, (_, q) => lerp(yLo, yHi, q / rowCount));
-        if (cluster.edge) ys.splice(0, ys.length, ...withLines(ys, [yLo + bevel, yHi - topBevel]));
+        const ys = drop ? [] : Array.from({ length: rowCount + 1 }, (_, q) => lerp(yLo, yHi, q / rowCount));
+        if (cluster.edge && !drop) ys.splice(0, ys.length, ...withLines(ys, [yLo + bevel, yHi - topBevel]));
         for (const y of ys) {
           const f = (y - win.y0) / (win.y1 - win.y0);
           const sF = frontAt(y) - frontGrow(grow);

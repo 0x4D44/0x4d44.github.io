@@ -1200,3 +1200,123 @@ test('the AT300 nose\'s fuller cheek blends back into the body with its loft\'s 
     }
   }
 });
+
+/** The convex hull of 2-D points, anticlockwise (Andrew's monotone chain). */
+function hull2(points: [number, number][]): [number, number][] {
+  const pts = [...points].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const turn = (o: [number, number], a: [number, number], b: [number, number]): number => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const half = (list: [number, number][]): [number, number][] => {
+    const out: [number, number][] = [];
+    for (const q of list) {
+      while (out.length >= 2 && turn(out[out.length - 2]!, out[out.length - 1]!, q) <= 0) out.pop();
+      out.push(q);
+    }
+    out.pop();
+    return out;
+  };
+  return [...half(pts), ...half([...pts].reverse())];
+}
+
+/**
+ * The sharpest corner of a closed outline: walked in steps of `step`, the largest angle (degrees) between the way it runs over the `reach` before a point and the `reach` after it,
+ * leaving out the points `skip` passes (a back tip); and where it is.
+ */
+function sharpest(poly: [number, number][], step: number, reach: number, skip: (p: [number, number]) => boolean): { turn: number; at: [number, number] } {
+  const walk: [number, number][] = [];
+  for (let k = 0; k < poly.length; k++) {
+    const a = poly[k]!;
+    const b = poly[(k + 1) % poly.length]!;
+    const n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / step));
+    for (let i = 0; i < n; i++) walk.push([a[0] + ((b[0] - a[0]) * i) / n, a[1] + ((b[1] - a[1]) * i) / n]);
+  }
+  // (the walk's points are at most `step` apart: count back and on along it until `reach` is covered)
+  const at = (i: number): [number, number] => walk[((i % walk.length) + walk.length) % walk.length]!;
+  const away = (i: number, dir: 1 | -1): [number, number] => {
+    let j = i;
+    while (Math.hypot(at(j)[0] - at(i)[0], at(j)[1] - at(i)[1]) < reach && Math.abs(j - i) < walk.length / 2) j += dir;
+    return at(j);
+  };
+  let best = { turn: 0, at: [0, 0] as [number, number] };
+  for (let i = 0; i < walk.length; i++) {
+    const p = at(i);
+    if (skip(p)) continue;
+    const a = away(i, -1);
+    const b = away(i, 1);
+    const t = (Math.abs(Math.atan2((p[0] - a[0]) * (b[1] - p[1]) - (p[1] - a[1]) * (b[0] - p[0]), (p[0] - a[0]) * (b[0] - p[0]) + (p[1] - a[1]) * (b[1] - p[1]))) * 180) / Math.PI;
+    if (t > best.turn) best = { turn: t, at: p };
+  }
+  return best;
+}
+
+test('the Hull Trains and Lumo lamp housings are swept teardrops, not boxes: a round lobe low at the front round the marker array, the outline tapering back and up to the tip with no corner, side on and through V01 and V02, at both ends (round B16)', () => {
+  // The B15 score (T8 6.0 for both): "the housings are angular boxes", where hull-802-doncaster-2024, hull-802-paragon-2025, LUMO-05 and LUMO-06-803005-FPK show a long swept
+  // teardrop of glazing, a round lobe low at its inboard (front) end round the big round lens, its outline tapering back and up along the cheek to its back tip, and no corner
+  // anywhere on it. Read by eye off those photographs (AT300_TEARDROP): the lowest point at the inboard end, the back tip the highest and furthest back, about 1 m behind the front.
+  // So, for the window (the dark glass) of each unit:
+  // - side on (distance behind the tip, height): its outline turns by no more than 50 degrees over any 6 cm of it outside 15 cm of its back tip (the B15 parallelogram's corners
+  //   turn 90 to 130 degrees); its back tip is at least 0.9 m behind its front; 2 cm above its lowest point it is under 0.15 m long (a round lobe, not the B15 flat foot 0.5 m
+  //   long), and that lowest point lies in the front 30 % of its length; the marker array's disc (the large round lens) is in its front 30 % and its lower 40 %;
+  // - through V01 (the eye 4.5 m out to the unit's side, 1.7 m up, 5 m ahead of the face, looking at 1.5 m behind the face, 50 degrees, 1600 by 1000) and V02 (3 m ahead, 1.7 m up,
+  //   head on), its foot is a round lobe, not a flat edge: the outline's lowest 8 % of its height is no wider than 0.35 (V01) and 0.3 (V02) of its whole width. The photographs
+  //   measure about 0.2 (hull-802-doncaster-2024, the near unit 215 px wide and 185 px tall, its lowest 15 px about 45 px wide) and 0.24 (LUMO-06-803005-FPK head on, the right unit
+  //   105 by 95 px, its lowest 8 px about 25 px wide); the B15 boxes 0.61 to 0.64 (V01) and 0.34 to 0.41 (V02). And through V01 its lowest point lies in the front 35 % of its
+  //   width, nearer the face than its back tip (the photographs: at the inboard end).
+  // (A corner test on the projected outline does not tell the two apart: seen that obliquely any round lobe draws to a point.) ASSUMED: the bands, set between what the photographs
+  // show and what the B15 boxes measure.
+  for (const cab of at300Cabs().filter((c) => c.kind === 'hull5' || c.kind === 'lumo5')) {
+    const cluster = frontOf(cab.kind).cluster!;
+    const rgb = col(cluster.window.colour);
+    const c = cab.detail.geometry.getAttribute('color');
+    const window = trianglesOf(cab.detail, cab.at, (ids) => ids.every((k) => Math.abs(c.getX(k) - rgb.r) < 1e-4 && Math.abs(c.getY(k) - rgb.g) < 1e-4 && Math.abs(c.getZ(k) - rgb.b) < 1e-4));
+    for (const sign of [-1, 1]) {
+      const here = `${cab.here} ${sign > 0 ? 'right' : 'left'}`;
+      const pts = window.flat().filter((v) => v.x * sign > 0 && v.z < 3);
+      assert.ok(pts.length > 100, `${here}: only ${pts.length} window vertices`);
+      // side on
+      const side = hull2(pts.map((v): [number, number] => [v.z, v.y]));
+      const front = Math.min(...side.map((p) => p[0]));
+      const back = Math.max(...side.map((p) => p[0]));
+      const tip = side.find((p) => p[0] === back)!;
+      const foot = Math.min(...side.map((p) => p[1]));
+      const top = Math.max(...side.map((p) => p[1]));
+      const corner = sharpest(side, 0.002, 0.03, (p) => Math.hypot(p[0] - tip[0], p[1] - tip[1]) < 0.15);
+      assert.ok(corner.turn <= 50, `${here}: side on the housing's outline turns ${corner.turn.toFixed(0)} degrees at ${corner.at[0].toFixed(3)} m back, ${corner.at[1].toFixed(3)} m up`);
+      assert.ok(back - front >= 0.9, `${here}: its back tip is ${(back - front).toFixed(2)} m behind its front`);
+      const low = side.find((p) => p[1] === foot)!;
+      assert.ok(low[0] - front <= 0.3 * (back - front), `${here}: its lowest point is ${(low[0] - front).toFixed(2)} m behind its front, of ${(back - front).toFixed(2)}`);
+      const lobe = pts.filter((v) => v.y < foot + 0.02).map((v) => v.z);
+      assert.ok(Math.max(...lobe) - Math.min(...lobe) < 0.15, `${here}: 2 cm over its foot it is ${(Math.max(...lobe) - Math.min(...lobe)).toFixed(2)} m long`);
+      // (the disc in the nose's frame: the spec's place, which train-detail's test holds the drawn disc to)
+      const disc: [number, number] = [cluster.array.s - faceSetback('at300'), cluster.array.y];
+      assert.ok(disc[0] - front <= 0.3 * (back - front) && disc[1] - foot <= 0.4 * (top - foot), `${here}: the marker array is ${((disc[0] - front) / (back - front)).toFixed(2)} of the way back and ${((disc[1] - foot) / (top - foot)).toFixed(2)} of the way up`);
+      // through V01 and V02
+      for (const [view, eye, target] of [
+        ['V01', [sign * 4.5, 1.7, -5], [0, 1.7, 1.5]],
+        ['V02', [0, 1.7, -3], [0, 1.7, 0]],
+      ] as const) {
+        const tipOff = faceSetback('at300');
+        const cam = new THREE.PerspectiveCamera(50, 1.6, 0.05, 100);
+        cam.position.set(eye[0], eye[1], eye[2] - tipOff);
+        cam.lookAt(target[0], target[1], target[2] - tipOff);
+        cam.updateMatrixWorld();
+        const px = (v: THREE.Vector3): [number, number] => {
+          const q = v.clone().project(cam);
+          return [((q.x + 1) / 2) * 1600, ((1 - q.y) / 2) * 1000];
+        };
+        const shape = hull2(pts.map(px));
+        const xs = shape.map((p) => p[0]);
+        const ys = shape.map((p) => p[1]);
+        const width = Math.max(...xs) - Math.min(...xs);
+        const lowest = Math.max(...ys);
+        const band = pts.map(px).filter((p) => p[1] > lowest - 0.08 * (lowest - Math.min(...ys)));
+        const bandWidth = (Math.max(...band.map((p) => p[0])) - Math.min(...band.map((p) => p[0]))) / width;
+        assert.ok(bandWidth <= (view === 'V01' ? 0.35 : 0.3), `${here} ${view}: the housing's lowest 8 % is ${bandWidth.toFixed(2)} of its width`);
+        if (view === 'V01') {
+          const frontPx = px(pts.reduce((a, b) => (b.z < a.z ? b : a)));
+          const low = shape.find((p) => p[1] === lowest)!;
+          assert.ok(Math.abs(low[0] - frontPx[0]) <= 0.35 * width, `${here} V01: the housing's lowest point is ${(Math.abs(low[0] - frontPx[0]) / width).toFixed(2)} of its width from its front`);
+        }
+      }
+    }
+  }
+});
