@@ -578,3 +578,38 @@ test('head on, the AT300 windscreen\'s sides are near parallel: the glass 1.04 t
     assert.ok(r >= 1.04 && r <= 1.14, `${cab.here}: the glass is ${r.toFixed(3)} times as wide 0.15 m under its top as 0.15 m over its foot`);
   }
 });
+
+test('in front-3m the LNER yellow has no waist: its edge never steps in by more than 2 px (about 1 cm) above a wider part below, from the chin up to the frame\'s foot, at both ends (round B7b)', () => {
+  // The B7 score (lner5/lner9 front-3m, rear-3m, the lights views): B7's flared band read as a bottle, frame-foot wide at the top, a waist about 10% narrower under it (347 px against
+  // 393 to 407 at the top and 379 lower down), wider again on the face. lner-800-113-newcastle-2025 shows the yellow about the same width from the screen's foot down past the lamps,
+  // narrowing smoothly into the beak below. The camera is the rubric's V02 (rubric-FROZEN-v1: 3 m ahead of the tip, 1.7 m up, looking straight back, a 50 degree lens); widths on its
+  // screen in pixels of a 700 px frame (1 cm of yellow 4 m off is about 2 px). B7's band narrowed 11.7 px under the frame; built, 0.4 px (the face's own facets).
+  const tip = faceSetback('at300');
+  const cam = new THREE.PerspectiveCamera(50, 1, 0.05, 100);
+  cam.position.set(0, 1.7, -3 - tip);
+  cam.lookAt(0, 1.7, -tip);
+  cam.updateMatrixWorld();
+  for (const cab of at300Cabs().filter((c) => c.kind === 'lner5' || c.kind === 'lner9')) {
+    const rgb = col(LNER_YELLOW);
+    const c = cab.detail.geometry.getAttribute('color');
+    const toScreen = (tris: THREE.Vector3[][]): THREE.Vector3[][] => tris.map((t) => t.map((v) => v.clone().project(cam)));
+    const yellow = toScreen(trianglesOf(cab.detail, cab.at, (ids) => ids.every((k) => Math.abs(c.getX(k) - rgb.r) < 1e-5 && Math.abs(c.getY(k) - rgb.g) < 1e-5 && Math.abs(c.getZ(k) - rgb.b) < 1e-5)));
+    const frame = toScreen(screenParts(cab).frame);
+    const y0 = Math.min(...yellow.flat().map((v) => v.y));
+    const y1 = Math.min(...frame.flat().map((v) => v.y));
+    let widest = 0;
+    let waist = 0;
+    let at = 0;
+    for (let k = 2; k < 120; k++) {
+      const y = y0 + ((y1 - y0) * k) / 120;
+      const w = (acrossAt(yellow, y) / 2) * 350;
+      if (widest - w > waist) {
+        waist = widest - w;
+        at = k;
+      }
+      widest = Math.max(widest, w);
+    }
+    assert.ok(widest > 100, `${cab.here}: the yellow is ${widest.toFixed(0)} px across at its widest`);
+    assert.ok(waist <= 2, `${cab.here}: ${at}/120 of the way up from the chin to the frame's foot the yellow's edge stands ${waist.toFixed(1)} px inside a wider part below it`);
+  }
+});
