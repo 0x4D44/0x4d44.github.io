@@ -613,3 +613,51 @@ test('in front-3m the LNER yellow has no waist: its edge never steps in by more 
     assert.ok(waist <= 2, `${cab.here}: ${at}/120 of the way up from the chin to the frame's foot the yellow's edge stands ${waist.toFixed(1)} px inside a wider part below it`);
   }
 });
+
+/** How far in (the least |x|) the triangles reach where they cross the height y. */
+function innerAt(tris: THREE.Vector3[][], y: number): number {
+  let m = Infinity;
+  for (const t of tris) {
+    for (const [a, b] of [[0, 1], [1, 2], [2, 0]] as const) {
+      const p = t[a]!;
+      const q = t[b]!;
+      if ((p.y - y) * (q.y - y) > 0 || p.y === q.y) continue;
+      m = Math.min(m, Math.abs(p.x + ((y - p.y) / (q.y - p.y)) * (q.x - p.x)));
+    }
+  }
+  return m;
+}
+
+test('head on, the LNER lamp units sit on the yellow\'s upper corners: from 1.65 to 1.95 m up each housing\'s inner edge lies on the yellow\'s edge, and the yellow is fuller under the frame than a straight band, at both ends (round B8)', () => {
+  // The B7b score (lner5/lner9 front-3m, rear-3m, lights): head on the yellow stayed about 0.62 of the body and the lamp units sat as slivers on the outline, 0.1 to 0.3 m of white from
+  // the yellow. lner-800-113-newcastle-2025 head on (109 px to the metre, from the frame's foot, 86 px either side of the middle = 0.79 m): the yellow's edge 83 px out under the frame,
+  // 78 px at the lamp unit's middle and 73 px at its foot (0.94 and 0.88 of its top); the unit's inner edge 85 px out, a 2 px white line off the yellow, from its foot to the frame's foot.
+  // Built: the rim's inner edge meets the yellow's at 1.65 m and lies over its corner above, by up to 4 cm at 1.95 m (the unit on the yellow's upper corner). The yellow is held as full as the B7b waist allows: 0.76 of its top at
+  // 1.6 m and 0.86 at 1.8 m (straight, 0.745 and 0.84), short of the photograph's because front-3m's perspective makes any fuller band a bottle.
+  for (const cab of at300Cabs().filter((c) => c.kind === 'lner5' || c.kind === 'lner9')) {
+    const c = cab.detail.geometry.getAttribute('color');
+    const p = cab.detail.geometry.getAttribute('position') as THREE.BufferAttribute;
+    const ofColour = (hex: number): THREE.Vector3[][] => {
+      const rgb = col(hex);
+      return trianglesOf(cab.detail, cab.at, (ids) => ids.every((k) => Math.abs(c.getX(k) - rgb.r) < 1e-5 && Math.abs(c.getY(k) - rgb.g) < 1e-5 && Math.abs(c.getZ(k) - rgb.b) < 1e-5 && cab.at(p, k).z < 3));
+    };
+    const yellow = ofColour(LNER_YELLOW);
+    const cluster = frontOf(cab.kind).cluster!;
+    const rim = ofColour(cluster.rim!.colour);
+    const glass = ofColour(cluster.window.colour);
+    assert.ok(rim.length > 200 && glass.length > 200, `${cab.here}: ${rim.length} rim and ${glass.length} window triangles`);
+    for (let y = 1.65; y <= 1.951; y += 0.05) {
+      const edge = acrossAt(yellow, y) / 2;
+      const inner = innerAt(rim, y);
+      assert.ok(inner - edge <= 0.02 && inner - edge >= -0.05, `${cab.here}: ${y.toFixed(2)} m up the housing's inner edge is ${inner.toFixed(3)} m out, the yellow's ${edge.toFixed(3)} m`);
+      // and the unit reads as a lamp unit, not a sliver: its dark glass at least 0.2 m across head on there
+      const across = acrossAt(glass, y) / 2 - innerAt(glass, y);
+      assert.ok(across >= 0.2, `${cab.here}: ${y.toFixed(2)} m up the housing's glass is ${across.toFixed(3)} m across head on`);
+    }
+    const top = acrossAt(yellow, 2.1) / 2;
+    for (const [y, least] of [[1.6, 0.75], [1.8, 0.85]] as const) {
+      const r = acrossAt(yellow, y) / 2 / top;
+      assert.ok(r >= least, `${cab.here}: ${y} m up the yellow is ${r.toFixed(3)} of its width at the frame's foot, the photograph's ${y === 1.6 ? 0.88 : 0.94}`);
+    }
+  }
+});

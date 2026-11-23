@@ -466,6 +466,13 @@ export interface ClusterSpec {
    * fringe a fresh score saw along the housing's top and foot; `foot` 3 mm under the loft keeps the corners, where two falls meet, clear of the paint too.
    */
   edge?: { bevel: number; top: number; foot: number };
+  /** A kind's own flank stop (absent: FLANK_FRACTION): the housing stops where the outline's half-width falls under this fraction of the section's widest. */
+  flank?: number;
+  /**
+   * A kind's own column spacing (absent: the columns crowd toward the front edge, the widest 0.12 m): the columns are spaced evenly, each `chord` metres across at most. Round B8:
+   * the LNER's housing climbs further round the shoulder, where a 4 cm chord of its top edge (a row at the foot's lift, its whole length) dipped 3 mm under the skin.
+   */
+  chord?: number;
 }
 
 /**
@@ -482,8 +489,9 @@ interface FrontSpec {
    * lengthwise lines, not up the face as the photographs show: lner-800-113-newcastle-2025, lner-801-214-2025: a trapezoid, about 1.45 m across under the glass and
    * 0.9 m at the chin). The cheeks either side keep the livery's own colour. `toCorner` (default false): the band widens straight to `hwSill` at the last row's outer corners,
    * which a swept foot (GlassSpec.screen.footSweep) stands further back than the foot's middle, not at the middle's end (and so reaches it only in its last row's corners).
+   * `fill` (default 1, straight): the band widens as that power of the fraction of the way along it, under 1 fuller near the face.
    */
-  mask?: { colour: number; hwFoot: number; hwTop: number; hwSill: number; toCorner?: boolean };
+  mask?: { colour: number; hwFoot: number; hwTop: number; hwSill: number; toCorner?: boolean; fill?: number };
   /** the last column of the loft (counted from the bottom, 0..12) that carries the livery texture on the nose, where the nose's own colours run higher than a car's side (default SHELL_K1) */
   shellTop?: number;
   /** the black frame round the windscreen glass: its width beyond the glass, all round */
@@ -689,10 +697,21 @@ export const AT300_CLUSTER: ClusterSpec = {
  * figures, by eye off the two photographs, to about 0.1 m. The edge falls over 2 cm (8 mm in height under the top, where the shoulder lies
  * over) to 3 mm under the loft (`edge`, every kind's since round B5: see AT300_CLUSTER; CLUSTER_EDGE's 6 cm drawn across one grid row lay within 2 mm of the paint under it, the ragged white fringe the same score saw on the pale
  * rim). ASSUMED: those figures, chosen so no more than 1% of the rim lies within 2 mm of the paint and near parallel to it (it was 15%).
+ * CHANGED (round B8; its front edge was 0.45 m back at its foot and 0.85 m at its top, under the AT300's 0.8 flank stop): head on the housing stood 0.80 to 1.05 m out, a sliver on the
+ * outline with 0.1 to 0.3 m of white between it and the yellow (the B7b score, front-3m, rear-3m and lights). lner-800-113-newcastle-2025 head on (109 px to the metre, from the frame's
+ * foot, 86 px either side of the middle = 0.79 m): the lamp unit's inner edge 85 px out (0.78 m), its outer 133 px (1.22 m), the yellow's edge 83 px under the frame and 73 px at the
+ * lamp's foot, a 2 px white line between them: the unit sits on the yellow's upper corner, tight to its edge. The front edge now stands 0.21 m back at the foot and 0.72 m at the top (its top 2.02 m up, was 2.1, so it stays 2 cm clear of the frame),
+ * and the LNER's own stop is 0.65 of the section's widest, so the housing climbs the shoulder to the yellow's edge: head on its rim's inner edge meets the yellow's at 1.65 m
+ * and lies over its corner by up to 4 cm above, its dark glass 0.38 m across (train-at300-shell.test.ts, round B8). The marker array comes 8 cm forward with the front edge (0.52 m
+ * back, 1.62 m up), toward the unit's inner half where the photograph has the honeycomb; further forward it lies on the shoulder's top, lifted more than 2 cm above its height.
+ * ASSUMED: the figures, chosen against those readings, to about 0.05 m.
  */
 export const LNER_CLUSTER: ClusterSpec = {
   ...AT300_CLUSTER,
-  window: { ...AT300_CLUSTER.window, sBack0: 0.75, sBack1: 1.4 },
+  window: { ...AT300_CLUSTER.window, y1: 2.02, sFront0: 0.21, sBack0: 0.75, sFront1: 0.72, sBack1: 1.4 },
+  flank: 0.65,
+  chord: 0.022,
+  array: { ...AT300_CLUSTER.array, s: 0.52, y: 1.62 },
 };
 
 /**
@@ -1276,8 +1295,11 @@ const BODIES: Readonly<Record<Family, BodySpec>> = { at300: AT300, electrostar: 
  * lner-800-113-newcastle-2025 the yellow is about the same width from the screen's foot down past the lamps, then narrows smoothly into the beak. The band now widens straight all
  * the way to its last row's outer corners (`toCorner`: 0.3 m further back than the foot's middle, the foot's sweep), not to the middle's end: in front-3m its edge then runs on
  * from the face's at a near-even width up to the frame (train-at300-shell.test.ts, round B7b), and it is 0.12 m2 less yellow head on than the Hull Trains beak (that test, above).
+ * CHANGED (round B8; was straight): lner-800-113-newcastle-2025 head on keeps the yellow fuller under the frame than a straight band: 83 px either side under the frame, 78 at the lamps'
+ * middle and 73 at their foot (0.94 and 0.88 of its top; built straight, 0.84 and 0.73). The band now widens as the 0.88th power of the distance along it (`fill`), as full as front-3m
+ * allows: any fuller and its edge steps in under the frame (the B7b waist, train-at300-shell.test.ts).
  */
-export const LNER_MASK = { colour: LNER_YELLOW, hwFoot: 0.44, hwTop: 0.56, hwSill: 0.79, toCorner: true } as const;
+export const LNER_MASK = { colour: LNER_YELLOW, hwFoot: 0.44, hwTop: 0.56, hwSill: 0.79, toCorner: true, fill: 0.88 } as const;
 /**
  * Hull Trains: the grey beak, over blue cheeks (hull-802-doncaster-2024: a grey bullet that fills the face between the two lamp clusters under the glass and closes to the cover's
  * foot; the cheeks are the body's blue): wider than the LNER's yellow, reaching the clusters' inner edges at the glass. CHANGED (AT300 round; was 0.4, 0.46 and 0.72, the LNER's):
@@ -1929,7 +1951,7 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
         const sCorner = mask.toCorner ? sEnd + footSweepAt(footFraction(mask.hwSill, front.frame)) : sEnd;
         nosePatch(rowS.length - 1, columns.length - 1, (v, u) => {
           const s = rowAt(v);
-          const x = lerp(bandStart, mask.hwSill, v >= 1 ? 1 : Math.min(1, s / sCorner)) * (columns[Math.round(u * (columns.length - 1))] as number);
+          const x = lerp(bandStart, mask.hwSill, v >= 1 ? 1 : Math.min(1, s / sCorner) ** (mask.fill ?? 1)) * (columns[Math.round(u * (columns.length - 1))] as number);
           // (the last row ends under the frame's foot, so with a swept foot it stands back from the middle's end by the sweep at that x)
           return [x, v >= 1 ? s + footSweepAt(footFraction(x, front.frame)) : s];
         }, detail, colourOf(mask.colour), (v) => (v >= 1 ? BAND_END_LIFT : lerp(0, 0.012, Math.min(1, rowAt(v) / 0.02))));
@@ -2038,13 +2060,16 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
       const widest = Math.max(win.sBack0 - win.sFront0, win.sBack1 - win.sFront1) + 2 * (cluster.rim?.width ?? 0);
       let cols = 8;
       while ((widest * (2 * cols - 1)) / (cols * cols) > 0.12) cols++;
+      // (a kind's own `chord`: the columns are spaced evenly instead, as many as hold each to `chord`)
+      if (cluster.chord) cols = Math.max(cols, Math.ceil(widest / cluster.chord));
+      const colAt = (p: number): number => (cluster.chord ? p / cols : (p / cols) * (p / cols));
       // The highest a layer of the cluster may stand at distance s from the tip: the cluster is on the flank, so it stops where the outline has turned over onto the nose's top
       // (its half-width under FLANK_FRACTION of the section's widest, above the window's foot). The window's top edge is a level line, and at the tip the nose itself is lower than
       // that line, so without the stop the window's top-front corner is laid across the roof's rounding and the colour mask's band, a ragged strip of shards in the face's corners.
       // (`inset`: the height where the half-width is that much under the stop's, a little further up the shoulder)
       const flankTop = (s: number, inset = 0): number => {
         const h = glassHalf(Math.max(0, s));
-        const limit = FLANK_FRACTION * Math.max(...h.map((pt) => pt[0])) - inset;
+        const limit = (cluster.flank ?? FLANK_FRACTION) * Math.max(...h.map((pt) => pt[0])) - inset;
         for (let k = 1; k < h.length; k++) {
           const a = h[k - 1] as [number, number];
           const b = h[k] as [number, number];
@@ -2098,7 +2123,7 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
           const sF = lerp(win.sFront0, win.sFront1, f) - grow;
           const sB = lerp(win.sBack0, win.sBack1, f) + grow;
           // (the columns crowd toward the front edge, where the face turns into the cheek over a few centimetres: a chord across that bend would dip under the loft)
-          const ss = Array.from({ length: cols + 1 }, (_, p) => lerp(sF, sB, (p / cols) * (p / cols)));
+          const ss = Array.from({ length: cols + 1 }, (_, p) => lerp(sF, sB, colAt(p)));
           if (cluster.edge) ss.splice(0, ss.length, ...withLines(ss, [sF + bevel, sB - bevel]));
           grid.push(
             ss.map((s, j) => {

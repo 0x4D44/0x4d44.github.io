@@ -5050,7 +5050,10 @@ test('lamps: the AT300 kinds\' lamp clusters are a slanted window on each cheek,
         // (CHANGED: the window used to be held 5 cm behind the tip by a stop (FACE_CLEAR); it starts 0.5 m back now, the stop could not bind and is gone, and this holds the window to its own
         // front edge less its lift, which is 26 mm: the cheek leans forward there)
         assert.ok(Math.min(...win.map(along)) > cluster.window.sFront0 - CLUSTER_LIFT.window, `${here}: the window starts ${Math.min(...win.map(along)).toFixed(3)} m behind the face`);
-        assert.ok(Math.min(...win.map(along)) > 0.4, `${here}: the window stands ${Math.min(...win.map(along)).toFixed(3)} m behind the face, clear of the plane it must not pass`);
+        // RE-PINNED (round B8; was 0.4 for every kind): the LNER's window starts 0.21 m behind the tip (LNER_CLUSTER: lner-800-113-newcastle-2025 puts its inner edge on the yellow's
+        // corner, which the housing reaches only by coming forward), so its clearance is the same 5 cm under its own front edge, 0.16 m; the other kinds keep 0.4
+        const clearOfFace = kind === 'lner5' || kind === 'lner9' ? 0.16 : 0.4;
+        assert.ok(Math.min(...win.map(along)) > clearOfFace, `${here}: the window stands ${Math.min(...win.map(along)).toFixed(3)} m behind the face, clear of the plane it must not pass`);
         const reach = Math.max(...win.map(along));
         near(reach, cluster.window.sBack1, 0.1, `${here}: the window's reach`);
         near(Math.min(...win.map((v) => v.y)), cluster.window.y0, 0.03, `${here}: the window's foot`);
@@ -5220,9 +5223,16 @@ test('lamps: the AT300 cluster stays on the flank and clear of the colour mask, 
         // on the flank: no vertex of the window or its rim stands nearer the middle than three quarters of the section's widest half-width at its own distance from the tip (a
         // vertex is lifted along the normal, which moves its distance a few millimetres: 2 cm of slack), and the stop is set no looser than that
         assert.ok(FLANK_FRACTION >= FLANK, `the stop is at ${FLANK_FRACTION} of the widest half-width`);
+        // RE-PINNED (round B8; the LNER's were 0.75 and 0.8, the AT300's): the LNER housing has its own stop, 0.65 of the widest half-width (LNER_CLUSTER.flank), so that head on its
+        // rim reaches the yellow's edge as lner-800-113-newcastle-2025 shows it (the unit's inner edge 85 px out, the yellow's 83 px, at 109 px to the metre); the same 0.05 of slack
+        // under its own stop for the window, and the rim on it less 2 cm
+        const lner = kind === 'lner5';
+        if (lner) assert.equal(cluster.flank, 0.65, 'the LNER stop is at 0.65 of the widest half-width');
+        const flankHere = lner ? 0.6 : FLANK;
+        const stopHere = lner ? 0.65 : 0.8;
         for (const [label, vs] of [['window', win], ['rim', rim]] as const) {
           for (const v of vs) {
-            const limit = FLANK * widest(along(v) + NOSE_RECESS);
+            const limit = flankHere * widest(along(v) + NOSE_RECESS);
             assert.ok(Math.abs(v.x) >= limit - 0.02, `${here}: a ${label} vertex at ${along(v).toFixed(3)} m, ${v.y.toFixed(3)} m up stands ${Math.abs(v.x).toFixed(3)} m from the middle, the flank starts at ${limit.toFixed(3)}`);
           }
         }
@@ -5230,7 +5240,7 @@ test('lamps: the AT300 cluster stays on the flank and clear of the colour mask, 
         // the 2 cm the lift moves it. (Added after the full pass of the mutation driver: with the window's reserve gone its top edge stands on the stop and the rim 2.5 cm over it, up the roof's
         // shoulder under the colour mask's band, and nothing here noticed.)
         for (const v of rim) {
-          assert.ok(Math.abs(v.x) >= 0.8 * widest(along(v) + NOSE_RECESS) - 0.02, `${here}: a rim vertex at ${along(v).toFixed(3)} m, ${v.y.toFixed(3)} m up stands ${Math.abs(v.x).toFixed(3)} m from the middle, over the stop`);
+          assert.ok(Math.abs(v.x) >= stopHere * widest(along(v) + NOSE_RECESS) - 0.02, `${here}: a rim vertex at ${along(v).toFixed(3)} m, ${v.y.toFixed(3)} m up stands ${Math.abs(v.x).toFixed(3)} m from the middle, over the stop`);
         }
         assert.equal(FLANK_FRACTION, 0.8, 'the stop is at 0.8 of the widest half-width');
         if (cluster.rim) {
@@ -5255,8 +5265,12 @@ test('lamps: the AT300 cluster stays on the flank and clear of the colour mask, 
             if (dy < 0.02) colStep = Math.max(colStep, Math.abs(along(a) - along(b)));
           }
         }
-        assert.ok(rowStep > 0.04 && rowStep <= 0.09, `${here}: the window's rows are up to ${rowStep.toFixed(3)} m apart`);
-        assert.ok(colStep > 0.05 && colStep <= 0.15, `${here}: the window's columns are up to ${colStep.toFixed(3)} m apart`);
+        // RE-PINNED for the LNER (round B8; was the same 0.04 to 0.09 and 0.05 to 0.15 as the others): its housing climbs further round the shoulder (lner-800-113-newcastle-2025: its inner
+        // edge on the yellow's), where a 4 cm chord of its edge dipped 3 mm under the skin, so its columns are spaced evenly at no more than `chord` (2.2 cm) and its rows fold onto the
+        // stop over shorter steps: each held over the 1.5 cm row, under the same 9 cm and 15 cm
+        const lnerGrid: boolean = cluster.chord !== undefined;
+        assert.ok(rowStep > (lnerGrid ? 0.015 : 0.04) && rowStep <= 0.09, `${here}: the window's rows are up to ${rowStep.toFixed(3)} m apart`);
+        assert.ok(colStep > (lnerGrid ? 0.015 : 0.05) && colStep <= 0.15, `${here}: the window's columns are up to ${colStep.toFixed(3)} m apart`);
         // both lenses lie inside the window: every vertex of a lens, seen from the side (distance behind the face, height), is in one of the window's triangles or within 5 mm of its edge
         // (the layers' lifts shift a vertex that much)
         const inWindow = (a: number, y: number): boolean =>
@@ -5296,7 +5310,9 @@ test('fronts: the AT300\'s colour mask: the LNER\'s yellow and the Hull Trains b
     // the lamp housings)
     // RE-PINNED (round B7; the LNER's sill was 0.7, straight): its top now meets the windscreen frame's foot, flush as lner-800-113-newcastle-2025 and lner-801-214-2025 show it (LNER_MASK);
     // (round B7b; B7 flared it, a cube) it widens straight to its last row's outer corners, an even width down from the screen's foot as that photograph shows it
-    if (mask) assert.deepEqual(mask, kind === 'hull5' ? { colour: HULL_BEAK, hwFoot: 0.5, hwTop: 0.62, hwSill: 0.8 } : { colour: LNER_YELLOW, hwFoot: 0.44, hwTop: 0.56, hwSill: 0.79, toCorner: true }, `${kind}: the mask's lines`);
+    // RE-PINNED (round B8; was straight, no `fill`): lner-800-113-newcastle-2025 keeps the yellow 0.94 of its top width at the lamps' middle and 0.88 at their foot (built straight, 0.84
+    // and 0.73), so the band widens as the 0.88th power of the way along it, as full as the B7b waist test allows
+    if (mask) assert.deepEqual(mask, kind === 'hull5' ? { colour: HULL_BEAK, hwFoot: 0.5, hwTop: 0.62, hwSill: 0.8 } : { colour: LNER_YELLOW, hwFoot: 0.44, hwTop: 0.56, hwSill: 0.79, toCorner: true, fill: 0.88 }, `${kind}: the mask's lines`);
     const family = bodySpec(layout.spec.family);
     const sec = carSection(family);
     const norm = normalised(sec);
