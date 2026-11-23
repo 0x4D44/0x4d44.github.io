@@ -5049,7 +5049,10 @@ test('lamps: the AT300 kinds\' lamp clusters are a slanted window on each cheek,
         assert.ok(win.length >= 300, `${here}: only ${win.length} window vertices`);
         // (CHANGED: the window used to be held 5 cm behind the tip by a stop (FACE_CLEAR); it starts 0.5 m back now, the stop could not bind and is gone, and this holds the window to its own
         // front edge less its lift, which is 26 mm: the cheek leans forward there)
-        assert.ok(Math.min(...win.map(along)) > cluster.window.sFront0 - CLUSTER_LIFT.window, `${here}: the window starts ${Math.min(...win.map(along)).toFixed(3)} m behind the face`);
+        // RE-PINNED (round B10; was sFront0 for every kind): the LNER's front edge bends in under 1.65 m to 0.175 m at its foot (LNER_CLUSTER.window.frontFoot), so its own foot is the edge
+        // the window may not pass; the same lift under it
+        const frontEdge = Math.min(cluster.window.sFront0, cluster.window.frontFoot?.s ?? Infinity);
+        assert.ok(Math.min(...win.map(along)) > frontEdge - CLUSTER_LIFT.window, `${here}: the window starts ${Math.min(...win.map(along)).toFixed(3)} m behind the face`);
         // RE-PINNED (round B8; was 0.4 for every kind): the LNER's window starts 0.21 m behind the tip (LNER_CLUSTER: lner-800-113-newcastle-2025 puts its inner edge on the yellow's
         // corner, which the housing reaches only by coming forward), so its clearance is the same 5 cm under its own front edge, 0.16 m; the other kinds keep 0.4
         const clearOfFace = kind === 'lner5' || kind === 'lner9' ? 0.16 : 0.4;

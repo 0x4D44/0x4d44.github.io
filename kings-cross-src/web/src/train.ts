@@ -449,7 +449,9 @@ interface FlankPatch {
  */
 export interface ClusterSpec {
   /** The window: rows climb from `y0` (its foot) to `y1`, the row at each height running from its front edge to its back edge (distances from the tip, the foot's pair then the top's). */
-  window: { y0: number; y1: number; sFront0: number; sBack0: number; sFront1: number; sBack1: number; colour: number };
+  window: { y0: number; y1: number; sFront0: number; sBack0: number; sFront1: number; sBack1: number; colour: number; frontFoot?: { s: number; y: number } };
+  // (`frontFoot`, a kind's own: under the height `y` the front edge leaves the straight line from `sFront0` to `sFront1` and runs straight down to `s` at the foot instead. The lenses'
+  // slant is still the straight line's. Round B10: on the LNER, where the nose rounds over under the shoulder, the straight edge stood up to 10 cm outboard of the yellow below 1.65 m.)
   /**
    * The headlamp: a strip of `cells` small lenses in a row up the window's slant (the photographs show a slim slanted multi-lens strip, not one round eye), its centre (s, y), the
    * half-length `a` of the whole strip along the slant and the half-width `b` of each lens across it. Each lens is an ellipse HEAD_FILL of its pitch long.
@@ -723,7 +725,7 @@ export const AT300_CLUSTER: ClusterSpec = {
  */
 export const LNER_CLUSTER: ClusterSpec = {
   ...AT300_CLUSTER,
-  window: { ...AT300_CLUSTER.window, y0: 1.55, y1: 2.02, sFront0: 0.225, sBack0: 0.62, sFront1: 0.68, sBack1: 1.4 },
+  window: { ...AT300_CLUSTER.window, y0: 1.55, y1: 2.02, sFront0: 0.225, sBack0: 0.62, sFront1: 0.68, sBack1: 1.4, frontFoot: { s: 0.175, y: 1.65 } },
   flank: 0.65,
   chord: 0.018,
   rim: { ...AT300_CLUSTER.rim!, width: 0.0115, front: 0.002, foot: 0.003 },
@@ -2058,6 +2060,12 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
     if (cluster && spec.nose.rake) throw new Error(`${spec.family}: a lamp cluster on a raked nose`);
     if (cluster) {
       const flank = (side: number, s: number, y: number): V3 => [side * xAtY(glassHalf(Math.max(0, s)), y), y, tip + s];
+      // the window's front edge at height y: the straight line from its foot's front to its top's, or under a kind's own `frontFoot` the line from there down to the foot
+      const frontAt = (y: number): number => {
+        const line = (h: number): number => lerp(cluster.window.sFront0, cluster.window.sFront1, (h - cluster.window.y0) / (cluster.window.y1 - cluster.window.y0));
+        const k = cluster.window.frontFoot;
+        return k && y < k.y ? lerp(k.s, line(k.y), (y - cluster.window.y0) / (k.y - cluster.window.y0)) : line(y);
+      };
       const flankNormal = (side: number, s: number, y: number): V3 => {
         const d = 0.03;
         const sx = (xAtY(glassHalf(s + d), y) - xAtY(glassHalf(Math.max(0, s - d)), y)) / (s + d - Math.max(0, s - d));
@@ -2115,7 +2123,7 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
       const taperedLift = (s: number, y: number, grow: number, lift: number, foot: number): number => {
         const f = (y - win.y0) / (win.y1 - win.y0);
         const top = topAt(s, grow, lift, foot);
-        const side = Math.min(s - (lerp(win.sFront0, win.sFront1, f) - frontGrow(grow)), lerp(win.sBack0, win.sBack1, f) + grow - s, y - (win.y0 - footGrow(grow)));
+        const side = Math.min(s - (frontAt(y) - frontGrow(grow)), lerp(win.sBack0, win.sBack1, f) + grow - s, y - (win.y0 - footGrow(grow)));
         return Math.min(lerp(foot, lift, clamp01(side / bevel)), lerp(topFoot(grow, lift, foot), lift, clamp01((top - Math.min(y, top)) / topBevel)));
       };
       const windowFoot = cluster.rim ? CLUSTER_LIFT.rim + CLUSTER_EDGE.overRim : CLUSTER_EDGE.foot;
@@ -2140,7 +2148,7 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
         if (cluster.edge) ys.splice(0, ys.length, ...withLines(ys, [yLo + bevel, yHi - topBevel]));
         for (const y of ys) {
           const f = (y - win.y0) / (win.y1 - win.y0);
-          const sF = lerp(win.sFront0, win.sFront1, f) - frontGrow(grow);
+          const sF = frontAt(y) - frontGrow(grow);
           const sB = lerp(win.sBack0, win.sBack1, f) + grow;
           // (the columns crowd toward the front edge, where the face turns into the cheek over a few centimetres: a chord across that bend would dip under the loft)
           const ss = Array.from({ length: cols + 1 }, (_, p) => lerp(sF, sB, colAt(p)));

@@ -662,6 +662,28 @@ test('head on, the LNER lamp units sit on the yellow\'s upper corners: from 1.65
   }
 });
 
+test('head on, the LNER lamp unit meets the yellow all the way down: from its foot to 1.65 m up no more than 2.5 cm of red between the yellow\'s edge and the housing, at both ends (round B10)', () => {
+  // The B9b score (front-3m, through V02): below about 1.65 m a strip of the face's red between the yellow's edge and the unit's front edge, widening to 9-11 cm at the unit's foot.
+  // Measured on B9b: the yellow's edge 0.577 m out at 1.55 m and 0.608 m at 1.65 m, the rim's inner edge 0.674 and 0.614 m (9.7 cm of red at the foot): the straight front edge from 0.225 m
+  // back at the foot leans outboard of the yellow below 1.65 m, where the nose rounds over. lner-800-113-newcastle-2025 head on: the yellow meets the unit closely from its foot to the frame
+  // (a 2 px white line at 109 px to the metre). Built (B10): the front edge bends in to 0.175 m back at its foot (LNER_CLUSTER.window.frontFoot), at most 1.5 cm of red.
+  for (const cab of at300Cabs().filter((c) => c.kind === 'lner5' || c.kind === 'lner9')) {
+    const c = cab.detail.geometry.getAttribute('color');
+    const p = cab.detail.geometry.getAttribute('position') as THREE.BufferAttribute;
+    const ofColour = (hex: number): THREE.Vector3[][] => {
+      const rgb = col(hex);
+      return trianglesOf(cab.detail, cab.at, (ids) => ids.every((k) => Math.abs(c.getX(k) - rgb.r) < 1e-5 && Math.abs(c.getY(k) - rgb.g) < 1e-5 && Math.abs(c.getZ(k) - rgb.b) < 1e-5 && cab.at(p, k).z < 3));
+    };
+    const yellow = ofColour(LNER_YELLOW);
+    const cluster = frontOf(cab.kind).cluster!;
+    const unit = [...ofColour(cluster.rim!.colour), ...ofColour(cluster.window.colour)];
+    for (let y = cluster.window.y0 + 0.005; y <= 1.6501; y += 0.01) {
+      const red = innerAt(unit, y) - acrossAt(yellow, y) / 2;
+      assert.ok(red <= 0.025 && red >= -0.05, `${cab.here}: ${y.toFixed(3)} m up ${(red * 100).toFixed(1)} cm of red between the yellow's edge and the housing's inner edge`);
+    }
+  }
+});
+
 test('head on through V02, the LNER lamp unit is dark glass with a fine rim: the pale rim no more than 3 cm inboard and 2 cm under the glass, the glass no taller than 0.5 m, at both ends (round B9)', () => {
   // The B8 score (lner5 front-3m, about 225 px to the metre): the dark glass 0.6 m tall, the grey rim 7-10 cm inboard and 4 cm under it, butting onto the yellow. lner-800-113-newcastle-2025,
   // lner-800-doncaster-2026 and lner-801-214-2025 show the glass running almost to the yellow, only a thin light line between. Read off lner-800-113-newcastle-2025 at normal size (about 117 px

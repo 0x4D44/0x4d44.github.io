@@ -158,7 +158,10 @@ function lnerShapes(nose: number): Shape[] {
   const crescent = between(bottom, under);
   // the cheek: the red strip beside the face, from the nose's foot up under the lamp window, its back edge rounded (a smooth curve through the readings, s as a function of y:
   // drawn through the same five points as a polygon it showed its facets on the nose's flank, a stair where a photograph has one curve)
-  const cheekBack = smoothCurve([[TEX_Y0, 0.5], [0.75, 0.8], [1.05, 0.92], [1.3, 0.85], [1.5, 0.7]], 32).map(([y, s]): [number, number] => [s, y]);
+  // CHANGED (round B10; its top knot was 0.7 m back): the wing's front edge runs from (0.7, 1.42) up to (0.9, 1.95), 0.71 to 0.73 m back between 1.46 and 1.5 m up, so a back edge
+  // ending 0.7 m back at 1.5 m left the body's cream between the two, a speck about 3 by 4 px under the lamp unit's lower outboard corner in every nose 3/4 view (the B9b score,
+  // nose-34-right about x 735, y 533 of the 1600 by 1000 frame: (0.72, 1.48) projects there). Ending 0.74 m back the curve stays behind that edge, and the red meets the wing.
+  const cheekBack = smoothCurve([[TEX_Y0, 0.5], [0.75, 0.8], [1.05, 0.92], [1.3, 0.85], [1.5, 0.74]], 32).map(([y, s]): [number, number] => [s, y]);
   // CHANGED (round B9b; its top was level at 1.5 m): the red runs on up under the lamp unit to LNER_CHEEK_TOP, and behind the unit's back edge up to 1.68 m where it meets the wing (the corner at 1.68 m lies under the unit), so no white shows between the
   // unit's foot (1.55 m since round B9) and the red. lner-801-214-2025 shows the near unit's lower corner meeting red, with no pale tab; the B9 score saw a white wedge there in every 3/4 view.
   const cheek: [number, number][] = [[0, TEX_Y0], ...cheekBack, [0.9, 1.5], [0.9, 1.68], [0.62, 1.68], [0.5, LNER_CHEEK_TOP], [0, LNER_CHEEK_TOP]];

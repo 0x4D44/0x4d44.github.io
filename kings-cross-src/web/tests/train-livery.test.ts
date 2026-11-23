@@ -696,3 +696,20 @@ test('LNER: no white shows under the lamp unit: the flank just under its foot an
     assert.equal(pale.length, 0, `${kind}: the flank by the lamp unit is not red at ${pale.slice(0, 6).join('; ')}`);
   }
 });
+
+test('LNER: no cream speck under the lamp unit\'s lower outboard corner: between the cheek and the wing the flank is red or the wing\'s pale crescent, never the body\'s cream, at both kinds (round B10)', () => {
+  // The B9b score (nose-34-left/right, rear-nose-34-left/right, faintly cab-car-side, lner5 and lner9): a cream speck about 3 by 4 px detached in the red just under the unit's lower
+  // outboard corner, nose-34-right about x 735-737, y 532-535 of the 1600 by 1000 frame. Measured: the texture held the body's cream at (0.70 to 0.72 m from the car's end, 1.47 to
+  // 1.50 m up), between the cheek's back edge (0.7 m back at 1.5 m) and the wing's front edge (0.71 to 0.73 m there); that point projects to (734, 535) through V01. lner-801-214-2025
+  // shows the unit's lower corner meeting red. Read on a 5 mm grid from the unit's back corner 0.45 m back and down to 1.4 m, where the crescent meets the body's white behind it.
+  const tip = faceSetback('at300');
+  for (const kind of ['lner5', 'lner9'] as const) {
+    const win = frontOf(kind).cluster!.window;
+    const body = liveryFor(kind).body;
+    const cream: string[] = [];
+    for (let s = win.sBack0 - 0.2; s <= win.sBack0 + 0.25; s += 0.005) {
+      for (let y = 1.4; y <= win.y0; y += 0.005) if (at(kind, LNER_NOSE, s + tip, y) === body) cream.push(`${s.toFixed(3)} m back, ${y.toFixed(3)} m up`);
+    }
+    assert.equal(cream.length, 0, `${kind}: the body's cream shows under the lamp unit at ${cream.slice(0, 6).join('; ')}`);
+  }
+});

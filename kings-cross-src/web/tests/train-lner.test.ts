@@ -112,7 +112,7 @@ test('LNER axle-box cable leads hang outboard of every AT300 bogie frame, inside
   for (const kind of ['hull5', 'lumo5'] as const) assert.ok(colouredBounds(near(buildTrain(kind), 0, 0), 0x45423d).isEmpty(), kind);
 });
 
-test('LNER lamp housings are compact: 0.21 to 1.4 m behind the tip, about 0.4 m across head on, at both cabs; the AT300 default staying 0.28 m (round B4, B8)', () => {
+test('LNER lamp housings are compact: 0.175 to 1.4 m behind the tip, about 0.45 m across head on, at both cabs; the AT300 default staying 0.28 m (round B4, B8, B10)', () => {
   // CHANGED (round B4; was "read about 0.38 m across head on", e76b7348's housing 0.45 to 2.06 m behind the tip, 1.6 m long): a fresh score saw a 1.5 m black slab across the cheek where
   // lner-801-214-2025 and lner-800-doncaster-2026 show a compact lamp recess at the yellow's upper corners (round 7's BASE: 0.55 to 1.34 m, 0.79 m long)
   // the right-hand housing's span in x: from its inboard edge to its outboard edge, as the head-on camera sees it
@@ -153,9 +153,13 @@ test('LNER lamp housings are compact: 0.21 to 1.4 m behind the tip, about 0.4 m 
       // RE-PINNED (round B8; was 0.16 to 0.20 across and 0.43 to 0.47 m to its start): the B7b score saw the housing as a sliver on the outline, 0.1 to 0.3 m of white from the
       // yellow, where lner-800-113-newcastle-2025 head on (109 px to the metre, from the frame's foot) shows the smoked glass 44 px across (0.40 m), its inner edge on the yellow's corner.
       // Its front edge now starts 0.21 m behind the tip, so that it climbs the shoulder to the yellow's edge (LNER_CLUSTER); the same 0.04 m band about the photograph's reading
-      assert.ok(w > 0.38 && w < 0.42, `${kind} ${cab.name}: housing ${w} m across`);
+      // RE-PINNED (round B10; was 0.38 to 0.42 across and 0.19 to 0.23 m to its start): the B9b score (front-3m) saw up to 10 cm of red between the yellow's edge and the unit's front
+      // edge below 1.65 m, where lner-800-113-newcastle-2025 shows the yellow meeting the unit all the way down to its foot. The front edge now bends in to 0.175 m behind the tip at the
+      // foot (LNER_CLUSTER.window.frontFoot), so the glass's inboard corner there is 4 cm further in: 0.45 m across, the photograph's unit 0.44 m (inner edge 0.78 m out, outer 1.22 m).
+      // The same 0.04 m bands, about 0.45 m and 0.175 m.
+      assert.ok(w > 0.43 && w < 0.47, `${kind} ${cab.name}: housing ${w} m across`);
       const [near, far] = along(cab, front);
-      assert.ok(near > 0.19 && near < 0.23, `${kind} ${cab.name}: housing starts ${near} m behind the end`);
+      assert.ok(near > 0.155 && near < 0.195, `${kind} ${cab.name}: housing starts ${near} m behind the end`);
       assert.ok(far > 1.38 && far < 1.42, `${kind} ${cab.name}: housing ends ${far} m behind the end`);
     }
   }
