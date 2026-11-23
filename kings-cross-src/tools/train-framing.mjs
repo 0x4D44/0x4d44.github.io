@@ -1263,12 +1263,59 @@ export function searchStation(T, { scene, camera, controls, group, ground }, pla
 }
 
 // ============================================================================================
+// T01 (opt-in, NON-SCORING): the long-lens nose view. The scoring views stay V01-V10 (rubric-FROZEN-v1's fixed evidence contract); two AT300 reference
+// photographs are long-lens shots about 11-15 degrees off the train's axis, not V01's ~42 degrees, so they cannot be compared like-angle with V01. T01 is
+// the one camera that matches them, taken only when `--views` names it, on the same neutral stage and with the same checks as V01-V09. Like V01 it is
+// taken from both sides and, by reversing the train frame, at the rear cab too. It is never part of a score.
+// ============================================================================================
+/**
+ * T01's frozen numbers, train-local metres like V01 (x across, +x the train's right; y above the rail head; nose at z = 0, body to +z), for the right
+ * side of the front cab; the left mirrors x and the rear ends reverse the frame. `references` records how the pose was measured from the photographs.
+ */
+export const TELE = Object.freeze({
+  id: 'T01',
+  scoring: false,
+  /** 13 degrees off the train's axis (atan(13.7 / 59.4)) and 61.0 m from the nose across the ground; the eye at a platform's eye height (0.9 + 1.7 m). */
+  eye: Object.freeze([13.7, q6(CATALOGUE.platformHeightM + CATALOGUE.eyeAbovePlatformM), -59.4]),
+  /** Level (target at eye height) on the train's centre line 25 m behind the nose, the end of an AT300 cab car: the nose sits about three quarters across the frame, as in both photographs. */
+  targetZ: 25,
+  /** Vertical FOV: 13.6 degrees across the 1600 px width, between the photographs' 11.6 and 14.5 degrees across theirs. */
+  fov: 8.5,
+  note: 'NON-SCORING comparison view: not one of the rubric-FROZEN-v1 scoring views V01-V10 and never part of a score. A long-lens nose three-quarter view matching the angle of two AT300 reference photographs, so they can be compared like-angle.',
+  references: Object.freeze([
+    Object.freeze({ photo: 'refs/lner/lner-801-214-2025.jpg', side: 'right', bearingDeg: 10.9, distanceM: 63.1, eyeAboveRailM: 2.2, hfovDeg: 11.6, frame: '1920x1280; the whole nine-car 801/2, nose 79% across',
+      method: 'in-memory pixel readings: axis vanishing point (-222, 689) from the red band bottom and skirt edge; car joints at x 921 and 660 px; cantrail 548 and rail 951 px at x 1050 for the assumed 3.35 m roof edge' }),
+    Object.freeze({ photo: 'refs/hull/hull-802-paragon-2025.jpg', side: 'right', bearingDeg: 15.1, distanceM: 58.8, eyeAboveRailM: 2.9, hfovDeg: 14.5, frame: '1920x1280; the whole five-car 802/3, nose 79% across, from a platform',
+      method: 'in-memory pixel readings: axis vanishing point (-511, 639) from the orange cantrail line and skirt edge; car joints at x 770 and 463 px; cantrail 594 and rail 956 px at x 1000 for the assumed 3.35 m roof edge' }),
+  ]),
+});
+/**
+ * T01's four views of one formation: `nose-tele-left`, `nose-tele-right`, then the rear cab by reversing the train frame as V01 does. The region checked is
+ * the cab car of that end (V01's nose box run back to the end of the car), so the frame must hold the whole cab car and its nose.
+ */
+export function planTeleViews(f) {
+  const L = f.length, out = [];
+  for (const rear of [false, true]) for (const [side, sx] of [['left', -1], ['right', 1]]) {
+    const car = rear ? f.cars.at(-1) : f.cars[0], flip = p => rear ? reverseFrame(p, L) : p.map(q6), region = box(-1.6, 1.6, .7, 3.6, -.2, q6(car.end - car.start));
+    const view = { id: TELE.id, suffix: `${rear ? 'rear-' : ''}nose-tele-${side}`, status: 'OK', reason: null, scoring: TELE.scoring, frame: rear ? 'rear' : 'front',
+      eye: flip([sx * TELE.eye[0], TELE.eye[1], TELE.eye[2]]), target: flip([0, TELE.eye[1], TELE.targetZ]), fov: TELE.fov, up: [0, 1, 0] };
+    view.near = catalogueNear(view.eye, view.target);
+    view.region = rear ? flipBox(region, L) : region;
+    view.car = { index: car.index, type: car.type };
+    view.notes = { end: rear ? 'rear cab end, train frame reversed' : 'front cab end', side, scoring: false, purpose: TELE.note };
+    view.rotation = stageRotation(view);
+    out.push(view);
+  }
+  return out;
+}
+
+// ============================================================================================
 // M01 (opt-in): the motion clip. The specimen drives away from a fixed camera along a neutral straight stage and, after every frame, the page is asked which level of
 // detail each bogie is drawn at and how far it is from the camera. The plan and the verdicts are plain numbers (the Node tests pin each of them); the readers take THREE
 // and run in the page. M01 is not in VIEW_IDS: a run that is not asked for it neither plans it nor refuses on poses frozen before it existed.
 // ============================================================================================
-/** The views a run can be asked for (`--views`) besides VIEW_IDS, which are the ones it takes when it is not asked. */
-export const OPT_IN_VIEW_IDS = Object.freeze(['M01', 'C01', 'C02']);
+/** The views a run can be asked for (`--views`) besides VIEW_IDS, which are the ones it takes when it is not asked. T01 is the non-scoring long-lens nose view. */
+export const OPT_IN_VIEW_IDS = Object.freeze(['M01', 'C01', 'C02', 'T01']);
 export const ASKABLE_VIEW_IDS = Object.freeze([...VIEW_IDS, ...OPT_IN_VIEW_IDS]);
 /**
  * The clip's numbers, one set for every kind. `lodDistanceM` is web/src/train-parts.ts BOGIE_LOD_DISTANCE (a test pins the two equal): at that distance or more a bogie is
