@@ -6,15 +6,16 @@
 - **Area:** kings-cross-src/tools
 - **Raised:** 2026-11-22T23:39:29Z
 - **Discovery source:** Agent
-- **Owner:** -
-- **Owner role:** -
-- **Owner run:** -
-- **Owner host:** -
-- **Owner branch:** -
-- **Owner base:** -
+- **Owner:** deltic:manual
+- **Owner role:** fix
+- **Owner run:** fix-20261123T010329Z-730b79ed
+- **Owner host:** flux
+- **Owner branch:** task/bug-ALM-BUG-FLU-00026-run-fix-20261123T010329Z-730b79ed
+- **Owner base:** 49f8c1f4f932924e19f1f0158725eb33aca52138
 - **Owner fingerprint:** -
-- **Owner since:** -
-- **Owner until:** -
+- **Owner since:** 2026-11-23T01:03:29Z
+- **Owner until:** 2026-11-23T05:03:29Z
+- **Owner session:** flux/6cdfe552-8774-4c7e-a478-e451f5ff339d (run fix-20261123T010329Z-730b79ed)
 - **Verify retry after:** -
 - **Held branch:** -
 - **Legacy fixed run:** -
