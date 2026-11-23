@@ -6,7 +6,7 @@ import { test } from 'node:test';
 import * as THREE from 'three';
 import { trainLayout } from '../../core/train.ts';
 import type { TrainKind } from '../../core/train.ts';
-import { bodySpec, buildTrain, carSection, CLUSTER_EDGE, CLUSTER_LIFT, CLUSTER_ROW, faceSetback, frontOf } from '../src/train.ts';
+import { bodySpec, buildTrain, carSection, CLUSTER_ARRAY, CLUSTER_EDGE, CLUSTER_LIFT, CLUSTER_ROW, faceSetback, frontOf, LENS } from '../src/train.ts';
 import { LIVERIES } from '../src/livery.ts';
 import { col } from '../src/train-geom.ts';
 import { HULL_BEAK, LNER_YELLOW } from '../src/train-livery.ts';
@@ -220,7 +220,11 @@ test('the AT300 lamp housing lies flush on the nose: its outline comes down onto
         assert.ok(worst <= 0.002, `${here}: the housing's outline stands ${(worst * 1000).toFixed(1)} mm off the nose`);
         assert.ok(Math.min(...offs) >= CLUSTER_EDGE.foot - 0.003, `${here}: the housing's outline sinks ${(-Math.min(...offs) * 1000).toFixed(1)} mm into the nose`);
         // and the window's middle still stands its lift over the loft, over the rim and the colour mask's band
-        assert.ok(Math.abs(windowLift - CLUSTER_LIFT.window) <= 0.002, `${here}: the window's middle stands ${(windowLift * 1000).toFixed(1)} mm off the nose`);
+        // RE-PINNED for the LNER (round B11; was CLUSTER_LIFT.window, 26 mm, as the others): side on the back of its housing lies on the nose's own outline, so its lift was the
+        // outline pushed out (cab-side-3m, cab-car-side: the squared-off rear end proud of the nose with a pale spur), where lner-801-214-2025 shows the unit flush with the nose; the
+        // LNER's window stands 8 mm (LNER_CLUSTER.lift), the same 2 mm either way
+        const wantLift = kind === 'lner5' || kind === 'lner9' ? 0.008 : CLUSTER_LIFT.window;
+        assert.ok(Math.abs(windowLift - wantLift) <= 0.002, `${here}: the window's middle stands ${(windowLift * 1000).toFixed(1)} mm off the nose`);
       }
     }
   }
@@ -731,5 +735,168 @@ test('head on through V02, the LNER lamp unit is dark glass with a fine rim: the
     assert.ok(under <= 0.02, `${cab.here}: head on the rim stands ${(under * 100).toFixed(1)} cm under the glass`);
     const tall = metres(hi - lo);
     assert.ok(tall <= 0.5, `${cab.here}: head on the glass is ${tall.toFixed(2)} m tall`);
+  }
+});
+
+/**
+ * A cab car drawn into a 1600x1000 coverage buffer through `project` (a point to its pixel and its depth, or null behind the eye). Per pixel: `near`, what is nearest of all (the index
+ * into `housing` of the housing colour, -1 anything else of the car, -2 nothing); `hull`, the nearest housing part alone; and `other`, whether anything but the housing covers it.
+ */
+function drawCab(group: THREE.Object3D, housing: THREE.Color[], project: (q: THREE.Vector3) => [number, number, number] | null): { near: Int8Array; hull: Int8Array; other: Uint8Array } {
+  const W = 1600;
+  const H = 1000;
+  const other = new Uint8Array(W * H);
+  const near = new Int8Array(W * H).fill(-2);
+  const hull = new Int8Array(W * H).fill(-2);
+  const depth = new Float32Array(W * H).fill(Infinity);
+  const hullDepth = new Float32Array(W * H).fill(Infinity);
+  const v = new THREE.Vector3();
+  group.traverse((o) => {
+    const m = o as THREE.Mesh;
+    if (!m.isMesh) return;
+    const p = m.geometry.getAttribute('position');
+    const c = m.name === 'body-detail' ? m.geometry.getAttribute('color') : undefined;
+    const index = m.geometry.index;
+    const n = index ? index.count : p.count;
+    for (let t = 0; t < n; t += 3) {
+      const ks = [t, t + 1, t + 2].map((k) => (index ? index.getX(k) : k));
+      const k0 = ks[0] as number;
+      const part = c ? housing.findIndex((h) => Math.abs(c.getX(k0) - h.r) < 1e-4 && Math.abs(c.getY(k0) - h.g) < 1e-4 && Math.abs(c.getZ(k0) - h.b) < 1e-4) : -1;
+      const pts = ks.map((k) => project(v.fromBufferAttribute(p, k).applyMatrix4(m.matrixWorld)));
+      if (pts.some((q) => !q)) continue;
+      const [a, b, e] = pts as [number, number, number][];
+      const area = (b[0] - a[0]) * (e[1] - a[1]) - (e[0] - a[0]) * (b[1] - a[1]);
+      if (Math.abs(area) < 1e-12) continue;
+      for (let y = Math.max(0, Math.floor(Math.min(a[1], b[1], e[1]))); y <= Math.min(H - 1, Math.ceil(Math.max(a[1], b[1], e[1]))); y++) {
+        for (let x = Math.max(0, Math.floor(Math.min(a[0], b[0], e[0]))); x <= Math.min(W - 1, Math.ceil(Math.max(a[0], b[0], e[0]))); x++) {
+          const w0 = ((b[0] - x - 0.5) * (e[1] - y - 0.5) - (e[0] - x - 0.5) * (b[1] - y - 0.5)) / area;
+          const w1 = ((e[0] - x - 0.5) * (a[1] - y - 0.5) - (a[0] - x - 0.5) * (e[1] - y - 0.5)) / area;
+          if (w0 < 0 || w1 < 0 || w0 + w1 > 1) continue;
+          const i = y * W + x;
+          const z = w0 * a[2] + w1 * b[2] + (1 - w0 - w1) * e[2];
+          if (z < depth[i]!) {
+            depth[i] = z;
+            near[i] = part;
+          }
+          if (part < 0) other[i] = 1;
+          else if (z < hullDepth[i]!) {
+            hullDepth[i] = z;
+            hull[i] = part;
+          }
+        }
+      }
+    }
+  });
+  return { near, hull, other };
+}
+
+test('side on from cab-side-3m, the LNER lamp housing lies flush with the nose: its squared-off rear end adds at most a few pixels to the nose\'s outline and no pale spur, at both ends (round B11)', () => {
+  // The B10 score (cab-side-3m and cab-car-side, both ends): the rear end of the housing stood proud of the nose's outline and ended in a pale grey spur, where lner-801-214-2025 shows
+  // the unit flush with the nose. The housing's back half lies on the flank's own outline seen from there, so its lift pushed the outline out: 505 px of housing past the nose, up to
+  // 14 a row across, 14 of them the pale rim (26 mm of window, 14 mm of rim). Here the cab car is drawn from the cab-side-3m eye (3 m off the body side, 1.85 m up, over the leading
+  // bogie; 65 degrees over 1000 px): a pixel is past the outline where the housing (its rim, window, disc or lenses) covers it and nothing else of the car does. Each millimetre of
+  // lift there is about half a pixel across a row.
+  const W = 1600;
+  const f = 500 / Math.tan((32.5 * Math.PI) / 180);
+  for (const kind of ['lner5', 'lner9'] as const) {
+    const cluster = frontOf(kind).cluster!;
+    const housing = [cluster.window.colour, cluster.rim!.colour, CLUSTER_ARRAY, ...Object.values(LENS)].map(col);
+    const g = buildTrain(kind);
+    g.updateMatrixWorld(true);
+    const cars = trainLayout(kind).cars;
+    const bogie = 4.455 - (cars[0] as { start: number }).start;
+    for (const car of cars.filter((c) => c.cab)) {
+      const eyeZ = car.cab === 'front' ? car.start + bogie : car.end - bogie;
+      for (const sx of [-1, 1]) {
+        const here = `${kind} car ${car.index} ${sx > 0 ? 'right' : 'left'}`;
+        // the camera looks across the train at the body side; screen x runs along the train, y up
+        const { hull, other } = drawCab(g.getObjectByName(`car-${car.index}`)!, housing, (q) => {
+          const d = (q.x - sx * 4.35) * -sx;
+          return d < 0.05 ? null : [W / 2 + (f * (q.z - eyeZ) * -sx) / d, 500 - (f * (q.y - 1.85)) / d, d];
+        });
+        const rows = new Map<number, number>();
+        let past = 0;
+        let spur = 0;
+        let seen = 0;
+        for (let i = 0; i < hull.length; i++) {
+          if (hull[i]! < 0) continue;
+          seen++;
+          if (other[i]) continue;
+          past++;
+          if (hull[i] === 1) spur++;
+          rows.set(Math.floor(i / W), (rows.get(Math.floor(i / W)) ?? 0) + 1);
+        }
+        const widest = Math.max(0, ...rows.values());
+        assert.ok(seen > 1000, `${here}: only ${seen} px of the housing drawn`);
+        assert.ok(widest <= 5, `${here}: the housing stands up to ${widest} px a row past the nose's outline`);
+        assert.ok(past <= 200, `${here}: ${past} px of the housing stand past the nose's outline`);
+        assert.ok(spur <= 10, `${here}: ${spur} px of the pale rim stand past the nose's outline, a spur`);
+      }
+    }
+  }
+});
+
+test('head on from front-3m, the LNER lamp unit\'s inboard edge keeps its pale line down to the foot and turns the corner into the foot\'s without a nub, at both ends (round B11)', () => {
+  // The B10 score (front-3m, rear-3m, lights): below the 1.65 m bend the pale rim on the unit's inboard edge thinned from 3-5 px to 0-1 px, and at the lower inboard corner the foot's
+  // rim reached about 2 px past the side edge into the red, a 2x2 px pale nub (lner-800-113-newcastle-2025, lner-800-doncaster-2026: the dark glass edged by a thin light line all
+  // round). Drawn from the V02 eye (3 m ahead of the face, 1.7 m up, 50 degrees over 1000 px), each row of the unit's inboard edge from the foot's rim up to 1.75 m: the run of rim
+  // between the glass and the paint is 2 to 8 px, its outer edge wanders by no more than a pixel a row, and the foot's rim reaches no further inboard than the side's over it.
+  const W = 1600;
+  const f = 500 / Math.tan((25 * Math.PI) / 180);
+  for (const kind of ['lner5', 'lner9'] as const) {
+    const cluster = frontOf(kind).cluster!;
+    const housing = [cluster.window.colour, cluster.rim!.colour, CLUSTER_ARRAY, ...Object.values(LENS)].map(col);
+    const g = buildTrain(kind);
+    g.updateMatrixWorld(true);
+    for (const car of trainLayout(kind).cars.filter((c) => c.cab)) {
+      const face = car.cab === 'front' ? car.start : car.end;
+      const ahead = car.cab === 'front' ? -1 : 1;
+      const { near } = drawCab(g.getObjectByName(`car-${car.index}`)!, housing, (q) => {
+        const d = (q.z - (face + 3 * ahead)) * -ahead;
+        return d < 0.05 ? null : [W / 2 + (f * (q.x * -ahead)) / d, 500 - (f * (q.y - 1.7)) / d, d];
+      });
+      for (const side of [-1, 1]) {
+        const here = `${kind} car ${car.index}, the unit on the picture's ${side > 0 ? 'right' : 'left'}`;
+        // inboard is toward the middle of the picture: walk each row from the unit's outboard side in, to the last pixel of glass, then count the rim beyond it
+        const step = side > 0 ? -1 : 1;
+        const start = side > 0 ? W - 1 : 0;
+        const own = (x: number): boolean => (side > 0 ? x >= W / 2 : x < W / 2);
+        const top = Math.round(500 - (f * (1.75 - 1.7)) / 3.3);
+        let rows = 0;
+        let lastOuter = -1;
+        let footSeen = false;
+        // the foot's rim at its most inboard, and the side's rim at its most inboard over the six rows of glass over it
+        let footInner = -1;
+        let cornerOuter = -1;
+        for (let y = 999; y >= top; y--) {
+          let glass = -1;
+          for (let x = start; own(x); x += step) if (near[y * W + x] === 0) glass = x;
+          if (glass < 0) {
+            // under the glass: the foot's rim, its innermost pixel
+            let rim = -1;
+            for (let x = start; own(x); x += step) if (near[y * W + x] === 1) rim = x;
+            if (rim >= 0) {
+              footSeen = true;
+              lastOuter = lastOuter < 0 ? rim : step > 0 ? Math.max(lastOuter, rim) : Math.min(lastOuter, rim);
+              footInner = lastOuter;
+            }
+            continue;
+          }
+          if (!footSeen) continue;
+          rows++;
+          let run = 0;
+          while (near[y * W + glass + step * (run + 1)] === 1) run++;
+          assert.ok(run >= 2 && run <= 8, `${here}: row ${y}, ${run} px of pale rim inboard of the glass`);
+          const outer = glass + step * run;
+          // going up the edge the rim's outer pixel moves outboard or stays; the row below reaching more than a pixel further inboard is the foot's rim poking past the side
+          assert.ok((lastOuter - outer) * step <= 1, `${here}: row ${y}, the rim below reaches ${(lastOuter - outer) * step} px further inboard than this row's, ${outer}`);
+          lastOuter = outer;
+          if (rows <= 6) cornerOuter = cornerOuter < 0 ? outer : step > 0 ? Math.max(cornerOuter, outer) : Math.min(cornerOuter, outer);
+        }
+        assert.ok(rows >= 20, `${here}: only ${rows} rows of the inboard edge`);
+        // the corner: the foot's rim reaches no further inboard than the side's just over it (B10: a pixel or two further, the nub)
+        assert.ok((footInner - cornerOuter) * step <= 0, `${here}: the foot's rim reaches ${(footInner - cornerOuter) * step} px past the side's rim at the lower inboard corner, a nub`);
+      }
+    }
   }
 });

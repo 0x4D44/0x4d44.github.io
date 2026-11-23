@@ -482,6 +482,12 @@ export interface ClusterSpec {
    * rim's top edge, 2.05 m up, dipped 1.8 mm between 2.2 cm columns.
    */
   chord?: number;
+  /**
+   * A kind's own lifts (absent: CLUSTER_LIFT's) for the rim, the window, the array's disc and the lenses. Round B11: on the LNER the back of the housing lies on the nose's own
+   * outline seen from the side, so its lift is the outline pushed out (cab-side-3m: the squared-off rear end proud of the nose, its pale rim a spur, where lner-801-214-2025 shows the
+   * unit flush with the nose).
+   */
+  lift?: { rim: number; window: number; array: number; lens: number };
 }
 
 /**
@@ -722,15 +728,24 @@ export const AT300_CLUSTER: ClusterSpec = {
  * 0.5 m tall head on through V02) and its back edge 0.62 m back at its foot and its front 0.68 m at its top (the housing 0.41 m across); the array (0.62, 1.65) stays in the shorter
  * glass, where the shoulder still faces it. ASSUMED: every figure, to about 0.01 m. Head on the glass is still about 0.25 m across, not the photograph's 0.38 m: the unit is held
  * between the yellow's edge and the nose's outline, about 0.95 m out at that height where the photograph's outer edge is 1.22 m.
+ * CHANGED (round B11; was CLUSTER_LIFT's 14, 26, 30 and 34 mm, the rim 2 mm past the front and 3 mm under the foot, the edge's 2 cm bevel and 8 mm top, overStop 3 mm, the headlamp 0.925 m
+ * back): from the cab-side-3m eye the housing's back half lies on the flank's own outline, so its lift was the outline pushed out, the squared-off rear end standing proud with a pale
+ * spur (B10 score; lner-801-214-2025 shows the unit flush with the nose): 505 px past the outline, up to 14 a row (train-at300-shell.test.ts, round B11). The LNER's own `lift` is
+ * 5, 8, 12 and 16 mm (each millimetre of window there is about half a pixel a row). With the layers that low the rim's exposed edge lay in its own 2 cm fall, under the skin (head on
+ * 0-1 px of rim inboard), so the edge falls over 4 mm (3 mm in height under the top), and the rim reaches 6 mm past the front, 7 mm under the foot and 6 mm past the stop: head on it is
+ * 3-7 px inboard down to the foot and turns the corner without the B10 nub. The headlamp's strip comes 2 cm forward, so its dark body stays inside the window's back edge without a
+ * high lens's parallax. ASSUMED: every figure, by eye against those readings.
  */
 export const LNER_CLUSTER: ClusterSpec = {
   ...AT300_CLUSTER,
   window: { ...AT300_CLUSTER.window, y0: 1.55, y1: 2.02, sFront0: 0.225, sBack0: 0.62, sFront1: 0.68, sBack1: 1.4, frontFoot: { s: 0.175, y: 1.65 } },
   flank: 0.65,
   chord: 0.018,
-  rim: { ...AT300_CLUSTER.rim!, width: 0.0115, front: 0.002, foot: 0.003 },
-  edge: { ...AT300_CLUSTER.edge!, overStop: 0.003 },
+  rim: { ...AT300_CLUSTER.rim!, width: 0.0115, front: 0.006, foot: 0.007 },
+  edge: { ...AT300_CLUSTER.edge!, bevel: 0.004, top: 0.003, overStop: 0.006 },
   array: { ...AT300_CLUSTER.array, s: 0.62, y: 1.65 },
+  head: { ...AT300_CLUSTER.head, s: 0.905 },
+  lift: { rim: 0.005, window: 0.008, array: 0.012, lens: 0.016 },
 };
 
 /**
@@ -2126,7 +2141,8 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
         const side = Math.min(s - (frontAt(y) - frontGrow(grow)), lerp(win.sBack0, win.sBack1, f) + grow - s, y - (win.y0 - footGrow(grow)));
         return Math.min(lerp(foot, lift, clamp01(side / bevel)), lerp(topFoot(grow, lift, foot), lift, clamp01((top - Math.min(y, top)) / topBevel)));
       };
-      const windowFoot = cluster.rim ? CLUSTER_LIFT.rim + CLUSTER_EDGE.overRim : CLUSTER_EDGE.foot;
+      const lifts = cluster.lift ?? CLUSTER_LIFT;
+      const windowFoot = cluster.rim ? lifts.rim + CLUSTER_EDGE.overRim : CLUSTER_EDGE.foot;
       // grid lines with the edge's own added, any inner line within a millimetre of one of those moved a millimetre off it (two lines a hair apart drew slivers with no
       // area; moved, not dropped, so every row keeps as many columns)
       const withLines = (lines: number[], extra: number[]): number[] =>
@@ -2209,17 +2225,17 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
       const pitch = (2 * cluster.head.a) / cluster.head.cells;
       const strip = Array.from({ length: cluster.head.cells }, (_, k): number => (k + 0.5 - cluster.head.cells / 2) * pitch);
       for (const side of [-1, 1]) {
-        if (cluster.rim) windowPatch(side, CLUSTER_LIFT.rim, cluster.rim.width, cluster.rim.colour);
-        windowPatch(side, CLUSTER_LIFT.window, 0, win.colour);
+        if (cluster.rim) windowPatch(side, lifts.rim, cluster.rim.width, cluster.rim.colour);
+        windowPatch(side, lifts.window, 0, win.colour);
         // the array: its dark disc, and the cells (marker lenses: white at the leading end, red at the trailing one) in it
-        const base = plane(side, cluster.array.s, cluster.array.y, CLUSTER_LIFT.array);
+        const base = plane(side, cluster.array.s, cluster.array.y, lifts.array);
         detail.fan(ellipse(base, 0, 0, cluster.array.r, cluster.array.r, 14).map(world), wn(base.n), col(CLUSTER_ARRAY));
-        const top = plane(side, cluster.array.s, cluster.array.y, CLUSTER_LIFT.lens);
+        const top = plane(side, cluster.array.s, cluster.array.y, lifts.lens);
         for (const [du, dv] of cells) lensFan('marker', ellipse(top, du, dv, cell, cell, 6, Math.PI / 6).map(world), wn(top.n));
         // the headlamp: a slim dark body along the slant, and the strip's lenses on it; and the marker the live layer finds it by
-        const bar = plane(side, cluster.head.s, cluster.head.y, CLUSTER_LIFT.array);
+        const bar = plane(side, cluster.head.s, cluster.head.y, lifts.array);
         detail.fan(ellipse(bar, 0, 0, cluster.head.a + HEAD_BODY, cluster.head.b + HEAD_BODY, 20).map(world), wn(bar.n), col(CLUSTER_ARRAY));
-        const head = plane(side, cluster.head.s, cluster.head.y, CLUSTER_LIFT.lens);
+        const head = plane(side, cluster.head.s, cluster.head.y, lifts.lens);
         for (const du of strip) lensFan('head', ellipse(head, du, 0, (pitch / 2) * HEAD_FILL, cluster.head.b, HEAD_SIDES).map(world), wn(head.n));
         const m = new THREE.Object3D();
         m.name = 'headlight';

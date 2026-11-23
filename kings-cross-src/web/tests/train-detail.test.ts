@@ -5206,6 +5206,17 @@ test('lamps: the AT300 cluster stays on the flank and clear of the colour mask, 
   assert.ok(CLUSTER_LIFT.rim - Math.max(BAND_TOP, PANE_LIFT.swoosh) >= 0.002 - 1e-9, `the rim stands ${CLUSTER_LIFT.rim} m off the loft, under or level with what it meets`);
   assert.ok(CLUSTER_LIFT.window - CLUSTER_LIFT.rim >= 0.01 - 1e-9, `the window stands ${CLUSTER_LIFT.window}, the rim ${CLUSTER_LIFT.rim}`);
   assert.ok(CLUSTER_LIFT.lens - CLUSTER_LIFT.window >= 0.003 - 1e-9, `the lenses stand ${CLUSTER_LIFT.lens}, the window ${CLUSTER_LIFT.window}`);
+  // ADDED (round B11): the LNER's own, lower lifts (LNER_CLUSTER.lift; side on the back of its housing lies on the nose's outline, which its lift pushed out): the layers still stand
+  // 3 mm apart and in the same order, the rim at least 4 mm off the loft (the B5 test holds it 2 mm clear of the skin), and clear of the colour mask's band by 2 mm under it, not level
+  for (const kind of ['lner5', 'lner9'] as const) {
+    const own = frontOf(kind).cluster!.lift!;
+    assert.ok(own, `${kind}: has its own lifts`);
+    assert.ok(own.window <= 0.01, `${kind}: the window stands ${own.window} m off the loft`);
+    assert.ok(own.rim >= 0.004 - 1e-9 && BAND_TOP - own.rim >= 0.002 - 1e-9, `${kind}: the rim stands ${own.rim} m off the loft`);
+    assert.ok(own.window - own.rim >= 0.003 - 1e-9, `${kind}: the window stands ${own.window}, the rim ${own.rim}`);
+    assert.ok(own.array - own.window >= 0.003 - 1e-9, `${kind}: the array's disc stands ${own.array}, the window ${own.window}`);
+    assert.ok(own.lens - own.array >= 0.003 - 1e-9, `${kind}: the lenses stand ${own.lens}, the array's disc ${own.array}`);
+  }
   for (const kind of ['lner5', 'hull5', 'lumo5'] as const) {
     const g = built(kind);
     const layout = trainLayout(kind);
