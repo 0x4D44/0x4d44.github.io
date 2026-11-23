@@ -1302,7 +1302,9 @@ export function planTeleViews(f) {
     view.near = catalogueNear(view.eye, view.target);
     view.region = rear ? flipBox(region, L) : region;
     view.car = { index: car.index, type: car.type };
-    view.notes = { end: rear ? 'rear cab end, train frame reversed' : 'front cab end', side, scoring: false, purpose: TELE.note };
+    // the lamps V01 is taken in: a fresh specimen's (web/src/train.ts SERVICE_LAMPS, LAMP_STATES.leading), set again before each T01 view because V09 leaves the specimen in its trailing state
+    view.lamps = { ...LAMP_STATES.leading };
+    view.notes = { end: rear ? 'rear cab end, train frame reversed' : 'front cab end', side, scoring: false, purpose: TELE.note, lamps: { ...view.lamps } };
     view.rotation = stageRotation(view);
     out.push(view);
   }

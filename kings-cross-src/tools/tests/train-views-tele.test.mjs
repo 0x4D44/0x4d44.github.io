@@ -8,7 +8,7 @@ import {fileURLToPath} from 'node:url';
 import path from 'node:path';
 import * as T from 'three';
 import {ALL_KINDS} from '../../core/train.ts';
-import {buildTrain} from '../../web/src/train.ts';
+import {SERVICE_LAMPS,buildTrain} from '../../web/src/train.ts';
 import * as F from '../train-framing.mjs';
 import * as C from '../train-capture.mjs';
 
@@ -102,4 +102,35 @@ test('T01 plans with --chrome none, adds nothing to a run that does not ask for 
   await assert.rejects(run('--kinds','lner5','--views','T01','--poses',poses),/refusing to capture: 1 pose\(s\) differ from .*lner5\/nose-tele-left pose differs from the frozen pose at \/fov/);
   await assert.rejects(run('--kinds','lner5','--views','T01','--exposure','dusk','--poses',poses),/--views T01: the non-scoring nose-tele view is taken at day only/);
  } finally {console.log=log;await rm(dir,{recursive:true,force:true});}
+});
+
+/** The in-page driver against a bare stand-in: cat.view as the capture calls it, recording every setTrainLampState. */
+function driverPage() {
+ const calls=[],group={name:'train',position:{toArray:()=>[0,0,0]},rotation:{y:0},traverse(){},userData:{lampState:{...SERVICE_LAMPS}}},el={id:'',style:{},textContent:''};
+ const k={camera:{position:{toArray:()=>[0,0,0]}},controls:{target:{toArray:()=>[0,0,0]}},renderer:{info:{render:{calls:0,triangles:0}}},atmosphere:null,
+  setTrainLampState:(g,state)=>{calls.push({...state});g.userData.lampState={...state};}};
+ const Fs={...F,placeStageSpecimen(){},setCatalogueView:()=>({position:[0,0,0],target:[0,0,0]}),inspectCatalogueView:()=>({clear:true}),trainCosts:()=>({})};
+ const window={__kx:k,__cat:{T,F:Fs},__signalFrame(){}},document={getElementById:()=>el,createElement:()=>el,body:{append(){}}};
+ Object.assign(globalThis,{window,document});
+ try {C.catalogueDriver();} finally {delete globalThis.window;delete globalThis.document;}
+ const cat=window.__cat;cat.assertChrome=()=>({hidden:[],visible:[]});cat.state={group,stage:null};
+ const view=v=>{Object.assign(globalThis,{window,document});try{return cat.view(v,'label');}finally{delete globalThis.window;delete globalThis.document;}};
+ return {calls,group,view};
+}
+
+test('T01 is taken in the lamps V01 is taken in (a fresh specimen\'s), even after V09 leaves the trailing state on the specimen; no other view sets lamps',()=>{
+ // the state V01 is taken in is the one a specimen is built in: V01 is the first view on a fresh specimen and nothing before V09 calls setTrainLampState
+ assert.deepEqual(F.LAMP_STATES.leading,SERVICE_LAMPS);
+ for(const kind of AT300)assert.deepEqual(buildTrain(kind).userData.lampState,SERVICE_LAMPS,`${kind} is built in its service lamps`);
+ for(const v of tele('lner5')){assert.deepEqual(v.lamps,{front:'head',rear:'tail'},v.suffix);assert.deepEqual(v.notes.lamps,{front:'head',rear:'tail'});}
+ const plan=F.planCatalogueViews(C.describeFormation('lner5'));for(const v of plan)assert.equal('lamps' in v,false,`${v.suffix} has no lamps of its own`);
+ const page=driverPage(),byId=s=>plan.find(v=>v.suffix===s);
+ const v01=page.view(byId('nose-34-right'));assert.equal(v01.lampState,null);assert.deepEqual(page.calls,[],'V01 sets no lamps');
+ const trailing=page.view(byId('lights-trailing'));assert.deepEqual(trailing.lampState,{front:'tail',rear:'head'});assert.deepEqual(page.group.userData.lampState,{front:'tail',rear:'head'});
+ const v02=page.view(byId('front-3m'));assert.equal(v02.lampState,null,'a non-T01 view still leaves the state as it is');assert.equal(page.calls.length,1);
+ for(const t of tele('lner5')){const r=page.view(t);assert.deepEqual(r.lampState,{front:'head',rear:'tail'},`${t.suffix} records its lamps for the sidecar`);assert.deepEqual(page.group.userData.lampState,SERVICE_LAMPS,t.suffix);}
+ assert.deepEqual(page.calls.slice(1),Array(4).fill({front:'head',rear:'tail'}),'one call per T01 view, the service lamps');
+ const sidecar=C.catalogueSidecar({kind:'lner5',view:tele('lner5')[0],file:'f.png',formation:C.describeFormation('lner5'),session:{size:[1600,1000],lampApi:true},host:{os:'h'},build:'b',state:{},
+  result:{verdict:{},live:{pose:{},placement:{},lampState:{front:'head',rear:'tail'}}},timings:{}});
+ assert.deepEqual(sidecar.renderState.lampState,{front:'head',rear:'tail'});
 });

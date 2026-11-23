@@ -644,6 +644,8 @@ export function catalogueDriver() {
       if(typeof k.setTrainLampState!=='function')throw new Error('the page lost setTrainLampState during the run');
       lampState={...view.capability.state};k.setTrainLampState(s.group,{...lampState});
     }
+    // T01: the lamps a fresh specimen has (V01's), put back because the V09 views before it leave the trailing state on the specimen; no other view is touched
+    else if(view.lamps&&typeof k.setTrainLampState==='function'){lampState={...view.lamps};k.setTrainLampState(s.group,{...lampState});}
     return {...settle(view,text,pose),lampState};
   };
   /** V10: a camera given in world metres, the specimen stood where the placement says; the sidecar also gets the pose in the train's own frame. */
