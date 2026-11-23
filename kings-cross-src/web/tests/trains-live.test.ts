@@ -11,7 +11,7 @@ import { ALL_KINDS, TRAIN_SPECS, trainLayout } from '../../core/train.ts';
 import { KINGS_CROSS_PLATFORM_LENGTHS_M } from '../../core/station.ts';
 import { buildTrain } from '../src/train.ts';
 import { plain, trainNight } from '../src/train-geom.ts';
-import { carPoses, cloneWithShaderHooks, COUPLING_CLEARANCE, createLiveTrains, createTrainKinds, kindForDescription, kindForService, lengthForDescription, sampleOccupied } from '../src/trains-live.ts';
+import { carPoses, cloneWithShaderHooks, COUPLING_CLEARANCE, createLiveTrains, GHOST_DEPTH, createTrainKinds, kindForDescription, kindForService, lengthForDescription, sampleOccupied } from '../src/trains-live.ts';
 import type { FormationView } from '../src/trains-live.ts';
 
 function fixture(curved = true, kind: (typeof ALL_KINDS)[number] = 'lner9'): { graph: Graph; train: TrainView } {
@@ -36,10 +36,11 @@ function fixture(curved = true, kind: (typeof ALL_KINDS)[number] = 'lner9'): { g
 }
 const close = (a: number, b: number, tolerance = 1e-7): void => assert.ok(Math.abs(a - b) <= tolerance, `${a} != ${b}`);
 const world = (node: THREE.Object3D): THREE.Vector3 => node.getWorldPosition(new THREE.Vector3());
+// The colour materials a train draws with. A see-through train's GHOST_DEPTH twins (depth only, no colour) are left out here: their own test pins them.
 const materialsOf = (root: THREE.Object3D): Set<THREE.Material> => {
   const materials = new Set<THREE.Material>();
   root.traverse((node) => {
-    if (node instanceof THREE.Mesh) for (const material of Array.isArray(node.material) ? node.material : [node.material]) materials.add(material);
+    if (node instanceof THREE.Mesh && node.name !== GHOST_DEPTH) for (const material of Array.isArray(node.material) ? node.material : [node.material]) materials.add(material);
   });
   return materials;
 };
@@ -390,7 +391,7 @@ test('fading one train leaves another opaque and disappearing trains release the
   layer.update([{ ...train, opacity: 0.25 }, { ...train, id: 2, description: '1OTHER' }]);
   const [faded, solid] = layer.trains();
   for (const [record, opacity] of [[faded!, 0.25], [solid!, 1]] as const) record.group.traverse((o) => {
-    if (o instanceof THREE.Mesh) for (const m of Array.isArray(o.material) ? o.material : [o.material]) close(m.opacity, opacity);
+    if (o instanceof THREE.Mesh && o.name !== GHOST_DEPTH) for (const m of Array.isArray(o.material) ? o.material : [o.material]) close(m.opacity, opacity);
   });
   layer.update([{ ...train, id: 2, description: '1OTHER' }]);
   assert.equal(layer.trains().length, 1); assert.equal(scene.children.length, 1);
@@ -651,4 +652,62 @@ test('new stations keep unknown operators unresolved and never draw the legacy L
     assert.equal(parent.children.length, 0);
     drawn.dispose();
   }
+});
+
+test('a see-through train fades as one shell: every opaque mesh of every kind gets a depth twin drawn first, so far-side doors do not show through the body', () => {
+  // An estimated train is drawn at 0.55 (core/motion.ts). Its colour copies write no depth, so without a depth pass the doors and window
+  // band of the far side, the bogies and the underframe blend through the near wall (Arthur, 2026-11-23: "I can see the doors through the body").
+  for (const kind of ALL_KINDS) {
+    const { graph, train } = fixture(false, kind);
+    const scene = new THREE.Scene(), layer = createLiveTrains(graph, scene);
+    const estimated = { ...train, state: 'estimated' as const, opacity: 0.55 };
+    layer.update([estimated, { ...train, id: 2, description: '1SOLID' }]);
+    const [ghost, solid] = layer.trains();
+    const meshes = (root: THREE.Object3D): THREE.Mesh[] => { const out: THREE.Mesh[] = []; root.traverse((n) => { if (n instanceof THREE.Mesh) out.push(n); }); return out; };
+    let twinned = 0;
+    for (const mesh of meshes(ghost!.group)) {
+      if (mesh.name === GHOST_DEPTH) continue;
+      const colour = mesh.material as THREE.Material;
+      assert.equal(colour.transparent, true, `${kind} ${mesh.name}: drawn see-through`);
+      const twins = mesh.children.filter((c): c is THREE.Mesh => c instanceof THREE.Mesh && c.name === GHOST_DEPTH);
+      assert.equal(twins.length, 1, `${kind} ${mesh.name}: an opaque mesh of a see-through train has one depth twin`);
+      const twin = twins[0]!, depth = twin.material as THREE.Material;
+      assert.equal(twin.geometry, mesh.geometry, `${kind} ${mesh.name}: the twin draws the mesh's own geometry`);
+      assert.deepEqual([twin.position.toArray(), twin.quaternion.toArray(), twin.scale.toArray()], [[0, 0, 0], [0, 0, 0, 1], [1, 1, 1]], `${kind} ${mesh.name}: the twin sits on the mesh`);
+      assert.ok(twin.renderOrder < mesh.renderOrder, `${kind} ${mesh.name}: the depth pass is drawn before the colour pass`);
+      assert.equal(depth.colorWrite, false, `${kind} ${mesh.name}: the twin paints no colour`);
+      assert.equal(depth.depthWrite, true, `${kind} ${mesh.name}: the twin writes depth`);
+      assert.equal(depth.depthTest, true); assert.equal(depth.transparent, true, `${kind} ${mesh.name}: the twin is sorted with the transparent pass, after the opaque scene`);
+      assert.equal(colour.depthTest, true); assert.equal(colour.depthFunc, THREE.LessEqualDepth, `${kind} ${mesh.name}: the colour pass keeps the surface the twin wrote`);
+      for (const key of ['side', 'polygonOffset', 'polygonOffsetFactor', 'polygonOffsetUnits', 'alphaTest', 'depthFunc'] as const) assert.equal(depth[key], colour[key], `${kind} ${mesh.name}: twin and colour pass agree on ${key}`);
+      assert.equal(depth.onBeforeCompile, colour.onBeforeCompile, `${kind} ${mesh.name}: same shader hook, so the same depth`);
+      twinned++;
+    }
+    assert.ok(twinned > 0, `${kind}: a see-through train is twinned`);
+    assert.ok(meshes(solid!.group).every((m) => m.name !== GHOST_DEPTH), `${kind}: an opaque train has no depth twins`);
+    // once its position is confirmed it is drawn opaque again, and the twins go
+    layer.update([{ ...estimated, state: 'moving', opacity: 1 }, { ...train, id: 2, description: '1SOLID' }]);
+    assert.ok(meshes(ghost!.group).every((m) => m.name !== GHOST_DEPTH), `${kind}: the twins go when the train is opaque again`);
+    layer.dispose();
+  }
+});
+
+test('a train that starts fading in its own palette gains depth twins, and their materials are released with the palette', () => {
+  const { graph, train } = fixture(false, 'lner5');
+  const scene = new THREE.Scene(), layer = createLiveTrains(graph, scene);
+  layer.update([train]);
+  const group = layer.trains()[0]!.group;
+  const twins = (): THREE.Mesh[] => { const out: THREE.Mesh[] = []; group.traverse((n) => { if (n instanceof THREE.Mesh && n.name === GHOST_DEPTH) out.push(n); }); return out; };
+  assert.equal(twins().length, 0);
+  layer.update([{ ...train, state: 'fading', opacity: 0.97 }]);
+  const first = twins();
+  assert.ok(first.length > 0, 'the fade reuses the opaque palette in place, and still gets twins');
+  layer.update([{ ...train, state: 'fading', opacity: 0.5 }]);
+  assert.deepEqual(twins(), first, 'a fade within one palette keeps its twins');
+  const disposed = new Set<THREE.Material>();
+  const depth = new Set(first.map((t) => t.material as THREE.Material));
+  for (const m of depth) m.addEventListener('dispose', () => disposed.add(m));
+  layer.update([]);
+  assert.equal(disposed.size, depth.size, 'the depth copies are disposed with the palette');
+  layer.dispose();
 });
