@@ -132,6 +132,8 @@ export const HULL_DOOR = 0xc41e46;
  * white below, which the round 3 score called inverted; the photographs show white-silver all round it, over a third of the side white above the windows' band.
  */
 export const LNER_BAND: [number, number] = [1.85, 2.76];
+/** The LNER cheek's top edge, metres up the nose's flank: a little over the lamp unit's foot (train.ts LNER_CLUSTER, 1.55 m less its 3 mm rim), so the red meets the unit with no white between. */
+export const LNER_CHEEK_TOP = 1.57;
 
 /**
  * The Azuma's side. lner-801-214-2025 (a 5-car 801 at Doncaster-area track; a close crop of its first car) and lner-800-doncaster-2026: white-silver car sides, one
@@ -157,7 +159,9 @@ function lnerShapes(nose: number): Shape[] {
   // the cheek: the red strip beside the face, from the nose's foot up under the lamp window, its back edge rounded (a smooth curve through the readings, s as a function of y:
   // drawn through the same five points as a polygon it showed its facets on the nose's flank, a stair where a photograph has one curve)
   const cheekBack = smoothCurve([[TEX_Y0, 0.5], [0.75, 0.8], [1.05, 0.92], [1.3, 0.85], [1.5, 0.7]], 32).map(([y, s]): [number, number] => [s, y]);
-  const cheek: [number, number][] = [[0, TEX_Y0], ...cheekBack, [0, 1.5]];
+  // CHANGED (round B9b; its top was level at 1.5 m): the red runs on up under the lamp unit to LNER_CHEEK_TOP, and behind the unit's back edge up to 1.68 m where it meets the wing (the corner at 1.68 m lies under the unit), so no white shows between the
+  // unit's foot (1.55 m since round B9) and the red. lner-801-214-2025 shows the near unit's lower corner meeting red, with no pale tab; the B9 score saw a white wedge there in every 3/4 view.
+  const cheek: [number, number][] = [[0, TEX_Y0], ...cheekBack, [0.9, 1.5], [0.9, 1.68], [0.62, 1.68], [0.5, LNER_CHEEK_TOP], [0, LNER_CHEEK_TOP]];
   return [
     // the dark underframe, from just behind the crew door (the nose's own lower flank is white-silver)
     { colour: 0x2d3036, pts: rect(nose + 0.2, TEX_SPAN, TEX_Y0, 1.0) },

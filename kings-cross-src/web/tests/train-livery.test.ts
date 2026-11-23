@@ -154,7 +154,9 @@ test('LNER: the cheek\'s back edge is one smooth curve through the photographs\'
   const atTop = back[back.length - 1] as number;
   assert.ok(atFoot < widest - 0.3 && atTop < widest - 0.05, `the edge swells to ${widest.toFixed(2)} m back from ${atFoot.toFixed(2)} at the foot and ${atTop.toFixed(2)} at the top`);
   assert.equal(at('lner5', LNER_NOSE, 0.3, 1.49), LNER_RED, 'the cheek reaches 1.5 m up beside the face');
-  assert.notEqual(at('lner5', LNER_NOSE, 0.3, 1.52), LNER_RED, 'and no higher');
+  // RE-PINNED (round B9b; was not red at 1.52 m): the cheek now runs on up under the lamp unit, whose foot rose to 1.55 m in round B9, to 1.57 m (LNER_CHEEK_TOP), so no white shows
+  // between them: lner-801-214-2025 shows the near unit's lower corner (about x 1395, y 785 of the 1920-wide frame) meeting red, with no pale tab. The same 2 cm over the top.
+  assert.notEqual(at('lner5', LNER_NOSE, 0.3, 1.59), LNER_RED, 'and no higher');
 });
 
 test('the nose\'s dark cap starts where the windscreen ends: the LNER\'s and Lumo\'s `noseTopFrom` is the glass\'s top edge (glass.screen.s1), whatever the screen\'s size', () => {
@@ -665,5 +667,32 @@ test('the nose\'s top: the LNER has a black dome and Lumo a dark grey one over t
     const g = buildTrain(kind);
     g.updateMatrixWorld(true);
     for (const index of cars(kind)) for (const colour of [dark, lumoDome]) assert.equal(trisOfColour(detailOf(g, index), colour).length, 0, `${kind} car ${index}: a nose roof in ${colour.toString(16)}`);
+  }
+});
+
+test('LNER: no white shows under the lamp unit: the flank just under its foot and just behind the lower half of its back edge is the cheek\'s red, at both kinds (round B9b)', () => {
+  // The B9 score (nose-34-left/right, rear-nose-34-left/right, the cab-car-side views of lner5 and lner9): raising the unit's foot to 1.55 m and its back corner to 0.62 m uncovered the body's own
+  // white between the cheek's top (1.5 m) and the wing, a pale wedge about 28 by 18 px under the unit's lower outboard corner (nose-34-right). lner-801-214-2025 shows the near unit's lower corner
+  // meeting red, with no pale tab. Read in the unit's own coordinates (LNER_CLUSTER: s from the tip, which the texture takes from the car's end, faceSetback further on): 2 and 4 cm outside its
+  // rim, along the whole foot and up the back edge to the unit's mid-height.
+  const tip = faceSetback('at300');
+  for (const kind of ['lner5', 'lner9'] as const) {
+    const cluster = frontOf(kind).cluster!;
+    const win = cluster.window;
+    const rim = cluster.rim!;
+    const foot = win.y0 - (rim.foot ?? rim.width);
+    const pale: string[] = [];
+    for (const d of [0.02, 0.04]) {
+      for (let k = 0; k <= 20; k++) {
+        const s = win.sFront0 + ((win.sBack0 - win.sFront0) * k) / 20;
+        if (at(kind, LNER_NOSE, s + tip, foot - d) !== LNER_RED) pale.push(`${(s).toFixed(2)} m back, ${(foot - d).toFixed(3)} m up`);
+      }
+      for (let k = 0; k <= 10; k++) {
+        const y = win.y0 + ((win.y1 - win.y0) * 0.5 * k) / 10;
+        const s = win.sBack0 + ((win.sBack1 - win.sBack0) * (y - win.y0)) / (win.y1 - win.y0) + rim.width + d;
+        if (at(kind, LNER_NOSE, s + tip, y) !== LNER_RED) pale.push(`${s.toFixed(2)} m back, ${y.toFixed(3)} m up`);
+      }
+    }
+    assert.equal(pale.length, 0, `${kind}: the flank by the lamp unit is not red at ${pale.slice(0, 6).join('; ')}`);
   }
 });
