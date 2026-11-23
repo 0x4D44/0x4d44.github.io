@@ -6,7 +6,7 @@ import { appendFile, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'no
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { aggregate, AREA_ASSETS, areaTrack, completedRecordingNames, countHeads, publicationDecision, relearnSclass, relearnValidation,
-  splitPublishedSclass, writePublishedSclass } from '../sclass.ts';
+  sourceFingerprint, splitPublishedSclass, writePublishedSclass } from '../sclass.ts';
 import { localFile } from '../../relay/relay.mjs';
 import { validatedSignalHypotheses } from '../../web/src/signals.ts';
 
@@ -36,6 +36,23 @@ test('real renderer counts only validated proceed with available bytes as aspect
   assert.equal(countHeads({ ...analysis, hypotheses: [hypothesis('route', '1004')] }, anchors, overlay, track, { '10': 1 }).aspectCapable, 0);
 });
 
+test('provenance records a missing optional source as absent, fingerprints a present one exactly, and still refuses a missing required one', async () => {
+  const scratch = path.join(root, '.scratch'); await mkdir(scratch, { recursive: true });
+  const dir = await mkdtemp(path.join(scratch, 'sclass-fingerprint-test-'));
+  try {
+    const missing = path.join(dir, 'package-lock.json');
+    assert.deepEqual(await sourceFingerprint(missing, true), { source: path.relative(root, missing), bytes: null, sha256: null, absent: true });
+    await assert.rejects(sourceFingerprint(missing), { code: 'ENOENT' });
+    await assert.rejects(sourceFingerprint(missing, false), { code: 'ENOENT' });
+    const bytes = Buffer.from('{"lockfileVersion":3}\n');
+    await writeFile(missing, bytes);
+    const expected = { source: path.relative(root, missing), bytes: bytes.length, sha256: createHash('sha256').update(bytes).digest('hex') };
+    assert.deepEqual(await sourceFingerprint(missing, true), expected, 'a present optional source carries no absent marker');
+    assert.deepEqual(await sourceFingerprint(missing), expected);
+    await assert.rejects(sourceFingerprint(dir, true), { code: 'EISDIR' }, 'only absence is tolerated');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
 test('CLI writes reproducible last-recording and baseline reports without raw events', async () => {
   const scratch = path.join(root, '.scratch'); await mkdir(scratch, { recursive: true });
   const dir = await mkdtemp(path.join(scratch, 'sclass-cli-test-'));
@@ -59,8 +76,14 @@ test('CLI writes reproducible last-recording and baseline reports without raw ev
   assert.ok(comparison.before);
   assert.equal(comparison.baselineValidation, 'halves');
   assert.equal(runtime.provenance.fingerprints.length, 14);
-  assert.ok(runtime.provenance.fingerprints.every(f => f.bytes > 0 && /^[a-f0-9]{64}$/.test(f.sha256)));
-  for (const fingerprint of runtime.provenance.fingerprints) {
+  // package-lock.json is gitignored: a fresh checkout has none, and the report then records it as absent.
+  const lockPresent = await readFile(path.join(root, 'kings-cross-src/package-lock.json')).then(() => true, () => false);
+  const present = runtime.provenance.fingerprints.filter(f => !f.absent);
+  assert.deepEqual(runtime.provenance.fingerprints.filter(f => f.absent),
+    lockPresent ? [] : [{ source: path.join('kings-cross-src', 'package-lock.json'), bytes: null, sha256: null, absent: true }]);
+  assert.equal(present.length, lockPresent ? 14 : 13);
+  assert.ok(present.every(f => f.bytes > 0 && /^[a-f0-9]{64}$/.test(f.sha256)));
+  for (const fingerprint of present) {
     const bytes = await readFile(path.resolve(root, fingerprint.source));
     assert.equal(fingerprint.bytes, bytes.length);
     assert.equal(fingerprint.sha256, createHash('sha256').update(bytes).digest('hex'));
