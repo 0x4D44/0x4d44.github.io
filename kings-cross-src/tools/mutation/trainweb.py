@@ -1,6 +1,6 @@
 """Mutation check for the three.js trains (web/src/train.ts, train-parts.ts, train-bogie-trace.ts, train-nose.ts, train-face.ts, train-geom.ts, train-livery.ts, livery.ts, train-interior-layout.ts, train-interior-kit.ts) against
 web/tests/train.test.ts, web/tests/train-detail.test.ts, web/tests/train-livery.test.ts, web/tests/train-lamps.test.ts, web/tests/train-rake.test.ts,
-web/tests/train-azuma-front.test.ts, web/tests/train-bogie-view.test.ts, web/tests/train-bogie-trace.test.ts, web/tests/train-bogie-trace-electrostar.test.ts, web/tests/train-bogie-trace-siemens.test.ts, web/tests/train-azuma-plan.test.ts, web/tests/train-roof.test.ts, web/tests/train-roof-ends.test.ts, web/tests/train-at300-shell.test.ts and web/tests/train-lner.test.ts.
+web/tests/train-azuma-front.test.ts, web/tests/train-bogie-view.test.ts, web/tests/train-bogie-trace.test.ts, web/tests/train-bogie-trace-electrostar.test.ts, web/tests/train-bogie-trace-siemens.test.ts, web/tests/train-azuma-plan.test.ts, web/tests/train-roof.test.ts, web/tests/train-roof-ends.test.ts, web/tests/train-at300-shell.test.ts, web/tests/train-lner.test.ts, web/tests/train-lamp-halo.test.ts and tools/tests/axis03-evidence.test.ts.
 usage: python3 -I -u tools/mutation/trainweb.py <kings-cross-src> <scratch dir> [mutation-name substring ... | #a-b]
 `#a-b` runs the mutants at positions a up to (not including) b of the list below, counted from 0: the full run in slices, each through the machine's one-driver gate, with the
 never-red test names of every slice intersected afterwards (a slice cannot see what the others turned red).
@@ -25,7 +25,7 @@ FACE = "web/src/train-face.ts"
 GEOM = "web/src/train-geom.ts"
 ILAY = "web/src/train-interior-layout.ts"
 IKIT = "web/src/train-interior-kit.ts"
-TESTS = ["web/tests/train.test.ts", "web/tests/train-detail.test.ts", "web/tests/train-livery.test.ts", "web/tests/train-lamps.test.ts", "web/tests/train-rake.test.ts", "web/tests/train-azuma-front.test.ts", "web/tests/train-bogie-view.test.ts", "web/tests/train-bogie-trace.test.ts", "web/tests/train-bogie-trace-electrostar.test.ts", "web/tests/train-bogie-trace-siemens.test.ts", "web/tests/train-azuma-plan.test.ts", "web/tests/train-roof.test.ts", "web/tests/train-roof-ends.test.ts", "web/tests/train-at300-shell.test.ts", "web/tests/train-lner.test.ts"]
+TESTS = ["web/tests/train.test.ts", "web/tests/train-detail.test.ts", "web/tests/train-livery.test.ts", "web/tests/train-lamps.test.ts", "web/tests/train-rake.test.ts", "web/tests/train-azuma-front.test.ts", "web/tests/train-bogie-view.test.ts", "web/tests/train-bogie-trace.test.ts", "web/tests/train-bogie-trace-electrostar.test.ts", "web/tests/train-bogie-trace-siemens.test.ts", "web/tests/train-azuma-plan.test.ts", "web/tests/train-roof.test.ts", "web/tests/train-roof-ends.test.ts", "web/tests/train-at300-shell.test.ts", "web/tests/train-lner.test.ts", "web/tests/train-lamp-halo.test.ts", "tools/tests/axis03-evidence.test.ts"]
 # the lines of the bogie's drive and brake units in train-parts.ts that the round-5 mutants below search for, each mutant changing one detail of one of them
 GEAR_CASE = "D.box(x0, x1, y - MOTOR_RADIUS + 0.04, y + MOTOR_RADIUS, Math.min(az - 0.17, az + dz - 0.17), Math.max(az + 0.17, az + dz + 0.17), pal.gear);"
 MOTOR_RINGS = "[[-stand, 0, 8], [-stand, boss, 8], [0, boss, 8], [0, MOTOR_RADIUS], [L, MOTOR_RADIUS], [L, boss, 8], [L + stand, boss, 8], [L + stand, 0, 8]],"
@@ -200,7 +200,7 @@ M = [
     ("bogie maker: the style not passed to the bogie", ", style: BOGIE_STYLE[spec.family] });", " });"),
     ("crew door counted among the passenger doors", "      marker.name = crew ? 'crew-door' : 'door';", "      marker.name = 'door';"),
     ("cluster: the Azuma's window as short as the face is deep", "sFront0: 0.45, sBack0: 0.95, sFront1: 0.85, sBack1: 1.6, colour: POD }", "sFront0: 0.45, sBack0: 0.95, sFront1: 0.85, sBack1: 0.6, colour: POD }"),
-    ("cluster: the Hull Trains cab has the Azuma's own", "cabSideSurround: CAB_SWOOSH, cluster: { ...AT300_CLUSTER, window: { ...AT300_CLUSTER.window, colour: HULL_POD }, rim: { colour: 0x4a5160, width: 0.025 } } },", "cabSideSurround: CAB_SWOOSH },"),
+    ("cluster: the Hull Trains cab has the Azuma's own", "cabSideSurround: CAB_SWOOSH, cluster: { ...AT300_CLUSTER, window: { ...AT300_CLUSTER.window, colour: HULL_POD }, rim: { colour: 0x4a5160, width: 0.025 }, chord: 0.05 } },", "cabSideSurround: CAB_SWOOSH },"),
     ("cluster: the Hull Trains cab's window in the Azuma's black", "window: { ...AT300_CLUSTER.window, colour: HULL_POD }", "window: { ...AT300_CLUSTER.window, colour: POD }"),
     ("cluster: the window starts at the face's plane", "window: { y0: 1.53, y1: 2.1, sFront0: 0.45,", "window: { y0: 1.53, y1: 2.1, sFront0: 0,"),
     ("cluster: the Lumo cab with the Azuma's pale rim", "lumo5: { cabSideSurround: CAB_SWOOSH, cluster: { ...AT300_CLUSTER, rim: undefined } },", "lumo5: { cabSideSurround: CAB_SWOOSH, cluster: { ...AT300_CLUSTER } },"),
@@ -947,16 +947,16 @@ M = [
     ("B7: the Azuma's glass back to B6's 0.68 and 0.6 (tapered, its lower corner on the 3/4 outline)", 'fraction: 0.6, fractionTop: 0.66,', 'fraction: 0.68, fractionTop: 0.6,'),
     ("B7: the Azuma's glass foot back to B6's 0.68 (its lower corner on the 3/4 outline)", 'fraction: 0.6, fractionTop: 0.66,', 'fraction: 0.68, fractionTop: 0.66,'),
     ("B7: the Azuma's glass top back to B6's 0.6 (tapered)", 'fraction: 0.6, fractionTop: 0.66,', 'fraction: 0.6, fractionTop: 0.6,'),
-    ("B7: the LNER yellow back to 0.7 m at the glass (black ears)", 'hwTop: 0.56, hwSill: 0.79, toCorner: true, fill: 0.88 } as const;', 'hwTop: 0.56, hwSill: 0.7, toCorner: true, fill: 0.88 } as const;'),
-    ("B7b: the LNER yellow widening to the foot's middle and not its corners (0.04 m2 more yellow head on, past the beak's lead)", 'hwTop: 0.56, hwSill: 0.79, toCorner: true, fill: 0.88 } as const;', 'hwTop: 0.56, hwSill: 0.79, fill: 0.88 } as const;'),
-    ("B7b: the LNER yellow flared again, a cube (a waist under the frame in front-3m)", 'lerp(bandStart, mask.hwSill, v >= 1 ? 1 : Math.min(1, s / sCorner) ** (mask.fill ?? 1))', 'lerp(bandStart, mask.hwSill, v >= 1 ? 1 : Math.min(1, s / sCorner) ** 3)'),
+    ("B7: the LNER yellow back to 0.7 m at the glass (black ears)", 'hwTop: 0.6, hwSill: 0.79, toCorner: true, fill: 0.55, round: 2.5 };', 'hwTop: 0.6, hwSill: 0.7, toCorner: true, fill: 0.55, round: 2.5 };'),
+    ("B7b: the LNER yellow widening to the foot's middle and not its corners (0.04 m2 more yellow head on, past the beak's lead)", 'hwTop: 0.6, hwSill: 0.79, toCorner: true, fill: 0.55, round: 2.5 };', 'hwTop: 0.6, hwSill: 0.79, fill: 0.55, round: 2.5 };'),
+    ("B7b: the LNER yellow flared again, a cube (narrow down the face)", 'lerp(bandStart, mask.hwSill, v >= 1 ? 1 : Math.min(1, s / sCorner) ** (mask.fill ?? 1))', 'lerp(bandStart, mask.hwSill, v >= 1 ? 1 : Math.min(1, s / sCorner) ** 3)'),
     ("B7b: the band's corner reach ignores the sweep", 'const sCorner = mask.toCorner ? sEnd + footSweepAt(footFraction(mask.hwSill, front.frame)) : sEnd;', 'const sCorner = sEnd;'),
     ("B7: the colour mask's last row back at 5 mm", 'const BAND_END_LIFT = 0.006;', 'const BAND_END_LIFT = 0.005;'),
     # --- round B8: the LNER lamp units on the yellow's upper corners, the yellow fuller under the frame (train-at300-shell.test.ts, round B8; train-lner.test.ts; train-detail.test.ts)
-    ("B8: the LNER yellow straight again (0.84 of its top at the lamps' middle)", 'hwSill: 0.79, toCorner: true, fill: 0.88 } as const;', 'hwSill: 0.79, toCorner: true, fill: 1 } as const;'),
-    ("B8: the LNER yellow fuller still (a waist under the frame in front-3m)", 'hwSill: 0.79, toCorner: true, fill: 0.88 } as const;', 'hwSill: 0.79, toCorner: true, fill: 0.75 } as const;'),
-    ("B8: the LNER housing back on the AT300's flank stop (a sliver off the yellow)", "  flank: 0.65,", "  flank: 0.8,"),
-    ("B8: the LNER housing's front edge back at 0.45 m (off the yellow at its foot)", "y1: 2.02, sFront0: 0.225, sBack0: 0.62,", "y1: 2.02, sFront0: 0.45, sBack0: 0.62,"),
+    ("B8: the LNER yellow straight again (0.84 of its top at the lamps' middle)", 'hwSill: 0.79, toCorner: true, fill: 0.55, round: 2.5 };', 'hwSill: 0.79, toCorner: true, fill: 1, round: 2.5 };'),
+    ("B8: the LNER yellow fuller still (the unit's pale rim hidden)", 'hwSill: 0.79, toCorner: true, fill: 0.55, round: 2.5 };', 'hwSill: 0.79, toCorner: true, fill: 0.4, round: 2.5 };'),
+    ("B8: the LNER housing back on the AT300's flank stop (a sliver off the yellow)", "  flank: 0.7,", "  flank: 0.8,"),
+    ("B8: the LNER housing's front edge back at 0.45 m (off the yellow at its foot)", "y1: 2.02, sFront0: 0.275, sBack0: 0.62,", "y1: 2.02, sFront0: 0.45, sBack0: 0.62,"),
     ("B8: the LNER housing's top back at 2.1 m (onto the frame's corner)", "  window: { ...AT300_CLUSTER.window, y0: 1.55, y1: 2.02, sFront0", "  window: { ...AT300_CLUSTER.window, y0: 1.55, y1: 2.1, sFront0"),
     ("B8: the LNER housing's columns 4 cm apart (its edge dips into the shoulder)", "  chord: 0.018,", "  chord: 0.04,"),
     # --- round B9: the LNER lamp unit's fine rim and shorter glass (train-at300-shell.test.ts, round B9; train-lner.test.ts; train-detail.test.ts)
@@ -970,9 +970,23 @@ M = [
     ("B9b: the LNER cheek stops under the unit's foot (white behind its back edge)", "[0.9, 1.5], [0.9, 1.68], [0.62, 1.68], [0.5, LNER_CHEEK_TOP]", "[0.7, LNER_CHEEK_TOP]", LV),
     ("B9b: the LNER cheek's top 4 cm lower (a white strip under the unit's foot)", "export const LNER_CHEEK_TOP = 1.57;", "export const LNER_CHEEK_TOP = 1.53;", LV),
     ("B10: the LNER cheek's back edge ends 0.7 m back at 1.5 m again (a cream speck under the unit's outboard corner)", "[1.3, 0.85], [1.5, 0.74]], 32)", "[1.3, 0.85], [1.5, 0.7]], 32)", LV),
-    ("B10: the LNER housing's front edge straight to its foot again (red between it and the yellow)", "sBack1: 1.4, frontFoot: { s: 0.175, y: 1.65 } },", "sBack1: 1.4 },"),
+    ("B10: the LNER housing's front edge straight to its foot again (red between it and the yellow)", "sBack1: 1.4, frontFoot: { s: 0.228, y: 1.65 } },", "sBack1: 1.4 },"),
     ("B10: the frontFoot bend ignored by the window's rows", "          const sF = frontAt(y) - frontGrow(grow);", "          const sF = lerp(win.sFront0, win.sFront1, (y - win.y0) / (win.y1 - win.y0)) - frontGrow(grow);"),
-    ("B10: the LNER housing's foot 5 cm further back than the yellow needs", "frontFoot: { s: 0.175, y: 1.65 } },", "frontFoot: { s: 0.225, y: 1.65 } },"),
+    ("B10: the LNER housing's foot 5 cm further back than the yellow needs", "frontFoot: { s: 0.228, y: 1.65 } },", "frontFoot: { s: 0.27, y: 1.65 } },"),
+    # --- round B14: the LNER yellow full down the face (long-lens photographs), the lamp unit's inner edge out with it
+    ("B14: the LNER yellow straight on the face again (a wedge from T01)", "hwSill: 0.79, toCorner: true, fill: 0.55, round: 2.5 };", "hwSill: 0.79, toCorner: true, fill: 0.55 };"),
+    ("B14: the LNER yellow band back at B8's 0.88 power (0.67 m out at the lamps)", "hwSill: 0.79, toCorner: true, fill: 0.55, round: 2.5 };", "hwSill: 0.79, toCorner: true, fill: 0.88, round: 2.5 };"),
+    ("B14: the LNER yellow's curve ignored on the face", "  return mask.round === undefined ? lerp(", "  return mask.round !== 12345 ? lerp("),
+    ("B14: the LNER housing on B8's flank stop (the yellow runs under the unit)", "  flank: 0.7,", "  flank: 0.65,"),
+    ("B14: the LNER housing's foot back at B10's 0.175 m (over the yellow)", "frontFoot: { s: 0.228, y: 1.65 } },", "frontFoot: { s: 0.175, y: 1.65 } },"),
+    ("B14: the LNER yellow pinched on the face, a waist a long lens sees", "hwFoot: 0.42, hwTop: 0.6,", "hwFoot: 0.42, hwTop: 0.36,"),
+    # --- round B14: the AT300 nose's fuller cheek (train-nose.ts NoseCheek), the lamps facing as before, Hull's and Lumo's housings on it
+    ("B14c: no cheek (the LNER unit 0.35 m across head on again)", "    cheek: { by: 0.09, s: [0.0, 1.2, 1.7, 3.4]", "    cheek: { by: 0, s: [0.0, 1.2, 1.7, 3.4]"),
+    ("B14c: the flank's stop follows the cheek out (the unit's inner edge off the yellow)", "const plain = halfAt(sec, norm, egg, { ...ringAt(spec.nose, Math.max(0, s)), cheek: undefined });", "const plain = h;"),
+    ("B14c: the lenses re-aimed by the cheek (the far-side halos show from the halo-close eye)", "const n = flankNormal(side, s, y, true);", "const n = flankNormal(side, s, y);"),
+    ("B14c: the cheek past the body's side", "const CHEEK_CLEAR = 0.97;", "const CHEEK_CLEAR = 1.2;", N),
+    ("B14c: the Hull Trains housing's columns crowding again (its grid dips into the cheek)", "colour: 0x4a5160, width: 0.025 }, chord: 0.05 } },", "colour: 0x4a5160, width: 0.025 } } },"),
+    ("B14c: the Lumo housing's columns crowding again (its grid dips into the cheek)", "foot: -0.001 }, chord: 0.03 } },", "foot: -0.001 } } },"),
     # --- round B11: the LNER lamp housing flush with the nose side on (train-at300-shell.test.ts, round B11 and B3; train-detail.test.ts)
     ("B11: the LNER housing on the AT300's lifts again (proud of the nose's outline side on)", "  lift: { rim: 0.005, window: 0.008, array: 0.012, lens: 0.016 },", ""),
     ("B11: a kind's own lifts ignored", "const lifts = cluster.lift ?? CLUSTER_LIFT;", "const lifts = CLUSTER_LIFT;"),
@@ -984,7 +998,7 @@ M = [
     ("B12: the LNER headlamp strip 2 cm lower (its lower lenses past the glass head on)", "  head: { ...AT300_CLUSTER.head, s: 0.83, a: 0.14 },", "  head: { ...AT300_CLUSTER.head, s: 0.83, a: 0.14, y: 1.74 },"),
     ("B12: the LNER headlamp strip 3 cm higher (its upper end past the outline side on)", "  head: { ...AT300_CLUSTER.head, s: 0.83, a: 0.14 },", "  head: { ...AT300_CLUSTER.head, s: 0.83, a: 0.14, y: 1.79 },"),
     ("B11: the LNER edge's 8 mm top fall again (the rim's top inside the skin)", "bevel: 0.004, top: 0.003, overStop: 0.006 },", "bevel: 0.004, overStop: 0.006 },"),
-    ("B8: a kind's own flank stop ignored", "const limit = (cluster.flank ?? FLANK_FRACTION) * Math.max(...h.map((pt) => pt[0])) - inset;", "const limit = FLANK_FRACTION * Math.max(...h.map((pt) => pt[0])) - inset;"),
+    ("B8: a kind's own flank stop ignored", "const limit = (cluster.flank ?? FLANK_FRACTION) * Math.max(...plain.map((pt) => pt[0])) - inset;", "const limit = FLANK_FRACTION * Math.max(...plain.map((pt) => pt[0])) - inset;"),
     ("front: every windscreen's foot swept by default", '(screen?.footSweep ?? 0) * f * f;', '(screen?.footSweep ?? 0.3) * f * f;'),
     ('front: the glass and frame patches ignore the sweep', '(pane === 0 ? footSweepAt(Math.abs(2 * u - 1)) : 0)', '0'),
     ('front: the frame patch ignores the sweep', '(pane === 0 ? footSweepAt(Math.abs(2 * u - 1)) : 0)', '(pane === 0 && margin === 0 ? footSweepAt(Math.abs(2 * u - 1)) : 0)'),
@@ -1148,7 +1162,7 @@ M = [
     ("paint: LNER yellow lines as wide as the old, bigger face's (0.44, 0.62)", "  lner5: { mask: { colour: LNER_YELLOW, hwFoot: 0.4, hwTop: 0.46, hwSill: 0.72 } },", "  lner5: { mask: { colour: LNER_YELLOW, hwFoot: 0.44, hwTop: 0.62, hwSill: 0.72 } },", F),
     ("paint: LNER yellow lines never inside the face's outline (no cheeks on the face)", "  lner9: { mask: { colour: LNER_YELLOW, hwFoot: 0.4, hwTop: 0.46, hwSill: 0.72 } },", "  lner9: { mask: { colour: LNER_YELLOW, hwFoot: 0.5, hwTop: 0.5, hwSill: 0.72 } },", F),
     ("paint: LNER yellow band narrower at the glass than the face", "  lner5: { mask: { colour: LNER_YELLOW, hwFoot: 0.4, hwTop: 0.46, hwSill: 0.72 } },", "  lner5: { mask: { colour: LNER_YELLOW, hwFoot: 0.4, hwTop: 0.46, hwSill: 0.3 } },", F),
-    ("mask: the cap 10 cm wider at its foot than its line", "lerp(mask.hwFoot, mask.hwTop, (y - r0.bottom) / (r0.top - r0.bottom))", "lerp(mask.hwFoot + 0.1, mask.hwTop, (y - r0.bottom) / (r0.top - r0.bottom))"),
+    ("mask: the cap 10 cm wider at its foot than its line", "? lerp(mask.hwFoot, mask.hwTop, t) :", "? lerp(mask.hwFoot + 0.1, mask.hwTop, t) :"),
     ("mask: the band over the nose stops half a metre short of the glass", "const sEnd = screen.s0 - front.frame + 0.06;", "const sEnd = screen.s0 - front.frame - 0.5;"),
     ("mask: the band over the nose runs on past the glass", "const sEnd = screen.s0 - front.frame + 0.06;", "const sEnd = screen.s0 - front.frame + 0.6;"),
     ("mask: the band's first row 4 mm off the face's edge (a slit of the loft's red between it and the cap)", '(v) => (v >= 1 ? BAND_END_LIFT : lerp(0, 0.012, Math.min(1, rowAt(v) / 0.02))));', '(v) => (v >= 1 ? BAND_END_LIFT : lerp(0.004, 0.012, Math.min(1, rowAt(v) / 0.02))));'),
@@ -1501,7 +1515,7 @@ M = [
     ("cluster: no stop on the flank", "export const FLANK_FRACTION = 0.8;", "export const FLANK_FRACTION = 0;"),
     ("cluster: the stop at the section's widest point", "export const FLANK_FRACTION = 0.8;", "export const FLANK_FRACTION = 1;"),
     ("cluster: the stop never bites", "return lerp(a[1], b[1], (a[0] - limit) / (a[0] - b[0]));", "return Infinity;"),
-    ("cluster: the stop takes the section's first point for the widest", "const limit = (cluster.flank ?? FLANK_FRACTION) * Math.max(...h.map((pt) => pt[0])) - inset;", "const limit = (cluster.flank ?? FLANK_FRACTION) * (h[0] as [number, number])[0] - inset;"),
+    ("cluster: the stop takes the section's first point for the widest", "const limit = (cluster.flank ?? FLANK_FRACTION) * Math.max(...plain.map((pt) => pt[0])) - inset;", "const limit = (cluster.flank ?? FLANK_FRACTION) * (plain[0] as [number, number])[0] - inset;"),
     ("cluster: the window not a rim's width under the stop", "const reserve = cluster.edge?.overStop ?? cluster.rim?.width ?? 0;", "const reserve = 0;"),
     ("cluster: the rim not laid on the stop itself", "flankTop(s) - reserve + grow + reach,", "flankTop(s) - reserve + reach,"),
     ("cluster: the window a rim's width over the stop", "flankTop(s) - reserve + grow + reach,", "flankTop(s) + reserve + grow + reach,"),
@@ -1510,10 +1524,10 @@ M = [
     ("cluster: the edge without its own rows and columns", "        if (cluster.edge) ys.splice(0, ys.length, ...withLines(ys, [yLo + bevel, yHi - topBevel]));", ""),
     # --- round B5: the housing's rows close enough that its chords follow the shoulder; Lumo's rimless window its own gentler edge ----------------
     ("cluster: the housing's rows 72 mm apart again (round B5's jagged outline)", "export const CLUSTER_ROW = 0.015;", "export const CLUSTER_ROW = 0.072;"),
-    ("cluster: Lumo's window on the shared 6 cm bevel", "rim: undefined, edge: { bevel: 0.045, top: 0.02, foot: -0.001 } } },", "rim: undefined } },"),
-    ("cluster: Lumo's window on the 2 cm edge (a 26 mm wall widens it head on)", "rim: undefined, edge: { bevel: 0.045, top: 0.02, foot: -0.001 } } },", "rim: undefined, edge: { bevel: 0.02, top: 0.008, foot: -0.003 } } },"),
+    ("cluster: Lumo's window on the shared 6 cm bevel", "rim: undefined, edge: { bevel: 0.045, top: 0.02, foot: -0.001 }, chord", "rim: undefined, chord"),
+    ("cluster: Lumo's window on the 2 cm edge (a 26 mm wall widens it head on)", "rim: undefined, edge: { bevel: 0.045, top: 0.02, foot: -0.001 }, chord", "rim: undefined, edge: { bevel: 0.02, top: 0.008, foot: -0.003 }, chord"),
     ("cluster: near-duplicate grid lines left a hair apart (zero-area slivers)", "(Math.abs(w - x) < 0.001 ? x + (w >= x ? 0.001 : -0.001) : w)", "w"),
-    ("cluster: the LNER housing carried back to 2.05 m again", "  window: { ...AT300_CLUSTER.window, y0: 1.55, y1: 2.02, sFront0: 0.225, sBack0: 0.62, sFront1: 0.68, sBack1: 1.4, frontFoot: { s: 0.175, y: 1.65 } },", "  window: { ...AT300_CLUSTER.window, y0: 1.55, y1: 2.02, sFront0: 0.225, sBack0: 1.35, sFront1: 0.68, sBack1: 2.05, frontFoot: { s: 0.175, y: 1.65 } },"),
+    ("cluster: the LNER housing carried back to 2.05 m again", "  window: { ...AT300_CLUSTER.window, y0: 1.55, y1: 2.02, sFront0: 0.275, sBack0: 0.62, sFront1: 0.72, sBack1: 1.4, frontFoot: { s: 0.228, y: 1.65 } },", "  window: { ...AT300_CLUSTER.window, y0: 1.55, y1: 2.02, sFront0: 0.275, sBack0: 1.35, sFront1: 0.72, sBack1: 2.05, frontFoot: { s: 0.228, y: 1.65 } },"),
     ("paint: the LNER band across every door again", "  // no `doorBand`: every passenger door is white", "  stripeY: LNER_BAND,\n  doorBand: () => true,\n  // no `doorBand`: every passenger door is white", LV),
     ("lner: the amber line stops at the dome's front corner", "          ...stations.filter((x) => x > sCap + 1e-9 && x <= noseLen + 1e-9).map((x): [number, number] => [edgeX(x), x]),", ""),
     ("lner: the amber line a row ahead of the dome's front edge", "          ...Array.from({ length: 9 }, (_, q): [number, number] => [lerp(0.235, edgeX(sCap), q / 8), sCap]),", "          ...Array.from({ length: 9 }, (_, q): [number, number] => [lerp(0.235, edgeX(sCap), q / 8), sCap - 0.1]),"),

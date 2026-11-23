@@ -53,8 +53,33 @@ export interface NoseSpec {
   /** Where the tip section is widest, as a fraction of its height (0 at the underside, 1 at the roof), and how boxy it is (2 = ellipse). */
   widest: number;
   boxiness: number;
+  /**
+   * A fuller cheek low on the nose, where it has one: from `s[0]` to `s[3]` back from the tip (full from `s[1]` to `s[2]`, easing in and out), between the heights `y[0]` and `y[3]`
+   * (full from `y[1]` to `y[2]`), the section's outer part stands up to `by` of its half-width further out (never past the body's side: CHEEK_CLEAR). Only the width changes: the roof line and the underside stay the knots'.
+   */
+  cheek?: NoseCheek;
   /** The face's lean, where it has one (an upright face, and the AT300's beak, have none). Everything laid on the nose follows it: see `rakeSet`. */
   rake?: NoseRake;
+}
+
+export interface NoseCheek {
+  by: number;
+  s: readonly [number, number, number, number];
+  y: readonly [number, number, number, number];
+  /** Only the section's outer part fills out: nothing inside `u[0]` of the ring's half-width, all of `by` from `u[1]` out, easing between. */
+  u: readonly [number, number];
+}
+
+/** A nose's cheek fills out nothing where the section is already this fraction of the body's half-width or more, easing in over CHEEK_EASE below it (so it never reaches past the body's side). */
+const CHEEK_CLEAR = 0.97;
+const CHEEK_EASE = 0.12;
+
+/** 0 outside [a0, a3], 1 across [a1, a2], easing smoothly between. */
+function plateau(a: readonly [number, number, number, number], x: number): number {
+  if (x <= a[0] || x >= a[3]) return 0;
+  if (x < a[1]) return smootherstep((x - a[0]) / (a[1] - a[0]));
+  if (x > a[2]) return smootherstep((a[3] - x) / (a[3] - a[2]));
+  return 1;
 }
 
 export interface Ring {
@@ -65,6 +90,8 @@ export interface Ring {
   bottom: number;
   /** 1 at the tip (the section is an egg), 0 where it has become the car's section */
   round: number;
+  /** The nose's fuller cheek at this ring (its `by` eased by the distance from the tip), if any. */
+  cheek?: NoseCheek;
 }
 
 /** The right half of a car's cross-section, from the bottom corner up to the roof's centre line, in metres. */
@@ -133,6 +160,7 @@ export function ringAt(spec: NoseSpec, s: number): Ring {
     top: mid + (top0 - mid) * f,
     bottom: mid - (mid - bottom0) * f,
     round: 1 - smootherstep(s / spec.roundLen),
+    ...(spec.cheek && plateau(spec.cheek.s, s) > 0 ? { cheek: { ...spec.cheek, by: spec.cheek.by * plateau(spec.cheek.s, s) } } : {}),
   };
 }
 
@@ -186,7 +214,12 @@ export function halfAt(sec: Section, norm: readonly [number, number][], egg: rea
   const w = 1 - r.round;
   return norm.map(([uc, vc], k): [number, number] => {
     const [ue, ve] = egg[k] as [number, number];
-    return [r.ws * sec.width * lerp(ue, uc, w), r.bottom + lerp(ve, vc, w) * (r.top - r.bottom)];
+    const y = r.bottom + lerp(ve, vc, w) * (r.top - r.bottom);
+    const u = lerp(ue, uc, w);
+    const c = r.cheek;
+    // (and nothing where the section already stands near the body's own width, so the cheek never reaches past the body's side: CHEEK_CLEAR)
+    const fill = c ? c.by * plateau(c.y, y) * smootherstep((u - c.u[0]) / (c.u[1] - c.u[0])) * smootherstep((CHEEK_CLEAR - r.ws * u) / CHEEK_EASE) : 0;
+    return [r.ws * sec.width * u * (1 + fill), y];
   });
 }
 

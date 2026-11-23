@@ -112,7 +112,7 @@ test('LNER axle-box cable leads hang outboard of every AT300 bogie frame, inside
   for (const kind of ['hull5', 'lumo5'] as const) assert.ok(colouredBounds(near(buildTrain(kind), 0, 0), 0x45423d).isEmpty(), kind);
 });
 
-test('LNER lamp housings are compact: 0.175 to 1.4 m behind the tip, about 0.45 m across head on, at both cabs; the AT300 default staying 0.28 m (round B4, B8, B10)', () => {
+test('LNER lamp housings are compact: 0.23 to 1.4 m behind the tip, about 0.42 m across head on, at both cabs; the AT300 default 0.38 m (round B4, B8, B10, B14)', () => {
   // CHANGED (round B4; was "read about 0.38 m across head on", e76b7348's housing 0.45 to 2.06 m behind the tip, 1.6 m long): a fresh score saw a 1.5 m black slab across the cheek where
   // lner-801-214-2025 and lner-800-doncaster-2026 show a compact lamp recess at the yellow's upper corners (round 7's BASE: 0.55 to 1.34 m, 0.79 m long)
   // the right-hand housing's span in x: from its inboard edge to its outboard edge, as the head-on camera sees it
@@ -157,14 +157,23 @@ test('LNER lamp housings are compact: 0.175 to 1.4 m behind the tip, about 0.45 
       // edge below 1.65 m, where lner-800-113-newcastle-2025 shows the yellow meeting the unit all the way down to its foot. The front edge now bends in to 0.175 m behind the tip at the
       // foot (LNER_CLUSTER.window.frontFoot), so the glass's inboard corner there is 4 cm further in: 0.45 m across, the photograph's unit 0.44 m (inner edge 0.78 m out, outer 1.22 m).
       // The same 0.04 m bands, about 0.45 m and 0.175 m.
-      assert.ok(w > 0.43 && w < 0.47, `${kind} ${cab.name}: housing ${w} m across`);
+      // RE-PINNED (round B14; was 0.43 to 0.47 across and 0.155 to 0.195 m to its start): the yellow is wider (LNER_MASK, round B14: lner-800-113-newcastle-2025 at 111 px to the
+      // metre, its edge 81 px out at the lamps' middle, 0.73 m, and the unit's inner edge on it, 476 px against 476), so the unit's front edge moves back with it, to 0.228 m behind
+      // the tip at the foot and the stop 0.7 (LNER_CLUSTER), and its back edge stays where B13's score held it (a swept unit, not a block): 0.349 m across, 0.233 m to its start,
+      // narrower than the photograph's unit (0.43 to 0.47 m: its outer edge about 1.17 m out, where the model's nose outline is about 1.0 m). The same 0.04 m bands.
+      // RE-PINNED (round B14, the fuller cheek; was 0.329 to 0.369): the AT300 nose's cheek (its `cheek`) fills the flank out under the unit's back half toward the photograph's outline,
+      // so the unit, its back edge where it was, reaches further out: 0.418 m across, toward lner-800-113-newcastle-2025's 0.40 to 0.44 m. The same 0.04 m band.
+      assert.ok(w > 0.398 && w < 0.438, `${kind} ${cab.name}: housing ${w} m across`);
       const [near, far] = along(cab, front);
-      assert.ok(near > 0.155 && near < 0.195, `${kind} ${cab.name}: housing starts ${near} m behind the end`);
+      assert.ok(near > 0.213 && near < 0.253, `${kind} ${cab.name}: housing starts ${near} m behind the end`);
       assert.ok(far > 1.38 && far < 1.42, `${kind} ${cab.name}: housing ends ${far} m behind the end`);
     }
   }
   const lumo = across(buildTrain('lumo5').children[0]!);
-  assert.ok(lumo > 0.26 && lumo < 0.30, `lumo5 housing ${lumo} m across`);
+  // RE-PINNED (round B14, the fuller cheek; was 0.26 to 0.30): the AT300 nose's cheek fills the flank out under the housing's back half, so the AT300's housing, its edges where they
+  // were, reaches 0.38 m across head on. LUMO-06-803005-FPK (about 25 degrees off the axis) shows the near unit about 105 px across against the frame's foot's 325 px (1.58 m), about
+  // 0.5 m as that angle opens it, its outer edge a thin band of blue inside the cheek's outline: no narrower than this. The same 0.04 m band.
+  assert.ok(lumo > 0.36 && lumo < 0.40, `lumo5 housing ${lumo} m across`);
 });
 
 test('LNER upper marker has its own lens at each cab, white leading and dark trailing', () => {

@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import { ALL_KINDS, EMU_FIGURES, EMU_KINDS, FIGURES, GC_KINDS, TL_KINDS, TRAIN_KINDS, trainLayout } from '../../core/train.ts';
 import type { Car, EmuFamily, Family, TrainKind } from '../../core/train.ts';
 import { LIVERIES, ROW_H, TEX_SPAN, TEX_W, atlasRect, atlasTexts, shellMaterial, texelsPerMetre, textEms } from '../src/livery.ts';
-import { ARRAY_CELL, ASSUMED, BOGIE_STYLE, bodySpec, buildTrain, CAB_SWOOSH, carPlan, carSection, CLUSTER_ARRAY, CLUSTER_LIFT, COVER_RELIEF, COVER_SEAM, END_GAP, faceSetback, FLANK_FRACTION, frontOf, HEAD_BODY, HEAD_FILL, HEAD_SIDES, HULL_POD, LENS, NOSE_RECESS, PANE_COLS, PANE_LIFT, PANE_ROWS, PANE_SEAL, PANE_SKY_HI, PANE_SKY_MID, POD, SEAM_ON_DARK, SEAM_ON_LIGHT, SKIRT_PALE, skirtColours, underfloorBlocks } from '../src/train.ts';
+import { ARRAY_CELL, ASSUMED, BOGIE_STYLE, bodySpec, buildTrain, CAB_SWOOSH, carPlan, carSection, CLUSTER_ARRAY, CLUSTER_LIFT, COVER_RELIEF, COVER_SEAM, END_GAP, faceSetback, FLANK_FRACTION, frontOf, HEAD_BODY, HEAD_FILL, HEAD_SIDES, HULL_POD, LENS, maskLine, NOSE_RECESS, PANE_COLS, PANE_LIFT, PANE_ROWS, PANE_SEAL, PANE_SKY_HI, PANE_SKY_MID, POD, SEAM_ON_DARK, SEAM_ON_LIGHT, SKIRT_PALE, skirtColours, underfloorBlocks } from '../src/train.ts';
 import { GC_ORANGE, GN_PINSTRIPE, HULL_BEAK, LNER_YELLOW, liveryFor, sideColourAt } from '../src/train-livery.ts';
 import { eggSection, filletFactor, halfAt, loopFromHalf, normalised, planProfile, ringAt, ringStations, sideProfile, xAtY, yAtX } from '../src/train-nose.ts';
 import { BOGIE_HALF_WIDTH, BOGIE_LOD_DISTANCE, BOGIE_TOP, BRAKE_UNIT, CARDAN_AXIS, CARDAN_RADIUS, DISC_RADIUS, DISC_THICKNESS, FAR_WHEEL_SEGMENTS, FLANGE_HEIGHT, GEARBOX_REACH, KIT_BIG_RADIUS, KIT_CABLE_WIDTH, KIT_COLOURS, KIT_HALF_WIDTH, KIT_PLATE_HALF, KIT_PLATE_TOP, KIT_SMALL_RADIUS, MOTOR_BOSS, MOTOR_CLEAR, MOTOR_FLOOR, MOTOR_LENGTH, MOTOR_RADIUS, PANTOGRAPH_STRIP, PANTOGRAPH_STRIP_THICKNESS, PANTOGRAPH_STRIPS, POD_PARTS, POD_SHAPE, ROOF_KITS, SKIRT_BOX_PATTERN, SKIRT_GRILLE, SKIRT_HATCH, SKIRT_HEM, SKIRT_LEAN, SKIRT_LOUVRES, SKIRT_RAKE, SKIRT_SLIT_LIFT, SKIRT_TUCK, SKIRT_VENT_CLEAR, WHEEL_SEGMENTS, WHEEL_WIDTH, YOKE_RADIUS, bogieFarSoup, bogieParts, bogieSoup, bogieStyle, buildBogie, couplerHalf, podFace, podHanger, podMarks, roofKitReach, roofKitSpan, skirtHalfAt, skirtPanel, skirtSplit, underfloorPod } from '../src/train-parts.ts';
@@ -311,6 +311,8 @@ test('nose: the AT300\'s front is blunt and round: a face about 1.15 m across an
     roundLen: 3.6,
     widest: 0.5,
     boxiness: 3.0,
+    // RE-PINNED (round B14; was none): the cheeks fuller at the lamps (lner-800-113-newcastle-2025: the lamp unit's outer edge about 1.17 m out, the built surface about 1.0 m)
+    cheek: { by: 0.09, s: [0.0, 1.2, 1.7, 3.4], y: [0.9, 1.85, 2.0, 3.0], u: [0.25, 1.2] },
   });
   assert.deepEqual(spec.glass.screen && { s0: spec.glass.screen.s0, s1: spec.glass.screen.s1 }, { s0: 1.0, s1: 2.6 }, 'the glass runs from 1.0 m back to 2.6 m');
   // CHANGED (round B6, 0.5 -> 0.68 at the foot, 0.52 -> 0.6 at the top): head on lner-800-113-newcastle-2025 shows the glass 0.58 of the body's width, the model's was 0.47 (train-at300-shell.test.ts, round B6)
@@ -5198,7 +5200,9 @@ test('lamps: the AT300 cluster stays on the flank and clear of the colour mask, 
   const sec = carSection(spec);
   const norm = normalised(sec);
   const egg = eggSection(norm, spec.nose.widest, spec.nose.boxiness);
-  const widest = (s: number): number => Math.max(...halfAt(sec, norm, egg, ringAt(spec.nose, Math.max(0, s))).map((p) => p[0]));
+  // RE-PINNED (round B14; was the section's widest with everything on it): the stop is measured on the section without the nose's fuller cheek (`cheek`), as the builder measures it:
+  // the cheek fills out the flank's outer part, under the stop, and the stop is to stay where the photographs put the housing's inner edge (on the yellow's), not follow the cheek out
+  const widest = (s: number): number => Math.max(...halfAt(sec, norm, egg, { ...ringAt(spec.nose, Math.max(0, s)), cheek: undefined }).map((p) => p[0]));
   /** The flank, as a fraction of the section's widest half-width: written here, not read from FLANK_FRACTION, so that the stop being switched off or loosened is seen. */
   const FLANK = 0.75;
   // the layers: the rim 2 mm over the highest of the colour mask's band (12 mm) and the cab side window's swoosh, the window 10 mm over the rim, the array's disc 3 mm over the window and
@@ -5243,10 +5247,12 @@ test('lamps: the AT300 cluster stays on the flank and clear of the colour mask, 
         // RE-PINNED (round B8; the LNER's were 0.75 and 0.8, the AT300's): the LNER housing has its own stop, 0.65 of the widest half-width (LNER_CLUSTER.flank), so that head on its
         // rim reaches the yellow's edge as lner-800-113-newcastle-2025 shows it (the unit's inner edge 85 px out, the yellow's 83 px, at 109 px to the metre); the same 0.05 of slack
         // under its own stop for the window, and the rim on it less 2 cm
+        // RE-PINNED (round B14; was 0.65, the floor 0.6): the yellow is wider (LNER_MASK, round B14: 0.73 m out at 1.8 m up, lner-800-113-newcastle-2025's 81 px at 111 px to the
+        // metre), so the unit's stop is 0.7 and its inner edge stays on the yellow's; the same 0.05 of slack under it
         const lner = kind === 'lner5';
-        if (lner) assert.equal(cluster.flank, 0.65, 'the LNER stop is at 0.65 of the widest half-width');
-        const flankHere = lner ? 0.6 : FLANK;
-        const stopHere = lner ? 0.65 : 0.8;
+        if (lner) assert.equal(cluster.flank, 0.7, 'the LNER stop is at 0.7 of the widest half-width');
+        const flankHere = lner ? 0.65 : FLANK;
+        const stopHere = lner ? 0.7 : 0.8;
         for (const [label, vs] of [['window', win], ['rim', rim]] as const) {
           for (const v of vs) {
             const limit = flankHere * widest(along(v) + NOSE_RECESS);
@@ -5338,7 +5344,10 @@ test('fronts: the AT300\'s colour mask: the LNER\'s yellow and the Hull Trains b
     // (round B7b; B7 flared it, a cube) it widens straight to its last row's outer corners, an even width down from the screen's foot as that photograph shows it
     // RE-PINNED (round B8; was straight, no `fill`): lner-800-113-newcastle-2025 keeps the yellow 0.94 of its top width at the lamps' middle and 0.88 at their foot (built straight, 0.84
     // and 0.73), so the band widens as the 0.88th power of the way along it, as full as the B7b waist test allows
-    if (mask) assert.deepEqual(mask, kind === 'hull5' ? { colour: HULL_BEAK, hwFoot: 0.5, hwTop: 0.62, hwSill: 0.8 } : { colour: LNER_YELLOW, hwFoot: 0.44, hwTop: 0.56, hwSill: 0.79, toCorner: true, fill: 0.88 }, `${kind}: the mask's lines`);
+    // RE-PINNED (round B14; was 0.44 and 0.56 m on the face, straight, and `fill` 0.88): both long-lens photographs (lner-800-113-newcastle-2025, lner-801-214-2025) keep the yellow
+    // 0.88 of its width under the frame 0.38 of the way down and 0.79 at 0.56, rounding off only near the chin (built straight 0.75 and 0.69): the edge on the face falls from 0.6 m as
+    // the 2.5th power of the way down to 0.42 m at the foot (`round`), and the band widens as the 0.55th power (train-at300-shell.test.ts, round B14)
+    if (mask) assert.deepEqual(mask, kind === 'hull5' ? { colour: HULL_BEAK, hwFoot: 0.5, hwTop: 0.62, hwSill: 0.8 } : { colour: LNER_YELLOW, hwFoot: 0.42, hwTop: 0.6, hwSill: 0.79, toCorner: true, fill: 0.55, round: 2.5 }, `${kind}: the mask's lines`);
     const family = bodySpec(layout.spec.family);
     const sec = carSection(family);
     const norm = normalised(sec);
@@ -5351,7 +5360,8 @@ test('fronts: the AT300\'s colour mask: the LNER\'s yellow and the Hull Trains b
       const tris = trisOfColour(mesh, mask.colour);
       const face = facePlane(car, true, false);
       const along = (v: THREE.Vector3): number => (car.cab === 'front' ? v.z - face : face - v.z);
-      const half = (y: number): number => mask.hwFoot + ((mask.hwTop - mask.hwFoot) * (y - r0.bottom)) / (r0.top - r0.bottom);
+      // (the mask's edge on the face: its two lines, or since round B14 the LNER's curve, train.ts maskLine)
+      const half = (y: number): number => maskLine(mask, (y - r0.bottom) / (r0.top - r0.bottom));
       const onFace = tris.filter((t) => t.every((v) => Math.abs(along(v)) < 1e-3));
       const area = onFace.reduce((a, t) => a + areaOf(t), 0);
       // CHANGED (the face was 1.3 m wide and held more than half a square metre of mask; the longer nose's face is 0.94 m across and 0.62 m tall): the mask is all that the two lines and

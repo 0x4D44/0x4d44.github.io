@@ -102,7 +102,7 @@ function coloured(kind: TrainKind, hex: number): { area: number; box: THREE.Box3
   return { area, box, foot };
 }
 
-test('the LNER yellow is a trapezoid widening to the glass, about 1.8 m2 head on; the Hull Trains beak is wider, between the lamp housings', () => {
+test('the LNER yellow is a trapezoid widening to the glass, about 1.8 m2 head on; the Hull Trains beak about the same, between the lamp housings (round B14)', () => {
   for (const kind of ['lner5', 'lner9'] as const) {
     const y = coloured(kind, LNER_YELLOW);
     // lner-800-113-newcastle-2025: about 0.96 m across at the chin (0.6 m up; measured here 0.15 m over the yellow's foot), 1.35 m under the glass, 1.55 m tall: about 1.8 m2 (each to about 10 %)
@@ -118,7 +118,11 @@ test('the LNER yellow is a trapezoid widening to the glass, about 1.8 m2 head on
   }
   const hull = coloured('hull5', HULL_BEAK);
   const lner = coloured('lner5', LNER_YELLOW);
-  assert.ok(hull.area > lner.area + 0.1, `the Hull Trains beak (${hull.area.toFixed(2)} m2) is wider than the LNER's yellow (${lner.area.toFixed(2)} m2)`);
+  // RE-PINNED (round B14; was hull > lner + 0.1 m2): the photographs do not show Hull's beak the bigger. Both scaled by the windscreen frame's foot (1.58 m): in hull-802-doncaster-2024
+  // (about 25-30 degrees off the axis, close; the other refs/hull photographs are further round or far off) the grey beak is about 1.06 frame-feet tall and 1.0, 0.87, 0.89, 0.85 and
+  // 0.81 of the frame's foot across from the glass down, rounding off at the chin: about 0.85 frame-feet squared. In lner-800-113-newcastle-2025 the yellow is 1.11 frame-feet tall
+  // (196 px against 176) and 0.95, 0.88, 0.83, 0.78, 0.69, 0.61 across: about 0.90. Within about 10% of each other, so the two are held to within 0.15 m2 (about 7%) either way.
+  assert.ok(Math.abs(hull.area - lner.area) <= 0.15, `the Hull Trains beak (${hull.area.toFixed(2)} m2) and the LNER's yellow (${lner.area.toFixed(2)} m2) cover about the same face`);
   assert.ok(2 * hull.box.max.x > 1.5 && 2 * hull.box.max.x < 1.7, `the Hull Trains beak is ${(2 * hull.box.max.x).toFixed(2)} m across at the glass`);
 });
 
@@ -583,15 +587,20 @@ test('head on, the AT300 windscreen\'s sides are near parallel: the glass 1.04 t
   }
 });
 
-test('in front-3m the LNER yellow has no waist: its edge never steps in by more than 2 px (about 1 cm) above a wider part below, from the chin up to the frame\'s foot, at both ends (round B7b)', () => {
+test('head on through a long lens, as lner-800-113-newcastle-2025 sees it, the LNER yellow has no waist: its edge never steps in by more than 2 px (about 1 cm) above a wider part below, from the chin up to the frame\'s foot, at both ends (round B7b, B14)', () => {
   // The B7 score (lner5/lner9 front-3m, rear-3m, the lights views): B7's flared band read as a bottle, frame-foot wide at the top, a waist about 10% narrower under it (347 px against
   // 393 to 407 at the top and 379 lower down), wider again on the face. lner-800-113-newcastle-2025 shows the yellow about the same width from the screen's foot down past the lamps,
   // narrowing smoothly into the beak below. The camera is the rubric's V02 (rubric-FROZEN-v1: 3 m ahead of the tip, 1.7 m up, looking straight back, a 50 degree lens); widths on its
   // screen in pixels of a 700 px frame (1 cm of yellow 4 m off is about 2 px). B7's band narrowed 11.7 px under the frame; built, 0.4 px (the face's own facets).
+  // RE-PINNED (round B14; was the V02 eye, 3 m ahead, 1.7 m up, a 50 degree lens): like angles and like lenses (Arthur's "T2: a", the B13 score's like-angle method). From 3 m the
+  // band further back on the nose shrinks against the face, so any yellow as full as the long-lens photographs show it (LNER_MASK, round B14) reads 13 px narrower under the frame
+  // than at the lamps; B7b's test held the yellow to 0.67 m out at the lamps for that. The eye now stands as lner-800-113-newcastle-2025's camera does: on the axis (the photograph
+  // about 4 degrees off it), 80 m ahead (a long lens: the cab's height there about 435 px against the far car's 210), 2.7 m up (its roof line and its foot meet the horizon at
+  // about 2.6-2.9 m over the rails), looking at the face's middle through a 3 degree lens, so 1 cm is about 1.7 px of the 700 px frame. The same 2 px.
   const tip = faceSetback('at300');
-  const cam = new THREE.PerspectiveCamera(50, 1, 0.05, 100);
-  cam.position.set(0, 1.7, -3 - tip);
-  cam.lookAt(0, 1.7, -tip);
+  const cam = new THREE.PerspectiveCamera(3, 1, 1, 200);
+  cam.position.set(0, 2.7, -80 - tip);
+  cam.lookAt(0, 1.5, -tip);
   cam.updateMatrixWorld();
   for (const cab of at300Cabs().filter((c) => c.kind === 'lner5' || c.kind === 'lner9')) {
     const rgb = col(LNER_YELLOW);
@@ -980,4 +989,95 @@ test('the LNER headlamp strip\'s lenses all sit inside the unit\'s dark glass, h
     }
   }
   assert.deepEqual(faults, [], faults.join('\n'));
+});
+
+/** Where the triangles cross the level y (any axis pair: x across, y up): the least and the greatest x of the crossings, or null where none crosses. */
+function spanAt(tris: THREE.Vector3[][], y: number): [number, number] | null {
+  let lo = Infinity;
+  let hi = -Infinity;
+  for (const t of tris) {
+    for (const [a, b] of [[0, 1], [1, 2], [2, 0]] as const) {
+      const p = t[a]!;
+      const q = t[b]!;
+      if ((p.y - y) * (q.y - y) > 0 || p.y === q.y) continue;
+      const x = p.x + ((y - p.y) / (q.y - p.y)) * (q.x - p.x);
+      lo = Math.min(lo, x);
+      hi = Math.max(hi, x);
+    }
+  }
+  return lo <= hi ? [lo, hi] : null;
+}
+
+/** The LNER cabs' triangles of one colour in the detail mesh, in the nose's frame, within 3 m of the face (`near`: the cab's right-hand flank alone, x > 0). */
+function lnerColour(cab: ReturnType<typeof at300Cabs>[number], hex: number, near = false): THREE.Vector3[][] {
+  const rgb = col(hex);
+  const c = cab.detail.geometry.getAttribute('color');
+  const p = cab.detail.geometry.getAttribute('position') as THREE.BufferAttribute;
+  return trianglesOf(cab.detail, cab.at, (ids) =>
+    ids.every((k) => Math.abs(c.getX(k) - rgb.r) < 1e-5 && Math.abs(c.getY(k) - rgb.g) < 1e-5 && Math.abs(c.getZ(k) - rgb.b) < 1e-5 && cab.at(p, k).z < 3 && (!near || cab.at(p, k).x > 0)));
+}
+
+test('head on, the LNER yellow stays full down the face and rounds off only at the chin, its edge about 0.73 m out at the lamps, as the long-lens photographs show it, at both ends (round B14)', () => {
+  // The B13 score (like angles): the yellow too narrow at the lamps, narrowing into a wedge, the red cheeks too wide. Read again, each row's width as a fraction of the yellow's under
+  // the frame, each height as a fraction of the way down from the frame's foot to the chin: lner-800-113-newcastle-2025 (about 4 degrees off the axis, a long lens; the yellow 170 px
+  // across under the frame, 196 px tall; the frame's foot 176 px across, 1.58 m, so 111 px to the metre) 0.95 at 0.15, 0.88 at 0.38, 0.83 at 0.48, 0.78 at 0.58, 0.69 at 0.74 and 0.61
+  // at 0.89; lner-801-214-2025 (11 degrees; 193 px under the frame, 230 px tall) 0.94 at 0.21, 0.88 at 0.38, 0.79 at 0.56, 0.73 at 0.73 and 0.66 at 0.87; both then round off over
+  // the last tenth. At the lamps' middle (newcastle row 956, 1.8 m up) the edge is 81 px out: 0.73 m. Built (B13, straight on the face): 0.86, 0.74, 0.68, 0.64 and 0.60 at those
+  // heights, 0.67 m out at 1.8 m; built (B14) 0.93, 0.84, 0.75, 0.72 and 0.64, 0.73 m out. Held to 0.05 of the readings, and the edge at 1.8 m 0.70 to 0.78 m out (0.78 the score's reading).
+  const photo: [number, number][] = [[0.21, 0.94], [0.38, 0.88], [0.56, 0.79], [0.73, 0.72], [0.87, 0.65]];
+  for (const cab of at300Cabs().filter((c) => c.kind === 'lner5' || c.kind === 'lner9')) {
+    const yellow = lnerColour(cab, LNER_YELLOW);
+    const ys = yellow.flat().map((v) => v.y);
+    const [y0, y1] = [Math.min(...ys), Math.max(...ys)];
+    const top = acrossAt(yellow, 2.1);
+    for (const [f, want] of photo) {
+      const r = acrossAt(yellow, y1 - f * (y1 - y0)) / top;
+      assert.ok(Math.abs(r - want) <= 0.05, `${cab.here}: ${f} of the way down the yellow is ${r.toFixed(3)} of its width under the frame, the photographs' ${want}`);
+    }
+    const edge = acrossAt(yellow, 1.8) / 2;
+    assert.ok(edge >= 0.7 && edge <= 0.78, `${cab.here}: at the lamps' middle, 1.8 m up, the yellow's edge is ${edge.toFixed(3)} m out`);
+  }
+});
+
+test('from the long-lens T01 eye (13 degrees off the axis) the LNER yellow keeps its width down the face as lner-801-214-2025 does, and the lamp unit keeps its swept back edge, its foot narrower, at both ends (round B14)', () => {
+  // T01 nose-tele-right: the eye 13.7 m out, 2.6 m up and 59.4 m ahead, looking at (0, 2.6, 25), an 8.5 degree lens on 1600x1000 (tools/train-framing.mjs). The B13 score: the yellow
+  // narrowed from about 160 px under the screen to about 100 px at its foot, where lner-801-214-2025 (11 degrees, 63 m) keeps it full and then rounds it off. That photograph, each
+  // row's width as a fraction of the yellow's under the frame (193 px), each height a fraction of the way down (230 px): 0.94 at 0.21, 0.88 at 0.38, 0.79 at 0.56, 0.73 at 0.73.
+  // Built (B13): 0.78 at 0.38, 0.71 at 0.56 and 0.67 at 0.73; built (B14) 0.86, 0.77 and 0.74; held here to 0.05 under the readings. The near lamp unit: the photograph's back edge leans about 30 degrees from upright
+  // and its foot narrows to a tip; the B13 score read B13's BASE at 24 degrees with a 50 px foot and held the back edge where it is (round B14 widens the yellow and moves the unit's
+  // inner edge, not its back): the lean is held to 21-27 degrees (built B13 and B14: 23.5), and the foot, a tenth of the unit's height over its lowest row, under 46 px (built B13: 51 px, B14: about 41).
+  const tip = faceSetback('at300');
+  const cam = new THREE.PerspectiveCamera(8.5, 1.6, 1, 200);
+  cam.position.set(13.7, 2.6, -59.4 - tip);
+  cam.lookAt(0, 2.6, 25 - tip);
+  cam.updateMatrixWorld();
+  const px = (tris: THREE.Vector3[][]): THREE.Vector3[][] => tris.map((t) => t.map((v) => {
+    const s = v.clone().project(cam);
+    return new THREE.Vector3(((s.x + 1) / 2) * 1600, ((s.y + 1) / 2) * 1000, 0);
+  }));
+  const photo: [number, number][] = [[0.38, 0.88], [0.56, 0.79], [0.73, 0.73]];
+  for (const cab of at300Cabs().filter((c) => c.kind === 'lner5' || c.kind === 'lner9')) {
+    // (y counts up the screen here)
+    const yellow = px(lnerColour(cab, LNER_YELLOW));
+    const ys = yellow.flat().map((v) => v.y);
+    const [lo, hi] = [Math.min(...ys), Math.max(...ys)];
+    const width = (f: number): number => {
+      const s = spanAt(yellow, hi - f * (hi - lo));
+      return s ? s[1] - s[0] : 0;
+    };
+    const top = width(0.05);
+    assert.ok(top > 150 && top < 180, `${cab.here}: from T01 the yellow is ${top.toFixed(0)} px across under the frame`);
+    for (const [f, want] of photo) {
+      const r = width(f) / top;
+      assert.ok(r >= want - 0.05, `${cab.here}: from T01, ${f} of the way down, the yellow is ${r.toFixed(3)} of its width under the frame, lner-801-214-2025's ${want}`);
+    }
+    const glass = px(lnerColour(cab, frontOf(cab.kind).cluster!.window.colour, true));
+    const gy = glass.flat().map((v) => v.y);
+    const [g0, g1] = [Math.min(...gy), Math.max(...gy)];
+    const back = (f: number): number => spanAt(glass, g0 + f * (g1 - g0))![0];
+    const lean = (Math.atan2(back(0.15) - back(0.85), 0.7 * (g1 - g0)) * 180) / Math.PI;
+    assert.ok(lean >= 21 && lean <= 27, `${cab.here}: from T01 the lamp unit's back edge leans ${lean.toFixed(1)} degrees from upright`);
+    const foot = spanAt(glass, g0 + 0.1 * (g1 - g0))!;
+    assert.ok(foot[1] - foot[0] < 46, `${cab.here}: from T01 the lamp unit's foot is ${(foot[1] - foot[0]).toFixed(1)} px across`);
+  }
 });

@@ -494,6 +494,26 @@ export interface ClusterSpec {
  * How a cab front is finished: the AT300's lamps are a cluster on the nose's flank, every other family's lenses are shapes of its flat face (train-face.ts). All of it ASSUMED
  * (no drawing of any of these fronts was found) unless a comment on a family says otherwise.
  */
+/** A colour mask on the AT300's front: see FrontSpec.mask. */
+export interface MaskSpec {
+  colour: number;
+  hwFoot: number;
+  hwTop: number;
+  hwSill: number;
+  toCorner?: boolean;
+  fill?: number;
+  /**
+   * (default absent, straight) how the edge on the face falls from `hwTop` at the face's top to `hwFoot` at its foot: as this power of the fraction of the way down, so over 1 the
+   * edge stays near `hwTop` most of the way down and rounds off toward the foot.
+   */
+  round?: number;
+}
+
+/** The mask's edge on the face, metres either side of the middle, `t` of the way up from the face's foot (0) to its top (1): FrontSpec.mask's two lines, or with `round` the curve. */
+export function maskLine(mask: MaskSpec, t: number): number {
+  return mask.round === undefined ? lerp(mask.hwFoot, mask.hwTop, t) : mask.hwTop - (mask.hwTop - mask.hwFoot) * Math.max(0, 1 - t) ** mask.round;
+}
+
 interface FrontSpec {
   /** the lamp cluster on the nose's flank (the AT300): every other family's lamps are shapes of its `face` */
   cluster?: ClusterSpec;
@@ -506,7 +526,7 @@ interface FrontSpec {
    * which a swept foot (GlassSpec.screen.footSweep) stands further back than the foot's middle, not at the middle's end (and so reaches it only in its last row's corners).
    * `fill` (default 1, straight): the band widens as that power of the fraction of the way along it, under 1 fuller near the face.
    */
-  mask?: { colour: number; hwFoot: number; hwTop: number; hwSill: number; toCorner?: boolean; fill?: number };
+  mask?: MaskSpec;
   /** the last column of the loft (counted from the bottom, 0..12) that carries the livery texture on the nose, where the nose's own colours run higher than a car's side (default SHELL_K1) */
   shellTop?: number;
   /** the black frame round the windscreen glass: its width beyond the glass, all round */
@@ -741,11 +761,18 @@ export const AT300_CLUSTER: ClusterSpec = {
  * forward and is 4 cm shorter (0.28 m), so every lens lies inside the glass from both eyes, a centimetre either way along the nose to spare (train-at300-shell.test.ts, round B12).
  * Not higher, and not further forward at its old length: either way its upper end, in that plane, stands off the shoulder and past the nose's outline from cab-side-3m (6-8 px a
  * row, the B11 test's 5), and further forward its dark body runs into the marker array's disc. ASSUMED: the figures, chosen against those tests.
+ * CHANGED (round B14; was the stop 0.65 of the section's widest, the front edge 0.225 m back at the foot's line, 0.68 at the top, bending to 0.175 m at the foot): the yellow is wider
+ * (LNER_MASK, round B14), so the unit's inner edge moves out with it and stays on the yellow's edge (lner-800-113-newcastle-2025 head on: the unit's inner edge on the yellow's,
+ * 476 px against 476, 0.7 m out at 111 px to the metre): the stop is 0.7 and the front edge 0.275 m back at the foot's line, 0.72 at the top, bending to 0.228 m at the foot, so that
+ * head on the rim's inner edge lies within 1.2 cm inboard and 2 cm outboard of the yellow's, and from front-3m its pale line still shows between the glass and the yellow, its
+ * foot's corner without a nub (train-at300-shell.test.ts, round B11). The back
+ * edge stays (B13 moved it and squared the unit into a block from 3/4): head on the glass is 0.26 m across at 1.8 m up and 0.3 m at 1.65 m (was 0.32 and 0.37), held between the yellow's edge and the nose's
+ * outline, about 1.0 m out at that height where the photograph's outer edge is about 1.17 m. ASSUMED: the figures, to about 0.01 m.
  */
 export const LNER_CLUSTER: ClusterSpec = {
   ...AT300_CLUSTER,
-  window: { ...AT300_CLUSTER.window, y0: 1.55, y1: 2.02, sFront0: 0.225, sBack0: 0.62, sFront1: 0.68, sBack1: 1.4, frontFoot: { s: 0.175, y: 1.65 } },
-  flank: 0.65,
+  window: { ...AT300_CLUSTER.window, y0: 1.55, y1: 2.02, sFront0: 0.275, sBack0: 0.62, sFront1: 0.72, sBack1: 1.4, frontFoot: { s: 0.228, y: 1.65 } },
+  flank: 0.7,
   chord: 0.018,
   rim: { ...AT300_CLUSTER.rim!, width: 0.0115, front: 0.006, foot: 0.007 },
   edge: { ...AT300_CLUSTER.edge!, bevel: 0.004, top: 0.003, overStop: 0.006 },
@@ -814,6 +841,12 @@ const AT300: BodySpec = {
     roundLen: 3.6,
     widest: 0.5,
     boxiness: 3.0,
+    // CHANGED (round B14; was none): the cheeks fuller at the lamps. In lner-800-113-newcastle-2025, head on, the lamp unit's outer edge stands about 1.17 m out with only a thin pale
+    // line between it and the body's edge; built, the surface 1.8 m up inside the unit's length was only about 1.0 m out, so the unit's glass, its back edge fixed on the flank, read
+    // 0.26 m across in front-3m once B14 moved its inner edge out with the yellow (0.32 before; the photograph about 0.40). The section's outer part (from a quarter of the ring's
+    // half-width out, all of it past 1.2) stands up to 0.09 of its half-width further out, full 1.2 to 1.7 m back and 1.85 to 2.0 m up, easing to nothing at the tip, 3.4 m back,
+    // 0.9 m up and 3.0 m up: the ramps long, so no ring and no row of the lamp housing's grid turns sharply over it. The flank's stop is measured without it (see flankTop).
+    cheek: { by: 0.09, s: [0.0, 1.2, 1.7, 3.4], y: [0.9, 1.85, 2.0, 3.0], u: [0.25, 1.2] },
   },
   glass: {
     // the glass is about half the cab's width and nearly as wide at its top as at its foot (lner-800-113-newcastle-2025: 1.2 m wide, 1.2 m high on the slope).
@@ -1338,8 +1371,17 @@ const BODIES: Readonly<Record<Family, BodySpec>> = { at300: AT300, electrostar: 
  * CHANGED (round B8; was straight): lner-800-113-newcastle-2025 head on keeps the yellow fuller under the frame than a straight band: 83 px either side under the frame, 78 at the lamps'
  * middle and 73 at their foot (0.94 and 0.88 of its top; built straight, 0.84 and 0.73). The band now widens as the 0.88th power of the distance along it (`fill`), as full as front-3m
  * allows: any fuller and its edge steps in under the frame (the B7b waist, train-at300-shell.test.ts).
+ * CHANGED (round B14; was 0.44 and 0.56 m on the face, straight, and the band's `fill` 0.88): the B13 score (like angles: T01 against lner-801-214-2025, front-3m against
+ * lner-800-113-newcastle-2025) saw the yellow narrowing to a wedge and too narrow at the lamps, the red cheeks too wide. Read again, both long-lens photographs, each row's width as
+ * a fraction of the yellow's width under the frame and each height as a fraction of the way down from the frame to the chin: lner-800-113-newcastle-2025 (the yellow 170 px across
+ * under the frame and 196 px tall; the frame 176 px across, 1.58 m, so 111 px to the metre) 0.95 at 0.15, 0.88 at 0.38, 0.83 at 0.48, 0.78 at 0.58, 0.69 at 0.74, 0.61 at 0.89,
+ * then rounding off; lner-801-214-2025 (193 px under the frame, 230 px tall) 0.94 at 0.21, 0.88 at 0.38, 0.79 at 0.56, 0.73 at 0.73, 0.66 at 0.87, then rounding off. Built straight,
+ * head on: 0.86 at 0.21, 0.74 at 0.38, 0.68 at 0.56, 0.64 at 0.72. So the edge on the face falls as the 2.5th power from 0.6 m (`round`: about the face's outline over its upper
+ * half) to 0.42 m at the foot, and the band widens as the 0.55th power along it: head on 0.73 m out at 1.8 m up (newcastle, at 111 px to the metre: 81 px, 0.73 m), 0.67 at 1.6 m
+ * and 0.58 at 1.1 m (train-at300-shell.test.ts, round B14). ASSUMED: the figures, to about 0.03 m. Any fuller near the face (a smaller `fill`) and the band's rows near the face's
+ * edge dip under the loft's fillet, a notch in the edge at 1.3 m. From front-3m, 3 m off, the band further back reads narrower than its front, a waist under the frame (the B7b test).
  */
-export const LNER_MASK = { colour: LNER_YELLOW, hwFoot: 0.44, hwTop: 0.56, hwSill: 0.79, toCorner: true, fill: 0.88 } as const;
+export const LNER_MASK: MaskSpec = { colour: LNER_YELLOW, hwFoot: 0.42, hwTop: 0.6, hwSill: 0.79, toCorner: true, fill: 0.55, round: 2.5 };
 /**
  * Hull Trains: the grey beak, over blue cheeks (hull-802-doncaster-2024: a grey bullet that fills the face between the two lamp clusters under the glass and closes to the cover's
  * foot; the cheeks are the body's blue): wider than the LNER's yellow, reaching the clusters' inner edges at the glass. CHANGED (AT300 round; was 0.4, 0.46 and 0.72, the LNER's):
@@ -1350,12 +1392,16 @@ export const HULL_MASK = { colour: HULL_BEAK, hwFoot: 0.5, hwTop: 0.62, hwSill: 
 const FRONT_OVERRIDES: Readonly<Partial<Record<TrainKind, Partial<FrontSpec>>>> = {
   lner5: { mask: LNER_MASK, cluster: LNER_CLUSTER },
   lner9: { mask: LNER_MASK, cluster: LNER_CLUSTER },
-  hull5: { mask: HULL_MASK, cabSideSurround: CAB_SWOOSH, cluster: { ...AT300_CLUSTER, window: { ...AT300_CLUSTER.window, colour: HULL_POD }, rim: { colour: 0x4a5160, width: 0.025 } } },
+  // CHANGED (round B14; was the AT300's columns crowding to the front edge, the widest 0.12 m): the nose's fuller cheek (AT300 `cheek`) curves the flank under the housing's back half more,
+  // and a 15 cm chord of its grid 2.14 m up dipped 1.5 mm into the nose (1.4 mm before): its columns are spaced evenly, each `chord` across at most (as the LNER's are).
+  hull5: { mask: HULL_MASK, cabSideSurround: CAB_SWOOSH, cluster: { ...AT300_CLUSTER, window: { ...AT300_CLUSTER.window, colour: HULL_POD }, rim: { colour: 0x4a5160, width: 0.025 }, chord: 0.05 } },
   // Lumo: the same dark swoosh round the cab side window (LUMO-04-Lumo-803003-at-Edinburgh-Waverley, LUMO-02-803-001-Lumo-Trains-at-Offord-Cluny), and a
   // black window in the cluster (LUMO-04: smoked glass in a body-coloured rim)
   // (with no rim its window is the layer that meets the nose, 26 mm up where a rim stands 14 mm: it comes down over 4.5 cm (2 cm in height under its top) to 1 mm under the loft, so the outline stays clean and the
   // housing still reads 0.28 m across head on, not widened by a 26 mm wall at its outboard edge; LUMO-04 and LUMO-05: an almond flush with the body. ASSUMED, by eye.)
-  lumo5: { cabSideSurround: CAB_SWOOSH, cluster: { ...AT300_CLUSTER, rim: undefined, edge: { bevel: 0.045, top: 0.02, foot: -0.001 } } },
+  // CHANGED (round B14; was the AT300's columns): the fuller cheek, as for the Hull Trains housing above: a 6 cm chord of its grid's top edge 2.12 m up dipped 3.2 mm into the
+  // nose (1.1 mm before), so its columns are even, each `chord` across at most
+  lumo5: { cabSideSurround: CAB_SWOOSH, cluster: { ...AT300_CLUSTER, rim: undefined, edge: { bevel: 0.045, top: 0.02, foot: -0.001 }, chord: 0.03 } },
 };
 
 /**
@@ -1664,7 +1710,7 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
     const mask = front.mask;
     // the mask's edge on the face at height y (a straight line from the foot to the top, see FrontSpec.mask); where it crosses the face's own outline, on the way
     // down from the crown, the band over the nose's top takes it up
-    const maskHalf = (y: number): number => (mask ? lerp(mask.hwFoot, mask.hwTop, (y - r0.bottom) / (r0.top - r0.bottom)) : 0);
+    const maskHalf = (y: number): number => (mask ? maskLine(mask, (y - r0.bottom) / (r0.top - r0.bottom)) : 0);
     let bandStart = 0;
     // the x of each vertex of the face's outline from where the mask's edge leaves it up to the crown: the band's front row has a column at every one of them
     const bandVertices: number[] = [];
@@ -2087,10 +2133,13 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
         const k = cluster.window.frontFoot;
         return k && y < k.y ? lerp(k.s, line(k.y), (y - cluster.window.y0) / (k.y - cluster.window.y0)) : line(y);
       };
-      const flankNormal = (side: number, s: number, y: number): V3 => {
+      // (`plain`: the section without the nose's fuller cheek, `cheek`: the cheek fills out the skin under the cluster, it does not re-aim the lamps, so the lenses face as they did)
+      const plainHalf = (s: number): [number, number][] => halfAt(sec, norm, egg, { ...ringAt(spec.nose, Math.max(0, s)), cheek: undefined });
+      const flankNormal = (side: number, s: number, y: number, plain = false): V3 => {
         const d = 0.03;
-        const sx = (xAtY(glassHalf(s + d), y) - xAtY(glassHalf(Math.max(0, s - d)), y)) / (s + d - Math.max(0, s - d));
-        const yx = (xAtY(glassHalf(Math.max(0, s)), y + d) - xAtY(glassHalf(Math.max(0, s)), y - d)) / (2 * d);
+        const h = plain ? plainHalf : glassHalf;
+        const sx = (xAtY(h(s + d), y) - xAtY(h(Math.max(0, s - d)), y)) / (s + d - Math.max(0, s - d));
+        const yx = (xAtY(h(Math.max(0, s)), y + d) - xAtY(h(Math.max(0, s)), y - d)) / (2 * d);
         // the surface |x| = X(s, y): its outward normal is (side, -X_y, -X_s) in (x, y, s)
         return unit([side, -yx, -sx]);
       };
@@ -2113,9 +2162,11 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
       // (its half-width under FLANK_FRACTION of the section's widest, above the window's foot). The window's top edge is a level line, and at the tip the nose itself is lower than
       // that line, so without the stop the window's top-front corner is laid across the roof's rounding and the colour mask's band, a ragged strip of shards in the face's corners.
       // (`inset`: the height where the half-width is that much under the stop's, a little further up the shoulder)
+      // (the section's widest is the one without the nose's fuller cheek, `cheek`: that fills out the flank's outer part, under the stop, and leaves the stop where it was)
       const flankTop = (s: number, inset = 0): number => {
         const h = glassHalf(Math.max(0, s));
-        const limit = (cluster.flank ?? FLANK_FRACTION) * Math.max(...h.map((pt) => pt[0])) - inset;
+        const plain = halfAt(sec, norm, egg, { ...ringAt(spec.nose, Math.max(0, s)), cheek: undefined });
+        const limit = (cluster.flank ?? FLANK_FRACTION) * Math.max(...plain.map((pt) => pt[0])) - inset;
         for (let k = 1; k < h.length; k++) {
           const a = h[k - 1] as [number, number];
           const b = h[k] as [number, number];
@@ -2204,12 +2255,17 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
       };
       // The tangent plane at a point of the flank, `lift` off the surface: the point, the unit vector `d` along the window's slant (the way from the middle of its foot to the
       // middle of its top, seen on the surface), `e` across it, and the surface's outward normal `n`. The lenses are flat polygons in this plane.
+      // CHANGED (round B14, the nose's fuller cheek): the plane's point is `lift` off the cheek's fuller skin (along the plain normal), but its directions are the plain section's
+      // (without the cheek), so the lenses, their dark bodies and everything lit from them (the halos, the headlamp's beam) face exactly as they did before the cheek.
+      const plainFlank = (side: number, s: number, y: number): V3 => [side * xAtY(plainHalf(s), y), y, tip + s];
       const slant: [number, number] = [(win.sFront1 + win.sBack1 - win.sFront0 - win.sBack0) / 2, win.y1 - win.y0];
       const plane = (side: number, s: number, y: number, lift: number): { c: V3; d: V3; e: V3; n: V3 } => {
-        const here = lifted(side, s, y, lift);
+        const n = flankNormal(side, s, y, true);
+        const skin = flank(side, s, y);
+        const here = { p: [skin[0] + n[0] * lift, skin[1] + n[1] * lift, skin[2] + n[2] * lift] as V3, n };
         const k = 0.05 / Math.hypot(slant[0], slant[1]);
-        const p0 = flank(side, Math.max(0, s - slant[0] * k), y - slant[1] * k);
-        const p1 = flank(side, s + slant[0] * k, y + slant[1] * k);
+        const p0 = plainFlank(side, Math.max(0, s - slant[0] * k), y - slant[1] * k);
+        const p1 = plainFlank(side, s + slant[0] * k, y + slant[1] * k);
         const along = [0, 1, 2].map((i) => (p1[i] as number) - (p0[i] as number));
         const off = (along[0] as number) * here.n[0] + (along[1] as number) * here.n[1] + (along[2] as number) * here.n[2];
         const d = unit([(along[0] as number) - off * here.n[0], (along[1] as number) - off * here.n[1], (along[2] as number) - off * here.n[2]]);
