@@ -5252,7 +5252,16 @@ test('lamps: the AT300 cluster stays on the flank and clear of the colour mask, 
           const winFront = Math.min(...win.map(along));
           const winBack = Math.max(...win.map(along));
           const top = (vs: THREE.Vector3[]): number => Math.max(...vs.filter((v) => along(v) < winFront + 0.45 * (winBack - winFront)).map((v) => v.y));
-          assert.ok(top(rim) - top(win) >= 0.007, `${here}: the rim's top at the front is ${top(rim).toFixed(3)}, the window's ${top(win).toFixed(3)}`);
+          if (lner) {
+            // RE-PINNED (round B9; was >= 0.007 for the LNER): lner-800-113-newcastle-2025, lner-800-doncaster-2026 and lner-801-214-2025 show the dark glass running to a thin light
+            // line all round, and a rim standing 7 mm over the window here (the shoulder's near-flat top, where a few millimetres of height read as centimetres across) was the 7-10 cm
+            // grey frame head on that the B8 score measured. B9 builds the rim's top 1.2 cm under the window's (its rim climbs 3 mm past the stop, the window 3 mm under it). Still
+            // guarded: the front 45 % holds a rim vertex (a lost rim fails), the B9 test in train-at300-shell.test.ts bounds the inboard rim head on at 3 cm, and the overStop mutants.
+            assert.ok(rim.some((v) => along(v) < winFront + 0.45 * (winBack - winFront)), `${here}: no rim over the front of the window's top`);
+            assert.ok(top(rim) - top(win) >= -0.015, `${here}: the rim's top at the front is ${top(rim).toFixed(3)}, the window's ${top(win).toFixed(3)}`);
+          } else {
+            assert.ok(top(rim) - top(win) >= 0.007, `${here}: the rim's top at the front is ${top(rim).toFixed(3)}, the window's ${top(win).toFixed(3)}`);
+          }
         }
         // the grid follows the shoulder: no edge of the window climbs more than 9 cm (the rows: 5 rows of its 0.66 m sag 7 mm between them on the shoulder, 8 rows 3 mm), and an edge
         // along a row (climbing under 2 cm) runs no further than 15 cm behind the face-ward one (the columns: they crowd toward the front edge, the last two are the furthest apart)
@@ -5266,7 +5275,7 @@ test('lamps: the AT300 cluster stays on the flank and clear of the colour mask, 
           }
         }
         // RE-PINNED for the LNER (round B8; was the same 0.04 to 0.09 and 0.05 to 0.15 as the others): its housing climbs further round the shoulder (lner-800-113-newcastle-2025: its inner
-        // edge on the yellow's), where a 4 cm chord of its edge dipped 3 mm under the skin, so its columns are spaced evenly at no more than `chord` (2.2 cm) and its rows fold onto the
+        // edge on the yellow's), where a 4 cm chord of its edge dipped 3 mm under the skin, so its columns are spaced evenly at no more than `chord` (2.2 cm; 1.8 cm since round B9) and its rows fold onto the
         // stop over shorter steps: each held over the 1.5 cm row, under the same 9 cm and 15 cm
         const lnerGrid: boolean = cluster.chord !== undefined;
         assert.ok(rowStep > (lnerGrid ? 0.015 : 0.04) && rowStep <= 0.09, `${here}: the window's rows are up to ${rowStep.toFixed(3)} m apart`);

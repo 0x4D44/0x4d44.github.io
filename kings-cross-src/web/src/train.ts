@@ -457,20 +457,27 @@ export interface ClusterSpec {
   head: { s: number; y: number; a: number; b: number; cells: number };
   /** The marker array: a dark round disc of radius `r` about (s, y), and in it a centre lens and six round it (marker lenses), hexagons of ARRAY_CELL of the disc's radius across their corners. */
   array: { s: number; y: number; r: number };
-  /** The rim round the window, a pale edge to its dark glass: its colour (absent: none), and how far it stands out beyond the window all round, metres. */
-  rim?: { colour: number; width: number };
+  /**
+   * The rim round the window, a pale edge to its dark glass: its colour (absent: none), and how far it stands out beyond the window all round, metres. A kind's own `front` and `foot`
+   * (absent: `width`) set how far it reaches past the window's front edge and under its foot. Round B9: on the LNER the front edge is the unit's inboard side head on, where the
+   * nose turns toward the eye and a centimetre along the surface reads as several across.
+   */
+  rim?: { colour: number; width: number; front?: number; foot?: number };
   /**
    * A kind's own edge (absent: CLUSTER_EDGE's, its fall drawn by the grid's own rows and columns): the lowest layer falls to `foot` over `bevel` inside its front, back and foot
    * edges and over `top` (in height) under its top, and the grid takes a row and a column there, so the fall is drawn as steep as it is. Round B4: on the LNER the 6 cm fall, drawn
    * across one 7 cm row of the grid, lay 11 to 15 degrees off the nose and within 2 mm of the paint under it over most of the 25 mm pale rim, which z-fought into the ragged white
    * fringe a fresh score saw along the housing's top and foot; `foot` 3 mm under the loft keeps the corners, where two falls meet, clear of the paint too.
    */
-  edge?: { bevel: number; top: number; foot: number };
+  edge?: { bevel: number; top: number; foot: number; overStop?: number };
+  // (`overStop`, a kind's own CLUSTER_EDGE.overStop: how far inboard of the flank's stop the rim's top may climb; where set, the window also stands that far under the stop, not a
+  // rim's width. Round B9: on the shoulder's near-flat top a few millimetres of height read as centimetres across head on, the LNER's inboard rim 7-10 cm in the B8 score.)
   /** A kind's own flank stop (absent: FLANK_FRACTION): the housing stops where the outline's half-width falls under this fraction of the section's widest. */
   flank?: number;
   /**
    * A kind's own column spacing (absent: the columns crowd toward the front edge, the widest 0.12 m): the columns are spaced evenly, each `chord` metres across at most. Round B8:
-   * the LNER's housing climbs further round the shoulder, where a 4 cm chord of its top edge (a row at the foot's lift, its whole length) dipped 3 mm under the skin.
+   * the LNER's housing climbs further round the shoulder, where a 4 cm chord of its top edge (a row at the foot's lift, its whole length) dipped 3 mm under the skin. CHANGED (round B9, 1.8 cm; was 2.2): the B9
+   * rim's top edge, 2.05 m up, dipped 1.8 mm between 2.2 cm columns.
    */
   chord?: number;
 }
@@ -705,13 +712,23 @@ export const AT300_CLUSTER: ClusterSpec = {
  * and lies over its corner by up to 4 cm above, its dark glass 0.38 m across (train-at300-shell.test.ts, round B8). The marker array comes 8 cm forward with the front edge (0.52 m
  * back, 1.62 m up), toward the unit's inner half where the photograph has the honeycomb; further forward it lies on the shoulder's top, lifted more than 2 cm above its height.
  * ASSUMED: the figures, chosen against those readings, to about 0.05 m.
+ * CHANGED (round B9; was the AT300's 25 mm rim, the window 1.53 to 2.02 m up, its front edge 0.21 to 0.72 m back, its back edge 0.75 m back at its foot, the array at (0.52, 1.62)):
+ * the B8 score (front-3m, about 225 px to the metre) saw a grey frame 7-10 cm wide inboard and 4 cm under the glass, the glass 0.6 m tall, where lner-800-113-newcastle-2025,
+ * lner-800-doncaster-2026 and lner-801-214-2025 show the dark glass almost to the yellow with a thin light line. lner-800-113-newcastle-2025 at normal size (about 117 px to the
+ * metre over the body): each unit about 45 px across and 55-60 px tall, 1.2 to 1.3 times as tall as wide. So the rim is 11.5 mm (it must still edge the window over 1 cm at its
+ * top), 2 mm past the front edge and 3 mm under the foot; it climbs 3 mm past the stop and the window stands 3 mm under it (`edge.overStop`); the window's foot is 1.55 m up (under
+ * 0.5 m tall head on through V02) and its back edge 0.62 m back at its foot and its front 0.68 m at its top (the housing 0.41 m across); the array (0.62, 1.65) stays in the shorter
+ * glass, where the shoulder still faces it. ASSUMED: every figure, to about 0.01 m. Head on the glass is still about 0.25 m across, not the photograph's 0.38 m: the unit is held
+ * between the yellow's edge and the nose's outline, about 0.95 m out at that height where the photograph's outer edge is 1.22 m.
  */
 export const LNER_CLUSTER: ClusterSpec = {
   ...AT300_CLUSTER,
-  window: { ...AT300_CLUSTER.window, y1: 2.02, sFront0: 0.21, sBack0: 0.75, sFront1: 0.72, sBack1: 1.4 },
+  window: { ...AT300_CLUSTER.window, y0: 1.55, y1: 2.02, sFront0: 0.225, sBack0: 0.62, sFront1: 0.68, sBack1: 1.4 },
   flank: 0.65,
-  chord: 0.022,
-  array: { ...AT300_CLUSTER.array, s: 0.52, y: 1.62 },
+  chord: 0.018,
+  rim: { ...AT300_CLUSTER.rim!, width: 0.0115, front: 0.002, foot: 0.003 },
+  edge: { ...AT300_CLUSTER.edge!, overStop: 0.003 },
+  array: { ...AT300_CLUSTER.array, s: 0.62, y: 1.65 },
 };
 
 /**
@@ -2078,7 +2095,7 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
         return Infinity;
       };
       // (the rim is laid on the stop itself, the window a rim's width under it, so the pale edge runs along the window's top where the stop bites)
-      const reserve = cluster.rim?.width ?? 0;
+      const reserve = cluster.edge?.overStop ?? cluster.rim?.width ?? 0;
       // The lift of a layer `grow` out from the window, at distance s and height y on the flank: `lift` inside, falling to `foot` over the last CLUSTER_EDGE.bevel before its outline
       // (see CLUSTER_EDGE). The distance to the outline is taken in s to the front and back edges and in height to the foot and the top. Along the top the fall is to `topFoot`:
       // a window over a rim keeps its lift there (the rim, a rim's width further up, is the housing's outline, and the headlamp's strip, near that edge, stays inside the window
@@ -2088,14 +2105,17 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
       const topReach = (grow: number, lift: number, foot: number): number => win.y1 + grow + lift - topFoot(grow, lift, foot);
       const topAt = (s: number, grow: number, lift: number, foot: number): number => {
         const reach = lift - topFoot(grow, lift, foot);
-        return Math.min(topReach(grow, lift, foot), flankTop(s) - reserve + grow + reach, reach > 0 ? flankTop(s, CLUSTER_EDGE.overStop) : Infinity);
+        return Math.min(topReach(grow, lift, foot), flankTop(s) - reserve + grow + reach, reach > 0 ? flankTop(s, cluster.edge?.overStop ?? CLUSTER_EDGE.overStop) : Infinity);
       };
+      // (how far a layer `grow` out from the window reaches past its front edge: the rim's own `front`, where it has one)
+      const frontGrow = (grow: number): number => (grow > 0 && cluster.rim?.front !== undefined ? cluster.rim.front : grow);
+      const footGrow = (grow: number): number => (grow > 0 && cluster.rim?.foot !== undefined ? cluster.rim.foot : grow);
       const bevel = cluster.edge?.bevel ?? CLUSTER_EDGE.bevel;
       const topBevel = cluster.edge?.top ?? CLUSTER_EDGE.bevel;
       const taperedLift = (s: number, y: number, grow: number, lift: number, foot: number): number => {
         const f = (y - win.y0) / (win.y1 - win.y0);
         const top = topAt(s, grow, lift, foot);
-        const side = Math.min(s - (lerp(win.sFront0, win.sFront1, f) - grow), lerp(win.sBack0, win.sBack1, f) + grow - s, y - (win.y0 - grow));
+        const side = Math.min(s - (lerp(win.sFront0, win.sFront1, f) - frontGrow(grow)), lerp(win.sBack0, win.sBack1, f) + grow - s, y - (win.y0 - footGrow(grow)));
         return Math.min(lerp(foot, lift, clamp01(side / bevel)), lerp(topFoot(grow, lift, foot), lift, clamp01((top - Math.min(y, top)) / topBevel)));
       };
       const windowFoot = cluster.rim ? CLUSTER_LIFT.rim + CLUSTER_EDGE.overRim : CLUSTER_EDGE.foot;
@@ -2111,16 +2131,16 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
         const foot = grow > 0 || !cluster.rim ? (cluster.edge?.foot ?? CLUSTER_EDGE.foot) : windowFoot;
         const grid: { p: V3; n: V3 }[][] = [];
         // (at least eight rows, and as many more as keep them CLUSTER_ROW apart, so no chord of the layer dips into the shoulder's curve)
-        const rowCount = Math.max(rows, Math.ceil((topReach(grow, lift, foot) - (win.y0 - grow)) / CLUSTER_ROW));
+        const rowCount = Math.max(rows, Math.ceil((topReach(grow, lift, foot) - (win.y0 - footGrow(grow))) / CLUSTER_ROW));
         // (the rim is the window's own outline pushed out by `grow` all round: the rows reach `grow` past each end and the edges `grow` out to each side; a kind's own `edge` adds
         // a row a bevel inside the foot and the top, and a column a bevel inside the front and back edges)
-        const yLo = win.y0 - grow;
+        const yLo = win.y0 - footGrow(grow);
         const yHi = topReach(grow, lift, foot);
         const ys = Array.from({ length: rowCount + 1 }, (_, q) => lerp(yLo, yHi, q / rowCount));
         if (cluster.edge) ys.splice(0, ys.length, ...withLines(ys, [yLo + bevel, yHi - topBevel]));
         for (const y of ys) {
           const f = (y - win.y0) / (win.y1 - win.y0);
-          const sF = lerp(win.sFront0, win.sFront1, f) - grow;
+          const sF = lerp(win.sFront0, win.sFront1, f) - frontGrow(grow);
           const sB = lerp(win.sBack0, win.sBack1, f) + grow;
           // (the columns crowd toward the front edge, where the face turns into the cheek over a few centimetres: a chord across that bend would dip under the loft)
           const ss = Array.from({ length: cols + 1 }, (_, p) => lerp(sF, sB, colAt(p)));

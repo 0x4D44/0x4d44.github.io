@@ -661,3 +661,53 @@ test('head on, the LNER lamp units sit on the yellow\'s upper corners: from 1.65
     }
   }
 });
+
+test('head on through V02, the LNER lamp unit is dark glass with a fine rim: the pale rim no more than 3 cm inboard and 2 cm under the glass, the glass no taller than 0.5 m, at both ends (round B9)', () => {
+  // The B8 score (lner5 front-3m, about 225 px to the metre): the dark glass 0.6 m tall, the grey rim 7-10 cm inboard and 4 cm under it, butting onto the yellow. lner-800-113-newcastle-2025,
+  // lner-800-doncaster-2026 and lner-801-214-2025 show the glass running almost to the yellow, only a thin light line between. Read off lner-800-113-newcastle-2025 at normal size (about 117 px
+  // to the metre over the 2.74 m body): each unit about 45 px across and 55-60 px tall, so 1.2 to 1.3 times as tall as wide; at the 0.38 m the score reads, 0.5 m tall at most.
+  // The camera is the rubric's V02 (3 m ahead of the tip, 1.7 m up, a 50 degree lens). A width on its screen is turned to metres at the depth it is seen at. Built (B9): the inboard rim
+  // 2.7 cm at most (8/40 up, at the front edge: 2 cm was the aim, not reached), the rim under the glass 1.9 cm, the glass 0.47 m tall; B8's inboard rim 9.6 cm.
+  const tip = faceSetback('at300');
+  const cam = new THREE.PerspectiveCamera(50, 1, 0.05, 100);
+  cam.position.set(0, 1.7, -3 - tip);
+  cam.lookAt(0, 1.7, -tip);
+  cam.updateMatrixWorld();
+  const k = Math.tan((25 * Math.PI) / 180);
+  for (const cab of at300Cabs().filter((c) => c.kind === 'lner5' || c.kind === 'lner9')) {
+    const c = cab.detail.geometry.getAttribute('color');
+    const p = cab.detail.geometry.getAttribute('position') as THREE.BufferAttribute;
+    const cluster = frontOf(cab.kind).cluster!;
+    // the right-hand unit's triangles of one colour, on the screen (x, y in NDC) with each vertex's depth in z
+    const onScreen = (hex: number): THREE.Vector3[][] => {
+      const rgb = col(hex);
+      return trianglesOf(cab.detail, cab.at, (ids) => ids.every((i) => Math.abs(c.getX(i) - rgb.r) < 1e-5 && Math.abs(c.getY(i) - rgb.g) < 1e-5 && Math.abs(c.getZ(i) - rgb.b) < 1e-5 && cab.at(p, i).z < 3 && cab.at(p, i).x > 0)).map((t) =>
+        t.map((v) => {
+          const s = v.clone().project(cam);
+          return new THREE.Vector3(s.x, s.y, v.z - cam.position.z);
+        }),
+      );
+    };
+    const glass = onScreen(cluster.window.colour);
+    const rim = onScreen(cluster.rim!.colour);
+    assert.ok(glass.length > 100 && rim.length > 50, `${cab.here}: ${glass.length} window and ${rim.length} rim triangles`);
+    const depth = glass.flat().reduce((a, v) => a + v.z, 0) / glass.flat().length;
+    const metres = (ndc: number): number => ndc * k * depth;
+    const ys = glass.flat().map((v) => v.y);
+    const lo = Math.min(...ys);
+    const hi = Math.max(...ys);
+    // (from a tenth of the way up to a tenth from the top: at the corners a row runs along the slanted foot or the stop, not across the rim)
+    let widest = 0;
+    let at = 0;
+    for (let q = 4; q <= 36; q++) {
+      const y = lo + ((hi - lo) * q) / 40;
+      const inboard = metres(innerAt(glass, y) - innerAt(rim, y));
+      if (inboard > widest) [widest, at] = [inboard, q];
+    }
+    assert.ok(widest <= 0.03, `${cab.here}: head on, ${at}/40 up the glass, the rim stands ${(widest * 100).toFixed(1)} cm inboard of it`);
+    const under = metres(lo - Math.min(...rim.flat().map((v) => v.y)));
+    assert.ok(under <= 0.02, `${cab.here}: head on the rim stands ${(under * 100).toFixed(1)} cm under the glass`);
+    const tall = metres(hi - lo);
+    assert.ok(tall <= 0.5, `${cab.here}: head on the glass is ${tall.toFixed(2)} m tall`);
+  }
+});
