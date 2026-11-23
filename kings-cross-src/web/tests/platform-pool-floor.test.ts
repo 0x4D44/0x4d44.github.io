@@ -127,3 +127,33 @@ test('King\'s Cross: no platform lamp\'s pool lands beyond the drawn platform ed
     assert.ok(worstIn >= INSIDE, `light is cut to ${worstIn.toFixed(3)} ${PROBE} m inside a platform's edge`);
   } finally { lamps.dispose(); }
 });
+
+test('King\'s Cross: where two drawn outlines share an edge (P4/P5 under the shed) the pool runs across the seam without a dark line', () => {
+  const data: KxData = JSON.parse(readFileSync(new URL('../src/data/kx-track.json', import.meta.url), 'utf8'));
+  const layout = shedLayout(data);
+  const sites = nightLightSites({ lamps: furniturePlan(data, layout).lamps, layout, canopy: { centre: [0, 0], radius: 0 } as never, footprint: [] });
+  const outlines = surfacePlatforms(data).map(p => p.pts);
+  const heads = [...sites.platform, ...sites.shed];
+  const lamps = createPlatformLamps(heads, outlines, PLATFORM_Y, 'kx');
+  try {
+    const clip = poolClip(lamps);
+    const lit = (p: Pt): boolean => { for (let k = 0; k < heads.length; k += 3) if (Math.hypot(p[0] - heads[k]!, p[1] - heads[k + 2]!) < lamps.radii[k / 3]!) return true; return false; };
+    let worst = 1, at: Pt | undefined, probes = 0;
+    outlines.forEach((ring, i) => {
+      const others = outlines.filter((_, j) => j !== i);
+      for (const { inside, outside } of edgeProbes(ring, ring[0]![0], ring[0]![1], Infinity)) {
+        // A seam: both sides of the edge are platform.
+        if (!pointInPolygon(inside, ring) || !others.some(o => pointInPolygon(outside, o))) continue;
+        for (let s = 0; s <= 4; s++) {
+          const p: Pt = [inside[0] + (outside[0] - inside[0]) * s / 4, inside[1] + (outside[1] - inside[1]) * s / 4];
+          if (!lit(p)) continue;
+          probes++;
+          const value = clip(...p);
+          if (value < worst) { worst = value; at = p; }
+        }
+      }
+    });
+    assert.ok(probes > 1000, `the shared seams under the lamps are probed (${probes})`);
+    assert.ok(worst >= INSIDE, `the pool darkens to ${worst.toFixed(3)} on a seam between two platform outlines at ${at?.map(v => v.toFixed(2))}`);
+  } finally { lamps.dispose(); }
+});
