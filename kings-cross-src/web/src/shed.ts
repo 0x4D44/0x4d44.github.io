@@ -57,6 +57,15 @@ export const GABLE_GLASS_FROM = 9.5;
 const ARC_STEPS = 12;
 /** The roof skin (slate, glass, lining) stands this far outside the nominal arch radius: on top of the ribs' top boom. */
 export const ROOF_SKIN = 0.3;
+/**
+ * The opening in the north end wall of the east aisle that platform 0's line runs out through. In this frame the OSM track of platform 0
+ * (way 200526794) runs from its buffer stop at u = 65.8 into the east aisle and crosses the north end at u = 69.2; the closed wall stood
+ * across it (tools/tests/track-walls.test.mjs). Wikipedia ("London King's Cross railway station") places platform 0 to the east of the main
+ * shed, under the offices of the east side, opened 2010, so its line passes out at the north end: the opening is sourced in that sense
+ * only. Its width from the aisle's inner edge (clearing a 2.9 m train envelope on the line, and 0.3 m more) and its head (above the
+ * trains' roofs, below the aisle roof) are ASSUMED; no drawing of the real opening was found.
+ */
+export const EAST_AISLE_OPENING = { width: 3.0, head: 4.8 } as const;
 /** Half the thickness of the board-lined valley fascia between the vaults, metres: ASSUMED (the first build's slab was 0.5 m thick). */
 export const VALLEY_HALF = 0.25;
 
@@ -630,8 +639,13 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   }
   // aisle roofs: flat slabs at the springing, slate on top (ASSUMED flat; the real aisle roofs are not surveyed)
   for (const x0 of [0, W - layout.aisle]) slate.box([x0 + layout.aisle / 2, wallH - 0.15, -L / 2], [layout.aisle, 0.3, L], { skip: ['-y'] });
-  // the north end of each aisle is closed by a brick wall
-  for (const x0 of [0, W - layout.aisle]) brick.box([x0 + layout.aisle / 2, (wallH + GROUND_Y) / 2, -L - WALL_THICK / 2], [layout.aisle, wallH - GROUND_Y, WALL_THICK]);
+  // the north end of each aisle is closed by a brick wall; the east one is pierced where platform 0's line runs out (EAST_AISLE_OPENING)
+  brick.box([layout.aisle / 2, (wallH + GROUND_Y) / 2, -L - WALL_THICK / 2], [layout.aisle, wallH - GROUND_Y, WALL_THICK]);
+  {
+    const z = -L - WALL_THICK / 2, a = W - layout.aisle, b = Math.min(W, a + EAST_AISLE_OPENING.width), head = EAST_AISLE_OPENING.head;
+    brick.box([(a + W) / 2, (wallH + head) / 2, z], [W - a, wallH - head, WALL_THICK]); // over the opening
+    if (W > b) brick.box([(b + W) / 2, (head + GROUND_Y) / 2, z], [W - b, head - GROUND_Y, WALL_THICK]); // the jamb against the east wall
+  }
 
   // ---- the south front ------------------------------------------------------------------------
   const outline = new THREE.Shape([new THREE.Vector2(0, GROUND_Y), new THREE.Vector2(W, GROUND_Y), new THREE.Vector2(W, frontTop), new THREE.Vector2(0, frontTop)]);
