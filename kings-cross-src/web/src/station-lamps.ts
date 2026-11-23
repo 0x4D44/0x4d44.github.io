@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import type { LightSource } from '../../core/light-sources.ts';
 import { downlight, roadLight } from './light-source-adapters.ts';
 import type { Pt } from '../../core/geo.ts';
-import { pointInPolygon } from '../../core/station.ts';
+import { poolFloorMap } from './pool-floor.ts';
 import { LAMP_KIND } from '../../core/streetlights.ts';
 import type { LampSpot } from '../../core/streetlights.ts';
 import { createStreetLights, headOf, LAMP_LIGHT, MAST_STRIP } from './streetlights.ts';
@@ -133,22 +133,6 @@ if (uOpenPlatformNight > 0.003 && uOpenPlatformWet > 0.45 && uOpenPlatformSnow <
 }
 
 
-/** Rasterised once at half-metre resolution; light stops at platform edges. */
-function floorMask(rings: readonly (readonly Pt[])[]): {map: THREE.DataTexture; rect: THREE.Vector4} | undefined {
-  const points = rings.flat();
-  if (!points.length) return;
-  const cell = .5;
-  const x0 = Math.floor(Math.min(...points.map(p=>p[0])))-1, z0 = Math.floor(Math.min(...points.map(p=>p[1])))-1;
-  const nx = Math.ceil((Math.max(...points.map(p=>p[0]))-x0+1)/cell), nz = Math.ceil((Math.max(...points.map(p=>p[1]))-z0+1)/cell);
-  const bytes = new Uint8Array(nx*nz);
-  for (let z=0;z<nz;z++) for (let x=0;x<nx;x++) {
-    if (rings.some(r=>pointInPolygon([x0+(x+.5)*cell,z0+(z+.5)*cell],r as Pt[]))) bytes[z*nx+x]=255;
-  }
-  const map = new THREE.DataTexture(bytes,nx,nz,THREE.RedFormat);
-  map.minFilter = map.magFilter = THREE.LinearFilter; map.needsUpdate = true;
-  return {map,rect:new THREE.Vector4(x0,z0,1/(nx*cell),1/(nz*cell))};
-}
-
 /** Heads are the same positions used by the visible fittings/pendants, metres. */
 export function createPlatformLamps(heads: readonly number[], rings: readonly (readonly Pt[])[], floorY: number, station:'kx'|'wv'='kx', fogAir=false, open: readonly OpenPlatformLamp[] = []): StreetLights & { radii: readonly number[]; sources: readonly LightSource[] } {
   const spots: LampSpot[] = [];
@@ -158,7 +142,9 @@ export function createPlatformLamps(heads: readonly number[], rings: readonly (r
     spots.forEach((q,j) => { const d=Math.hypot(s.x-q.x,s.z-q.z); if(i!==j && d>3) spacing=Math.min(spacing,d); });
     return station==='kx'?Math.min(10,.6*spacing):Math.min(8,.58*spacing);
   });
-  const floor = floorMask(rings);
+  // The floor map covers the pools themselves, not every platform in the data (St Pancras, the Underground).
+  const reach = spots.map((s,i) => [s.x-radii[i]!,s.z-radii[i]!,s.x+radii[i]!,s.z+radii[i]!]);
+  const floor = poolFloorMap(rings, spots.length ? [Math.min(...reach.map(r=>r[0]!)),Math.min(...reach.map(r=>r[1]!)),Math.max(...reach.map(r=>r[2]!)),Math.max(...reach.map(r=>r[3]!))] : undefined);
   const layer = createStreetLights([...spots,...open], {posts:false,headAt:s=>[s.x,s.y+s.height,s.z],fog:true,
     sourceCores: station === 'kx' ? 'kx-platform' : 'wv-platform',
     analyticPool:true,poolCeiling:.20,poolAt:(_s,i)=>i<spots.length,poolFloor:floor,poolLiftAt:()=>.004,poolRadiusAt:(_s,i)=>radii[i]!,

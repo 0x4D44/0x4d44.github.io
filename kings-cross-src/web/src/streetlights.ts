@@ -16,6 +16,7 @@ import { surfaceUniforms } from './atmosphere.ts';
 import { COVER_GLSL, coverUniforms } from './cover.ts';
 import type { LampWetSurface } from './lamp-wet-surface.ts';
 import { LAMP_RECEIVER_GLSL } from './lamp-wet-surface.ts';
+import { poolFloorClip } from './pool-floor.ts';
 import { createLampWeather, fadeLightInFog, sharpenPlatformCoreInFog } from './streetlight-weather.ts';
 
 /** The tall post's height as built; an instance scales it to its own height (the arm and the head with it). */
@@ -155,7 +156,7 @@ export interface StreetLightOptions {
   poolSurface?: LampWetSurface;
   /** Receiver samples across a pool on tightly folded urban terrain. */
   poolSegments?: number;
-  /** Clip raised platform light to the physical platforms instead of the tracks. */
+  /** Clip raised platform light to the physical platforms instead of the tracks: a signed-distance map from pool-floor.ts. */
   poolFloor?: { map: THREE.Texture; rect: THREE.Vector4; appliesAt?: (spot: LampSpot, index: number) => boolean };
   /** Wet open ground absorbs more light; dense fog reduces the ground pool. */
   poolWeather?: boolean;
@@ -504,7 +505,7 @@ if (vPoolLocalScale > 0.0) {
         shader.uniforms.uPoolFloorMap = { value: options.poolFloor.map };
         shader.uniforms.uPoolFloorRect = { value: options.poolFloor.rect };
         declarations += '\nvarying float vPoolFloorWeight;\nuniform sampler2D uPoolFloorMap;\nuniform vec4 uPoolFloorRect;';
-        body += '\ngl_FragColor.a *= mix( 1.0, texture2D( uPoolFloorMap, ( vPoolWorld.xz - uPoolFloorRect.xy ) * uPoolFloorRect.zw ).r, vPoolFloorWeight );';
+        body += `\ngl_FragColor.a *= mix( 1.0, ${poolFloorClip('texture2D( uPoolFloorMap, ( vPoolWorld.xz - uPoolFloorRect.xy ) * uPoolFloorRect.zw ).r')}, vPoolFloorWeight );`;
       }
       if (options.poolWeather) {
         shader.uniforms.uPoolWet = surfaceUniforms.wet;
