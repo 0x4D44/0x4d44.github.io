@@ -217,7 +217,7 @@
    "tags": [
     "perf"
    ],
-   "note": "The top two seats score within 3 points of each other; their order is within judge noise."
+   "note": "The top two seats score within 3 points of each other; their order is within judge noise. The four seats added on 19 Nov ran this exercise on the Windows host under different conditions: Sol 6.2 ultra on 19 Nov with administrator rights and the operator's own agent setup, as the published seats ran; Opus 4.8, GPT-5 and Astra 6.2 on 22-23 Nov with a clean per-seat setup and ordinary user rights, and Astra 6.2 through the OpenAI API rather than the ChatGPT subscription its other exercises used. The four seats added on 19 Nov (GPT-6.2 Astra xhigh, GPT-6.2 Sol ultra, Opus 4.8 high and GPT-5 high) were judged in a separate panel with four of the published seats as anchors; their scores sit on the same scale (anchors moved by at most 1.7 points) but they have no panel rank. In the separate panel these seats score within 3 points of the next, so their order is within judge noise: GPT-6.2 Astra xhigh, GPT-6 Astra xhigh and GPT-6.1 Sol ultra."
   },
   {
    "id": "DES-02",
@@ -650,6 +650,86 @@
     "gates_ok": true
    },
    "flags": []
+  },
+  {
+   "seat": "gpt-5-high",
+   "task": "DES-01",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "score": 39.5,
+    "rubric": 41.8,
+    "score_claude": 39.3,
+    "score_gpt": 39.7,
+    "judge_sd": 0.8,
+    "bonus": 0.0,
+    "cost_usd": 1.58,
+    "wall_min": 9.3,
+    "gates_ok": true
+   },
+   "flags": [
+    "separate_panel"
+   ]
+  },
+  {
+   "seat": "sol-6.2-ultra",
+   "task": "DES-01",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "score": 79.0,
+    "rubric": 79.6,
+    "score_claude": 78.3,
+    "score_gpt": 79.7,
+    "judge_sd": 1.0,
+    "bonus": 0.0,
+    "cost_usd": 1.268,
+    "wall_min": 13.2,
+    "gates_ok": true
+   },
+   "flags": [
+    "separate_panel"
+   ]
+  },
+  {
+   "seat": "astra-6.2-xhigh",
+   "task": "DES-01",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "score": 90.8,
+    "rubric": 90.5,
+    "score_claude": 91.0,
+    "score_gpt": 90.7,
+    "judge_sd": 0.4,
+    "bonus": 2.0,
+    "cost_usd": 21.483,
+    "wall_min": 51.3,
+    "gates_ok": true
+   },
+   "flags": [
+    "separate_panel"
+   ]
+  },
+  {
+   "seat": "opus-4.8-high",
+   "task": "DES-01",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "score": 56.3,
+    "rubric": 63.4,
+    "score_claude": 61.0,
+    "score_gpt": 51.7,
+    "judge_sd": 4.8,
+    "bonus": 0.0,
+    "cost_usd": 7.69,
+    "wall_min": 36.3,
+    "gates_ok": true
+   },
+   "flags": [
+    "separate_panel"
+   ]
   },
   {
    "seat": "sol-6.1-ultra",
