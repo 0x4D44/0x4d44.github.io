@@ -848,13 +848,22 @@ export const AT300_TEARDROP: Teardrop = [
  * tangent at its middle, so its upper end stands off the shoulder). And the B16 lobe (0.19 m about (0.6, 1.605), 1.5 cm lower) kept at the front-top: without it the bigger lobe's
 front sits low, where the nose is wider, and head on the unit narrowed from 0.39 m to 0.31 m across (train-lner.test.ts: LUMO-06-803005-FPK, no narrower than 0.36 m); with it 0.38 m.
 ASSUMED, as AT300_TEARDROP.
+CHANGED (round B18; the front-top circle was the B16 lobe, 0.19 m about (0.6, 1.605), and the tip 0.2 m about (1.5, 2.02)): the B17 score saw, at V01 (nose-34-right and
+rear-nose-34-right), a concave kink about 3 px in the unit's lower front outline beside the lens, where the small circle met the big lobe's; measured (V01, 1600 by 1000) the outline
+stood 4.5 px inside its own convex hull there (Hull Trains', with a 0.27 m circle there, 0.9). A circle 0.26 m across about (0.585, 1.55), as Hull Trains' but 1.6 cm higher (the
+stop is Lumo's limit, not the stop less a rim), blends the two: 1.0 px, and head on the unit is 0.383 m across. And at cab-side-3m it saw a 2 px hook at the unit's back tip: there
+the tip's upper back, on the shoulder rolling away from that eye, foreshortens, so its lower back stands out as a nub (measured: the outline 1.6 px inside its convex hull near the
+tip). A tip 0.16 m across about (1.52, 1.96), lower on the shoulder, keeps its back at 1.6 m and reads round: 0.3 px (train-at300-shell.test.ts, round B18); a circle 0.16 m
+across about (1.4, 1.95) carries the top edge to it, without which the lower tip left a 1.8 px dip in the unit's top edge head on (the B17 test's limit 1.5). (Hull Trains' unit
+keeps its tip: every such tip tried fails its B5 test, 2.2 to 2.6 mm against 1.5.) ASSUMED: the figures, to about 0.02 m.
  */
 export const LUMO_TEARDROP: Teardrop = [
   { s: 0.68, y: 1.47, r: 0.15 },
-  { s: 0.6, y: 1.605, r: 0.095 },
+  { s: 0.585, y: 1.55, r: 0.13 },
   { s: 1.02, y: 1.76, r: 0.14 },
   { s: 1.2, y: 1.872, r: 0.11 },
-  { s: 1.5, y: 2.02, r: 0.1 },
+  { s: 1.4, y: 1.95, r: 0.08 },
+  { s: 1.52, y: 1.96, r: 0.08 },
 ];
 /**
  * The Hull Trains and Lumo headlamp's strip (round B17; was the AT300's, at (0.925, 1.76)): 1.5 cm further back and 5 mm lower, so that with the outline no longer cut along the stop

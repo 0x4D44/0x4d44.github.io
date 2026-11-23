@@ -1487,3 +1487,116 @@ test('the Hull Trains and Lumo lamp housings are swept teardrops, not boxes: a r
     }
   }
 });
+
+/** The outline of a set of triangles: the edges only one of them uses. */
+function outlineEdges(tris: THREE.Vector3[][]): [THREE.Vector3, THREE.Vector3][] {
+  const key = (v: THREE.Vector3): string => `${v.x.toFixed(5)},${v.y.toFixed(5)},${v.z.toFixed(5)}`;
+  const uses = new Map<string, { n: number; a: THREE.Vector3; b: THREE.Vector3 }>();
+  for (const t of tris) {
+    for (const [i, j] of [[0, 1], [1, 2], [2, 0]] as const) {
+      const ka = key(t[i]!);
+      const kb = key(t[j]!);
+      if (ka === kb) continue;
+      const e = ka < kb ? `${ka}|${kb}` : `${kb}|${ka}`;
+      const u = uses.get(e) ?? { n: 0, a: t[i]!, b: t[j]! };
+      u.n++;
+      uses.set(e, u);
+    }
+  }
+  return [...uses.values()].filter((u) => u.n === 1).map((u) => [u.a, u.b]);
+}
+
+test('the Lumo lamp unit\'s lower front outline is convex beside the lens at V01, and its back tip is round at cab-side-3m, with no nub, at both ends (round B18)', () => {
+  // The B17 score (lumo5 T8 7.0): at V01 nose-34-right and rear-nose-34-right "a visible concave kink in the lower front outline just beside the lens, about 3 px at 1:1" (the left
+  // side a slight inflection there too), from the blend of the lobe's two circles; and at V03 cab-side-3m (both kinds) "the rear tip of the unit now has a small hook or nub, about
+  // 2 px". LUMO-05 and LUMO-06-803005-FPK show a smooth round lobe and a round back tip.
+  // - V01 (the eye 4.5 m out to the unit's side, 1.7 m up, 5 m ahead of the face, looking at 1.5 m behind it, 50 degrees, 1600 by 1000): the near unit's window drawn (coverage,
+  //   no depth), its lowest pixel column by column stands no more than 1.5 px inside its own convex hull, along the outline where it climbs or falls under 2 px a column (not down the
+  //   unit's steep ends). Measured: B17 4.5 and 4.9 px for Lumo (the right and left eyes), 0.9 px for Hull Trains; built (B18) 1.0 px.
+  // - V03 (tools/train-framing.mjs: the eye 3 m out from the body side, 1.85 m up, level with the leading bogie, a 65 degree lens): the window's outline within 30 px of its back tip
+  //   stands no more than 1 px inside its own convex hull there. Measured: B17 1.6 px (1.53 with the B18 lobe); built 0.3 px.
+  // (Hull Trains' unit has the same 1.9 px tip; every tip that cures it fails its B5 test: see LUMO_TEARDROP.)
+  const tipOff = faceSetback('at300');
+  const { cars } = trainLayout('lumo5');
+  const half = bodySpec('at300').half;
+  // (the leading bogie's distance behind the face; the rear end is the front's mirror)
+  const bogie = cars[0]!.bogies[0]! - cars[0]!.start;
+  for (const cab of at300Cabs().filter((c) => c.kind === 'lumo5')) {
+    const cluster = frontOf(cab.kind).cluster!;
+    const rgb = col(cluster.window.colour);
+    const c = cab.detail.geometry.getAttribute('color');
+    const window = trianglesOf(cab.detail, cab.at, (ids) => ids.every((k) => Math.abs(c.getX(k) - rgb.r) < 1e-4 && Math.abs(c.getY(k) - rgb.g) < 1e-4 && Math.abs(c.getZ(k) - rgb.b) < 1e-4));
+    for (const sign of [-1, 1]) {
+      const here = `${cab.here} ${sign > 0 ? 'right' : 'left'}`;
+      const mine = window.filter((t) => t.every((v) => v.x * sign > 0 && v.z < 3));
+      assert.ok(mine.length > 100, `${here}: only ${mine.length} window triangles`);
+      const screen = (eye: [number, number, number], target: [number, number, number], fov: number): ((v: THREE.Vector3) => [number, number]) => {
+        const cam = new THREE.PerspectiveCamera(fov, 1.6, 0.05, 100);
+        cam.position.set(...eye);
+        cam.lookAt(...target);
+        cam.updateMatrixWorld();
+        return (v) => {
+          const q = v.clone().project(cam);
+          return [((q.x + 1) / 2) * 1600, ((1 - q.y) / 2) * 1000];
+        };
+      };
+      // V01: the lowest covered pixel of each column
+      const v01 = screen([sign * 4.5, 1.7, -5 - tipOff], [0, 1.7, 1.5 - tipOff], 50);
+      const low = new Map<number, number>();
+      for (const t of mine) {
+        const [a, b, e] = t.map(v01) as [[number, number], [number, number], [number, number]];
+        const area = (b[0] - a[0]) * (e[1] - a[1]) - (e[0] - a[0]) * (b[1] - a[1]);
+        if (Math.abs(area) < 1e-12) continue;
+        for (let y = Math.max(0, Math.floor(Math.min(a[1], b[1], e[1]))); y <= Math.min(999, Math.ceil(Math.max(a[1], b[1], e[1]))); y++) {
+          for (let x = Math.max(0, Math.floor(Math.min(a[0], b[0], e[0]))); x <= Math.min(1599, Math.ceil(Math.max(a[0], b[0], e[0]))); x++) {
+            const w0 = ((b[0] - x - 0.5) * (e[1] - y - 0.5) - (e[0] - x - 0.5) * (b[1] - y - 0.5)) / area;
+            const w1 = ((e[0] - x - 0.5) * (a[1] - y - 0.5) - (a[0] - x - 0.5) * (e[1] - y - 0.5)) / area;
+            if (w0 < 0 || w1 < 0 || w0 + w1 > 1) continue;
+            low.set(x, Math.max(low.get(x) ?? -1, y));
+          }
+        }
+      }
+      const cols = [...low.entries()].sort((p, q) => p[0] - q[0]);
+      assert.ok(cols.length > 60, `${here} V01: the unit is ${cols.length} px wide`);
+      // (the hull under the columns, y down: the least concave function over them)
+      const under: [number, number][] = [];
+      for (const q of cols) {
+        while (under.length >= 2) {
+          const a = under[under.length - 2]!;
+          const b = under[under.length - 1]!;
+          if ((b[0] - a[0]) * (q[1] - a[1]) - (b[1] - a[1]) * (q[0] - a[0]) >= 0) under.pop();
+          else break;
+        }
+        under.push(q);
+      }
+      let kink = 0;
+      let at = 0;
+      for (const [i, q] of cols.entries()) {
+        if (i === 0 || i + 1 === cols.length || Math.abs(cols[i + 1]![1] - cols[i - 1]![1]) > 4) continue;
+        const k = under.findIndex((u) => u[0] >= q[0]);
+        const a = under[Math.max(0, k - 1)]!;
+        const b = under[k]!;
+        const hullY = b[0] === a[0] ? b[1] : a[1] + ((b[1] - a[1]) * (q[0] - a[0])) / (b[0] - a[0]);
+        if (hullY - q[1] > kink) {
+          kink = hullY - q[1];
+          at = q[0];
+        }
+      }
+      assert.ok(kink <= 1.5, `${here} V01: the unit's lower outline stands ${kink.toFixed(1)} px inside its convex hull at x ${at}`);
+      // V03: the outline near the back tip
+      const v03 = screen([sign * (half + 3), 1.85, bogie - tipOff], [sign * half, 1.85, bogie - tipOff], 65);
+      const edges = outlineEdges(mine);
+      const pts = edges.flat().map((v): [number, number, number] => [...v03(v), v.z]);
+      const back = pts.reduce((p, q) => (q[2] > p[2] ? q : p));
+      const near = pts.filter((q) => Math.hypot(q[0] - back[0], q[1] - back[1]) < 30).map((q): [number, number] => [q[0], q[1]]);
+      assert.ok(near.length > 20, `${here} V03: only ${near.length} outline points near the back tip`);
+      const ring = hull2(near);
+      const dent = Math.max(...near.map((q) =>
+        Math.min(...ring.map((a, k) => {
+          const b = ring[(k + 1) % ring.length]!;
+          return Math.abs(((b[0] - a[0]) * (q[1] - a[1]) - (b[1] - a[1]) * (q[0] - a[0])) / Math.hypot(b[0] - a[0], b[1] - a[1]));
+        }))));
+      assert.ok(dent <= 1, `${here} V03: the unit's outline stands ${dent.toFixed(2)} px inside its convex hull near its back tip`);
+    }
+  }
+});

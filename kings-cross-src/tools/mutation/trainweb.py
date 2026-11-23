@@ -1546,7 +1546,11 @@ M = [
     ("B17b: the lens's turn toward the track ignored", "return { c: f.c, d: rot(f.d), e: rot(f.e), n: rot(f.n) };", "return f;"),
     ("B17b: the Hull Trains front-top circle dropped (0.26 m across head on)", "  { s: 0.585, y: 1.5335, r: 0.133 },\n", ""),
     ("B17b: the headlamp's strip 3.5 cm higher (its top lens outside the glass)", "s: 0.94, y: 1.755 };", "s: 0.94, y: 1.79 };"),
-    ("B17: Lumo without its front-top circle (0.31 m across head on)", "  { s: 0.68, y: 1.47, r: 0.15 },\n  { s: 0.6, y: 1.605, r: 0.095 },\n", "  { s: 0.68, y: 1.47, r: 0.15 },\n"),
+    ("B17: Lumo without its front-top circle (0.31 m across head on)", "  { s: 0.68, y: 1.47, r: 0.15 },\n  { s: 0.585, y: 1.55, r: 0.13 },\n", "  { s: 0.68, y: 1.47, r: 0.15 },\n"),
+    # round B18: Lumo's lower front outline convex beside the lens at V01, and its back tip round at cab-side-3m (train-at300-shell.test.ts, round B18)
+    ("B18: the Lumo front-top circle the B16 lobe again (a kink beside the lens at V01)", "  { s: 0.585, y: 1.55, r: 0.13 },\n  { s: 1.02, y: 1.76", "  { s: 0.6, y: 1.605, r: 0.095 },\n  { s: 1.02, y: 1.76"),
+    ("B18: the Lumo tip the B17 one again (a nub at cab-side-3m)", "  { s: 1.52, y: 1.96, r: 0.08 },\n];", "  { s: 1.5, y: 2.02, r: 0.1 },\n];"),
+    ("B18: the Lumo tip without its carrying circle (a dip in the top edge head on)", "  { s: 1.4, y: 1.95, r: 0.08 },\n", ""),
     ("B17: a cheek's own join ignored (8 mm for every kind)", "> (cluster.join ?? 0.008)) as.splice", "> 0.008) as.splice"),
     # round B16: the Hull Trains and Lumo housings are swept teardrops (AT300_TEARDROP), laid on a grid across their axis
     ("B16: the Lumo housing a parallelogram again (the B15 box)", "window: { ...AT300_CLUSTER.window, teardrop: LUMO_TEARDROP },", "window: { ...AT300_CLUSTER.window },"),
