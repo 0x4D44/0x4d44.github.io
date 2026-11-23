@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import { ALL_KINDS, EMU_FIGURES, EMU_KINDS, FIGURES, GC_KINDS, TL_KINDS, TRAIN_KINDS, trainLayout } from '../../core/train.ts';
 import type { Car, EmuFamily, Family, TrainKind } from '../../core/train.ts';
 import { LIVERIES, ROW_H, TEX_SPAN, TEX_W, atlasRect, atlasTexts, shellMaterial, texelsPerMetre, textEms } from '../src/livery.ts';
-import { ARRAY_CELL, ASSUMED, BOGIE_STYLE, bodySpec, buildTrain, CAB_SWOOSH, carPlan, carSection, CLUSTER_ARRAY, CLUSTER_LIFT, COVER_RELIEF, COVER_SEAM, END_GAP, faceSetback, FLANK_FRACTION, frontOf, HEAD_BODY, HEAD_FILL, HEAD_SIDES, HULL_POD, LENS, maskLine, NOSE_RECESS, PANE_COLS, PANE_LIFT, PANE_ROWS, PANE_SEAL, PANE_SKY_HI, PANE_SKY_MID, POD, SEAM_ON_DARK, SEAM_ON_LIGHT, SKIRT_PALE, skirtColours, underfloorBlocks } from '../src/train.ts';
+import { ARRAY_CELL, ASSUMED, BOGIE_STYLE, bodySpec, buildTrain, CAB_SWOOSH, carPlan, carSection, CLUSTER_ARRAY, CLUSTER_LIFT, COVER_RELIEF, COVER_SEAM, END_GAP, faceSetback, FLANK_FRACTION, frontOf, HEAD_BODY, HEAD_FILL, HEAD_SIDES, HULL_POD, LENS, maskLine, NOSE_RECESS, PANE_COLS, PANE_LIFT, PANE_ROWS, PANE_SEAL, PANE_SKY_HI, PANE_SKY_MID, POD, SEAM_ON_DARK, SEAM_ON_LIGHT, SKIRT_PALE, skirtColours, teardropOutline, underfloorBlocks } from '../src/train.ts';
 import { GC_ORANGE, GN_PINSTRIPE, HULL_BEAK, LNER_YELLOW, liveryFor, sideColourAt } from '../src/train-livery.ts';
 import { eggSection, filletFactor, halfAt, loopFromHalf, normalised, planProfile, ringAt, ringStations, sideProfile, xAtY, yAtX } from '../src/train-nose.ts';
 import { BOGIE_HALF_WIDTH, BOGIE_LOD_DISTANCE, BOGIE_TOP, BRAKE_UNIT, CARDAN_AXIS, CARDAN_RADIUS, DISC_RADIUS, DISC_THICKNESS, FAR_WHEEL_SEGMENTS, FLANGE_HEIGHT, GEARBOX_REACH, KIT_BIG_RADIUS, KIT_CABLE_WIDTH, KIT_COLOURS, KIT_HALF_WIDTH, KIT_PLATE_HALF, KIT_PLATE_TOP, KIT_SMALL_RADIUS, MOTOR_BOSS, MOTOR_CLEAR, MOTOR_FLOOR, MOTOR_LENGTH, MOTOR_RADIUS, PANTOGRAPH_STRIP, PANTOGRAPH_STRIP_THICKNESS, PANTOGRAPH_STRIPS, POD_PARTS, POD_SHAPE, ROOF_KITS, SKIRT_BOX_PATTERN, SKIRT_GRILLE, SKIRT_HATCH, SKIRT_HEM, SKIRT_LEAN, SKIRT_LOUVRES, SKIRT_RAKE, SKIRT_SLIT_LIFT, SKIRT_TUCK, SKIRT_VENT_CLEAR, WHEEL_SEGMENTS, WHEEL_WIDTH, YOKE_RADIUS, bogieFarSoup, bogieParts, bogieSoup, bogieStyle, buildBogie, couplerHalf, podFace, podHanger, podMarks, roofKitReach, roofKitSpan, skirtHalfAt, skirtPanel, skirtSplit, underfloorPod } from '../src/train-parts.ts';
@@ -5062,8 +5062,13 @@ test('lamps: the AT300 kinds\' lamp clusters are a slanted window on each cheek,
         assert.ok(Math.min(...win.map(along)) > clearOfFace, `${here}: the window stands ${Math.min(...win.map(along)).toFixed(3)} m behind the face, clear of the plane it must not pass`);
         const reach = Math.max(...win.map(along));
         near(reach, cluster.window.sBack1, 0.1, `${here}: the window's reach`);
-        near(Math.min(...win.map((v) => v.y)), cluster.window.y0, 0.03, `${here}: the window's foot`);
-        near(Math.max(...win.map((v) => v.y)), cluster.window.y1, 0.03, `${here}: the window's top`);
+        // RE-PINNED (round B17; was y0 for every kind): the Hull Trains and Lumo windows are their teardrop's outline (AT300_TEARDROP, LUMO_TEARDROP), whose lobe grew down to the
+        // photographs' fuller unit (hull-802-doncaster-2024: 0.40 to 0.46 m tall at its inboard end), its foot 1.32 m up, not the AT300 window's 1.53; so a teardrop's foot and top are
+        // its own lowest and highest points, to the same 3 cm
+        const drop = cluster.window.teardrop;
+        const [footY, topY] = drop ? [Math.min(...teardropOutline(drop).map((q) => q[1])), Math.max(...teardropOutline(drop).map((q) => q[1]))] : [cluster.window.y0, cluster.window.y1];
+        near(Math.min(...win.map((v) => v.y)), footY, 0.03, `${here}: the window's foot`);
+        near(Math.max(...win.map((v) => v.y)), topY, 0.03, `${here}: the window's top`);
         // it wraps onto the cheek: its back end stands further out from the middle than its front (the first and last fifth of its length)
         const lo = Math.min(...win.map(along));
         const first = win.filter((v) => along(v) < lo + 0.2 * (reach - lo));
@@ -5113,11 +5118,18 @@ test('lamps: the AT300 kinds\' lamp clusters are a slanted window on each cheek,
         assert.ok(lean > 25 && lean < 55, `${here} headlamp: its strip leans ${lean.toFixed(1)} degrees off the vertical, up and back`);
         // the dark grey is two pieces: the strip's slim body under its lenses (an ellipse of 20 sides, 0.012 m bigger than the strip all round: 0.172 m by 0.045 m (0.192 m before the AT300 round's shorter strip), 21 vertices, 4 mm
         // under the lenses) and the marker array's disc (14 sides, radius 0.075 m, 15 vertices)
+        // RE-PINNED (round B17; was the 0.075 m disc of 14 sides and seven cells for every kind): the Hull Trains and Lumo units have one big round lens (AT300_LENS:
+        // hull-802-doncaster-2024's near unit shows the honeycomb lens 65 to 70 px across at about 375 px to the metre, 0.17 to 0.19 m, and LUMO-06-803005-FPK one large round lens
+        // of small LEDs low in the lobe), a disc of 0.085 m radius with 28 sides holding nineteen cells, two rings round the middle one 2 cells apart (not 1.9: the smaller cells keep the
+        // 3 mm gap below), each 0.085 / 5.35 m at its corners
+        const BIG = kind === 'hull5' || kind === 'lumo5';
+        const DISC_R = BIG ? 0.085 : 0.075;
+        const DISC_SIDES = BIG ? 28 : 14;
         const dark = parts(onSide(trisOfColour(mesh, CLUSTER_ARRAY)));
         assert.equal(dark.length, 2, `${here}: ${dark.length} pieces of the lamps' dark grey (the strip's body and the array's disc)`);
         const body = dark.find((p) => p.pts.length === 21);
-        const disc = dark.find((p) => p.pts.length === 15);
-        assert.ok(body && disc, `${here}: the dark grey pieces have ${dark.map((p) => p.pts.length).join(' and ')} vertices, not 21 (the strip's body) and 15 (the array's disc)`);
+        const disc = dark.find((p) => p.pts.length === DISC_SIDES + 1);
+        assert.ok(body && disc, `${here}: the dark grey pieces have ${dark.map((p) => p.pts.length).join(' and ')} vertices, not 21 (the strip's body) and ${DISC_SIDES + 1} (the array's disc)`);
         const bodyReach = body.pts.map((v) => v.distanceTo(body.centre));
         // RE-PINNED (round B12; was 0.16 for every kind): the LNER's strip is 0.28 m long (see PITCH above), its body 0.152 m by 0.045 m
         near(Math.max(...bodyReach), (PITCH * 5) / 2 + 0.012, 2e-4, `${here} headlamp body: its half-length`);
@@ -5128,14 +5140,22 @@ test('lamps: the AT300 kinds\' lamp clusters are a slanted window on each cheek,
         const dc = disc.centre;
         near(along(dc), cluster.array.s, 0.03, `${here} array disc: distance behind the face`);
         near(dc.y, cluster.array.y, 0.02, `${here} array disc: height`);
-        near(Math.abs(dc.x), xAtY(halfAt(sec, norm, egg, ringAt(spec.nose, cluster.array.s)), cluster.array.y), 0.03, `${here} array disc: on the flank`);
+        // RE-PINNED (round B17; was the flank's own half-width for every kind): the big lens's disc stands its lift and its own raise more off the flank (AT300_LENS.raise, 9 mm, so its edge clears
+        // the curved window under it), along a normal facing 0.8 to 0.9 out where it sits low in the bigger lobe: 3.2 cm further out than the flank, where the 0.075 m disc's lift
+        // put it 2 cm; so the big lens is held, to the same 3 cm, to the flank pushed out along its own normal by that lift
+        const rimPts = disc.pts.filter((v) => v.distanceTo(dc) > 0.05);
+        const discN = new THREE.Vector3().subVectors(rimPts[0]!, dc).cross(new THREE.Vector3().subVectors(rimPts[Math.floor(rimPts.length / 4)]!, dc)).normalize();
+        assert.ok(Number.isFinite(discN.x), `${here} array disc: its plane`);
+        const discOut = BIG ? (CLUSTER_LIFT.array + (cluster.array.raise ?? 0)) * Math.abs(discN.x) : 0;
+        near(Math.abs(dc.x), xAtY(halfAt(sec, norm, egg, ringAt(spec.nose, cluster.array.s)), cluster.array.y) + discOut, 0.03, `${here} array disc: on the flank`);
         for (const v of disc.pts) {
           const d = v.distanceTo(dc);
-          assert.ok(Math.abs(d - 0.075) < 2e-4 || d < 2e-4, `${here} array disc: a vertex ${d.toFixed(4)} m from its centre, the radius is 0.075`);
+          assert.ok(Math.abs(d - DISC_R) < 2e-4 || d < 2e-4, `${here} array disc: a vertex ${d.toFixed(4)} m from its centre, the radius is ${DISC_R}`);
         }
-        const CELL = 0.075 / 3.2;
+        const CELL = BIG ? 0.085 / 5.35 : 0.075 / 3.2;
+        const STEP = BIG ? 2 : 1.9;
         const cells = parts(onSide(trisOfColour(mesh, markerHex)));
-        assert.equal(cells.length, 7, `${here}: ${cells.length} marker lenses in the array`);
+        assert.equal(cells.length, BIG ? 19 : 7, `${here}: ${cells.length} marker lenses in the array`);
         for (const cell of cells) {
           assert.equal(cell.pts.length, 7, `${here}: a marker lens has ${cell.pts.length} vertices (6 corners and its centre)`);
           for (const v of cell.pts) {
@@ -5145,13 +5165,21 @@ test('lamps: the AT300 kinds\' lamp clusters are a slanted window on each cheek,
         }
         const middle = cells.reduce((best, c) => (c.centre.distanceTo(dc) < best.centre.distanceTo(dc) ? c : best));
         near(middle.centre.distanceTo(dc), 0.004, 5e-4, `${here}: the middle marker lens stands 4 mm over the disc's centre`);
-        const outer = cells.filter((c) => c !== middle);
+        const outer = cells.filter((c) => c !== middle && (!BIG || Math.abs(c.centre.distanceTo(middle.centre) - STEP * CELL) < 3e-4));
+        assert.equal(outer.length, 6, `${here}: ${outer.length} marker lenses in the ring round the middle one`);
         for (const c of outer) {
-          near(c.centre.distanceTo(middle.centre), 1.9 * CELL, 3e-4, `${here}: an outer marker lens's distance from the middle one`);
-          const ring2 = outer.filter((o) => o !== c && Math.abs(o.centre.distanceTo(c.centre) - 1.9 * CELL) < 3e-4);
+          near(c.centre.distanceTo(middle.centre), STEP * CELL, 3e-4, `${here}: an outer marker lens's distance from the middle one`);
+          const ring2 = outer.filter((o) => o !== c && Math.abs(o.centre.distanceTo(c.centre) - STEP * CELL) < 3e-4);
           assert.equal(ring2.length, 2, `${here}: an outer marker lens has ${ring2.length} neighbours in the ring at 1.9 cells`);
-          for (const v of c.pts) assert.ok(v.distanceTo(dc) < 0.075 - 0.005, `${here}: a marker lens corner stands ${v.distanceTo(dc).toFixed(4)} m from the disc's centre, the disc is 0.075`);
         }
+        // (the big lens's second ring: twelve more, each 4 cells from the middle one (six) or 2 root 3 cells (six between them), on the same lattice: two or more neighbours 2
+        // cells away)
+        for (const c of cells.filter((c) => c !== middle && !outer.includes(c))) {
+          const d = c.centre.distanceTo(middle.centre) / CELL;
+          assert.ok(Math.abs(d - 2 * STEP) < 0.02 || Math.abs(d - STEP * Math.sqrt(3)) < 0.02, `${here}: a marker lens ${d.toFixed(2)} cells from the middle one`);
+          assert.ok(cells.filter((o) => o !== c && Math.abs(o.centre.distanceTo(c.centre) - STEP * CELL) < 3e-4).length >= 2, `${here}: a marker lens of the second ring off the lattice`);
+        }
+        for (const c of cells) for (const v of c.pts) assert.ok(v.distanceTo(dc) < DISC_R - 0.005, `${here}: a marker lens corner stands ${v.distanceTo(dc).toFixed(4)} m from the disc's centre, the disc is ${DISC_R}`);
         // no two lenses touch: along the line between two neighbours' centres a gap of 3 mm or more is left between their corners' reach (their flats face each other: 1.9 cells apart is a
         // gap of 4.5 mm; turned a sixth of a turn their corners would face each other and overlap by 2.7 mm)
         for (const c1 of cells) {

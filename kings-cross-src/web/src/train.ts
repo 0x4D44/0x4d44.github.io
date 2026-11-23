@@ -533,8 +533,14 @@ export interface ClusterSpec {
    * half-length `a` of the whole strip along the slant and the half-width `b` of each lens across it. Each lens is an ellipse HEAD_FILL of its pitch long.
    */
   head: { s: number; y: number; a: number; b: number; cells: number };
-  /** The marker array: a dark round disc of radius `r` about (s, y), and in it a centre lens and six round it (marker lenses), hexagons of ARRAY_CELL of the disc's radius across their corners. */
-  array: { s: number; y: number; r: number };
+  /**
+   * The marker array: a dark round disc of radius `r` about (s, y), and in it a centre lens and six round it (marker lenses), hexagons of ARRAY_CELL of the disc's radius across their corners.
+   * A kind's own `rings` (absent: 1) lays that many rings of hexagons round the centre one (2: nineteen cells), 2 cells apart, each cell's corner radius the disc's over
+   * (2 rings + 1.35), so the outermost corners stand 5 mm inside the disc's edge; `sides` (absent: 14) the disc's; and `raise` (absent: 0) lifts the disc and its cells that much further
+   * off the loft, so a wide flat disc's edge, where the curved window falls away under its tangent plane less than the disc's 4 mm, still stands over the window; and `tilt`
+   * (absent: 0) turns the disc and its cells that many radians about its centre from the flank's tangent plane toward straight ahead.
+   */
+  array: { s: number; y: number; r: number; rings?: number; sides?: number; raise?: number; tilt?: number };
   /**
    * The rim round the window, a pale edge to its dark glass: its colour (absent: none), and how far it stands out beyond the window all round, metres. A kind's own `front` and `foot`
    * (absent: `width`) set how far it reaches past the window's front edge and under its foot. Round B9: on the LNER the front edge is the unit's inboard side head on, where the
@@ -558,6 +564,12 @@ export interface ClusterSpec {
    * rim's top edge, 2.05 m up, dipped 1.8 mm between 2.2 cm columns.
    */
   chord?: number;
+  /**
+   * A teardrop housing's line spacing near its ends (absent: 8 mm): a line is added halfway between two whose ends lie further apart than this. Round B17: the Hull Trains unit's
+   * 0.36 m lobe added so many at 8 mm that its cab car came to 45,300 triangles with its interior, over the 40,000 budget; at 1.9 cm (its columns 4.2 cm apart) it is 34,008 (39,694 with its interior), and
+   * its grid passes the B5 test (measured: 114 of 12,458 points low, the worst chord 1.36 mm; it is sensitive to both spacings, so change them only against that test).
+   */
+  join?: number;
   /**
    * A kind's own lifts (absent: CLUSTER_LIFT's) for the rim, the window, the array's disc and the lenses. Round B11: on the LNER the back of the housing lies on the nose's own
    * outline seen from the side, so its lift is the outline pushed out (cab-side-3m: the squared-off rear end proud of the nose, its pale rim a spur, where lner-801-214-2025 shows the
@@ -811,10 +823,58 @@ export const AT300_CLUSTER: ClusterSpec = {
  * were (the array 6 mm and the strip 2 cm inside it). ASSUMED: the figures, to about 0.05 m.
  */
 export const AT300_TEARDROP: Teardrop = [
-  { s: 0.6, y: 1.615, r: 0.095 },
-  { s: 1.02, y: 1.76, r: 0.14 },
-  { s: 1.55, y: 2.03, r: 0.05 },
+  { s: 0.69, y: 1.48, r: 0.15 },
+  { s: 0.585, y: 1.5335, r: 0.133 },
+  { s: 1.2, y: 1.872, r: 0.11 },
+  { s: 1.5, y: 2.02, r: 0.1 },
 ];
+// CHANGED (round B17; was the lobe 0.19 m across about (0.6, 1.615), a middle 0.28 m about (1.02, 1.76), the tip 0.1 m about (1.55, 2.03)): the B16 score measured the lobe at
+// about 0.19 m against the photographs' 0.4 m (hull-802-doncaster-2024: the unit 160 px tall at its inboard end, 0.40 to 0.46 m), the marker array nearly touching its edge, and saw
+// a spike and a step at the top of the unit head on and a facet along its upper edge at V01. The stop stays (it holds the unit's inboard edge; moving it in let the housing climb onto
+// the shoulder's flat top, read head on as a box), so the lobe grows down and back: 0.3 m across about (0.69, 1.48), its foot 1.33 m up and its front 0.54 m back (clear of the
+// face's tight corner, where a bigger lobe's grid dipped 2 mm into the nose; no bigger, or 2 cm over its foot it is no longer round, the B16 test); its top runs straight back to a circle 0.22 m across about (1.2, 1.872), 0.5 cm or more under the
+// window's limit (the stop less the rim's width) all the way, so no part of it is cut along the stop (the B16 outline was cut by up to 1.4 cm over its front half: the ends of that cut
+// were the facet and, head on, the spike and step); and the tip is rounder, 0.2 m across about (1.5, 2.02), so head on the unit's top (its tip, which the perspective puts at its
+// inboard top) is rounded, not a point (train-at300-shell.test.ts, round B17). The window's front 0.25 m is about 0.4 m tall. ASSUMED: the figures, to about 0.05 m, fitted under the stop
+// and the B5 test's 1.5 mm dip.
+// CHANGED (round B17, second pass; was those three circles alone): their top ran 4 to 12 cm under the stop at the front, so head on the unit was 0.26 m across, against B16's 0.351
+// (hull-802-doncaster-2024's near unit is wider, not narrower: about 205 px at 375 px to the metre, well off the axis). A circle 0.266 m across about (0.585, 1.534) fills the
+// lobe's front-top up to 2 to 3 mm under the window's limit, its front 0.452 m back: 0.354 m across. Fitted (measured) under the stop (side on the top stands 15 to 16 mm over the
+// teardrop's all along: uncut), the B5 test (worst chord 1.36 mm) and the rim's 7 mm over the window at the front (15 mm); fragile: a centimetre's move fails the B5 test.
+
+/**
+ * Lumo's own outline (round B17): AT300_TEARDROP with the B16 middle circle (0.28 m about (1.02, 1.76)) kept. Lumo's window has no rim, so its limit is the stop itself, not the stop
+ * less a rim's width, and the circle stays under it; without it, side on the window's top edge ran 2 cm under the upper end of the headlamp's strip (the strip lies in the plane
+ * tangent at its middle, so its upper end stands off the shoulder). And the B16 lobe (0.19 m about (0.6, 1.605), 1.5 cm lower) kept at the front-top: without it the bigger lobe's
+front sits low, where the nose is wider, and head on the unit narrowed from 0.39 m to 0.31 m across (train-lner.test.ts: LUMO-06-803005-FPK, no narrower than 0.36 m); with it 0.38 m.
+ASSUMED, as AT300_TEARDROP.
+ */
+export const LUMO_TEARDROP: Teardrop = [
+  { s: 0.68, y: 1.47, r: 0.15 },
+  { s: 0.6, y: 1.605, r: 0.095 },
+  { s: 1.02, y: 1.76, r: 0.14 },
+  { s: 1.2, y: 1.872, r: 0.11 },
+  { s: 1.5, y: 2.02, r: 0.1 },
+];
+/**
+ * The Hull Trains and Lumo headlamp's strip (round B17; was the AT300's, at (0.925, 1.76)): 1.5 cm further back and 5 mm lower, so that with the outline no longer cut along the stop
+ * its upper lenses still lie inside the dark glass seen side on (at the AT300's place its top lens stood 6 mm outside Hull's window, at 1.74 m up 3.5 cm down its slant 5 mm), and
+ * it is 1.755 m up, inside the 1.76 +- 0.02 m the photographs give the headlamps. ASSUMED: the move, chosen against those tests.
+ */
+export const AT300_DROP_HEAD: ClusterSpec['head'] = { ...AT300_CLUSTER.head, s: 0.94, y: 1.755 };
+/**
+ * The Hull Trains and Lumo units' big round lens (round B17; was the AT300's marker array, a disc 0.15 m across holding seven hexagons): hull-802-doncaster-2024 and
+ * LUMO-06-803005-FPK show one large round lens low in the lobe, a honeycomb of small LEDs filling it (the B16 score: "the model has a small hex cluster"). hull-802-doncaster-2024's
+ * near unit (about 375 px to the metre): the honeycomb lens about 65 to 70 px across, 0.17 to 0.19 m; the B16 worker read 0.16 m. So a disc 0.17 m across about (0.64, 1.54), in the
+ * lobe with 3 cm or more of dark glass round it, holding nineteen cells (two rings round the middle one); 28 sides keep its edge round in the 3 m views. It stands 9 mm
+ * higher than the AT300's disc: across 0.17 m the curved window under its edge falls away from its tangent plane further than under the 0.15 m disc (measured: 6 mm left
+ * its edge 0.2 mm into the window).
+ * CHANGED (round B17, second pass; was about (0.68, 1.49), in the flank's plane): there the flank faces nearly sideways, and head on (V02) the lit lens read 22 px against the B16
+ * array's 189, seen almost edge on, where hull-802-doncaster-2024 shows the lens facing the track, round from well off the axis (a lamp is aimed along the line). So it sits 5 cm
+ * higher and 4 cm nearer the face, and `tilt` turns it 0.12 radians (7 degrees) from the flank toward straight ahead: 229 px. Higher still it would leave the lobe under the stop;
+ * nearer the face the window may not go (0.4 m); more tilt stands its outboard edge out past the unit's outline head on. ASSUMED: the figures, to about 0.02 m.
+ */
+export const AT300_LENS: ClusterSpec['array'] = { s: 0.64, y: 1.54, r: 0.085, rings: 2, sides: 28, raise: 0.009, tilt: 0.12 };
 
 /**
  * The LNER's cluster: the AT300's lamps in a shorter housing with a steep edge. CHANGED (round B4; was carried back to 1.35 m at its foot and 2.05 m at its top, to read 0.38 m across
@@ -1491,14 +1551,14 @@ const FRONT_OVERRIDES: Readonly<Partial<Record<TrainKind, Partial<FrontSpec>>>> 
   lner9: { mask: LNER_MASK, cluster: LNER_CLUSTER },
   // CHANGED (round B14; was the AT300's columns crowding to the front edge, the widest 0.12 m): the nose's fuller cheek (AT300 `cheek`) curves the flank under the housing's back half more,
   // and a 15 cm chord of its grid 2.14 m up dipped 1.5 mm into the nose (1.4 mm before): its columns are spaced evenly, each `chord` across at most (as the LNER's are).
-  hull5: { mask: HULL_MASK, cabSideSurround: CAB_SWOOSH, cluster: { ...AT300_CLUSTER, window: { ...AT300_CLUSTER.window, colour: HULL_POD, teardrop: AT300_TEARDROP }, rim: { colour: 0x4a5160, width: 0.025 }, chord: 0.035 } },
+  hull5: { mask: HULL_MASK, cabSideSurround: CAB_SWOOSH, cluster: { ...AT300_CLUSTER, window: { ...AT300_CLUSTER.window, colour: HULL_POD, teardrop: AT300_TEARDROP }, head: AT300_DROP_HEAD, array: AT300_LENS, rim: { colour: 0x4a5160, width: 0.025 }, chord: 0.042, join: 0.019 } },
   // Lumo: the same dark swoosh round the cab side window (LUMO-04-Lumo-803003-at-Edinburgh-Waverley, LUMO-02-803-001-Lumo-Trains-at-Offord-Cluny), and a
   // black window in the cluster (LUMO-04: smoked glass in a body-coloured rim)
   // (with no rim its window is the layer that meets the nose, 26 mm up where a rim stands 14 mm: it comes down over 4.5 cm (2 cm in height under its top) to 1 mm under the loft, so the outline stays clean and the
   // housing still reads 0.28 m across head on, not widened by a 26 mm wall at its outboard edge; LUMO-04 and LUMO-05: an almond flush with the body. ASSUMED, by eye.)
   // CHANGED (round B14; was the AT300's columns): the fuller cheek, as for the Hull Trains housing above: a 6 cm chord of its grid's top edge 2.12 m up dipped 3.2 mm into the
   // nose (1.1 mm before), so its columns are even, each `chord` across at most
-  lumo5: { cabSideSurround: CAB_SWOOSH, cluster: { ...AT300_CLUSTER, window: { ...AT300_CLUSTER.window, teardrop: AT300_TEARDROP }, rim: undefined, edge: { bevel: 0.045, top: 0.02, foot: -0.001 }, chord: 0.03 } },
+  lumo5: { cabSideSurround: CAB_SWOOSH, cluster: { ...AT300_CLUSTER, window: { ...AT300_CLUSTER.window, teardrop: LUMO_TEARDROP }, head: AT300_DROP_HEAD, array: AT300_LENS, rim: undefined, edge: { bevel: 0.045, top: 0.02, foot: -0.001 }, chord: 0.03 } },
 };
 
 /**
@@ -2348,7 +2408,7 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
           for (let q = 0; q + 1 < as.length; q++) {
             const p0 = ends(as[q] as number);
             const p1 = ends(as[q + 1] as number);
-            if ((as[q + 1] as number) - (as[q] as number) > 0.002 && Math.max(Math.abs(p0[0] - p1[0]), Math.abs(p0[1] - p1[1])) > 0.008) as.splice(q + 1, 0, ((as[q] as number) + (as[q + 1] as number)) / 2), q--;
+            if ((as[q + 1] as number) - (as[q] as number) > 0.002 && Math.max(Math.abs(p0[0] - p1[0]), Math.abs(p0[1] - p1[1])) > (cluster.join ?? 0.008)) as.splice(q + 1, 0, ((as[q] as number) + (as[q + 1] as number)) / 2), q--;
           }
           const widestAcross = Math.max(...as.map((a) => ends(a)[1] - ends(a)[0]));
           const steps = Math.max(rows, Math.ceil(widestAcross / CLUSTER_ROW));
@@ -2443,6 +2503,20 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
         const e = unit([here.n[1] * d[2] - here.n[2] * d[1], here.n[2] * d[0] - here.n[0] * d[2], here.n[0] * d[1] - here.n[1] * d[0]]);
         return { c: here.p, d, e, n: here.n };
       };
+      // such a plane turned `angle` radians about its point toward straight ahead (the nose's axis, out of the face), so a lens on a flank that faces mostly sideways still faces the track
+      const turned = (f: { c: V3; d: V3; e: V3; n: V3 }, angle: number): { c: V3; d: V3; e: V3; n: V3 } => {
+        if (!angle) return f;
+        const ahead: V3 = [0, 0, -1];
+        const k = unit([f.n[1] * ahead[2] - f.n[2] * ahead[1], f.n[2] * ahead[0] - f.n[0] * ahead[2], f.n[0] * ahead[1] - f.n[1] * ahead[0]]);
+        const cos = Math.cos(angle);
+        const sin = Math.sin(angle);
+        const rot = (v: V3): V3 => {
+          const kv = k[0] * v[0] + k[1] * v[1] + k[2] * v[2];
+          const kx: V3 = [k[1] * v[2] - k[2] * v[1], k[2] * v[0] - k[0] * v[2], k[0] * v[1] - k[1] * v[0]];
+          return [0, 1, 2].map((i) => (v[i] as number) * cos + (kx[i] as number) * sin + (k[i] as number) * kv * (1 - cos)) as V3;
+        };
+        return { c: f.c, d: rot(f.d), e: rot(f.e), n: rot(f.n) };
+      };
       // an ellipse in such a plane: `sides` points, centred `du` along the slant and `dv` across it from the plane's point, semi-axes `a` along the slant and `b` across, the first point `turn` radians round
       const ellipse = (f: { c: V3; d: V3; e: V3 }, du: number, dv: number, a: number, b: number, sides: number, turn = 0): V3[] =>
         Array.from({ length: sides }, (_, k): V3 => {
@@ -2452,8 +2526,17 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
           return [f.c[0] + f.d[0] * u + f.e[0] * v, f.c[1] + f.d[1] * u + f.e[1] * v, f.c[2] + f.d[2] * u + f.e[2] * v];
         });
       // the marker array's seven cells: the middle one and six round it, a hexagon's width and a thin gap apart (the cell's corner radius is ARRAY_CELL of the disc's)
-      const cell = cluster.array.r * ARRAY_CELL;
-      const cells: [number, number][] = [[0, 0], ...Array.from({ length: 6 }, (_, k): [number, number] => [Math.cos((Math.PI * k) / 3) * cell * 1.9, Math.sin((Math.PI * k) / 3) * cell * 1.9])];
+      // (a kind's own `rings`: the middle cell and every cell of the hexagonal lattice within that many steps of it, the lattice's step 2 cells, so the smaller cells still leave
+      // 4 mm between them, and the cell's corner radius the disc's over (2 rings + 1.35), so the outermost corners stand 5 mm inside the disc)
+      const rings = cluster.array.rings ?? 1;
+      const cell = rings === 1 ? cluster.array.r * ARRAY_CELL : cluster.array.r / (2 * rings + 1.35);
+      const step = rings === 1 ? 1.9 : 2;
+      const cells: [number, number][] = [[0, 0], ...Array.from({ length: 6 }, (_, k): [number, number] => [Math.cos((Math.PI * k) / 3) * cell * step, Math.sin((Math.PI * k) / 3) * cell * step])];
+      for (let q = -rings; q <= rings; q++) {
+        for (let r = Math.max(-rings, -q - rings); r <= Math.min(rings, -q + rings); r++) {
+          if (Math.max(Math.abs(q), Math.abs(r), Math.abs(q + r)) > 1) cells.push([(q + r / 2) * cell * step, ((r * Math.sqrt(3)) / 2) * cell * step]);
+        }
+      }
       // the headlamp's strip: its lenses in a row along the slant (each `pitch` from the next, centred `strip[k]` from the strip's middle), a little under their pitch long, so a gap shows between them
       const pitch = (2 * cluster.head.a) / cluster.head.cells;
       const strip = Array.from({ length: cluster.head.cells }, (_, k): number => (k + 0.5 - cluster.head.cells / 2) * pitch);
@@ -2461,9 +2544,9 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
         if (cluster.rim) windowPatch(side, lifts.rim, cluster.rim.width, cluster.rim.colour);
         windowPatch(side, lifts.window, 0, win.colour);
         // the array: its dark disc, and the cells (marker lenses: white at the leading end, red at the trailing one) in it
-        const base = plane(side, cluster.array.s, cluster.array.y, lifts.array);
-        detail.fan(ellipse(base, 0, 0, cluster.array.r, cluster.array.r, 14).map(world), wn(base.n), col(CLUSTER_ARRAY));
-        const top = plane(side, cluster.array.s, cluster.array.y, lifts.lens);
+        const base = turned(plane(side, cluster.array.s, cluster.array.y, lifts.array + (cluster.array.raise ?? 0)), cluster.array.tilt ?? 0);
+        detail.fan(ellipse(base, 0, 0, cluster.array.r, cluster.array.r, cluster.array.sides ?? 14).map(world), wn(base.n), col(CLUSTER_ARRAY));
+        const top = turned(plane(side, cluster.array.s, cluster.array.y, lifts.lens + (cluster.array.raise ?? 0)), cluster.array.tilt ?? 0);
         for (const [du, dv] of cells) lensFan('marker', ellipse(top, du, dv, cell, cell, 6, Math.PI / 6).map(world), wn(top.n));
         // the headlamp: a slim dark body along the slant, and the strip's lenses on it; and the marker the live layer finds it by
         const bar = plane(side, cluster.head.s, cluster.head.y, lifts.array);

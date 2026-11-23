@@ -6,7 +6,7 @@ import { test } from 'node:test';
 import * as THREE from 'three';
 import { trainLayout } from '../../core/train.ts';
 import type { TrainKind } from '../../core/train.ts';
-import { bodySpec, buildTrain, carSection, CLUSTER_ARRAY, CLUSTER_EDGE, CLUSTER_LIFT, CLUSTER_ROW, faceSetback, frontOf, LENS } from '../src/train.ts';
+import { bodySpec, buildTrain, carSection, CLUSTER_ARRAY, CLUSTER_EDGE, CLUSTER_LIFT, CLUSTER_ROW, faceSetback, frontOf, LENS, teardropSpan } from '../src/train.ts';
 import { LIVERIES } from '../src/livery.ts';
 import { col, gridNormals } from '../src/train-geom.ts';
 import { HULL_BEAK, LNER_YELLOW } from '../src/train-livery.ts';
@@ -1197,6 +1197,173 @@ test('the AT300 nose\'s fuller cheek blends back into the body with its loft\'s 
       assert.ok(slope >= 0.25, `fill ${f.toFixed(3)}: the filled width rises only ${slope.toFixed(3)} as fast as the plain at ${a.toFixed(3)}`);
       assert.ok(cheekWidth(a, f) <= Math.max(a, 1) + 1e-9, `fill ${f.toFixed(3)}: the filled width ${cheekWidth(a, f).toFixed(4)} is past the body's side at ${a.toFixed(3)}`);
       if (a <= 0.83) assert.ok(Math.abs(cheekWidth(a, f) - a * (1 + f)) < 1e-12, `fill ${f.toFixed(3)}: the lamps' section (${a.toFixed(3)}) loses some of its fill`);
+    }
+  }
+});
+
+test('the Hull Trains and Lumo lamp units have a full lobe at the front holding one big round lens with dark glass round it, an outline the stop never cuts, and head on a clean top edge, at both ends (round B17)', () => {
+  // The B16 score (T8 6.5 for both): the front lobe is too small (about 0.19 m against the photographs' 0.4 m, the marker cluster nearly touching its edge), there is no large round
+  // lens (a small hex cluster), head on (V02) a 2-3 px spike at the top of the unit and a stepped inboard edge (Hull's grey rim a sharp jog there), and at V01 a slight facet along
+  // its upper edge. Read off the photographs (ASSUMED, by eye): hull-802-doncaster-2024 (about 375 px to the metre at the near unit) shows the unit 160 px tall at its inboard end
+  // (0.40 to 0.46 m) and one big round honeycomb lens 65 to 70 px across (0.17 to 0.19 m) low in it with dark glass round it; LUMO-06-803005-FPK the same lens filling the lower lobe.
+  // So, for each unit:
+  // - side on, its window's front 0.25 m stands 0.36 to 0.48 m tall (B16: 0.24);
+  // - the lens is one round disc (its edge within 1 mm of one radius), 0.16 to 0.19 m across, 0.35 to 0.55 of that height (the photograph about 0.42), its edge clear of the window
+  //   under it, and side on it lies at least 3 cm inside the window's outline all round (B16: 6 mm);
+  // - side on, the window's top edge is its teardrop's, not cut along the stop: from 5 cm behind its front to 15 cm short of its back tip the drawn outline's top stands the same
+  //   height over the teardrop's, to 4 mm (B16, Hull Trains: cut by up to 1.4 cm over its front half, the cut whose ends read as the facet at V01 and the spike head on);
+  // - head on through V02 (3 m ahead of the tip, 1.7 m up, 50 degrees, 1600 by 1000), the housing's top edge (the window's, and the rim's where it has one; coverage, no depth),
+  //   column by column, falls away on each side of its peak with no rise of more than 1 px, and where it climbs or falls under 2 px a column stands no more than 1.5 px under its
+  //   own convex hull: no spike and no step (B16: 4 to 7 px under it).
+  for (const cab of at300Cabs().filter((c) => c.kind === 'hull5' || c.kind === 'lumo5')) {
+    const cluster = frontOf(cab.kind).cluster!;
+    const drop = cluster.window.teardrop!;
+    const tipOff = faceSetback('at300');
+    const ofColour = (hex: number): THREE.Vector3[][] => {
+      const rgb = col(hex);
+      const c = cab.detail.geometry.getAttribute('color');
+      return trianglesOf(cab.detail, cab.at, (ids) => ids.every((k) => Math.abs(c.getX(k) - rgb.r) < 1e-4 && Math.abs(c.getY(k) - rgb.g) < 1e-4 && Math.abs(c.getZ(k) - rgb.b) < 1e-4));
+    };
+    const window = ofColour(cluster.window.colour);
+    const rim = cluster.rim ? ofColour(cluster.rim.colour) : [];
+    const dark = ofColour(CLUSTER_ARRAY);
+    // (the unit seen head on: its window, its rim, and the lenses and their dark grey in it)
+    const unit = [cluster.window.colour, ...(cluster.rim ? [cluster.rim.colour] : []), CLUSTER_ARRAY, ...Object.values(LENS)];
+    const lenses = unit.slice(cluster.rim ? 3 : 2).flatMap((h) => ofColour(h).filter((tr) => tr.every((v) => v.y > 1.2 && Math.abs(v.x) > 0.5)));
+    // (every other triangle of the cab car's meshes in front of 3 m, for depth)
+    const scene: THREE.Vector3[][] = [];
+    cab.detail.parent!.traverse((o) => {
+      const m = o as THREE.Mesh;
+      if (!m.isMesh || (m as THREE.InstancedMesh).isInstancedMesh) return;
+      const own = new Set(unit.map((h) => col(h)));
+      const c = m.geometry.getAttribute('color');
+      for (const tr of trianglesOf(m, cab.at, (ids) => !(m === cab.detail && c && [...own].some((rgb) => ids.every((k) => Math.abs(c.getX(k) - rgb.r) < 1e-4 && Math.abs(c.getY(k) - rgb.g) < 1e-4 && Math.abs(c.getZ(k) - rgb.b) < 1e-4))))) {
+        if (tr.every((v) => v.z < 3)) scene.push(tr);
+      }
+    });
+    for (const sign of [-1, 1]) {
+      const here = `${cab.here} ${sign > 0 ? 'right' : 'left'}`;
+      const onSide = (ts: THREE.Vector3[][]): THREE.Vector3[][] => ts.filter((t) => t.every((v) => v.x * sign > 0 && v.z < 3));
+      const pts = onSide(window).flat();
+      const front = Math.min(...pts.map((v) => v.z));
+      const back = Math.max(...pts.map((v) => v.z));
+      const lobe = pts.filter((v) => v.z < front + 0.25).map((v) => v.y);
+      const tall = Math.max(...lobe) - Math.min(...lobe);
+      assert.ok(tall >= 0.36 && tall <= 0.48, `${here}: the window's front 0.25 m is ${tall.toFixed(3)} m tall`);
+      // the lens: the dark grey piece lowest down (the other is the headlamp's body)
+      const key = (v: THREE.Vector3): string => `${v.x.toFixed(4)},${v.y.toFixed(4)},${v.z.toFixed(4)}`;
+      const root = new Map<string, string>();
+      const find = (k: string): string => (root.get(k) === k || !root.has(k) ? k : find(root.get(k)!));
+      const darkTris = onSide(dark);
+      for (const tr of darkTris) for (const v of tr) if (!root.has(key(v))) root.set(key(v), key(v));
+      for (const tr of darkTris) for (const v of tr) root.set(find(key(v)), find(key(tr[0]!)));
+      const pieces = new Map<string, THREE.Vector3[]>();
+      for (const tr of darkTris) for (const v of tr) pieces.set(find(key(tr[0]!)), [...(pieces.get(find(key(tr[0]!))) ?? []), v]);
+      const disc = [...pieces.values()].reduce((a, b) => (Math.min(...b.map((v) => v.y)) < Math.min(...a.map((v) => v.y)) ? b : a));
+      const centre = disc.reduce((a, v) => a.add(v), new THREE.Vector3()).multiplyScalar(1 / disc.length);
+      const edge = disc.filter((v) => v.distanceTo(centre) > 0.02);
+      const radii = edge.map((v) => v.distanceTo(centre));
+      const r = radii.reduce((a, b) => a + b, 0) / radii.length;
+      assert.ok(Math.max(...radii) - Math.min(...radii) <= 0.002, `${here}: the lens's edge lies ${Math.min(...radii).toFixed(4)} to ${Math.max(...radii).toFixed(4)} m from its centre`);
+      assert.ok(2 * r >= 0.16 && 2 * r <= 0.19, `${here}: the lens is ${(2 * r).toFixed(3)} m across`);
+      assert.ok(2 * r >= 0.35 * tall && 2 * r <= 0.55 * tall, `${here}: the lens is ${((2 * r) / tall).toFixed(2)} of the lobe's height`);
+      const side = hull2(pts.map((v): [number, number] => [v.z, v.y]));
+      const inside = (q: [number, number]): number =>
+        Math.min(...side.map((a, k) => {
+          const b = side[(k + 1) % side.length]!;
+          return ((b[0] - a[0]) * (q[1] - a[1]) - (b[1] - a[1]) * (q[0] - a[0])) / Math.hypot(b[0] - a[0], b[1] - a[1]);
+        }));
+      // the disc stands clear of the window under its edge (a flat disc 0.17 m across over the curved flank sinks into it at its rim unless raised)
+      const discTri = darkTris.find((tr) => tr.every((v) => disc.includes(v)) && new THREE.Vector3().subVectors(tr[1]!, tr[0]!).cross(new THREE.Vector3().subVectors(tr[2]!, tr[0]!)).length() > 1e-6)!;
+      const n = new THREE.Vector3().subVectors(discTri[1]!, discTri[0]!).cross(new THREE.Vector3().subVectors(discTri[2]!, discTri[0]!)).normalize();
+      if (n.dot(new THREE.Vector3(sign, 0, 0)) < 0) n.negate();
+      const glassPts = pts;
+      const clear = Math.min(...edge.map((v) => {
+        const under = glassPts.filter((w) => new THREE.Vector3().subVectors(w, v).projectOnPlane(n).length() < 0.012);
+        return under.length ? Math.min(...under.map((w) => new THREE.Vector3().subVectors(v, w).dot(n))) : Infinity;
+      }));
+      assert.ok(clear >= 0, `${here}: the lens's edge stands ${(clear * 1000).toFixed(1)} mm off the window under it`);
+      const glass = Math.min(...edge.map((v) => inside([v.z, v.y])));
+      assert.ok(glass >= 0.03, `${here}: the lens stands ${glass.toFixed(3)} m inside the window's outline`);
+      // the top edge is the teardrop's: side on, the drawn outline's top runs parallel to the teardrop's (the window stands its lift over it, which over a rim it keeps at its top)
+      const topOf = (s: number): number =>
+        Math.max(...side.map((a, k) => {
+          const b = side[(k + 1) % side.length]!;
+          return (a[0] - s) * (b[0] - s) > 0 || a[0] === b[0] ? -Infinity : a[1] + ((b[1] - a[1]) * (s - a[0])) / (b[0] - a[0]);
+        }));
+      const offsets: number[] = [];
+      for (let s = front + 0.05; s <= back - 0.15; s += 0.02) offsets.push(topOf(s) - teardropSpan(drop, s, 0, [0, 1], [1, 0])![1]);
+      assert.ok(Math.max(...offsets) - Math.min(...offsets) <= 0.004, `${here}: side on the window's top stands ${(Math.min(...offsets) * 1000).toFixed(0)} to ${(Math.max(...offsets) * 1000).toFixed(0)} mm over its teardrop's`);
+      // head on through V02
+      const cam = new THREE.PerspectiveCamera(50, 1.6, 0.05, 100);
+      cam.position.set(0, 1.7, -3 - tipOff);
+      cam.lookAt(0, 1.7, -tipOff);
+      cam.updateMatrixWorld();
+      // (z-buffered over the cab car's meshes in front of 3 m: the nose's shoulder hides part of the housing from this eye)
+      const housing = new Set([...onSide(window), ...onSide(rim), ...onSide(lenses)]);
+      // (the big lens's lit cells: white at the leading end, red at the trailing one)
+      const lit = new Set(onSide(ofColour(cab.back === 1 ? LENS.markerOn : LENS.tailOn)));
+      const depth = new Map<number, { z: number; mine: boolean; lit?: boolean }>();
+      // (the lit cells drawn first: each is also in the housing, at the same depth, which then does not replace it)
+      for (const tr of [...lit, ...scene, ...housing]) {
+        const mine = housing.has(tr) || lit.has(tr);
+        const [a, b, e] = tr.map((v) => {
+          const q = v.clone().project(cam);
+          return [((q.x + 1) / 2) * 1600, ((1 - q.y) / 2) * 1000, v.distanceTo(cam.position)];
+        }) as [[number, number, number], [number, number, number], [number, number, number]];
+        const area = (b[0] - a[0]) * (e[1] - a[1]) - (e[0] - a[0]) * (b[1] - a[1]);
+        if (Math.abs(area) < 1e-12) continue;
+        for (let y = Math.max(0, Math.floor(Math.min(a[1], b[1], e[1]))); y <= Math.min(999, Math.ceil(Math.max(a[1], b[1], e[1]))); y++) {
+          for (let x = Math.max(0, Math.floor(Math.min(a[0], b[0], e[0]))); x <= Math.min(1599, Math.ceil(Math.max(a[0], b[0], e[0]))); x++) {
+            const w0 = ((b[0] - x - 0.5) * (e[1] - y - 0.5) - (e[0] - x - 0.5) * (b[1] - y - 0.5)) / area;
+            const w1 = ((e[0] - x - 0.5) * (a[1] - y - 0.5) - (a[0] - x - 0.5) * (e[1] - y - 0.5)) / area;
+            if (w0 < 0 || w1 < 0 || w0 + w1 > 1) continue;
+            const z = w0 * a[2] + w1 * b[2] + (1 - w0 - w1) * e[2];
+            const was = depth.get(y * 1600 + x);
+            if (!was || z < was.z) depth.set(y * 1600 + x, { z, mine, lit: lit.has(tr) });
+          }
+        }
+      }
+      // head on the big lens reads at least as large as the B16 marker array it replaced (189 px lit at 8a34e7dd, counted this way): hull-802-doncaster-2024 shows the honeycomb
+      // lens facing the track, read round from well off the axis. (B17's first build laid it on the lobe's sideways-facing flank: 22 px, nearly edge on.)
+      const litPx = [...depth.values()].filter((d) => d.lit).length;
+      assert.ok(litPx >= 189, `${here} V02: the big lens reads ${litPx} px lit`);
+      // and the unit is no narrower head on than the B16 unit (0.351 m across, the window's own vertices): hull-802-doncaster-2024's near unit, about 205 px across at about 375 px
+      // to the metre and well off the axis, is wider than that, not narrower (Lumo's is held in train-lner.test.ts)
+      if (cab.kind === 'hull5') {
+        const across = Math.max(...pts.map((v) => Math.abs(v.x))) - Math.min(...pts.map((v) => Math.abs(v.x)));
+        assert.ok(across >= 0.351, `${here}: the unit is ${across.toFixed(3)} m across head on`);
+      }
+      const top = new Map<number, number>();
+      for (const [i, d] of depth) if (d.mine) top.set(i % 1600, Math.min(top.get(i % 1600) ?? Infinity, Math.floor(i / 1600)));
+      const cols = [...top.entries()].sort((p, q) => p[0] - q[0]);
+      assert.ok(cols.length > 40, `${here} V02: the housing is ${cols.length} px wide`);
+      const peak = cols.reduce((k, c, i) => (c[1] < cols[k]![1] ? i : k), 0);
+      for (let i = 0; i + 1 < cols.length; i++) {
+        const rise = i < peak ? cols[i + 1]![1] - cols[i]![1] : cols[i]![1] - cols[i + 1]![1];
+        assert.ok(rise <= 1, `${here} V02: the housing's top edge turns back by ${rise} px at x ${cols[i]![0]}`);
+      }
+      const upper: [number, number][] = [];
+      for (const c of cols) {
+        while (upper.length >= 2) {
+          const a = upper[upper.length - 2]!;
+          const b = upper[upper.length - 1]!;
+          if ((b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]) <= 0) upper.pop();
+          else break;
+        }
+        upper.push(c);
+      }
+      // (along the top proper: where the edge climbs or falls under 2 px a column, not down the unit's steep sides, whose last column catches the corner of its outboard edge)
+      let deficit = 0;
+      for (const [i, c] of cols.entries()) {
+        if (i === 0 || i + 1 === cols.length || Math.abs(cols[i + 1]![1] - cols[i - 1]![1]) > 4) continue;
+        const k = upper.findIndex((u) => u[0] >= c[0]);
+        const a = upper[Math.max(0, k - 1)]!;
+        const b = upper[k]!;
+        const hullY = b[0] === a[0] ? b[1] : a[1] + ((b[1] - a[1]) * (c[0] - a[0])) / (b[0] - a[0]);
+        deficit = Math.max(deficit, c[1] - hullY);
+      }
+      assert.ok(deficit <= 1.5, `${here} V02: the housing's top edge stands ${deficit.toFixed(1)} px under its convex hull (${cols.map((c) => c.join(':')).join(' ')})`);
     }
   }
 });

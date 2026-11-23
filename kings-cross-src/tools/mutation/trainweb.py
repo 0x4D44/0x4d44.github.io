@@ -25,7 +25,7 @@ FACE = "web/src/train-face.ts"
 GEOM = "web/src/train-geom.ts"
 ILAY = "web/src/train-interior-layout.ts"
 IKIT = "web/src/train-interior-kit.ts"
-TESTS = ["web/tests/train.test.ts", "web/tests/train-detail.test.ts", "web/tests/train-livery.test.ts", "web/tests/train-lamps.test.ts", "web/tests/train-rake.test.ts", "web/tests/train-azuma-front.test.ts", "web/tests/train-bogie-view.test.ts", "web/tests/train-bogie-trace.test.ts", "web/tests/train-bogie-trace-electrostar.test.ts", "web/tests/train-bogie-trace-siemens.test.ts", "web/tests/train-azuma-plan.test.ts", "web/tests/train-roof.test.ts", "web/tests/train-roof-ends.test.ts", "web/tests/train-at300-shell.test.ts", "web/tests/train-lner.test.ts", "web/tests/train-lamp-halo.test.ts", "tools/tests/axis03-evidence.test.ts"]
+TESTS = ["web/tests/train.test.ts", "web/tests/train-detail.test.ts", "web/tests/train-livery.test.ts", "web/tests/train-lamps.test.ts", "web/tests/train-rake.test.ts", "web/tests/train-azuma-front.test.ts", "web/tests/train-bogie-view.test.ts", "web/tests/train-bogie-trace.test.ts", "web/tests/train-bogie-trace-electrostar.test.ts", "web/tests/train-bogie-trace-siemens.test.ts", "web/tests/train-azuma-plan.test.ts", "web/tests/train-roof.test.ts", "web/tests/train-roof-ends.test.ts", "web/tests/train-at300-shell.test.ts", "web/tests/train-lner.test.ts", "web/tests/train-lamp-halo.test.ts", "tools/tests/axis03-evidence.test.ts", "web/tests/train-interior.test.ts"]
 # the lines of the bogie's drive and brake units in train-parts.ts that the round-5 mutants below search for, each mutant changing one detail of one of them
 GEAR_CASE = "D.box(x0, x1, y - MOTOR_RADIUS + 0.04, y + MOTOR_RADIUS, Math.min(az - 0.17, az + dz - 0.17), Math.max(az + 0.17, az + dz + 0.17), pal.gear);"
 MOTOR_RINGS = "[[-stand, 0, 8], [-stand, boss, 8], [0, boss, 8], [0, MOTOR_RADIUS], [L, MOTOR_RADIUS], [L, boss, 8], [L + stand, boss, 8], [L + stand, 0, 8]],"
@@ -200,7 +200,7 @@ M = [
     ("bogie maker: the style not passed to the bogie", ", style: BOGIE_STYLE[spec.family] });", " });"),
     ("crew door counted among the passenger doors", "      marker.name = crew ? 'crew-door' : 'door';", "      marker.name = 'door';"),
     ("cluster: the Azuma's window as short as the face is deep", "sFront0: 0.45, sBack0: 0.95, sFront1: 0.85, sBack1: 1.6, colour: POD }", "sFront0: 0.45, sBack0: 0.95, sFront1: 0.85, sBack1: 0.6, colour: POD }"),
-    ("cluster: the Hull Trains cab has the Azuma's own", "cabSideSurround: CAB_SWOOSH, cluster: { ...AT300_CLUSTER, window: { ...AT300_CLUSTER.window, colour: HULL_POD, teardrop: AT300_TEARDROP }, rim: { colour: 0x4a5160, width: 0.025 }, chord: 0.035 } },", "cabSideSurround: CAB_SWOOSH },"),
+    ("cluster: the Hull Trains cab has the Azuma's own", "cabSideSurround: CAB_SWOOSH, cluster: { ...AT300_CLUSTER, window: { ...AT300_CLUSTER.window, colour: HULL_POD, teardrop: AT300_TEARDROP }, head: AT300_DROP_HEAD, array: AT300_LENS, rim: { colour: 0x4a5160, width: 0.025 }, chord: 0.042, join: 0.019 } },", "cabSideSurround: CAB_SWOOSH },"),
     ("cluster: the Hull Trains cab's window in the Azuma's black", "window: { ...AT300_CLUSTER.window, colour: HULL_POD, teardrop: AT300_TEARDROP }", "window: { ...AT300_CLUSTER.window, colour: POD, teardrop: AT300_TEARDROP }"),
     ("cluster: the window starts at the face's plane", "window: { y0: 1.53, y1: 2.1, sFront0: 0.45,", "window: { y0: 1.53, y1: 2.1, sFront0: 0,"),
     ("cluster: the Lumo cab with the Azuma's pale rim", "lumo5: { cabSideSurround: CAB_SWOOSH, cluster: { ...AT300_CLUSTER, rim: undefined } },", "lumo5: { cabSideSurround: CAB_SWOOSH, cluster: { ...AT300_CLUSTER } },"),
@@ -227,8 +227,8 @@ M = [
     ("cluster: the headlamp upright (the slant lost)", "const slant: [number, number] = [(win.sFront1 + win.sBack1 - win.sFront0 - win.sBack0) / 2, win.y1 - win.y0];", "const slant: [number, number] = [0, win.y1 - win.y0];"),
     ("cluster: the headlamp leaning the wrong way", "const slant: [number, number] = [(win.sFront1 + win.sBack1 - win.sFront0 - win.sBack0) / 2, win.y1 - win.y0];", "const slant: [number, number] = [-(win.sFront1 + win.sBack1 - win.sFront0 - win.sBack0) / 2, win.y1 - win.y0];"),
     ("cluster: the headlight marker ten centimetres high", "m.position.set(head.c[0], head.c[1], Z(head.c[2]));", "m.position.set(head.c[0], head.c[1] + 0.1, Z(head.c[2]));"),
-    ("cluster: no marker array disc", "detail.fan(ellipse(base, 0, 0, cluster.array.r, cluster.array.r, 14).map(world), wn(base.n), col(CLUSTER_ARRAY));", "void base;"),
-    ("cluster: the array disc a third too big", "detail.fan(ellipse(base, 0, 0, cluster.array.r, cluster.array.r, 14).map(world), wn(base.n), col(CLUSTER_ARRAY));", "detail.fan(ellipse(base, 0, 0, cluster.array.r * 1.3, cluster.array.r * 1.3, 14).map(world), wn(base.n), col(CLUSTER_ARRAY));"),
+    ("cluster: no marker array disc", "detail.fan(ellipse(base, 0, 0, cluster.array.r, cluster.array.r, cluster.array.sides ?? 14).map(world), wn(base.n), col(CLUSTER_ARRAY));", "void base;"),
+    ("cluster: the array disc a third too big", "detail.fan(ellipse(base, 0, 0, cluster.array.r, cluster.array.r, cluster.array.sides ?? 14).map(world), wn(base.n), col(CLUSTER_ARRAY));", "detail.fan(ellipse(base, 0, 0, cluster.array.r * 1.3, cluster.array.r * 1.3, cluster.array.sides ?? 14).map(world), wn(base.n), col(CLUSTER_ARRAY));"),
     ("cluster: the array's lenses lit as headlamps", "for (const [du, dv] of cells) lensFan('marker', ", "for (const [du, dv] of cells) lensFan('head', "),
     ("cluster: the array's lenses tail lamps (red at one end only, as round 4's)", "for (const [du, dv] of cells) lensFan('marker', ", "for (const [du, dv] of cells) lensFan('tail', "),
     ("lamps: a marker lamp is never lit white", "if (role === 'marker') return mode === 'off' ? { hex: LENS.tailOff, glow: 0 } : { hex: mode === 'head' ? LENS.markerOn : LENS.tailOn, glow: 2 };", "if (role === 'marker') return mode === 'off' ? { hex: LENS.tailOff, glow: 0 } : { hex: LENS.tailOn, glow: 2 };"),
@@ -239,15 +239,15 @@ M = [
     ("lamps: a marker lamp's dark state the headlamp's grey", "if (role === 'marker') return mode === 'off' ? { hex: LENS.tailOff, glow: 0 } :", "if (role === 'marker') return mode === 'off' ? { hex: LENS.headOff, glow: 0 } :"),
     ("lamps: the marker lamp's white the headlamp's", "markerOn: 0xe6edff }", "markerOn: 0xfff3c4 }"),
     ("lamps: the marker lamp's white pure white", "markerOn: 0xe6edff }", "markerOn: 0xffffff }"),
-    ("cluster: the array's middle lens only", "...Array.from({ length: 6 }, (_, k): [number, number] => [Math.cos((Math.PI * k) / 3) * cell * 1.9, Math.sin((Math.PI * k) / 3) * cell * 1.9])];", "...Array.from({ length: 0 }, (_, k): [number, number] => [Math.cos((Math.PI * k) / 3) * cell * 1.9, Math.sin((Math.PI * k) / 3) * cell * 1.9])];"),
-    ("cluster: the array's ring of five lenses", "...Array.from({ length: 6 }, (_, k): [number, number] => [Math.cos((Math.PI * k) / 3) * cell * 1.9, Math.sin((Math.PI * k) / 3) * cell * 1.9])];", "...Array.from({ length: 5 }, (_, k): [number, number] => [Math.cos((Math.PI * k) / 3) * cell * 1.9, Math.sin((Math.PI * k) / 3) * cell * 1.9])];"),
-    ("cluster: the array's ring of lenses too wide", "Math.cos((Math.PI * k) / 3) * cell * 1.9, Math.sin((Math.PI * k) / 3) * cell * 1.9]", "Math.cos((Math.PI * k) / 3) * cell * 2.4, Math.sin((Math.PI * k) / 3) * cell * 2.4]"),
-    ("cluster: the array's ring of lenses packed too tight", "Math.cos((Math.PI * k) / 3) * cell * 1.9, Math.sin((Math.PI * k) / 3) * cell * 1.9]", "Math.cos((Math.PI * k) / 3) * cell * 1.6, Math.sin((Math.PI * k) / 3) * cell * 1.6]"),
-    ("cluster: the array's ring squashed (one axis tight)", "Math.cos((Math.PI * k) / 3) * cell * 1.9, Math.sin((Math.PI * k) / 3) * cell * 1.9]", "Math.cos((Math.PI * k) / 3) * cell * 1.9, Math.sin((Math.PI * k) / 3) * cell * 1.3]"),
-    ("cluster: the array's lenses a third too big", "const cell = cluster.array.r * ARRAY_CELL;", "const cell = cluster.array.r * ARRAY_CELL * 1.3;"),
+    ("cluster: the array's middle lens only", "...Array.from({ length: 6 }, (_, k): [number, number] => [Math.cos((Math.PI * k) / 3) * cell * step, Math.sin((Math.PI * k) / 3) * cell * step])];", "...Array.from({ length: 0 }, (_, k): [number, number] => [Math.cos((Math.PI * k) / 3) * cell * step, Math.sin((Math.PI * k) / 3) * cell * step])];"),
+    ("cluster: the array's ring of five lenses", "...Array.from({ length: 6 }, (_, k): [number, number] => [Math.cos((Math.PI * k) / 3) * cell * step, Math.sin((Math.PI * k) / 3) * cell * step])];", "...Array.from({ length: 5 }, (_, k): [number, number] => [Math.cos((Math.PI * k) / 3) * cell * step, Math.sin((Math.PI * k) / 3) * cell * step])];"),
+    ("cluster: the array's ring of lenses too wide", "Math.cos((Math.PI * k) / 3) * cell * step, Math.sin((Math.PI * k) / 3) * cell * step]", "Math.cos((Math.PI * k) / 3) * cell * step * 1.26, Math.sin((Math.PI * k) / 3) * cell * step * 1.26]"),
+    ("cluster: the array's ring of lenses packed too tight", "Math.cos((Math.PI * k) / 3) * cell * step, Math.sin((Math.PI * k) / 3) * cell * step]", "Math.cos((Math.PI * k) / 3) * cell * step * 0.84, Math.sin((Math.PI * k) / 3) * cell * step * 0.84]"),
+    ("cluster: the array's ring squashed (one axis tight)", "Math.cos((Math.PI * k) / 3) * cell * step, Math.sin((Math.PI * k) / 3) * cell * step]", "Math.cos((Math.PI * k) / 3) * cell * step, Math.sin((Math.PI * k) / 3) * cell * step * 0.68]"),
+    ("cluster: the array's lenses a third too big", "const cell = rings === 1 ? cluster.array.r * ARRAY_CELL :", "const cell = rings === 1 ? cluster.array.r * ARRAY_CELL * 1.3 :"),
     ("cluster: the array's lenses squares, not hexagons", "ellipse(top, du, dv, cell, cell, 6, Math.PI / 6)", "ellipse(top, du, dv, cell, cell, 4, Math.PI / 6)"),
     ("cluster: the array's hexagons turned a sixth of a turn (corners toward each other)", "ellipse(top, du, dv, cell, cell, 6, Math.PI / 6)", "ellipse(top, du, dv, cell, cell, 6, 0)"),
-    ("cluster: the array's lenses level with its disc", "const top = plane(side, cluster.array.s, cluster.array.y, lifts.lens);", "const top = plane(side, cluster.array.s, cluster.array.y, lifts.array);"),
+    ("cluster: the array's lenses level with its disc", "const top = turned(plane(side, cluster.array.s, cluster.array.y, lifts.lens + (cluster.array.raise ?? 0)), cluster.array.tilt ?? 0);", "const top = turned(plane(side, cluster.array.s, cluster.array.y, lifts.array + (cluster.array.raise ?? 0)), cluster.array.tilt ?? 0);"),
     ('wipers: the AT300 without them', "    wipers: true,\n    warning: null,\n    coupler: { style: 'plain', covered: true },", "    wipers: false,\n    warning: null,\n    coupler: { style: 'plain', covered: true },"),
     ("cab glass in the body material", "const m = new THREE.Mesh(glass.build(), glassMaterial());", "const m = new THREE.Mesh(glass.build(), plain());"),
     # --- bogies ------------------------------------------------------------------------------------------------
@@ -986,7 +986,7 @@ M = [
     ("B14c: the lenses re-aimed by the cheek (the far-side halos show from the halo-close eye)", "const n = flankNormal(side, s, y, true);", "const n = flankNormal(side, s, y);"),
     ("B14c: the cheek past the body's side", "const CHEEK_CLEAR = 0.995;", "const CHEEK_CLEAR = 1.2;", N),
     # (CHANGED round B16: the Hull Trains housing is a teardrop, its lines across its axis `chord` apart, 3.5 cm (5 cm without its own); the mutant widens them to 20 cm)
-    ("B14c: the Hull Trains housing's columns crowding again (its grid dips into the cheek)", "colour: 0x4a5160, width: 0.025 }, chord: 0.035 } },", "colour: 0x4a5160, width: 0.025 }, chord: 0.2 } },"),
+    ("B14c: the Hull Trains housing's columns crowding again (its grid dips into the cheek)", "colour: 0x4a5160, width: 0.025 }, chord: 0.042, join: 0.019 } },", "colour: 0x4a5160, width: 0.025 }, chord: 0.2, join: 0.019 } },"),
     ("B14c: the Lumo housing's columns crowding again (its grid dips into the cheek)", "foot: -0.001 }, chord: 0.03 } },", "foot: -0.001 } } },"),
     # --- round B15: the LNER yellow's edge smooth at the cover's top corners (the band's normals off the side's width field), the cheek blending back in without a crease
     ("B15: the band's normals from the height field alone again (its rows sink under the red: a nick and a dent at the cover's corners)", "        if (spec.nose.rake) return fromHeight;", "        return fromHeight;"),
@@ -1528,13 +1528,33 @@ M = [
     ("cluster: the housing's edge left standing its lift (round B3's proud plate)", "return Math.min(lerp(foot, lift, clamp01(side / bevel)), lerp(topFoot(grow, lift, foot), lift, clamp01((top - Math.min(y, top)) / topBevel)));", "return lift;"),
     ("cluster: the AT300's edge back to the shared 6 cm bevel (round B4's white fringe, round B5's jagged Hull rim)", "  edge: { bevel: 0.02, top: 0.008, foot: -0.003 },", ""),
     ("cluster: the edge without its own rows and columns", "        if (cluster.edge && !drop) ys.splice(0, ys.length, ...withLines(ys, [yLo + bevel, yHi - topBevel]));", ""),
+    # round B17: the Hull Trains and Lumo units' full lobe, big round lens and uncut outline (train-at300-shell.test.ts, round B17; train-detail.test.ts)
+    ("B17: the Hull Trains lobe the B16 size again (0.19 m)", "export const AT300_TEARDROP: Teardrop = [\n  { s: 0.69, y: 1.48, r: 0.15 },", "export const AT300_TEARDROP: Teardrop = [\n  { s: 0.6, y: 1.615, r: 0.095 },"),
+    ("B17: the Lumo lobe the B16 size again (0.19 m)", "export const LUMO_TEARDROP: Teardrop = [\n  { s: 0.68, y: 1.47, r: 0.15 },", "export const LUMO_TEARDROP: Teardrop = [\n  { s: 0.6, y: 1.615, r: 0.095 },"),
+    ("B17: the Hull Trains outline cut along the stop (its top 3 cm higher)", "  { s: 1.2, y: 1.872, r: 0.11 },\n  { s: 1.5, y: 2.02, r: 0.1 },\n];\n// CHANGED (round B17", "  { s: 1.2, y: 1.902, r: 0.11 },\n  { s: 1.5, y: 2.02, r: 0.1 },\n];\n// CHANGED (round B17"),
+    ("B17: the Hull Trains tip a point again (r 0.05)", "  { s: 1.5, y: 2.02, r: 0.1 },\n];\n// CHANGED (round B17", "  { s: 1.55, y: 2.03, r: 0.05 },\n];\n// CHANGED (round B17"),
+    ("B17: the big lens the AT300's 0.15 m disc", "array: AT300_LENS, rim: { colour: 0x4a5160", "array: { ...AT300_LENS, r: 0.075 }, rim: { colour: 0x4a5160"),
+    ("B17: the big lens a 14-sided disc (its edge faceted)", "r: 0.085, rings: 2, sides: 28, raise: 0.009, tilt: 0.12 }", "r: 0.085, rings: 2, sides: 14, raise: 0.009, tilt: 0.12 }"),
+    ("B17: the big lens with one ring of cells", "r: 0.085, rings: 2, sides: 28, raise: 0.009, tilt: 0.12 }", "r: 0.085, rings: 1, sides: 28, raise: 0.009, tilt: 0.12 }"),
+    ("B17: the big lens sunk 2 cm (its edge in the window; round B17b: turned toward the track, it clears the window unraised and sunk 6 mm, measured)", "r: 0.085, rings: 2, sides: 28, raise: 0.009, tilt: 0.12 }", "r: 0.085, rings: 2, sides: 28, raise: -0.02, tilt: 0.12 }"),
+    ("B17: the big lens up against the headlamp (no glass between)", "export const AT300_LENS: ClusterSpec['array'] = { s: 0.64, y: 1.54,", "export const AT300_LENS: ClusterSpec['array'] = { s: 0.8, y: 1.62,"),
+    ("B17: the big lens's second ring of cells dropped", "if (Math.max(Math.abs(q), Math.abs(r), Math.abs(q + r)) > 1) cells.push(", "if (Math.max(Math.abs(q), Math.abs(r), Math.abs(q + r)) > 9) cells.push("),
+    ("B17: the big lens's cells 2.2 cells apart (gaps between them)", "const step = rings === 1 ? 1.9 : 2;", "const step = rings === 1 ? 1.9 : 2.2;"),
+    ("B17: the Hull Trains grid's lines added 8 mm apart again (its cab car over the 40k budget)", "chord: 0.042, join: 0.019 } },", "chord: 0.042, join: 0.005 } },"),
+    # round B17, second pass: the big lens turned toward the track, Hull's front-top circle (its width head on), the headlamp's strip inside the glass
+    ("B17b: the big lens in the flank's plane again (nearly edge on head on)", "rings: 2, sides: 28, raise: 0.009, tilt: 0.12 }", "rings: 2, sides: 28, raise: 0.009, tilt: 0 }"),
+    ("B17b: the lens's turn toward the track ignored", "return { c: f.c, d: rot(f.d), e: rot(f.e), n: rot(f.n) };", "return f;"),
+    ("B17b: the Hull Trains front-top circle dropped (0.26 m across head on)", "  { s: 0.585, y: 1.5335, r: 0.133 },\n", ""),
+    ("B17b: the headlamp's strip 3.5 cm higher (its top lens outside the glass)", "s: 0.94, y: 1.755 };", "s: 0.94, y: 1.79 };"),
+    ("B17: Lumo without its front-top circle (0.31 m across head on)", "  { s: 0.68, y: 1.47, r: 0.15 },\n  { s: 0.6, y: 1.605, r: 0.095 },\n", "  { s: 0.68, y: 1.47, r: 0.15 },\n"),
+    ("B17: a cheek's own join ignored (8 mm for every kind)", "> (cluster.join ?? 0.008)) as.splice", "> 0.008) as.splice"),
     # round B16: the Hull Trains and Lumo housings are swept teardrops (AT300_TEARDROP), laid on a grid across their axis
-    ("B16: the Lumo housing a parallelogram again (the B15 box)", "window: { ...AT300_CLUSTER.window, teardrop: AT300_TEARDROP }, rim: undefined,", "window: { ...AT300_CLUSTER.window }, rim: undefined,"),
+    ("B16: the Lumo housing a parallelogram again (the B15 box)", "window: { ...AT300_CLUSTER.window, teardrop: LUMO_TEARDROP },", "window: { ...AT300_CLUSTER.window },"),
     ("B16: the Hull Trains housing a parallelogram again (the B15 box)", "colour: HULL_POD, teardrop: AT300_TEARDROP }", "colour: HULL_POD }"),
     ("B16: the teardrop's circles drawn as squares (corners)", "const TEARDROP_SIDES = 96;", "const TEARDROP_SIDES = 4;"),
-    ("B16: the teardrop's foot a flat edge, not a round lobe", "  { s: 0.6, y: 1.615, r: 0.095 },\n", "  { s: 0.6, y: 1.615, r: 0.095 },\n  { s: 0.55, y: 1.52, r: 0 },\n  { s: 1.0, y: 1.52, r: 0 },\n"),
+    ("B16: the teardrop's foot a flat edge, not a round lobe", "export const AT300_TEARDROP: Teardrop = [\n  { s: 0.69, y: 1.48, r: 0.15 },\n", "export const AT300_TEARDROP: Teardrop = [\n  { s: 0.69, y: 1.48, r: 0.15 },\n  { s: 0.6, y: 1.3, r: 0 },\n  { s: 1.0, y: 1.3, r: 0 },\n"),
     ("B16: the teardrop's grid not refined where the shoulder rolls over (its chords dip into it)", "Math.hypot(...sub(onFlank(q0), onFlank(q1))) > 0.025;", "Math.hypot(...sub(onFlank(q0), onFlank(q1))) > 1;"),
-    ("B16: the teardrop's lines not added round the lobe and the tip", "Math.max(Math.abs(p0[0] - p1[0]), Math.abs(p0[1] - p1[1])) > 0.008) as.splice", "Math.max(Math.abs(p0[0] - p1[0]), Math.abs(p0[1] - p1[1])) > 1) as.splice"),
+    ("B16: the teardrop's lines not added round the lobe and the tip", "Math.max(Math.abs(p0[0] - p1[0]), Math.abs(p0[1] - p1[1])) > (cluster.join ?? 0.008)) as.splice", "Math.max(Math.abs(p0[0] - p1[0]), Math.abs(p0[1] - p1[1])) > 1) as.splice"),
     # --- round B5: the housing's rows close enough that its chords follow the shoulder; Lumo's rimless window its own gentler edge ----------------
     ("cluster: the housing's rows 72 mm apart again (round B5's jagged outline)", "export const CLUSTER_ROW = 0.015;", "export const CLUSTER_ROW = 0.072;"),
     ("cluster: Lumo's window on the shared 6 cm bevel", "rim: undefined, edge: { bevel: 0.045, top: 0.02, foot: -0.001 }, chord", "rim: undefined, chord"),
