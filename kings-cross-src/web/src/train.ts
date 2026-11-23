@@ -34,7 +34,7 @@ import { atlasRect, BAND_Y, decalMaterial, TEX_SPAN, TEX_Y0, TEX_Y1, texU, textE
 import type { DecalItem } from './livery.ts';
 import { HULL_BEAK, liveryFor, LNER_YELLOW, shellMaterialFor, sideColourAt } from './train-livery.ts';
 import type { TrainLivery } from './train-livery.ts';
-import { clamp01, clipConvex, col, glassMaterial, gridNormals, lerp, plain, roundedRect, Soup, sub, trainNight, unit } from './train-geom.ts';
+import { clamp01, clipConvex, col, glassMaterial, gridNormals, lerp, plain, roundedRect, smoothstep, Soup, sub, trainNight, unit } from './train-geom.ts';
 import type { V3 } from './train-geom.ts';
 import { ADELANTE_FACE, AMBER, boxOutline, DESIRO_700_FACE, DESIRO_717_FACE, ELECTROSTAR_FACE, PANE_SEAL, PANE_SKY_HI, PANE_SKY_MID, RECESS, RECESS_LIFT, WIPER, YELLOW } from './train-face.ts';
 import type { FaceShape, FaceSpec } from './train-face.ts';
@@ -846,7 +846,11 @@ const AT300: BodySpec = {
     // 0.26 m across in front-3m once B14 moved its inner edge out with the yellow (0.32 before; the photograph about 0.40). The section's outer part (from a quarter of the ring's
     // half-width out, all of it past 1.2) stands up to 0.09 of its half-width further out, full 1.2 to 1.7 m back and 1.85 to 2.0 m up, easing to nothing at the tip, 3.4 m back,
     // 0.9 m up and 3.0 m up: the ramps long, so no ring and no row of the lamp housing's grid turns sharply over it. The flank's stop is measured without it (see flankTop).
-    cheek: { by: 0.09, s: [0.0, 1.2, 1.7, 3.4], y: [0.9, 1.85, 2.0, 3.0], u: [0.25, 1.2] },
+    // CHANGED (round B15; its foot was 0.9 m up): the fill rises from 0.4 m up. Over 0.9 to 1.85 m the section's few points (1.28, 1.70 and 1.84 m up, 1.8 m back) sampled the
+    // rise as a sharp lower flank, and with the points climbing about 6 cm a ring there, the loft's normals tipped back (to 0.046 of the way back, from 0.011 without the cheek):
+    // a faint crease across the white in the 3/4 views. Rising from 0.4 m the flank is gentle enough that the shading's dips there are no deeper than without the cheek
+    // (train-at300-shell.test.ts, round B15). At the lamps (1.85 to 2.0 m up) it is full, as it was.
+    cheek: { by: 0.09, s: [0.0, 1.2, 1.7, 3.4], y: [0.4, 1.85, 2.0, 3.0], u: [0.25, 1.2] },
   },
   glass: {
     // the glass is about half the cab's width and nearly as wide at its top as at its foot (lner-800-113-newcastle-2025: 1.2 m wide, 1.2 m high on the slope).
@@ -1921,6 +1925,12 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
       const hs = 0.04;
       const heightAt = (x: number, s: number): number => yAtX(glassHalf(Math.max(0, s)), Math.abs(x));
       const rakeFoot = spec.nose.rake?.from ?? 0;
+      // CHANGED (round B15): where the section stands near upright (its side, under the shoulder) the height field is no use: a step of `hx` out runs off the section's widest
+      // point (yAtX then gives the crown's height) and y(x) is steep. There the normal is the side's own, from its width field x(y, s), pointing out: (sign x, -x_y, -x_s), the
+      // same surface's normal, blended in as the slope |y_x| passes 0.8 to 1.25 (and all of it where a step runs off the section). The LNER's band reaches down the face's
+      // upright side to 1.1 m since round B14, and there its height-field normals pointed in and back: the rows lifted along them stepped the yellow's edge in and out by
+      // 3 px at the cover's top corners in front-3m, and the yellow there shaded darker (a dent), the B14 score. (A raked nose keeps the height field: its patches stand on the roof.)
+      const widthAt = (y: number, s: number): number => xAtY(glassHalf(Math.max(0, s)), y);
       const Ng = grid.map((row, i) => row.map((p, j): V3 => {
         const s = (along[i] as number[])[j] as number;
         const yx = (heightAt(p[0] + hx, s) - heightAt(p[0] - hx, s)) / (2 * hx);
@@ -1928,7 +1938,15 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
         const over = p[1] > rakeFoot ? p[1] - rakeFoot : 0;
         const k = over > 0 ? rakeLean(spec.nose, s) : 0;
         const kSlope = over > 0 ? rakeLeanSlope(spec.nose, s) : 0;
-        return unit([-yx * (1 + kSlope * over), 1 + kSlope * over + k * ys, -ys]);
+        const fromHeight = unit([-yx * (1 + kSlope * over), 1 + kSlope * over + k * ys, -ys]);
+        if (spec.nose.rake) return fromHeight;
+        const runsOff = Math.abs(p[0]) + hx > Math.max(...glassHalf(Math.max(0, s)).map((q) => q[0]));
+        const w = runsOff ? 1 : smoothstep((Math.abs(yx) - 0.8) / 0.45);
+        if (w <= 0) return fromHeight;
+        const xy = (widthAt(p[1] + hx, s) - widthAt(p[1] - hx, s)) / (2 * hx);
+        const xs = (widthAt(p[1], s + hs) - widthAt(p[1], s - hs)) / (2 * hs);
+        const fromWidth = unit([Math.sign(p[0]) || 1, -xy, -xs]);
+        return unit([lerp(fromHeight[0], fromWidth[0], w), lerp(fromHeight[1], fromWidth[1], w), lerp(fromHeight[2], fromWidth[2], w)]);
       }));
       const liftOf = (i: number): number => (typeof lift === 'number' ? lift : lift(i / rows));
       const lifted = grid.map((row, i) => row.map((p, j): V3 => [p[0] + (Ng[i] as V3[])[j]![0] * liftOf(i), p[1] + (Ng[i] as V3[])[j]![1] * liftOf(i), p[2] + (Ng[i] as V3[])[j]![2] * liftOf(i)]));

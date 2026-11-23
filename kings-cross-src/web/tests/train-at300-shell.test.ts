@@ -8,9 +8,9 @@ import { trainLayout } from '../../core/train.ts';
 import type { TrainKind } from '../../core/train.ts';
 import { bodySpec, buildTrain, carSection, CLUSTER_ARRAY, CLUSTER_EDGE, CLUSTER_LIFT, CLUSTER_ROW, faceSetback, frontOf, LENS } from '../src/train.ts';
 import { LIVERIES } from '../src/livery.ts';
-import { col } from '../src/train-geom.ts';
+import { col, gridNormals } from '../src/train-geom.ts';
 import { HULL_BEAK, LNER_YELLOW } from '../src/train-livery.ts';
-import { eggSection, halfAt, normalised, ringAt, ringStations, xAtY } from '../src/train-nose.ts';
+import { cheekWidth, eggSection, halfAt, normalised, ringAt, ringStations, xAtY } from '../src/train-nose.ts';
 
 const spec = bodySpec('at300');
 const sec = carSection(spec);
@@ -330,7 +330,7 @@ test('the AT300 lamp housing\'s outline is the one drawn: inside it the layer th
 });
 
 /** The four AT300 kinds' cab cars, each with its geometry in the nose's frame (x across, y up, s back from the tip): `at` maps a vertex of a mesh of that car to it. */
-function at300Cabs(): { here: string; kind: TrainKind; glass: THREE.Mesh; detail: THREE.Mesh; at: (p: THREE.BufferAttribute, k: number) => THREE.Vector3 }[] {
+function at300Cabs(): { here: string; kind: TrainKind; glass: THREE.Mesh; detail: THREE.Mesh; at: (p: THREE.BufferAttribute, k: number) => THREE.Vector3; back: 1 | -1 }[] {
   const tip = faceSetback('at300');
   return (['lner5', 'lner9', 'hull5', 'lumo5'] as const).flatMap((kind) => {
     const g = buildTrain(kind);
@@ -343,6 +343,8 @@ function at300Cabs(): { here: string; kind: TrainKind; glass: THREE.Mesh; detail
         glass: group.getObjectByName('cab-glass') as THREE.Mesh,
         detail: group.getObjectByName('body-detail') as THREE.Mesh,
         at: (p: THREE.BufferAttribute, k: number) => new THREE.Vector3(p.getX(k), p.getY(k), (car.cab === 'front' ? p.getZ(k) - face : face - p.getZ(k)) - tip),
+        // (the sign of world z pointing back from the face, into the car)
+        back: car.cab === 'front' ? 1 : -1,
       };
     });
   });
@@ -1079,5 +1081,122 @@ test('from the long-lens T01 eye (13 degrees off the axis) the LNER yellow keeps
     assert.ok(lean >= 21 && lean <= 27, `${cab.here}: from T01 the lamp unit's back edge leans ${lean.toFixed(1)} degrees from upright`);
     const foot = spanAt(glass, g0 + 0.1 * (g1 - g0))!;
     assert.ok(foot[1] - foot[0] < 46, `${cab.here}: from T01 the lamp unit's foot is ${(foot[1] - foot[0]).toFixed(1)} px across`);
+  }
+});
+
+test('head on from front-3m, the LNER yellow\'s edge runs smoothly past the cover\'s top corners, with no step in or out, on both sides at both ends (round B15)', () => {
+  // The B14 score (front-3m, nose-34, rear-nose-34): where the yellow meets the red at the coupler cover's top corners its edge stepped in and out by 4-5 px, a yellow tooth into the red
+  // in the 3/4 views. The band over the nose reaches down the face's upright side to 1.1 m since round B14 (LNER_MASK), and there its rows were lifted off the fillet along normals
+  // taken from the nose's height field, which runs off the section's widest point there: they pointed in and back, so the rows sank under the red. Drawn from the V02 eye (3 m ahead,
+  // 1.7 m up, 50 degrees over 1000 px), magnified 4 times about each corner (0.6 m out, 1.27 m up), each picture row's outermost yellow from 1.4 m down to 1.14 m (under that the
+  // cover's seam crosses the edge), sampled every 2 px of the V02 picture: going down, the edge never moves out by more than half a pixel and never bends by more than a pixel
+  // from one sample to the next (B14: out 0.25 and 5.25 px, bends 1.5 and 10.5 px; built 0 and 0.5).
+  const W = 1600;
+  const H = 1000;
+  const zoom = 4;
+  const f = (500 / Math.tan((25 * Math.PI) / 180)) * zoom;
+  for (const kind of ['lner5', 'lner9'] as const) {
+    const g = buildTrain(kind);
+    g.updateMatrixWorld(true);
+    for (const car of trainLayout(kind).cars.filter((c) => c.cab)) {
+      const face = car.cab === 'front' ? car.start : car.end;
+      const ahead = car.cab === 'front' ? -1 : 1;
+      for (const side of [-1, 1]) {
+        const here = `${kind} car ${car.index}, the picture's ${side > 0 ? 'right' : 'left'}`;
+        const [cx, cy] = [side * 0.6, 1.27];
+        const { near } = drawCab(g.getObjectByName(`car-${car.index}`)!, [col(LNER_YELLOW)], (q) => {
+          const d = (q.z - (face + 3 * ahead)) * -ahead;
+          return d < 0.05 ? null : [W / 2 + f * ((q.x * -ahead) / d - cx / 3), H / 2 - f * ((q.y - 1.7) / d - (cy - 1.7) / 3), d];
+        });
+        // (the height a picture row looks at, on the face's plane 3 m off)
+        const heightOf = (row: number): number => 1.7 + 3 * ((H / 2 - row) / f + (cy - 1.7) / 3);
+        const edges: number[] = [];
+        for (let row = 0; row < H; row += 2 * zoom) {
+          const y = heightOf(row);
+          if (y > 1.4 || y < 1.14) continue;
+          // how far in from the picture's outer side the first yellow pixel is, in V02 pixels
+          let e = -1;
+          for (let k = 0; k < W && e < 0; k++) if (near[row * W + (side > 0 ? W - 1 - k : k)] === 0) e = k / zoom;
+          assert.ok(e >= 0, `${here}: no yellow ${y.toFixed(3)} m up`);
+          edges.push(e);
+        }
+        assert.ok(edges.length >= 40, `${here}: only ${edges.length} rows of the edge`);
+        for (let i = 1; i < edges.length; i++) {
+          assert.ok(edges[i - 1]! - edges[i]! <= 0.5, `${here}: sample ${i}, the yellow's edge steps ${(edges[i - 1]! - edges[i]!).toFixed(2)} px out going down`);
+          if (i > 1) {
+            const bend = edges[i]! - 2 * edges[i - 1]! + edges[i - 2]!;
+            assert.ok(Math.abs(bend) <= 1, `${here}: sample ${i}, the yellow's edge bends by ${bend.toFixed(2)} px`);
+          }
+        }
+      }
+    }
+  }
+});
+
+test('the LNER band\'s shading normals over the cover\'s top corners face out of the nose as its surface does: no dent in the yellow, at both ends (round B15)', () => {
+  // The B14 score: a faint shading dent in the yellow just over the cover's outer corner (front-3m, nose-34). The band's normals there came from the nose's height field y(x), which
+  // runs off the section's widest point on its upright side (a step out of it reads the crown's height): up to 111 degrees off the surface, pointing in. Each band vertex off the
+  // face (2 mm to 0.3 m back) more than 0.45 m out and 1.05 to 1.45 m up, its normal across the section against the section's own outward normal at the nearest point of the ring's
+  // outline there: within 25 degrees (built: 11 at worst); and as the band lies on the fillet, which only widens going back, no normal faces back into the car (with the side's
+  // normals only where a step runs off the section, not blended in as it steepens: 0.07 of a unit back; built: none).
+  const rgb = col(LNER_YELLOW);
+  for (const cab of at300Cabs().filter((c) => c.kind === 'lner5' || c.kind === 'lner9')) {
+    const p = cab.detail.geometry.getAttribute('position') as THREE.BufferAttribute;
+    const c = cab.detail.geometry.getAttribute('color');
+    const n = cab.detail.geometry.getAttribute('normal');
+    let seen = 0;
+    for (let k = 0; k < p.count; k++) {
+      if (Math.abs(c.getX(k) - rgb.r) > 1e-5 || Math.abs(c.getY(k) - rgb.g) > 1e-5 || Math.abs(c.getZ(k) - rgb.b) > 1e-5) continue;
+      const v = cab.at(p, k);
+      if (Math.abs(v.x) < 0.45 || v.y < 1.05 || v.y > 1.45 || v.z < 0.002 || v.z > 0.3) continue;
+      seen++;
+      const h = ringHalf(v.z);
+      let best = Infinity;
+      let out: [number, number] = [0, 0];
+      for (let i = 0; i + 1 < h.length; i++) {
+        const [ax, ay] = h[i]!;
+        const [bx, by] = h[i + 1]!;
+        const len = Math.hypot(bx - ax, by - ay);
+        const t = Math.max(0, Math.min(1, ((Math.abs(v.x) - ax) * (bx - ax) + (v.y - ay) * (by - ay)) / (len * len)));
+        const d = Math.hypot(ax + t * (bx - ax) - Math.abs(v.x), ay + t * (by - ay) - v.y);
+        if (d < best) [best, out] = [d, [(by - ay) / len, -(bx - ax) / len]];
+      }
+      const [nx, ny] = [Math.sign(v.x) * n.getX(k), n.getY(k)];
+      const off = (Math.acos(Math.max(-1, Math.min(1, (nx * out[0] + ny * out[1]) / Math.hypot(nx, ny)))) * 180) / Math.PI;
+      assert.ok(off <= 25, `${cab.here}: the band's normal at (${v.x.toFixed(3)}, ${v.y.toFixed(3)}), ${v.z.toFixed(3)} m back, is ${off.toFixed(1)} degrees off the nose's surface across its section`);
+      assert.ok(n.getZ(k) * cab.back <= 0.02, `${cab.here}: the band's normal at (${v.x.toFixed(3)}, ${v.y.toFixed(3)}), ${v.z.toFixed(3)} m back, faces ${(n.getZ(k) * cab.back).toFixed(3)} back into the car`);
+    }
+    assert.ok(seen >= 100, `${cab.here}: only ${seen} band vertices over the cover's corners`);
+  }
+});
+
+test('the AT300 nose\'s fuller cheek blends back into the body with its loft\'s normals turning smoothly: none faces back more than a little, and its filled width never narrows as the section widens (round B15)', () => {
+  // The B14 score: a faint dark crease across the grey band and the white on the nose's side where the fuller cheek blends back in (nose-34-left and rear-nose-34-left, about 1.43 m
+  // up, 1.45 m back), the shading dipping about 12 levels where it was smooth before. The cheek's fill faded with how far out the section stood faster than the section widened, so
+  // along the nose the outline came back in 13 mm and went out again, and the loft's normals there faced back. Over the side, 1.1 to 2.9 m up, from 0.9 m back to the nose's end,
+  // the loft's normals (as the body is drawn: gridNormals over the rings) face back by at most 0.04 of a unit (B14: 0.088; the nose without its cheek 0.011; built 0.032), and the
+  // filled width (cheekWidth) rises with the plain one for every fill the cheek uses (at least a quarter as fast), stays within the body's side, and keeps all its fill at the lamps.
+  const st = ringStations(spec.nose);
+  const P = st.map((s) => halfAt(sec, norm, egg, ringAt(spec.nose, s)).map(([x, y]): [number, number, number] => [x, y, s]));
+  const N = gridNormals(P, false, (i) => [0, 2, st[i]!]);
+  let worst = 0;
+  let at = '';
+  for (let i = 0; i < st.length; i++) {
+    for (let k = 1; k + 1 < (P[i] as [number, number, number][]).length; k++) {
+      const [x, y, s] = (P[i] as [number, number, number][])[k]!;
+      if (s < 0.9 || y < 1.1 || y > 2.9) continue;
+      const back = (N[i] as [number, number, number][])[k]![2];
+      if (back > worst) [worst, at] = [back, `(${x.toFixed(3)}, ${y.toFixed(3)}) ${s.toFixed(2)} m back`];
+    }
+  }
+  assert.ok(worst <= 0.04, `the nose's loft faces back by ${worst.toFixed(3)} at ${at}`);
+  const by = spec.nose.cheek!.by;
+  for (let f = 0; f <= by + 1e-9; f += by / 6) {
+    for (let a = 0.5; a < 1.05; a += 0.001) {
+      const slope = (cheekWidth(a + 1e-5, f) - cheekWidth(a - 1e-5, f)) / 2e-5;
+      assert.ok(slope >= 0.25, `fill ${f.toFixed(3)}: the filled width rises only ${slope.toFixed(3)} as fast as the plain at ${a.toFixed(3)}`);
+      assert.ok(cheekWidth(a, f) <= Math.max(a, 1) + 1e-9, `fill ${f.toFixed(3)}: the filled width ${cheekWidth(a, f).toFixed(4)} is past the body's side at ${a.toFixed(3)}`);
+      if (a <= 0.83) assert.ok(Math.abs(cheekWidth(a, f) - a * (1 + f)) < 1e-12, `fill ${f.toFixed(3)}: the lamps' section (${a.toFixed(3)}) loses some of its fill`);
+    }
   }
 });

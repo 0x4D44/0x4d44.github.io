@@ -70,9 +70,29 @@ export interface NoseCheek {
   u: readonly [number, number];
 }
 
-/** A nose's cheek fills out nothing where the section is already this fraction of the body's half-width or more, easing in over CHEEK_EASE below it (so it never reaches past the body's side). */
-const CHEEK_CLEAR = 0.97;
-const CHEEK_EASE = 0.12;
+/**
+ * A nose's cheek fills out nothing where the section is already this fraction of the body's half-width or more, and all of its fill from CHEEK_EASE below it in, blending
+ * between (so it never reaches past the body's side). CHANGED (round B15; was 0.97 and 0.12, the fill faded by a smootherstep of how far in the section stood): the fill faded
+ * faster than the section widened, so along the nose the filled outline stood out, came back in 13 mm and went out again (at 1.43 m up, 1.45 to 1.9 m back: the surface there
+ * faced backwards, a dark crease across the white in the 3/4 views, the B14 score). The filled width is now a monotone curve of the plain one (`cheekWidth`), never narrowing
+ * as the plain section widens: this wide a blend keeps it monotone for any fill up to 0.15, and the lamps' section (0.83 of the half-width or less) keeps all of it.
+ */
+const CHEEK_CLEAR = 0.995;
+const CHEEK_EASE = 0.165;
+
+/**
+ * The filled width, as a fraction of the body's half-width, of a section point `a` of the half-width out that the cheek fills out by the fraction `f`: `a (1 + f)` up to
+ * CHEEK_CLEAR - CHEEK_EASE, `a` from CHEEK_CLEAR out, and between them the cubic Hermite joining the two lines with their slopes (C1, and monotone in `a`: round B15).
+ */
+export function cheekWidth(a: number, f: number): number {
+  const a0 = CHEEK_CLEAR - CHEEK_EASE;
+  if (f <= 0 || a >= CHEEK_CLEAR) return a;
+  if (a <= a0) return a * (1 + f);
+  const t = (a - a0) / CHEEK_EASE;
+  const t2 = t * t;
+  const t3 = t2 * t;
+  return (2 * t3 - 3 * t2 + 1) * a0 * (1 + f) + (t3 - 2 * t2 + t) * CHEEK_EASE * (1 + f) + (-2 * t3 + 3 * t2) * CHEEK_CLEAR + (t3 - t2) * CHEEK_EASE;
+}
 
 /** 0 outside [a0, a3], 1 across [a1, a2], easing smoothly between. */
 function plateau(a: readonly [number, number, number, number], x: number): number {
@@ -217,9 +237,9 @@ export function halfAt(sec: Section, norm: readonly [number, number][], egg: rea
     const y = r.bottom + lerp(ve, vc, w) * (r.top - r.bottom);
     const u = lerp(ue, uc, w);
     const c = r.cheek;
-    // (and nothing where the section already stands near the body's own width, so the cheek never reaches past the body's side: CHEEK_CLEAR)
-    const fill = c ? c.by * plateau(c.y, y) * smootherstep((u - c.u[0]) / (c.u[1] - c.u[0])) * smootherstep((CHEEK_CLEAR - r.ws * u) / CHEEK_EASE) : 0;
-    return [r.ws * sec.width * u * (1 + fill), y];
+    // (and nothing where the section already stands near the body's own width, so the cheek never reaches past the body's side: CHEEK_CLEAR, cheekWidth)
+    const fill = c ? c.by * plateau(c.y, y) * smootherstep((u - c.u[0]) / (c.u[1] - c.u[0])) : 0;
+    return [c ? sec.width * cheekWidth(r.ws * u, fill) : r.ws * sec.width * u, y];
   });
 }
 

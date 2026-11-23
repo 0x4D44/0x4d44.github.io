@@ -312,7 +312,8 @@ test('nose: the AT300\'s front is blunt and round: a face about 1.15 m across an
     widest: 0.5,
     boxiness: 3.0,
     // RE-PINNED (round B14; was none): the cheeks fuller at the lamps (lner-800-113-newcastle-2025: the lamp unit's outer edge about 1.17 m out, the built surface about 1.0 m)
-    cheek: { by: 0.09, s: [0.0, 1.2, 1.7, 3.4], y: [0.9, 1.85, 2.0, 3.0], u: [0.25, 1.2] },
+    // RE-PINNED (round B15; its foot was 0.9 m up): the fill rises from 0.4 m, a gentler lower flank, so the loft's normals no longer tip back into a crease (train-at300-shell.test.ts, round B15)
+    cheek: { by: 0.09, s: [0.0, 1.2, 1.7, 3.4], y: [0.4, 1.85, 2.0, 3.0], u: [0.25, 1.2] },
   });
   assert.deepEqual(spec.glass.screen && { s0: spec.glass.screen.s0, s1: spec.glass.screen.s1 }, { s0: 1.0, s1: 2.6 }, 'the glass runs from 1.0 m back to 2.6 m');
   // CHANGED (round B6, 0.5 -> 0.68 at the foot, 0.52 -> 0.6 at the top): head on lner-800-113-newcastle-2025 shows the glass 0.58 of the body's width, the model's was 0.47 (train-at300-shell.test.ts, round B6)
