@@ -112,7 +112,9 @@ test('the LNER yellow is a trapezoid widening to the glass, about 1.8 m2 head on
     assert.ok(y.box.min.y < 0.75, `${kind}: the yellow comes down to ${y.box.min.y.toFixed(2)} m, the chin`);
     const sill = 2 * y.box.max.x;
     assert.ok(chin > 0.8 && chin < 1.0, `${kind}: ${chin.toFixed(2)} m across at the chin`);
-    assert.ok(sill > 1.3 && sill < 1.5, `${kind}: ${sill.toFixed(2)} m across at the glass`);
+    // RE-PINNED (round B7; was 1.3 to 1.5, the 1.35 m reading): the yellow's top is flush with the frame's foot in lner-800-113-newcastle-2025 and lner-801-214-2025 (the B6 score: the frame's
+    // corners stood 0.15 m past it), so it now flares out to the frame's edge, 1.58 m across; the same 0.1 m either side
+    assert.ok(sill > 1.48 && sill < 1.68, `${kind}: ${sill.toFixed(2)} m across at the glass`);
   }
   const hull = coloured('hull5', HULL_BEAK);
   const lner = coloured('lner5', LNER_YELLOW);
@@ -472,5 +474,107 @@ test('the widened AT300 windscreen lies on the nose: its frame runs at least 3 c
     };
     const clear = Math.min(...housing.flat().map((v) => Math.min(...frame.map((t) => Math.min(toSegment(v.x, v.z, t[0]!, t[1]!), toSegment(v.x, v.z, t[1]!, t[2]!), toSegment(v.x, v.z, t[2]!, t[0]!))))));
     assert.ok(clear >= 0.02, `${cab.here}: the lamp housings come within ${(clear * 1000).toFixed(0)} mm of the windscreen's frame, in plan`);
+  }
+});
+
+test('the LNER yellow\'s top meets the windscreen frame\'s foot: at the yellow\'s upper corner the frame reaches no further out than the yellow, and no yellow lies on the glass; the Hull Trains beak the same (round B7)', () => {
+  // The B6 score (lner5/lner9 front-3m, rear-3m, nose-34-right): the frame's lower corners stood about 25 px (0.15 m) past the yellow each side, black "ears" over the white, where
+  // lner-800-113-newcastle-2025 and lner-801-214-2025 show the yellow's top edge flush with the frame's foot. Built: within 1 cm (LNER_MASK). hull5's grey beak had the same overhang; B7's narrower glass foot leaves it flush too
+  // at its own 0.8 m (HULL_MASK, unchanged), so it is held the same way.
+  for (const cab of at300Cabs().filter((c) => c.kind !== 'lumo5')) {
+    const { glass, frame } = screenParts(cab);
+    const rgb = col(cab.kind === 'hull5' ? HULL_BEAK : LNER_YELLOW);
+    const c = cab.detail.geometry.getAttribute('color');
+    const mask = trianglesOf(cab.detail, cab.at, (ids) => ids.every((k) => Math.abs(c.getX(k) - rgb.r) < 1e-5 && Math.abs(c.getY(k) - rgb.g) < 1e-5 && Math.abs(c.getZ(k) - rgb.b) < 1e-5));
+    const pts = mask.flat();
+    const half = Math.max(...pts.map((v) => Math.abs(v.x)));
+    // the top of the mask's outer corner, head on: its highest point within 1 cm of its widest
+    const top = Math.max(...pts.filter((v) => Math.abs(v.x) > half - 0.01).map((v) => v.y));
+    const frameHalf = acrossAt(frame, top) / 2;
+    assert.ok(Math.abs(frameHalf - half) <= 0.02, `${cab.here}: at the mask's upper corner (${top.toFixed(3)} m up) the frame is ${frameHalf.toFixed(3)} m out and the mask ${half.toFixed(3)} m`);
+    const above = acrossAt(frame, top + 0.02) / 2;
+    assert.ok(above <= half + 0.03, `${cab.here}: 2 cm over the mask's corner the frame is ${above.toFixed(3)} m out, past the mask's ${half.toFixed(3)} m: a black ear`);
+    // and the mask does not climb onto the glass: no point of it lies over the glass's plan (x across, s back)
+    const onGlass = pts.filter((v) => glass.some(([a, b, d]) => {
+      const e = (p: THREE.Vector3, q: THREE.Vector3): number => (q.x - p.x) * (v.z - p.z) - (q.z - p.z) * (v.x - p.x);
+      const [e1, e2, e3] = [e(a!, b!), e(b!, d!), e(d!, a!)];
+      return (e1 > 1e-9 && e2 > 1e-9 && e3 > 1e-9) || (e1 < -1e-9 && e2 < -1e-9 && e3 < -1e-9);
+    }));
+    assert.equal(onGlass.length, 0, `${cab.here}: ${onGlass.length} points of the mask lie over the glass, e.g. ${onGlass[0]?.toArray().map((x) => x.toFixed(3))}`);
+  }
+});
+
+test('at 3/4 the AT300 windscreen keeps its frame and a body margin on the far side: over the glass\'s lower 40% the frame stands inside the nose\'s outline and the glass inside the frame, at both ends of all four kinds (round B7)', () => {
+  // The B6 score (nose-34-left/right, rear-nose-34-left/right, all four kinds): the glass's lower outer corner reached the outline, the frame and the body-coloured margin on that edge gone,
+  // where LUMO-06-803005-FPK and lner-801-214-2025 keep a thin body margin beyond the frame. The camera is the close-up pack's nose-34 (ASSUMED to stand for the scorer's): 6 m out and
+  // 6 m ahead of the tip, 2.5 m up, a 45 degree lens, looking at 1.9 m up 1.2 m back; distances on its screen in pixels of a 700 px frame. Built (lner5): the frame at least 1.0 px inside
+  // the outline over that part of the glass, the glass 1.4 px inside the frame; B6's stood 0.6 px past the outline.
+  const stations = [...ringStations(spec.nose).filter((s) => s < 3.5), 4, 5, 6];
+  const rings = stations.map(ringHalf);
+  for (const side of [1, -1]) {
+    const cam = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+    cam.position.set(6 * side, 2.5, -6);
+    cam.lookAt(0, 1.9, 1.2);
+    cam.updateMatrixWorld();
+    // (on the screen, x measured toward the far side: the side the camera is not on)
+    const toScreen = (tris: THREE.Vector3[][]): THREE.Vector3[][] => tris.map((t) => t.map((v) => {
+      const q = v.clone().project(cam);
+      q.x *= side;
+      return q;
+    }));
+    const loft: THREE.Vector3[][] = [];
+    for (let i = 0; i + 1 < rings.length; i++) {
+      for (let j = 0; j + 1 < (rings[i] as [number, number][]).length; j++) {
+        for (const sx of [-1, 1]) {
+          const v = (a: number, b: number): THREE.Vector3 => new THREE.Vector3(sx * ((rings[a] as [number, number][])[b] as [number, number])[0], ((rings[a] as [number, number][])[b] as [number, number])[1], stations[a] as number);
+          loft.push([v(i, j), v(i, j + 1), v(i + 1, j + 1)], [v(i, j), v(i + 1, j + 1), v(i + 1, j)]);
+        }
+      }
+    }
+    const outline = toScreen(loft);
+    // the furthest a set of triangles reaches toward the far side where it crosses the screen height y
+    const farAt = (tris: THREE.Vector3[][], y: number): number => {
+      let m = -Infinity;
+      for (const t of tris) {
+        for (const [a, b] of [[0, 1], [1, 2], [2, 0]] as const) {
+          const p = t[a]!;
+          const q = t[b]!;
+          if ((p.y - y) * (q.y - y) > 0 || p.y === q.y) continue;
+          m = Math.max(m, p.x + ((y - p.y) / (q.y - p.y)) * (q.x - p.x));
+        }
+      }
+      return m;
+    };
+    const px = 350;
+    for (const cab of at300Cabs()) {
+      const { glass, frame } = screenParts(cab);
+      const g = toScreen(glass);
+      const f = toScreen(frame);
+      const ys = g.flat().map((v) => v.y);
+      const y0 = Math.min(...ys);
+      const y1 = Math.max(...ys);
+      for (let k = 1; k <= 16; k++) {
+        const y = y0 + ((y1 - y0) * k) / 40;
+        const body = (farAt(outline, y) - farAt(f, y)) * px;
+        const rim = (farAt(f, y) - farAt(g, y)) * px;
+        assert.ok(body >= 0.8, `${cab.here}, camera on the ${side > 0 ? 'right' : 'left'}: ${k}/40 up the glass the frame stands ${body.toFixed(2)} px inside the outline`);
+        assert.ok(rim >= 1.2, `${cab.here}, camera on the ${side > 0 ? 'right' : 'left'}: ${k}/40 up the glass the glass stands ${rim.toFixed(2)} px inside the frame`);
+      }
+    }
+  }
+});
+
+test('head on, the AT300 windscreen\'s sides are near parallel: the glass 1.04 to 1.14 times as wide 0.15 m under its top as 0.15 m over its foot, at both ends of all four kinds (round B7)', () => {
+  // The B6 score (front-3m, all four kinds): the glass read 0.82 as wide at its top as at its foot, lner-800-113-newcastle-2025 about 0.96 (a long lens from the platform end; near-parallel
+  // sides, a rounded top). The 3 m camera's perspective shrinks the top against the foot: B5's glass, built 1.08 here, read 0.91 and B6's, built 0.95, read 0.82 (about 0.85 of the built
+  // ratio, an inference from those two scores). The band is the photograph's 0.96 over that factor, 1.13, less the room B6's width bands leave (the top no wider than 0.6 of the body, the
+  // foot no narrower than 0.54): about 0.89 to 0.97 at 3 m. Built 1.09.
+  for (const cab of at300Cabs()) {
+    const { glass } = screenParts(cab);
+    const ys = glass.flat().map((v) => v.y);
+    const foot = Math.min(...ys);
+    const top = Math.max(...ys);
+    const r = acrossAt(glass, top - 0.15) / acrossAt(glass, foot + 0.15);
+    assert.ok(r >= 1.04 && r <= 1.14, `${cab.here}: the glass is ${r.toFixed(3)} times as wide 0.15 m under its top as 0.15 m over its foot`);
   }
 });

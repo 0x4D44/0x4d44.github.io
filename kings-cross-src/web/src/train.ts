@@ -144,8 +144,10 @@ const FRAME_REACH = 0.91;
  * blunt nose the last row's chord across the outline's corner 0.6 m out stood 2.96 mm over the loft at 4 mm, under that floor; 4.5 mm (ASSUMED still under the frame, 14 mm off) clears it.
  * CHANGED (round B6, 4.5 mm): the wider glass (GlassSpec.screen) puts the swept foot further forward 0.6 m out (s 1.14 m, was the corner at 1.3 m), and the last row's chord there stood 2.8 mm
  * over the loft at 4.5 mm; 5 mm (ASSUMED still under the frame, 14 mm off) clears it.
+ * CHANGED (round B7, 5 mm): the LNER band flares out to the frame's lower corners (LNER_MASK), and the last row's chord 0.58 m out stood 2.3 mm over the loft at 5 mm; 6 mm (ASSUMED still
+ * under the frame, 14 mm off) clears it.
  */
-const BAND_END_LIFT = 0.005;
+const BAND_END_LIFT = 0.006;
 /** How many steps the columns of a colour mask's band take over its half-turn of angle (see the band in buildCar). CHANGED (AT300 round: 18 before): the blunt nose turns over
  * sharply at the band's outer edge, where the chord across two columns of its last row stood 0.4 mm under the loft at 18 steps (see BAND_END_LIFT for the rest). */
 const BAND_SPREAD = 36;
@@ -478,9 +480,10 @@ interface FrontSpec {
    * the face's foot and `hwTop` at its top, over the cover down to the chin, and a band over the nose's top from where those lines leave the face's outline back
    * to the windscreen's foot, widening to `hwSill` there. It is laid on the nose, not painted into the loft's columns (which would cut it along the loft's own
    * lengthwise lines, not up the face as the photographs show: lner-800-113-newcastle-2025, lner-801-214-2025: a trapezoid, about 1.45 m across under the glass and
-   * 0.9 m at the chin). The cheeks either side keep the livery's own colour.
+   * 0.9 m at the chin). The cheeks either side keep the livery's own colour. `flare` (default 1: straight) is the power of the distance along the band by which it widens from the
+   * face's edge to `hwSill`: above 1 the band keeps near its width at the face most of the way and flares out to `hwSill` under the windscreen's foot.
    */
-  mask?: { colour: number; hwFoot: number; hwTop: number; hwSill: number };
+  mask?: { colour: number; hwFoot: number; hwTop: number; hwSill: number; flare?: number };
   /** the last column of the loft (counted from the bottom, 0..12) that carries the livery texture on the nose, where the nose's own colours run higher than a car's side (default SHELL_K1) */
   shellTop?: number;
   /** the black frame round the windscreen glass: its width beyond the glass, all round */
@@ -771,7 +774,16 @@ const AT300: BodySpec = {
     // middle (0.58 of the body), 290 px near its top (0.56), its black frame 340 px (0.65). So 0.68 of the ring's half-width at the foot and 0.6 at the top: built, 0.58, 0.59 and 0.56 of the body
     // and the frame 0.65. The rake, the foot and top (s0, s1) and the corners are c522cb3d's; the glass's height head on (0.97 m) is near the photograph's 1.04 m, so it is not made taller.
     // The housings stay 57 mm clear of the frame in plan, tucked under its outer corners as the photograph shows them (train-at300-shell.test.ts, round B6). ASSUMED: the readings, to about 20 px.
-    screen: { s0: 1.0, s1: 2.6, fraction: 0.68, fractionTop: 0.6, topRadius: 0.3, bottomRadius: 0.12, footSweep: 0.3 },
+    // CHANGED (round B7; was 0.68, 0.6 and a 0.12 m lower corner): the B6 score found two trim faults in that glass. (1) Taper: in front-3m the glass read 0.82 as wide at its top as at its
+    // foot, where lner-800-113-newcastle-2025 reads about 0.96 (near-parallel sides, a rounded top; that photograph, a long lens from the platform end, is near orthographic). The 3 m camera's
+    // own perspective shrinks the top against the foot: the two scored builds read 0.91 (B5, 1.08 built, head on with no perspective, 0.15 m in from the foot and the top) and 0.82 (B6, 0.95
+    // built), about 0.85 of the built ratio (an inference from those two). So the foot narrows to 0.6 of the ring's half-width and the top widens to 0.66: built 1.09 (about 0.93 at 3 m),
+    // the glass 0.55 of the body 0.15 m over its foot, 0.59 at its middle (B6's photo-matched width) and 0.6 0.15 m under its top, all inside B6's bands. (2) At 3/4 (nose-34-left/right,
+    // rear-nose-34-left/right) the glass's lower outer corner reached the far side's outline and the frame and body margin there were gone, where LUMO-06-803005-FPK and lner-801-214-2025
+    // keep a thin body margin beyond the frame. The narrower foot pulls the lower corner in: the far side's frame now stands back from the outline over the glass's lower 40% (at least
+    // 1 px in a 700 px nose-34 frame, where B6's stood 0.6 px past it: train-at300-shell.test.ts, round B7). (A rounder lower corner, 0.45 m, gave no more margin there and turned the
+    // foot's shallow smile into a U.)
+    screen: { s0: 1.0, s1: 2.6, fraction: 0.6, fractionTop: 0.66, topRadius: 0.3, bottomRadius: 0.12, footSweep: 0.3 },
     // A wedge, low at the front and tall at the back, against the nose's end: a short dark window whose raked top edge climbs from a point low on the
     // cheek to the cab door's side (photographs lner-800-doncaster-2026, hull-802-paragon-2025, hull-802-doncaster-2024, LUMO-04-Lumo-803003-at-Edinburgh-Waverley:
     // a teardrop pane behind the windscreen's pillar, its rear edge upright beside the crew door). Hull Trains and Lumo have a dark swoosh round it
@@ -1255,8 +1267,13 @@ const BODIES: Readonly<Record<Family, BodySpec>> = { at300: AT300, electrostar: 
  * that widens upward: lner-800-113-newcastle-2025, head on (about 128 px to the metre): about 0.96 m across at the chin (0.6 m up) and 1.35 m under the glass (2.15 m up), its sides
  * nearly straight; lner-801-214-2025 the same. CHANGED (AT300 round, with the blunter nose; was 0.4, 0.46 and 0.72): the edge is 0.44 m out at the face's foot (0.67 m up), 0.56 m
  * at its top (1.44 m up: on the photograph's straight edge, 0.54 to 0.57 m there) and 0.7 m at the glass. ASSUMED, to about 0.05 m.
+ * CHANGED (round B7; was 0.7 m at the glass, widening straight): in lner-800-113-newcastle-2025 and lner-801-214-2025 the yellow's top edge is flush with the windscreen frame's foot,
+ * across the frame's width. B6's wider glass left the frame's lower corners standing about 0.15 m past the yellow each side, over the white (black "ears" in front-3m, rear-3m and
+ * nose-34-right, the B6 score). The frame is 0.79 m out where the yellow's top meets it (B7's glass, GlassSpec.screen), so the band widens to 0.79 m there, its corner within a centimetre
+ * of the frame's edge (train-at300-shell.test.ts, round B7). It flares (the cube of the distance along it), keeping near the 1.35 m the photograph shows under the glass until close to
+ * the frame's foot, where the lamp units sit at its upper corners: a straight band that wide was 0.08 m2 more yellow head on, past the Hull Trains beak's lead (that test, above). ASSUMED: the flare, by eye.
  */
-export const LNER_MASK = { colour: LNER_YELLOW, hwFoot: 0.44, hwTop: 0.56, hwSill: 0.7 } as const;
+export const LNER_MASK = { colour: LNER_YELLOW, hwFoot: 0.44, hwTop: 0.56, hwSill: 0.79, flare: 3 } as const;
 /**
  * Hull Trains: the grey beak, over blue cheeks (hull-802-doncaster-2024: a grey bullet that fills the face between the two lamp clusters under the glass and closes to the cover's
  * foot; the cheeks are the body's blue): wider than the LNER's yellow, reaching the clusters' inner edges at the glass. CHANGED (AT300 round; was 0.4, 0.46 and 0.72, the LNER's):
@@ -1906,7 +1923,7 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
         const rowAt = (v: number): number => rowS[Math.round(v * (rowS.length - 1))] as number;
         nosePatch(rowS.length - 1, columns.length - 1, (v, u) => {
           const s = rowAt(v);
-          const x = lerp(bandStart, mask.hwSill, s / sEnd) * (columns[Math.round(u * (columns.length - 1))] as number);
+          const x = lerp(bandStart, mask.hwSill, (s / sEnd) ** (mask.flare ?? 1)) * (columns[Math.round(u * (columns.length - 1))] as number);
           // (the last row ends under the frame's foot, so with a swept foot it stands back from the middle's end by the sweep at that x)
           return [x, v >= 1 ? s + footSweepAt(footFraction(x, front.frame)) : s];
         }, detail, colourOf(mask.colour), (v) => (v >= 1 ? BAND_END_LIFT : lerp(0, 0.012, Math.min(1, rowAt(v) / 0.02))));

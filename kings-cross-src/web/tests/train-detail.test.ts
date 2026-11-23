@@ -318,8 +318,10 @@ test('nose: the AT300\'s front is blunt and round: a face about 1.15 m across an
   // read off lner-800-113-newcastle-2025, head on: ASSUMED to a few centimetres, a photograph at about 75 px to the metre)
   assert.deepEqual(
     spec.glass.screen && { fraction: spec.glass.screen.fraction, fractionTop: spec.glass.screen.fractionTop, topRadius: spec.glass.screen.topRadius, bottomRadius: spec.glass.screen.bottomRadius, footSweep: spec.glass.screen.footSweep },
-    { fraction: 0.68, fractionTop: 0.6, topRadius: 0.3, bottomRadius: 0.12, footSweep: 0.3 },
-    'the glass is 0.68 of the half-width wide at its foot, 0.6 at its top, the foot swept back 0.3 m at its corners',
+    // RE-PINNED (round B7; 0.68 -> 0.6 at the foot, 0.6 -> 0.66 at the top): lner-800-113-newcastle-2025's near-parallel sides (about 0.96 as wide at the top as the foot) against B6's 0.82
+    // at 3 m, and its body margin beyond the frame at 3/4 (lner-801-214-2025, LUMO-06-803005-FPK) (train-at300-shell.test.ts, round B7)
+    { fraction: 0.6, fractionTop: 0.66, topRadius: 0.3, bottomRadius: 0.12, footSweep: 0.3 },
+    'the glass is 0.6 of the half-width wide at its foot, 0.66 at its top, the foot swept back 0.3 m at its corners',
   );
   // the nose never rises above the roof it runs into (the roof line must not go back: the test of every nose's profile reads it too)
   for (const k of spec.nose.knots) assert.ok(k.top <= spec.crown + 1e-9, `the knot at ${k.s} m is ${k.top} m up, over the roof edge at ${spec.crown} m`);
@@ -5292,7 +5294,8 @@ test('fronts: the AT300\'s colour mask: the LNER\'s yellow and the Hull Trains b
     // CHANGED (AT300 round: 0.4, 0.46 and 0.72 for both, on the old beak's 0.94 m face): the blunt nose's face is 1.23 m across; the LNER's yellow runs 0.44 m out at its foot, 0.56 at its
     // top and 0.7 at the glass (lner-800-113-newcastle-2025: 0.96 m across at the chin, 1.35 m under the glass), the Hull Trains beak 0.5, 0.62 and 0.8 (hull-802-doncaster-2024: wider, between
     // the lamp housings)
-    if (mask) assert.deepEqual(mask, kind === 'hull5' ? { colour: HULL_BEAK, hwFoot: 0.5, hwTop: 0.62, hwSill: 0.8 } : { colour: LNER_YELLOW, hwFoot: 0.44, hwTop: 0.56, hwSill: 0.7 }, `${kind}: the mask's lines`);
+    // RE-PINNED (round B7; the LNER's sill was 0.7, straight): its top now meets the windscreen frame's foot, flush as lner-800-113-newcastle-2025 and lner-801-214-2025 show it (LNER_MASK)
+    if (mask) assert.deepEqual(mask, kind === 'hull5' ? { colour: HULL_BEAK, hwFoot: 0.5, hwTop: 0.62, hwSill: 0.8 } : { colour: LNER_YELLOW, hwFoot: 0.44, hwTop: 0.56, hwSill: 0.79, flare: 3 }, `${kind}: the mask's lines`);
     const family = bodySpec(layout.spec.family);
     const sec = carSection(family);
     const norm = normalised(sec);
