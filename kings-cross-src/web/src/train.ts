@@ -735,6 +735,12 @@ export const AT300_CLUSTER: ClusterSpec = {
  * 0-1 px of rim inboard), so the edge falls over 4 mm (3 mm in height under the top), and the rim reaches 6 mm past the front, 7 mm under the foot and 6 mm past the stop: head on it is
  * 3-7 px inboard down to the foot and turns the corner without the B10 nub. The headlamp's strip comes 2 cm forward, so its dark body stays inside the window's back edge without a
  * high lens's parallax. ASSUMED: every figure, by eye against those readings.
+ * CHANGED (round B12; was 0.905 m back and 0.16 m the half-length, 0.32 m long): head on (front-3m, the lights views) the strip's lower lenses overlapped the red cheek at the unit's
+ * outboard edge (the B11 score, x 505-555), where lner-800-113-newcastle-2025 shows every lens inside the dark glass: the window's back edge is its outboard side head on, and the
+ * strip's lower end, in the plane tangent at its middle, stood out past it (59 of 221 lens pixels outside the glass through V02, 5 of 229 from nose-34). The strip comes 7.5 cm
+ * forward and is 4 cm shorter (0.28 m), so every lens lies inside the glass from both eyes, a centimetre either way along the nose to spare (train-at300-shell.test.ts, round B12).
+ * Not higher, and not further forward at its old length: either way its upper end, in that plane, stands off the shoulder and past the nose's outline from cab-side-3m (6-8 px a
+ * row, the B11 test's 5), and further forward its dark body runs into the marker array's disc. ASSUMED: the figures, chosen against those tests.
  */
 export const LNER_CLUSTER: ClusterSpec = {
   ...AT300_CLUSTER,
@@ -744,7 +750,7 @@ export const LNER_CLUSTER: ClusterSpec = {
   rim: { ...AT300_CLUSTER.rim!, width: 0.0115, front: 0.006, foot: 0.007 },
   edge: { ...AT300_CLUSTER.edge!, bevel: 0.004, top: 0.003, overStop: 0.006 },
   array: { ...AT300_CLUSTER.array, s: 0.62, y: 1.65 },
-  head: { ...AT300_CLUSTER.head, s: 0.905 },
+  head: { ...AT300_CLUSTER.head, s: 0.83, a: 0.14 },
   lift: { rim: 0.005, window: 0.008, array: 0.012, lens: 0.016 },
 };
 

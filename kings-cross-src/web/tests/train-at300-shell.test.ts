@@ -900,3 +900,84 @@ test('head on from front-3m, the LNER lamp unit\'s inboard edge keeps its pale l
     }
   }
 });
+
+/**
+ * The pixels of a 1600x1000 picture through `cam` that the triangles of `mesh` (in world space) of the colour `hex` cover, at their centres, counting only those whose three corners
+ * `keep` passes. Coverage alone, with no depth: what lies inside what, seen from that eye, not what hides what.
+ */
+function coverage(mesh: THREE.Mesh, cam: THREE.Camera, hex: number, keep: (v: THREE.Vector3) => boolean): Set<number> {
+  const W = 1600;
+  const H = 1000;
+  const rgb = col(hex);
+  const c = mesh.geometry.getAttribute('color');
+  const p = mesh.geometry.getAttribute('position');
+  const index = mesh.geometry.index;
+  const n = index ? index.count : p.count;
+  const out = new Set<number>();
+  for (let t = 0; t < n; t += 3) {
+    const ks = [t, t + 1, t + 2].map((k) => (index ? index.getX(k) : k));
+    if (!ks.every((k) => Math.abs(c.getX(k) - rgb.r) < 1e-5 && Math.abs(c.getY(k) - rgb.g) < 1e-5 && Math.abs(c.getZ(k) - rgb.b) < 1e-5)) continue;
+    const world = ks.map((k) => new THREE.Vector3().fromBufferAttribute(p, k).applyMatrix4(mesh.matrixWorld));
+    if (!world.every(keep)) continue;
+    const [a, b, e] = world.map((v) => {
+      const q = v.clone().project(cam);
+      return [((q.x + 1) / 2) * W, ((1 - q.y) / 2) * H];
+    }) as [number, number][];
+    const area = (b[0] - a[0]) * (e[1] - a[1]) - (e[0] - a[0]) * (b[1] - a[1]);
+    if (Math.abs(area) < 1e-12) continue;
+    for (let y = Math.max(0, Math.floor(Math.min(a[1], b[1], e[1]))); y <= Math.min(H - 1, Math.ceil(Math.max(a[1], b[1], e[1]))); y++) {
+      for (let x = Math.max(0, Math.floor(Math.min(a[0], b[0], e[0]))); x <= Math.min(W - 1, Math.ceil(Math.max(a[0], b[0], e[0]))); x++) {
+        const w0 = ((b[0] - x - 0.5) * (e[1] - y - 0.5) - (e[0] - x - 0.5) * (b[1] - y - 0.5)) / area;
+        const w1 = ((e[0] - x - 0.5) * (a[1] - y - 0.5) - (a[0] - x - 0.5) * (e[1] - y - 0.5)) / area;
+        if (w0 < 0 || w1 < 0 || w0 + w1 > 1) continue;
+        out.add(y * W + x);
+      }
+    }
+  }
+  return out;
+}
+
+test('the LNER headlamp strip\'s lenses all sit inside the unit\'s dark glass, head on through V02 and from the four nose-34 eyes, at both ends (round B12)', () => {
+  // The B11 score (lner5/lner9 front-3m and the lights views): head on, the strip's lower lenses overlapped the red cheek at the unit's outboard edge (x 505-555 in front-3m), where
+  // lner-800-113-newcastle-2025 shows every lens inside the dark glass; B11 had put the strip inside the glass at 3/4, which must hold. Drawn at 1600x1000 through the catalogue's
+  // eyes (train-framing.mjs): V02 3 m ahead of the face, 1.7 m up, looking straight back; V01 4.5 m out to one side and 5 m ahead, looking at 1.5 m back, 1.7 m up; both a 50 degree
+  // lens. A lens pixel is outside the glass where no triangle of the window covers it, seen from that eye (head on both units; at 3/4 the unit on the camera's side, the far one
+  // being seen edge on behind the nose). B11 (lner5, both ends): 59 of 221 lens pixels outside the glass head on, 5 of 229 from nose-34; built (B12), none.
+  const faults: string[] = [];
+  for (const kind of ['lner5', 'lner9'] as const) {
+    const cluster = frontOf(kind).cluster!;
+    const g = buildTrain(kind);
+    g.updateMatrixWorld(true);
+    for (const car of trainLayout(kind).cars.filter((c) => c.cab)) {
+      const face = car.cab === 'front' ? car.start : car.end;
+      const ahead = car.cab === 'front' ? -1 : 1;
+      const lens = car.cab === 'front' ? LENS.headOn : LENS.headOff;
+      const detail = g.getObjectByName(`car-${car.index}`)!.getObjectByName('body-detail') as THREE.Mesh;
+      const views: [string, THREE.Vector3, THREE.Vector3, number[]][] = [
+        ['front-3m', new THREE.Vector3(0, 1.7, face + 3 * ahead), new THREE.Vector3(0, 1.7, face), [-1, 1]],
+        ...[-1, 1].map((sx): [string, THREE.Vector3, THREE.Vector3, number[]] => [
+          `nose-34 with the eye at x ${sx * 4.5 * -ahead}`,
+          new THREE.Vector3(sx * 4.5 * -ahead, 1.7, face + 5 * ahead),
+          new THREE.Vector3(0, 1.7, face - 1.5 * ahead),
+          [sx * -ahead],
+        ]),
+      ];
+      for (const [view, eye, target, units] of views) {
+        const cam = new THREE.PerspectiveCamera(50, 1.6, 0.05, 200);
+        cam.position.copy(eye);
+        cam.lookAt(target);
+        cam.updateMatrixWorld();
+        for (const unit of units) {
+          const here = `${kind} car ${car.index}, ${view}, the unit at x ${unit > 0 ? '+' : '-'}`;
+          const keep = (v: THREE.Vector3): boolean => v.x * unit > 0.3 && Math.abs(v.z - face) < 2.5;
+          const glass = coverage(detail, cam, cluster.window.colour, keep);
+          const lenses = coverage(detail, cam, lens, keep);
+          const out = [...lenses].filter((i) => !glass.has(i)).length;
+          assert.ok(lenses.size > 30, `${here}: only ${lenses.size} px of headlamp lens drawn`);
+          if (out > 0) faults.push(`${here}: ${out} of ${lenses.size} px of headlamp lens lie outside the dark glass`);
+        }
+      }
+    }
+  }
+  assert.deepEqual(faults, [], faults.join('\n'));
+});

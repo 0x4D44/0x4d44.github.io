@@ -5081,7 +5081,9 @@ test('lamps: the AT300 kinds\' lamp clusters are a slanted window on each cheek,
         // the headlamp: a strip of five small lenses, each an ellipse of 12 sides about a centre (13 vertices) with a half-width of 0.033 m across the window's slant and a half-length of
         // 0.84 of half its pitch (0.064 m; 0.072 m before the AT300 round) along it, in a row up the slant at its place on the flank, in the headlamp's colour; the row slants up and back with the window (seen from the side,
         // from its first lens to its last it leans 25 to 55 degrees off the vertical, to the rear), and a gap of 8 mm or more is left between one lens and the next
-        const PITCH = 0.064;
+        // RE-PINNED (round B12; was 0.064 for every kind): the LNER's strip is 0.28 m long, not 0.32 (LNER_CLUSTER), so every lens lies inside its shorter dark glass head on, where the
+        // B11 score saw the lower lenses over the red cheek (front-3m) and lner-800-113-newcastle-2025 shows them all in the glass: its pitch is 0.056 m, its lenses 0.047 m long
+        const PITCH = kind === 'lner5' || kind === 'lner9' ? 0.056 : 0.064;
         const HALF_ALONG = (PITCH / 2) * 0.84;
         const HALF_ACROSS = 0.033;
         const headLenses = parts(onSide(trisOfColour(mesh, headHex)));
@@ -5114,7 +5116,8 @@ test('lamps: the AT300 kinds\' lamp clusters are a slanted window on each cheek,
         const disc = dark.find((p) => p.pts.length === 15);
         assert.ok(body && disc, `${here}: the dark grey pieces have ${dark.map((p) => p.pts.length).join(' and ')} vertices, not 21 (the strip's body) and 15 (the array's disc)`);
         const bodyReach = body.pts.map((v) => v.distanceTo(body.centre));
-        near(Math.max(...bodyReach), 0.16 + 0.012, 2e-4, `${here} headlamp body: its half-length`);
+        // RE-PINNED (round B12; was 0.16 for every kind): the LNER's strip is 0.28 m long (see PITCH above), its body 0.152 m by 0.045 m
+        near(Math.max(...bodyReach), (PITCH * 5) / 2 + 0.012, 2e-4, `${here} headlamp body: its half-length`);
         near(Math.min(...bodyReach.filter((d) => d > 2e-4)), 0.033 + 0.012, 2e-4, `${here} headlamp body: its half-width`);
         near(body.centre.distanceTo(hc), 0.004, 1e-3, `${here} headlamp body: 4 mm under the middle of the strip`);
         // the marker array: a dark disc of 0.075 m radius (14 sides), and in it seven hexagonal lenses of 0.075 / 3.2 m at their corners: one in the middle (4 mm over the disc: the
