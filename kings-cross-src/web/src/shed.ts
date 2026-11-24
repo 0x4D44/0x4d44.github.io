@@ -431,20 +431,34 @@ export function gableBars(uc: number, springing: number, from: number, r = R): B
  *            dark flank only low on each vault, by the gutter, under a pale glazed crown, consistent with that within its error (MEASURED, rough);
  *   ribCap   a dark cover strip over every rib, springing to springing (MODEL: the ribs' pitch, RIB_SPACING): front-e reads the far roof as pale glass crossed by
  *            evenly stacked dark transverse lines, one a rib bay; 0.3 m wide along the shed, 0.12 m proud (ASSUMED);
- *   bar      longitudinal glazing bars along the crown every `barPitch` 2.7 m of arc (three of the shedGlass texture's 0.9 m panes, so they land on its pane
- *            edges); front-b shows a rectangular grid, the pitch is ASSUMED; 0.3 m wide, 0.1 m proud (ASSUMED; 0.2 m did not read from outside), wide enough not to shimmer from the overview;
+ *   endRib   the last rib at the north gables is heavier: front-d shows each gable's edge as a dark band about 0.9 m deep at the gable's scale (its 32 m span
+ *            about 550 px wide there, the band about 15 px: MEASURED in memory, +-30%), skin and lining included, so the cap stands `endRib` 0.6 m proud, 0.5 m
+ *            along the shed (ASSUMED);
+ *   seam     fine glazing bars over the crown glass running down the slope, `seamPitch` 1.8 m apart along the shed (the shedGlass texture's pane length, so they
+ *            land on its pane ends), 0.06 m wide, 0.03 m proud, top face only. front-d's far vault and front-e read the roof's rhythm down the slope, close ribs
+ *            and seams, with the crown a lighter strip of fine texture: the seams there look about 0.9 m apart (MEASURED in memory, rough, +-50%); every other
+ *            one is drawn so they stay three or more pixels apart from the overview and do not beat against the pixel grid. Until roof-exterior-round-2 the crown
+ *            carried 0.3 m lengthwise bars every 2.7 m of arc, which the scorer read as seven bold straps a vault, a cage: front-d and -e show none;
+ *   rail     a walkway handrail along each vault's crown: front-d shows a rail with close posts along the far vault's crown (and front-e a rail line along the
+ *            top), about 1.1 m high (some 18 px against the gable's 17 px a metre: MEASURED in memory, +-25%); posts every 1.525 m, a quarter rib bay (ASSUMED,
+ *            the photographs show them close but not countable), a top and a mid rail, 0.06 m members (ASSUMED);
  *   eaves    a box gutter along each vault's outer springing, `gutter` 0.5 m wide and 0.45 m deep, and a 0.8 m valley gutter over the spine (ASSUMED sizes; front-e
  *            shows a dark eaves line along the springing);
  *   PV       none: no photovoltaic rows can be made out on the flanks in R-kx-front-b, -d or -e, so none are drawn (the rubric asks for them only if the reference
  *            shows them).
  */
-export const ROOF_EXTERIOR = { barPitch: 2.7, bar: [0.3, 0.1], ribCap: [0.3, 0.12], gutter: [0.5, 0.45], valleyGutter: [0.8, 0.3] } as const;
+export const ROOF_EXTERIOR = {
+  seamPitch: 1.8, seam: [0.06, 0.03], ribCap: [0.3, 0.12], endRib: [0.5, 0.6], rail: { height: 1.1, post: 1.525, size: 0.06 },
+  gutter: [0.5, 0.45], valleyGutter: [0.8, 0.3],
+  /** the distance outside the shed over which the outside structure fades in from nothing (a camera rising above the crown counts four times): see roofBarsOpacity */
+  fade: 8,
+} as const;
 
-/** The angles (up from the springing) of the crown's longitudinal glazing bars: every ROOF_EXTERIOR.barPitch of arc on the skin, inside the glazed strip. */
-export function crownBarAngles(rs = R + ROOF_SKIN, phi = glazedHalfAngle()): number[] {
-  const a0 = Math.PI / 2 - phi, a1 = Math.PI / 2 + phi;
+/** Where the crown's fine seams stand, metres north of the south front: every ROOF_EXTERIOR.seamPitch, leaving out any within 0.4 m of a rib cap. */
+export function crownSeams(length: number): number[] {
+  const ribs = ribPositions(length);
   const out: number[] = [];
-  for (let k = Math.ceil((rs * a0) / ROOF_EXTERIOR.barPitch + 1e-9); (k * ROOF_EXTERIOR.barPitch) / rs < a1 - 1e-9; k++) out.push((k * ROOF_EXTERIOR.barPitch) / rs);
+  for (let v = ROOF_EXTERIOR.seamPitch; v < length - 0.2; v += ROOF_EXTERIOR.seamPitch) if (!ribs.some(r => Math.abs(r - v) < 0.4)) out.push(v);
   return out;
 }
 
@@ -485,7 +499,11 @@ export function insideShed(cam: V3, layout: Pick<ShedLayout, 'width' | 'length' 
  * B1: platform-eye-p8-south, -p1-north); from inside, the real roof's outside is not to be seen through its milky glass.
  */
 export function roofBarsOpacity(cam: V3, layout: Pick<ShedLayout, 'width' | 'length' | 'crown' | 'spine'>, mode: RoofMode = 'auto'): number {
-  return insideShed(cam, layout) ? 0 : roofOpacity(cam, layout, mode);
+  // continuous across the shed's boundary (until roof-exterior-round-2 a step there, a pop as the camera crossed the south screen): 0 anywhere inside, rising
+  // smoothly to the cladding's opacity ROOF_EXTERIOR.fade metres out
+  const [x, y, z] = cam;
+  const dx = Math.max(-x, x - layout.width, 0), dz = Math.max(z, -layout.length - z, 0), dy = 4 * Math.max(y - (layout.crown + 1), 0);
+  return roofOpacity(cam, layout, mode) * smoothstep(0, ROOF_EXTERIOR.fade, Math.hypot(dx, dy, dz));
 }
 
 /** Opacity of the roof glazing: a bright daylit panel inside and close up, the see-through tint it had before from far off. ASSUMED look. */
@@ -739,10 +757,28 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
         outer.box([(p[0] + q[0]) / 2, (p[1] + q[1]) / 2, -v], [Math.hypot(q[0] - p[0], q[1] - p[1]) + 0.04, ROOF_EXTERIOR.ribCap[1], ROOF_EXTERIOR.ribCap[0]], { rotZ: Math.atan2(q[1] - p[1], q[0] - p[0]), skip: ['+x', '-x', '-y'] });
       }
     }
-    for (const a of crownBarAngles(rs)) {
-      const [u, y] = vaultPoint(uc, sp, rs + ROOF_EXTERIOR.bar[1] / 2, a);
-      outer.box([u, y, -L / 2], [ROOF_EXTERIOR.bar[0], ROOF_EXTERIOR.bar[1], L], { rotZ: Math.PI / 2 - a, skip: ['+z', '-z', '-y'] });
+    // the heavier end rib on the north gable's edge
+    const endR = rs + ROOF_EXTERIOR.endRib[1] / 2;
+    for (let i = 0; i < ARC_STEPS * 2; i++) {
+      const p = vaultPoint(uc, sp, endR, a0 + ((a1 - a0) * i) / (ARC_STEPS * 2));
+      const q = vaultPoint(uc, sp, endR, a0 + ((a1 - a0) * (i + 1)) / (ARC_STEPS * 2));
+      outer.box([(p[0] + q[0]) / 2, (p[1] + q[1]) / 2, -L + ROOF_EXTERIOR.endRib[0] / 2], [Math.hypot(q[0] - p[0], q[1] - p[1]) + 0.1, ROOF_EXTERIOR.endRib[1], ROOF_EXTERIOR.endRib[0]], { rotZ: Math.atan2(q[1] - p[1], q[0] - p[0]), skip: ['+x', '-x', '-y'] });
     }
+    // the crown's fine seams down the slope, over the glass only: top faces only, so from below (inside) every face is a back face
+    const [g0, g1] = [Math.PI / 2 - phi, Math.PI / 2 + phi];
+    const seamR = rs + ROOF_EXTERIOR.seam[1];
+    for (const v of crownSeams(L)) {
+      for (let i = 0; i < ARC_STEPS; i++) {
+        const p = vaultPoint(uc, sp, seamR, g0 + ((g1 - g0) * i) / ARC_STEPS);
+        const q = vaultPoint(uc, sp, seamR, g0 + ((g1 - g0) * (i + 1)) / ARC_STEPS);
+        outer.box([(p[0] + q[0]) / 2, (p[1] + q[1]) / 2, -v], [Math.hypot(q[0] - p[0], q[1] - p[1]) + 0.02, 0, ROOF_EXTERIOR.seam[0]], { rotZ: Math.atan2(q[1] - p[1], q[0] - p[0]), skip: ['+x', '-x', '-y', '+z', '-z'] });
+      }
+    }
+    // the crown walkway's rail: posts, a top and a mid rail
+    const { height: rh, post, size } = ROOF_EXTERIOR.rail;
+    const top = sp + rs;
+    for (let v = post / 2; v < L; v += post) outer.box([uc, top + rh / 2, -v], [size, rh, size], { skip: ['-y'] });
+    for (const h of [rh, rh / 2]) outer.box([uc, top + h, -L / 2], [size, size, L]);
     // the eaves gutter on the vault's outer springing (the west vault's west side, the east vault's east side)
     const [gw, gh] = ROOF_EXTERIOR.gutter;
     const edge = vault === 0 ? uc - rs - gw / 2 + 0.1 : uc + rs + gw / 2 - 0.1;

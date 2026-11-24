@@ -204,9 +204,10 @@ test('the roof glazing follows the roof cladding: bright from inside the shed, t
   assert.equal(material('shedGlass').opacity, 1, 'the shared material is never changed');
 });
 
-test('the roof outside (rubric A5, R-kx-front-e): the glazed crown 72% +-6% of the arc, slate flanks darker than the glass, rib caps every rib, crown bars every 2.7 m of arc, gutters', async () => {
-  const { ROOF_EXTERIOR, crownBarAngles } = await import('../src/shed.ts') as typeof import('../src/shed.ts') & { ROOF_EXTERIOR: { barPitch: number; ribCap: readonly number[]; gutter: readonly number[] }; crownBarAngles: () => number[] };
-  assert.ok(ROOF_EXTERIOR && typeof crownBarAngles === 'function', 'the roof outside has a spec (ROOF_EXTERIOR, crownBarAngles)');
+test('the roof outside (rubric A5, R-kx-front-e): the glazed crown 72% +-6% of the arc, slate flanks darker than the glass, rib caps every rib, gutters', async () => {
+  // re-pinned 2026-11-24 (roof-exterior-round-2): the crown's 2.7 m lengthwise bars are gone (the scorer: a cage, front-d and -e show none); their checks moved to the next test's fine seams
+  const { ROOF_EXTERIOR } = await import('../src/shed.ts') as typeof import('../src/shed.ts') & { ROOF_EXTERIOR: { ribCap: readonly number[]; gutter: readonly number[] } };
+  assert.ok(ROOF_EXTERIOR, 'the roof outside has a spec (ROOF_EXTERIOR)');
   const rs = SHED_SPAN_WIDTH / 2 + ROOF_SKIN;
   const phi = glazedHalfAngle();
   const cut = valleyCut(rs);
@@ -216,12 +217,6 @@ test('the roof outside (rubric A5, R-kx-front-e): the glazed crown 72% +-6% of t
   const lum = (m: THREE.Material): number => { const c = (m as THREE.MeshLambertMaterial).color; return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b; };
   const clad = lum(byName(group, 'shed-roof-cladding').material as THREE.Material), glass = lum(byName(group, 'shed-roof-glass').material as THREE.Material);
   assert.ok(2 * clad < glass, `slate flanks (${clad.toFixed(3)}) at most half the glass's tone (${glass.toFixed(3)})`);
-  // the crown's bars: evenly 2.7 m of arc apart, inside the glazed strip, at least ten a vault
-  assert.equal(ROOF_EXTERIOR.barPitch, 2.7);
-  const angles = crownBarAngles();
-  assert.ok(angles.length >= 10, `${angles.length} crown bars a vault`);
-  for (let i = 1; i < angles.length; i++) close(rs * (angles[i]! - angles[i - 1]!), ROOF_EXTERIOR.barPitch, 1e-9);
-  for (const a of angles) assert.ok(Math.abs(a - Math.PI / 2) < phi, `bar at ${a.toFixed(3)} rad is on the glass`);
   // the mesh: dark like the ribs, its vertices on or just outside the skin, a cap over every rib on both vaults
   const bars = byName(group, 'shed-roof-bars');
   const m = bars.material as THREE.MeshLambertMaterial;
@@ -233,10 +228,13 @@ test('the roof outside (rubric A5, R-kx-front-e): the glazed crown 72% +-6% of t
   for (let i = 0; i < p.count; i++) {
     const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
     const r = Math.min(Math.hypot(x - (layout.spine - SHED_SPAN_WIDTH / 2), y - layout.springing), Math.hypot(x - (layout.spine + SHED_SPAN_WIDTH / 2), y - layout.springing));
-    if (y > layout.springing + 2 && Math.abs(x - layout.spine) > 1) assert.ok(r > rs - 0.05 && r < rs + 0.4, `vertex ${i} off the skin (r ${r.toFixed(2)})`);
+    // (re-pinned 2026-11-24, roof-exterior-round-2: the crown rail and the north end rib stand higher, and are checked in the next test)
+    const rail = y > layout.crown && Math.min(Math.abs(x - (layout.spine - SHED_SPAN_WIDTH / 2)), Math.abs(x - (layout.spine + SHED_SPAN_WIDTH / 2))) < 0.1, endRib = z < -layout.length + 0.6;
+    if (y > layout.springing + 2 && Math.abs(x - layout.spine) > 1 && !rail && !endRib) assert.ok(r > rs - 0.05 && r < rs + 0.4, `vertex ${i} off the skin (r ${r.toFixed(2)})`);
     if (y > layout.crown - 1) crownZ.push(z);
-    if (x < layout.spine - SHED_SPAN_WIDTH - 0.6) gutterW++; // past the rib caps' feet (0.48 m out): only the gutter reaches there
-    if (x > layout.spine + SHED_SPAN_WIDTH + 0.6) gutterE++;
+    // past the rib caps' feet (0.48 m out): only the gutter reaches there, and the north end rib's foot (re-pinned 2026-11-24, roof-exterior-round-2: that is left out)
+    if (x < layout.spine - SHED_SPAN_WIDTH - 0.6 && !endRib) gutterW++;
+    if (x > layout.spine + SHED_SPAN_WIDTH + 0.6 && !endRib) gutterE++;
   }
   const capped = ribPositions(layout.length).filter(v => crownZ.some(z => Math.abs(Math.abs(z + v) - ROOF_EXTERIOR.ribCap[0]! / 2) < 1e-3));
   assert.equal(capped.length, ribPositions(layout.length).length, `a cap over every rib at the crown (${capped.length})`);
@@ -279,6 +277,58 @@ test('the roof\'s outside bars are not seen from inside the shed (roof-exterior-
   assert.ok(m.opacity > 0.4, 'from the overview it shows');
   assert.ok(bars.renderOrder > byName(group, 'shed-roof-glass').renderOrder, 'drawn after the glass, which would otherwise wash it out');
   assert.equal(m.side, THREE.FrontSide);
+});
+
+test('the roof outside, round 2 (roof-exterior-round-2, R-kx-front-d and -e): fine seams down the slope and no lengthwise straps on the crown, a heavier north end rib, a crown rail, and a fade with no pop at the shed\'s edge', async () => {
+  const shed = await import('../src/shed.ts') as Record<string, unknown>;
+  const X = shed.ROOF_EXTERIOR as { seamPitch?: number; seam?: readonly number[]; ribCap: readonly number[]; endRib?: readonly number[]; rail?: { height: number; post: number }; fade?: number };
+  const crownSeams = shed.crownSeams as ((length: number) => number[]) | undefined;
+  assert.ok(typeof crownSeams === 'function' && X.seamPitch && X.seam && X.endRib && X.rail && X.fade, 'the round 2 spec: crownSeams, seamPitch, seam, endRib, rail, fade');
+  const barsOpacity = shed.roofBarsOpacity as (cam: [number, number, number], l: typeof layout, mode?: 'auto' | 'solid' | 'xray') => number;
+  const L = layout.length, rs = SHED_SPAN_WIDTH / 2 + ROOF_SKIN, phi = glazedHalfAngle();
+  const centres = [layout.spine - SHED_SPAN_WIDTH / 2, layout.spine + SHED_SPAN_WIDTH / 2];
+  // seams: on the glazing's pane module (1.8 m), close (at least 100 a vault), never on a rib cap
+  close(X.seamPitch!, 1.8, 1e-12);
+  const seams = crownSeams!(L);
+  assert.ok(seams.length >= 100, `${seams.length} seams a vault`);
+  for (const v of seams) assert.ok(Math.abs(v / 1.8 - Math.round(v / 1.8)) < 1e-6 && ribPositions(L).every(r => Math.abs(r - v) >= 0.4), `seam at ${v.toFixed(2)}`);
+  assert.ok(X.seam![0]! <= 0.08, 'fine: no wider than 0.08 m');
+  const group = buildShed(layout);
+  const g = byName(group, 'shed-roof-bars').geometry;
+  const pos = g.getAttribute('position'), idx = g.index!;
+  const P = (i: number): THREE.Vector3 => new THREE.Vector3().fromBufferAttribute(pos, i);
+  let seamTris = 0, straps = 0, endHigh = 0, railTop = 0;
+  for (let t = 0; t < idx.count; t += 3) {
+    const [a, b, c] = [P(idx.getX(t)), P(idx.getX(t + 1)), P(idx.getX(t + 2))];
+    const m = a.clone().add(b).add(c).multiplyScalar(1 / 3);
+    const uc = centres.reduce((best, u) => (Math.abs(u - m.x) < Math.abs(best - m.x) ? u : best));
+    const r = Math.hypot(m.x - uc, m.y - layout.springing), ang = Math.atan2(m.y - layout.springing, uc - m.x);
+    const n = b.clone().sub(a).cross(c.clone().sub(a)).normalize();
+    // a seam's top face faces outward, so from anywhere under its own vault it is a back face (the other vault's outer face can face a platform eye, the cause of
+    // roof-exterior-1a's ghost: that is left to the fade below)
+    const below = new THREE.Vector3(uc + 5, 2.5, -120);
+    if ([a, b, c].every(p => Math.abs(Math.hypot(p.x - uc, p.y - layout.springing) - rs - X.seam![1]!) < 0.005)) {
+      seamTris++;
+      const out = new THREE.Vector3(-Math.cos(ang), Math.sin(ang), 0);
+      assert.ok(n.dot(out) > 0.99 && n.dot(below.clone().sub(m)) < 0, `seam triangle ${t / 3} is seen from below`);
+    }
+    // a lengthwise member over the glass reaches the south end (z = 0); the seams and caps do not
+    if (Math.abs(ang - Math.PI / 2) < phi - 0.05 && Math.abs(ang - Math.PI / 2) > 0.05 && r > rs - 0.01 && r < rs + 0.3 && [a, b, c].some(p => p.z > -0.01)) straps++;
+    if (m.z < -L + X.endRib![0]! + 1e-6 && r > rs + 0.5 && r < rs + X.endRib![1]! + 0.01) endHigh++;
+    if (Math.abs(m.y - (layout.springing + rs + X.rail!.height)) < 0.05 && Math.max(a.z, b.z, c.z) - Math.min(a.z, b.z, c.z) > L / 2) railTop++; // the top rail runs the length
+  }
+  assert.ok(seamTris >= 2 * seams.length * 2, `${seamTris} seam triangles`);
+  assert.equal(straps, 0, 'no lengthwise straps over the crown glass');
+  assert.ok(X.endRib![1]! >= 3 * X.ribCap[1]! && endHigh > 0, `the north end rib stands ${X.endRib![1]} m proud against the caps' ${X.ribCap[1]} m`);
+  assert.ok(X.rail!.height > 0.8 && X.rail!.height < 1.4 && railTop >= 2, `a crown rail ${X.rail!.height} m high on each vault (${railTop} top-rail triangles)`);
+  // no pop: walking out through the south screen at platform height, the opacity rises from 0 in small steps, in every mode
+  for (const mode of ['auto', 'solid', 'xray'] as const) {
+    let last = barsOpacity([layout.width / 2, 3, -5], layout, mode), worst = 0;
+    assert.equal(last, 0, `${mode}: hidden inside`);
+    for (let i = 0; i <= 700; i++) { const o = barsOpacity([layout.width / 2, 3, -5 + i * 0.05], layout, mode); worst = Math.max(worst, Math.abs(o - last)); last = o; }
+    assert.ok(worst < 0.03, `${mode}: largest step ${worst.toFixed(3)} crossing the south screen`);
+    close(last, roofOpacity([layout.width / 2, 3, 30], layout, mode), 1e-6);
+  }
 });
 
 test('ribMembers: slender sections, as the restored shed has (the first build\'s 0.38 x 0.30 booms read as heavy girders)', () => {
