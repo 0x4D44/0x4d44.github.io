@@ -245,8 +245,40 @@ test('the roof outside (rubric A5, R-kx-front-e): the glazed crown 72% +-6% of t
   group.updateMatrixWorld(true);
   const cam = new THREE.PerspectiveCamera();
   cam.position.set(900, 600, 500);
+  // re-pinned 2026-11-24 (roof-exterior-1a): the bars set their own opacity in their own callback (the cladding's could run after them), so both callbacks run here
   byName(group, 'shed-roof-cladding').onBeforeRender({} as never, {} as never, cam, {} as never, {} as never, {} as never);
+  bars.onBeforeRender({} as never, {} as never, cam, {} as never, {} as never, {} as never);
   close(m.opacity, (byName(group, 'shed-roof-cladding').material as THREE.Material).opacity, 1e-12);
+});
+
+test('the roof\'s outside bars are not seen from inside the shed (roof-exterior-1a, B1: the ghost lattice through the glass) and are drawn over the crown glass from outside', async () => {
+  const shed = await import('../src/shed.ts') as Record<string, unknown>;
+  const barsOpacity = shed.roofBarsOpacity as ((cam: [number, number, number], l: typeof layout, mode?: 'auto' | 'solid' | 'xray') => number) | undefined;
+  assert.equal(typeof barsOpacity, 'function', 'roofBarsOpacity is exported');
+  const rs = SHED_SPAN_WIDTH / 2 + ROOF_SKIN;
+  // the cause: from a platform eye under the east vault, the west vault's outer face (its glass, where the caps and bars stand) faces the eye
+  const eye: [number, number] = [layout.spine + 8, 2.5];
+  const a = Math.PI / 2 + glazedHalfAngle() - 0.1;
+  const [pu, py] = vaultPoint(layout.spine - SHED_SPAN_WIDTH / 2, layout.springing, rs, a);
+  assert.ok(-Math.cos(a) * (eye[0] - pu) + Math.sin(a) * (eye[1] - py) > 0, 'the far vault\'s outer face is a front face from the platform');
+  const inside: [number, number, number][] = [[layout.spine + 8, 2.5, -120], [layout.spine - 8, 2.5, -60], [layout.width / 2, layout.crown - 2, -200]];
+  for (const mode of ['auto', 'solid', 'xray'] as const) {
+    for (const p of inside) assert.equal(barsOpacity!(p, layout, mode), 0, `${mode}: hidden from ${p.map(v => v.toFixed(0)).join(',')}`);
+    for (const p of [[900, 600, 500], [layout.width / 2, 30, -120], [-40, 20, 10]] as [number, number, number][]) close(barsOpacity!(p, layout, mode), roofOpacity(p, layout, mode), 1e-12);
+  }
+  const group = buildShed(layout);
+  group.updateMatrixWorld(true);
+  const bars = byName(group, 'shed-roof-bars');
+  const m = bars.material as THREE.Material;
+  const cam = new THREE.PerspectiveCamera();
+  cam.position.set(layout.spine + 8, 2.5, -120);
+  bars.onBeforeRender({} as never, {} as never, cam, {} as never, {} as never, {} as never);
+  assert.ok(m.opacity === 0 && m.depthWrite === false, `from a platform: opacity ${m.opacity}, depthWrite ${m.depthWrite}`);
+  cam.position.set(900, 600, 500);
+  bars.onBeforeRender({} as never, {} as never, cam, {} as never, {} as never, {} as never);
+  assert.ok(m.opacity > 0.4, 'from the overview it shows');
+  assert.ok(bars.renderOrder > byName(group, 'shed-roof-glass').renderOrder, 'drawn after the glass, which would otherwise wash it out');
+  assert.equal(m.side, THREE.FrontSide);
 });
 
 test('ribMembers: slender sections, as the restored shed has (the first build\'s 0.38 x 0.30 booms read as heavy girders)', () => {

@@ -432,13 +432,13 @@ export function gableBars(uc: number, springing: number, from: number, r = R): B
  *   ribCap   a dark cover strip over every rib, springing to springing (MODEL: the ribs' pitch, RIB_SPACING): front-e reads the far roof as pale glass crossed by
  *            evenly stacked dark transverse lines, one a rib bay; 0.3 m wide along the shed, 0.12 m proud (ASSUMED);
  *   bar      longitudinal glazing bars along the crown every `barPitch` 2.7 m of arc (three of the shedGlass texture's 0.9 m panes, so they land on its pane
- *            edges); front-b shows a rectangular grid, the pitch is ASSUMED; 0.2 m wide, 0.08 m proud (ASSUMED), wide enough not to shimmer from the overview;
+ *            edges); front-b shows a rectangular grid, the pitch is ASSUMED; 0.3 m wide, 0.1 m proud (ASSUMED; 0.2 m did not read from outside), wide enough not to shimmer from the overview;
  *   eaves    a box gutter along each vault's outer springing, `gutter` 0.5 m wide and 0.45 m deep, and a 0.8 m valley gutter over the spine (ASSUMED sizes; front-e
  *            shows a dark eaves line along the springing);
  *   PV       none: no photovoltaic rows can be made out on the flanks in R-kx-front-b, -d or -e, so none are drawn (the rubric asks for them only if the reference
  *            shows them).
  */
-export const ROOF_EXTERIOR = { barPitch: 2.7, bar: [0.2, 0.08], ribCap: [0.3, 0.12], gutter: [0.5, 0.45], valleyGutter: [0.8, 0.3] } as const;
+export const ROOF_EXTERIOR = { barPitch: 2.7, bar: [0.3, 0.1], ribCap: [0.3, 0.12], gutter: [0.5, 0.45], valleyGutter: [0.8, 0.3] } as const;
 
 /** The angles (up from the springing) of the crown's longitudinal glazing bars: every ROOF_EXTERIOR.barPitch of arc on the skin, inside the glazed strip. */
 export function crownBarAngles(rs = R + ROOF_SKIN, phi = glazedHalfAngle()): number[] {
@@ -467,9 +467,25 @@ export function roofOpacity(cam: V3, layout: Pick<ShedLayout, 'width' | 'length'
   if (mode === 'solid') return 1;
   if (mode === 'xray') return XRAY_OPACITY;
   const [x, y, z] = cam;
-  if (x > 0 && x < layout.width && z < 0 && z > -layout.length && y < layout.crown + 1) return 1;
+  if (insideShed(cam, layout)) return 1;
   const d = Math.hypot(x - layout.spine, y - layout.crown, z + layout.length / 2);
   return 1 - (1 - XRAY_OPACITY) * smoothstep(60, 220, d);
+}
+
+/** Whether `cam` (the shed's local frame) is under the roof: within its plan and below its crown. */
+export function insideShed(cam: V3, layout: Pick<ShedLayout, 'width' | 'length' | 'crown'>): boolean {
+  const [x, y, z] = cam;
+  return x > 0 && x < layout.width && z < 0 && z > -layout.length && y < layout.crown + 1;
+}
+
+/**
+ * Opacity of the roof's outside structure (shed-roof-bars) for a camera at `cam`: the cladding's (roofOpacity) outside, 0 inside, in every mode. From under
+ * one vault its glass looks out on the other vault's outer face (that face's normals lean towards a platform eye on the far side of the spine), so the
+ * other vault's caps and bars showed through the glazing as a pale ghost lattice, larger than and offset from the trusses (the scorer's roof-exterior-1a,
+ * B1: platform-eye-p8-south, -p1-north); from inside, the real roof's outside is not to be seen through its milky glass.
+ */
+export function roofBarsOpacity(cam: V3, layout: Pick<ShedLayout, 'width' | 'length' | 'crown' | 'spine'>, mode: RoofMode = 'auto'): number {
+  return insideShed(cam, layout) ? 0 : roofOpacity(cam, layout, mode);
 }
 
 /** Opacity of the roof glazing: a bright daylit panel inside and close up, the see-through tint it had before from far off. ASSUMED look. */
@@ -709,8 +725,6 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
     cladMat.opacity = o;
     cladMat.depthWrite = o > 0.98;
     glassMat.opacity = glazingOpacity(o);
-    barsMat.opacity = o;
-    barsMat.depthWrite = o > 0.98;
   };
   // the outside's structure (ROOF_EXTERIOR): rib caps, the crown's glazing bars, the gutters; dark like the ribs, thinning with the cladding
   const outer = new Batch();
@@ -736,9 +750,18 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   });
   outer.box([spine, valleyTop(sp) + ROOF_EXTERIOR.valleyGutter[1] / 2 - 0.1, -L / 2], [ROOF_EXTERIOR.valleyGutter[0], ROOF_EXTERIOR.valleyGutter[1], L]);
   const barsMat = (material('ribPaint') as THREE.MeshLambertMaterial).clone();
-  barsMat.transparent = true; // its opacity follows the cladding's, see roofOpacity
+  barsMat.transparent = true; // its opacity follows the cladding's outside and is 0 inside, see roofBarsOpacity
   const roofBars = mesh(outer.build(), barsMat, 'shed-roof-bars');
-  roofBars.renderOrder = 2;
+  // its own callback, not the cladding's: the two sort among the transparent draws by distance, so the cladding's may come after this one in a frame
+  roofBars.onBeforeRender = (_renderer, _scene, camera) => {
+    inverse.copy(group.matrixWorld).invert();
+    local.copy(camera.position).applyMatrix4(inverse);
+    const o = roofBarsOpacity([local.x, local.y, local.z], layout, roofMode);
+    barsMat.opacity = o;
+    barsMat.depthWrite = o > 0.98;
+  };
+  // after the glass (3): drawn before it, the milky crown glass blended over the caps and bars and hid them from outside (the scorer's roof-exterior-1a)
+  roofBars.renderOrder = 4;
   group.add(roofBars);
   cladding.renderOrder = 2;
   group.add(cladding);

@@ -71,6 +71,9 @@ M = [
  ('no eaves gutters', '    outer.box([edge, sp + gh / 2 - 0.1, -L / 2], [gw, gh, L]);\n', ''),
  ('the roof bars pale and self-lit', "const barsMat = (material('ribPaint')", "const barsMat = (material('lining')"),
  ('the rib caps a metre off the skin', 'const capR = rs + ROOF_EXTERIOR.ribCap[1] / 2;', 'const capR = rs + 1;'),
+ ('the roof bars seen from inside again: the ghost lattice', 'return insideShed(cam, layout) ? 0 : roofOpacity(cam, layout, mode);', 'return roofOpacity(cam, layout, mode);'),
+ ('the roof bars drawn under the crown glass again', 'roofBars.renderOrder = 4;', 'roofBars.renderOrder = 2;'),
+ ('the roof bars without their own opacity callback', 'roofBars.onBeforeRender = (', 'roofBars.userData.unused = ('),
 ]
 def run(name):
  try: r = kxmut.run_process(['node','--test','--test-reporter=tap','--test-timeout=10000','web/tests/shed-tower.test.ts','web/tests/shed.test.ts'],cwd=work,timeout=30)
