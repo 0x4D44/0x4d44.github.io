@@ -30,7 +30,7 @@ M = [
  ('vane mast floats above cap', 'vane.box([0, (capTop - 0.15 + CLOCK_TOWER_HEIGHT) / 2, 0], [0.045, CLOCK_TOWER_HEIGHT - capTop + 0.15, 0.045]);', 'vane.box([0, (capTop + 0.2 + CLOCK_TOWER_HEIGHT) / 2, 0], [0.045, CLOCK_TOWER_HEIGHT - capTop - 0.2, 0.045]);'),
  ('overall tower height grows', 'CLOCK_TOWER_HEIGHT - capTop + 0.15, 0.045]', 'CLOCK_TOWER_HEIGHT - capTop + 0.55, 0.045]'),
  ('the east aisle roof open underneath', 'for (const [a, b] of aisles) slate.box([(a + b) / 2, wallH - 0.15, -L / 2], [b - a, 0.3, L]);', "for (const [a, b] of aisles) slate.box([(a + b) / 2, wallH - 0.15, -L / 2], [b - a, 0.3, L], { skip: ['-y'] });"),
- ('the east arcade stops short of the springing', 'buildSpineWall(eastArcade, spineStone, eastArcadeU(layout), L, sp, sp, [-1], eastArcadeOpenings(L));', 'buildSpineWall(eastArcade, spineStone, eastArcadeU(layout), L, sp - 0.5, sp - 0.5, [-1], eastArcadeOpenings(L));'),
+ ('the east arcade stops short of the springing', 'buildEastArcade(eastArcade, spineStone, eastArcadeU(layout), L, sp, eastArcadeOpenings(L));', 'buildEastArcade(eastArcade, spineStone, eastArcadeU(layout), L, sp - 0.5, eastArcadeOpenings(L));'),
  ('the spine wall back in shed-brick, a sun-shadow caster', 'buildSpineWall(spineBrick, spineStone, spine, L, sp, valleyY, [-1, 1]);', 'buildSpineWall(brick, spineStone, spine, L, sp, valleyY, [-1, 1]);'),
  ('the spine wall stopped at the springing again, no upper storey', 'const upper = top > springing + 1;', 'const upper = false;'),
  ('one lower opening a bay, in its middle', '[v - pitch / 2, v + pitch / 2].map(', '[v].map('),
@@ -38,7 +38,7 @@ M = [
  ('corbels short of the rib\'s inner boom', 'export const RIB_FOOT = SPINE_WALL.thick / 2 + SPINE_WALL.corbel.out - MEMBER_SIZE.boom[0] / 2;', 'export const RIB_FOOT = 1.3;'),
  ('the corbel two heavy blocks again', 'steps: [[0.45, 0.3, 0.5], [0.34, 0.3, 0.33], [0.26, 0.35, 0.17]]', 'steps: [[0.6, 0.4275, 0.93], [0.48, 0.5225, 0.558]]'),
  ('a gap between the rib\'s foot and its corbel', 'drop: 0.07, steps', 'drop: 0.13, steps'),
- ('the east arcade back to the spine\'s paired openings', ", [-1], eastArcadeOpenings(L));", ", [-1]);"),
+ ('the east arcade back to the spine\'s paired openings', ", sp, eastArcadeOpenings(L));", ", sp, spineLowerOpenings(L));"),
  ('the north pier left out', 'buildNorthPier(spineBrick, spineStone, spine, L, valleyY);', ''),
  ('the north pier no wider than the wall', 'NORTH_PIER = { half: 1.4,', 'NORTH_PIER = { half: 0.5,'),
  ('the arcades\' dressings back in the front\'s brown stone', "material('stoneDressing'), 'shed-spine-stone'", "material('stoneFoot'), 'shed-spine-stone'"),
@@ -46,6 +46,12 @@ M = [
  ('the west arcade a plain wall, no arches', 'arcadeStorey(brick, depth / 2, length, GROUND_Y, springing, opens,', 'arcadeStorey(brick, depth / 2, length, GROUND_Y, springing, [],'),
  ('the west arcade\'s piers stand in the gateline passages', '(overCut(v0, v1) ? WESTERN_HEAD : GROUND_Y)', '(GROUND_Y)'),
  ('the east aisle\'s ceiling left out: the slate\'s dark underside in the arches', "  group.add(mesh(ceiling.build(), material('valleyLining'), 'shed-aisle-ceiling'));\n", ''),
+ ('the east arcade\'s heads the wall\'s full 1.0 m deep again: a pointed wedge through them', 'arcadeStorey(brick, x - h + EAST_ARCADE.ring / 2, length, spring, springing, opens, EAST_ARCADE.ring);', 'arcadeStorey(brick, x, length, spring, springing, opens, thick);'),
+ ('the west arcade\'s glass the dark pane again', "material('arcadeGlass'), 'shed-west-arcade-panes'", "material('pane'), 'shed-west-arcade-panes'"),
+ ('the west arcade\'s glass not numbered as windows: dark after dark', 'panes.poly(pts, pts.map((p): V2 => uvOf(-p[2], p[1])), { facing: [1, 0, 0] });', 'panes.poly(pts, pts.map((p): V2 => [-p[2], p[1]]), { facing: [1, 0, 0] });'),
+ ('the west arcade\'s glazing without its transom', '    strip(vc - r, jamb, vc + r, jamb, bar);\n', ''),
+ ('the west arcade\'s glazing without its mullions', 'for (let i = 1; i < lights; i++) { const v', 'for (let i = lights; i < lights; i++) { const v'),
+ ('the west arcade\'s glazing without its frame', '    strip(vc - fr, GROUND_Y, vc - fr, jamb, frame);\n    strip(vc + fr, GROUND_Y, vc + fr, jamb, frame);\n', ''),
 ]
 def run(name):
  try: r = kxmut.run_process(['node','--test','--test-reporter=tap','--test-timeout=10000','web/tests/shed-tower.test.ts','web/tests/shed.test.ts'],cwd=work,timeout=30)

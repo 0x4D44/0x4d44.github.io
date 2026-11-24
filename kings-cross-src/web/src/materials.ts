@@ -565,7 +565,7 @@ export type MaterialName =
   | 'brick' | 'stone' | 'slate' | 'asphalt' | 'platformEdge' | 'ballast'
   | 'roofGlass' | 'glass' | 'window' | 'windowArch'
   | 'concrete' | 'steel' | 'whiteSteel' | 'ribPaint' | 'lining' | 'valleyLining' | 'shedGlass' | 'panel' | 'concourseFloor'
-  | 'brickRed' | 'slateBothSides' | 'sash' | 'sashArch' | 'pane' | 'platformEdgeStrip' | 'brickFoot' | 'stoneFoot' | 'stoneDressing';
+  | 'brickRed' | 'slateBothSides' | 'sash' | 'sashArch' | 'pane' | 'platformEdgeStrip' | 'brickFoot' | 'stoneFoot' | 'stoneDressing' | 'arcadeGlass';
 
 /**
  * A wall material with the contact shade at its foot, the define lighting.ts `FOOT_SHADE` names (not imported: lighting.ts is the page's chunk, this its own; a test holds the two to one name).
@@ -607,6 +607,15 @@ function tiled(name: TextureName, extra: THREE.MeshLambertMaterialParameters = {
  * as the rest of the shed's stone does, only lighter.
  */
 export const STONE_DRESSING = 0xc2bba6;
+/**
+ * The glass in the shed's west arcade (shed.ts buildWestArcade). The scorer of shed-arcade-round-5 (B3): the arches rendered as near-black holes (the library's dark
+ * `pane`, mean about (4, 6, 10) at platform eye), where R-kx-shed-interior-c (shed-c-arcade-2013.jpg) shows the lower arches glazed: grey glass by day with some
+ * reflection, lit rooms behind it at dusk. `color` a pale grey-blue glass and `sheen` an emissive stand-in for the bright vault the glass mirrors by day (as the
+ * linings' emissive stands in for the light through the glazing; the atmosphere scales it down after dark): both ASSUMED, chosen to read grey, not black, under the
+ * shed's light. After dark each arch is a window of its own (`litPane`, its number in its UVs), lit warm or cool at an hour of its own; `share` 0.8 of them lit
+ * (shed-c at dusk shows every lower arch in view lit: ASSUMED a few dark).
+ */
+export const ARCADE_GLASS = { color: 0x8a96a0, sheen: 0x4e5862, share: 0.8 } as const;
 function stoneDressing(): THREE.MeshLambertMaterial {
   const m = tiled('stone');
   if (m.map) {
@@ -1151,10 +1160,10 @@ export function paneUv(id: number, across: number, up: number): [number, number]
  * (`PANE_UV`: v under zero), it takes its night light as the decal windows do (`winDecal`: warm or a little cool, its own hour of the dusk, some of a building's windows dark), a window's number the
  * only thing its light is read from. Where the pane's UV is a band's, a wall's or a balcony's, nothing changes. `m` is the material and is returned.
  */
-export function litPane<T extends THREE.MeshLambertMaterial>(m: T, midland: boolean | 'amber' = false): T {
+export function litPane<T extends THREE.MeshLambertMaterial>(m: T, midland: boolean | 'amber' = false, share: number = PANE_UV.share): T {
   const light = midland
     ? 'midlandVisiblePaneLight( vWinUv, wSpan, uWinNight )'
-    : `winPaneLit( vWinUv, wSpan, uWinNight, ${glslFloat(PANE_UV.share)} )`;
+    : `winPaneLit( vWinUv, wSpan, uWinNight, ${glslFloat(share)} )`;
   m.defines = { ...m.defines, WIN_GAIN: glslFloat(NIGHT_GAIN.decal) };
   m.onBeforeCompile = (shader) => {
     shader.uniforms.uWinNight = windowNight;
@@ -1165,7 +1174,7 @@ export function litPane<T extends THREE.MeshLambertMaterial>(m: T, midland: bool
       .replace('#include <common>', `#include <common>\nvarying vec2 vWinUv;\nuniform float uWinNight;${WIN_NIGHT_GLSL}${midland ? MIDLAND_PANE_GLSL + midlandVisiblePaneGlsl(midland === 'amber') : ''}`)
       .replace('#include <map_fragment>', `#include <map_fragment>\nvec2 wSpan = fwidth( vec2( vWinUv.x / ${glslFloat(1 - 2 * PANE_UV.margin)}, vWinUv.y ) );\nif ( vWinUv.y < -0.5 && uWinNight > 0.003 ) totalEmissiveRadiance += WIN_GAIN * ${light};`);
   };
-  m.customProgramCacheKey = () => midland === 'amber' ? 'midlandLitPane-amber' : midland ? 'midlandLitPane' : 'litPane';
+  m.customProgramCacheKey = () => midland === 'amber' ? 'midlandLitPane-amber' : midland ? 'midlandLitPane' : share === PANE_UV.share ? 'litPane' : `litPane-${glslFloat(share)}`;
   return m;
 }
 
@@ -1382,6 +1391,8 @@ const makers: Readonly<Record<MaterialName, () => THREE.Material>> = {
   stoneFoot: () => floodLit(footShaded(tiled('stone'), FRONT_FOOT), ...FRONT_FLOOD.stone),
   // the shed's pale dressings: see STONE_DRESSING
   stoneDressing,
+  // the glazing of the shed's west arcade: see ARCADE_GLASS
+  arcadeGlass: () => litPane(nearer(new THREE.MeshLambertMaterial({ color: ARCADE_GLASS.color, emissive: ARCADE_GLASS.sheen })), false, ARCADE_GLASS.share),
 };
 
 const materials = new Map<MaterialName, THREE.Material>();

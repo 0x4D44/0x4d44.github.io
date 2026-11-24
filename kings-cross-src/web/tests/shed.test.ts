@@ -6,7 +6,8 @@ import type { KxData } from '../../core/osm.ts';
 import { CLOCK_TOWER_HEIGHT, SHED_LENGTH, SHED_SPAN_WIDTH, shedLayout, shedToWorld, stationBuilding, worldToShed } from '../../core/station.ts';
 import { shedRoofY } from '../src/furniture.ts';
 import { SHADOW_CASTERS } from '../src/lighting.ts';
-import { material } from '../src/materials.ts';
+import { ARCADE_GLASS, material, PANE_UV } from '../src/materials.ts';
+import { westArcadeOpenings, WEST_GLAZING } from '../src/shed.ts';
 import { buildShed, buildTower, EAST_ARCADE, eastArcadeOpenings, eastArcadeU, NORTH_PIER, RIB_FOOT, ribLanding, spineLowerOpenings, spineUpperOpenings, valleyTop, buildWesternRange, gableBars, GABLE_GLASS_FROM, glazedHalfAngle, GLAZED_STRIP_WIDTH, GLASS_OPACITY, glazingOpacity, lunetteBars, MEMBER_SIZE, RIB_SPACING, ribMembers, ribPositions, ROOF_SKIN, roofOpacity, SPINE_WALL, spineOpenings, TOWER_SIZE, valleyCut, vaultBand, vaultPoint, WESTERN_RANGE, WESTERN_RANGE_DEPTH_BEFORE, westernArches, westernBays, westernBlock, westernWindows, XRAY_OPACITY } from '../src/shed.ts';
 
 const data: KxData = JSON.parse(readFileSync(new URL('../src/data/kx-track.json', import.meta.url), 'utf8'));
@@ -849,7 +850,7 @@ test('the west wall\'s inner face is an arcade: a round-headed arch in every rib
     assert.ok(!down(g, stone, depth + SPINE_WALL.corbel.out + 0.03, v, sp), `a corbel prouder than its cap at v ${v.toFixed(1)}`);
   }
   assert.ok(bays >= 39, `${bays} bays`);
-  // the gateline passages stay open through the wall and the arcade, and the blind arches elsewhere are dark panes, not windows
+  // the gateline passages stay open through the wall and the arcade, and the arches elsewhere are glazed (the test below), not sash windows
   // (shed.ts WESTERN_GATES: five 6.6 m passages, centres v0 + 4 + 8i; the piers over them hung from their 3.6 m head), across their whole width
   for (const c of [12.1, 20.1, 28.1, 36.1, 44.1]) for (let v = c - 3.2; v <= c + 3.2; v += 0.4) {
     const [x0, z0] = shedToWorld(layout, -1.2, v), [x1, z1] = shedToWorld(layout, 1.2, v);
@@ -857,7 +858,7 @@ test('the west wall\'s inner face is an arcade: a round-headed arch in every rib
     assert.equal(hits.length, 0, `the passage at v ${v.toFixed(1)} is open`);
   }
   const panes = byName(g, 'shed-west-arcade-panes');
-  assert.equal(panes.material, material('pane'));
+  assert.equal(panes.material, material('arcadeGlass')); // re-pinned 2026-11-24 from the dark 'pane': the scorer of shed-arcade-round-5 read the arches as holes; glazed now
   const windows = bbox(byName(g, 'shed-windows'));
   assert.ok(windows.min.x > layout.width - 1, 'no generic windows left on the west wall');
 });
@@ -879,5 +880,130 @@ test('from platform 1\'s eye, the top of each near east-arcade arch shows the ea
     assert.ok(hit, `nothing within 15 m beyond the arch at ${(vc - eye.v).toFixed(1)} m ahead`);
     assert.equal(hit.object.name, 'shed-aisle-ceiling', `at ${(vc - eye.v).toFixed(1)} m ahead`);
     assert.equal((hit.object as THREE.Mesh).material, material('valleyLining'), 'the vaults\' pale lining');
+  }
+});
+
+// Scorer of 2026-11-24 (shed-arcade-round-5, B3): every west arch rendered a uniform near-black fill (mean about (4, 6, 10), the library's dark 'pane'), no panes or
+// frames, holes by day and dark at night. R-kx-shed-interior-c shows the lower arches glazed: frames, a transom on the springing, four lights under it (MEASURED in
+// memory, rough: shed.ts WEST_GLAZING), grey glass by day, lit rooms at dusk. The glass (materials.ts ARCADE_GLASS) is at least 120 of luminance (sRGB bytes) in its
+// own colour and 60 in its daylight sheen (the dark pane: 42 and 0), and after dark each arch is a lit pane of its own (litPane, its number in its UVs).
+test('the west arcade\'s arches are glazed: grey glass by day, lit after dark, in a frame with a transom on the springing, mullions under it and a fanlight\'s bars (R-kx-shed-interior-c)', () => {
+  const g = shedWorld(), panes = byName(g, 'shed-west-arcade-panes'), bars = byName(g, 'shed-west-arcade-bars');
+  const glass = panes.material as THREE.MeshLambertMaterial;
+  assert.equal(glass, material('arcadeGlass'));
+  assert.equal(bars.material, material('ribPaint'), 'the shed\'s dark ironwork paint');
+  const lum = (hex: number): number => 0.2126 * (hex >> 16) + 0.7152 * ((hex >> 8) & 255) + 0.0722 * (hex & 255);
+  assert.ok(lum(glass.color.getHex()) >= 120, `the glass's colour ${lum(glass.color.getHex()).toFixed(0)}`);
+  assert.ok(lum(glass.emissive.getHex()) >= 60, `its daylight sheen ${lum(glass.emissive.getHex()).toFixed(0)}`);
+  // after dark: the lit-pane path, most of the arches lit
+  const shader = { uniforms: {} as Record<string, THREE.IUniform>, vertexShader: THREE.ShaderLib.lambert.vertexShader, fragmentShader: THREE.ShaderLib.lambert.fragmentShader };
+  glass.onBeforeCompile(shader as unknown as THREE.WebGLProgramParametersWithUniforms, undefined as never);
+  assert.ok(shader.fragmentShader.includes(`winPaneLit( vWinUv, wSpan, uWinNight, ${ARCADE_GLASS.share} )`), 'lit as a window after dark');
+  assert.ok(ARCADE_GLASS.share >= 0.7, 'most of the arches lit, as shed-c at dusk');
+  assert.ok('uWinNight' in shader.uniforms, 'by the night\'s window uniform');
+  // every vertex of the glass is a window's (v under -0.5), each arch a number of its own
+  const uv = panes.geometry.getAttribute('uv') as THREE.BufferAttribute, pos = positions(panes.geometry);
+  const ids = new Set<number>();
+  for (let i = 0; i < uv.count; i++) {
+    const v = uv.getY(i), u = uv.getX(i), id = Math.floor(u), f = u - id;
+    if (!(v <= -1 + 1e-4 && v >= -2 - 1e-4 && f >= PANE_UV.margin - 1e-4 && f <= 1 - PANE_UV.margin + 1e-4)) assert.fail(`vertex ${i}: uv (${u.toFixed(3)}, ${v.toFixed(3)})`);
+    ids.add(id);
+  }
+  assert.ok(ids.size >= 30, `${ids.size} arches with a number`);
+  assert.ok(pos.count > 0);
+  // the frame and bars, on rays from the shed westward onto the arch: bar or glass first
+  const depth = 0.5, first = (v: number, y: number): string => {
+    const [x0, z0] = shedToWorld(layout, depth + 0.5, v), [x1, z1] = shedToWorld(layout, -0.1, v);
+    const hit = new THREE.Raycaster(new THREE.Vector3(x0, y, z0), new THREE.Vector3(x1 - x0, 0, z1 - z0).normalize(), 0, 1.2).intersectObjects([panes, bars], false)[0];
+    return hit ? hit.object.name : 'none';
+  };
+  const { lights, frame, bar } = WEST_GLAZING;
+  assert.ok(lights >= 3 && lights <= 5, 'four lights, as measured, +-1');
+  let glazed = 0;
+  for (const { vc, r, jamb } of westArcadeOpenings(layout.length)) {
+    if ([12.1, 20.1, 28.1, 36.1, 44.1].some(c => vc + r > c - 3.3 && vc - r < c + 3.3)) continue; // the gateline passages (shed.ts WESTERN_GATES)
+    const pane = (v: number, y: number): void => assert.equal(first(v, y), 'shed-west-arcade-panes', `glass at v ${v.toFixed(2)}, y ${y.toFixed(2)}`);
+    const barAt = (v: number, y: number, what: string): void => assert.equal(first(v, y), 'shed-west-arcade-bars', `${what} at v ${v.toFixed(2)}, y ${y.toFixed(2)}`);
+    barAt(vc - r + frame / 2, 1.8, 'the frame'); barAt(vc + r - frame / 2, 1.8, 'the frame');
+    barAt(vc - r / 4, jamb, 'the transom'); barAt(vc + r / 4, jamb, 'the transom');
+    for (let i = 1; i < lights; i++) barAt(vc - r + (2 * r * i) / lights, 1.8, 'a mullion');
+    barAt(vc, jamb + r / 2, 'the fanlight\'s centre bar');
+    barAt(vc, jamb + r - frame / 2, 'the frame over the crown');
+    for (let i = 0; i < lights; i++) pane(vc - r + (2 * r * (i + 0.5)) / lights, 1.8);
+    pane(vc - r / 4, jamb + bar + 0.1); pane(vc + r / 4, jamb + bar + 0.1);
+    glazed++;
+  }
+  assert.ok(glazed >= 30, `${glazed} arches glazed`);
+});
+
+// Scorer of 2026-11-24 (shed-arcade-round-5, platform-eye-p1-north): a pointed wedge, pale by day, in the top of the nearest east-arcade opening. The heads are
+// round on the west face (sampled below); the point was parallax: through the full 1.0 m of the wall a head shows only where its two faces' semicircles overlap,
+// and they meet in a cusp under the head's crown (in the arch 12 m ahead, on the evidence camera's screen, 15% of the head's height under it). Over the springing
+// the east arcade is now a ring EAST_ARCADE.ring deep, so the opening seen through a head is near enough the head's own outline: on that camera's screen (fov 50,
+// aspect 1.6), through the nearest arch wholly in its frame (8-15 m ahead: the one 12.1 m ahead), the top of the clear view turns by no more than 30 degrees from
+// one screen column to the next in the head's top fifth (an apex of 150 degrees or more; the 1.0 m head's cusp turned 86) and reaches within 4% of the head's screen
+// height of its crown (the 1.0 m head's stopped 14% under it). The arch 18 m ahead still turns 47 degrees (a lens 0.4 of the ring deep at that angle): not held here.
+test('from platform 1\'s eye the view through the near east-arcade heads is round-topped, not pointed; the heads are round on the west face', () => {
+  const g = shedWorld(), wall = byName(g, 'shed-east-arcade'), x = eastArcadeU(layout), half = SPINE_WALL.thick / 2;
+  // the heads are round: open just inside the circle, brick just outside it, on the west face, every 15 degrees
+  for (const { vc, r, jamb } of eastArcadeOpenings(layout.length).slice(2, 6)) for (let k = 0; k <= 12; k++) {
+    const a = (Math.PI * k) / 12;
+    const solid = (rr: number): boolean => {
+      const v = vc - rr * Math.cos(a), y = jamb + rr * Math.sin(a);
+      const [x0, z0] = shedToWorld(layout, x - half - 0.3, v), [x1, z1] = shedToWorld(layout, x - half + 0.1, v);
+      return new THREE.Raycaster(new THREE.Vector3(x0, y, z0), new THREE.Vector3(x1 - x0, 0, z1 - z0).normalize(), 0, 0.4).intersectObject(wall, false).length > 0;
+    };
+    assert.ok(!solid(r - 0.05) && solid(r + 0.05), `the head at v ${vc.toFixed(1)}, ${(15 * k)} degrees`);
+  }
+  const cam = new THREE.PerspectiveCamera(50, 1.6, 0.1, 1000);
+  cam.position.set(67.66190476190475, 2.5, -206.35238095238097);
+  cam.lookAt(68.7832388299945, 2.5, -246.33666048706488);
+  cam.updateMatrixWorld(true);
+  const eye = worldToShed(layout, [67.66190476190475, -206.35238095238097]);
+  const rc = new THREE.Raycaster();
+  const clear = (sx: number, sy: number): boolean => { rc.setFromCamera(new THREE.Vector2(sx, sy), cam); return rc.intersectObject(wall, false).length === 0; };
+  const near = eastArcadeOpenings(layout.length).filter(o => o.vc - eye.v >= 8 && o.vc - eye.v <= 15);
+  assert.ok(near.length >= 1, `${near.length} arches`);
+  for (const { vc, r, jamb } of near) {
+    // the head's screen box, from the west face's semicircle
+    const pts = Array.from({ length: 25 }, (_, k) => { const a = (Math.PI * k) / 24, [px, pz] = shedToWorld(layout, x - half, vc - r * Math.cos(a)); return new THREE.Vector3(px, jamb + r * Math.sin(a), pz).project(cam); });
+    const x0 = Math.min(...pts.map(p => p.x)), x1 = Math.max(...pts.map(p => p.x)), y0 = Math.min(...pts.map(p => p.y)), y1 = Math.max(...pts.map(p => p.y));
+    // the top of the clear view in each screen column
+    const cols = 160, step = ((x1 - x0) * 1.6) / cols, tops: [number, number][] = [];
+    for (let i = 0; i <= cols; i++) {
+      const sx = x0 + ((x1 - x0) * i) / cols;
+      let lo = NaN;
+      for (let j = 0; j <= 80; j++) { const sy = y1 - ((y1 - y0) * j) / 80; if (clear(sx, sy)) { lo = sy; break; } }
+      if (Number.isNaN(lo)) continue;
+      let hi = lo + (y1 - y0) / 80; // not clear
+      for (let n = 0; n < 20; n++) { const m = (lo + hi) / 2; if (clear(sx, m)) lo = m; else hi = m; }
+      if (lo > y0 + 0.02 * (y1 - y0)) tops.push([sx * 1.6, lo]); // screen units, square
+    }
+    assert.ok(tops.length >= 8, `the arch ${(vc - eye.v).toFixed(1)} m ahead: ${tops.length} clear columns`);
+    const ahead = (vc - eye.v).toFixed(1), H = y1 - y0;
+    // the west face's semicircle on the screen: its highest point in a column
+    const ring = Array.from({ length: 193 }, (_, k) => { const a = (Math.PI * k) / 192, [px, pz] = shedToWorld(layout, x - half, vc - r * Math.cos(a)); const q = new THREE.Vector3(px, jamb + r * Math.sin(a), pz).project(cam); return [q.x * 1.6, q.y] as const; });
+    const outline = (sx: number): number => {
+      let best = -Infinity;
+      for (let k = 0; k + 1 < ring.length; k++) { const [ax, ay] = ring[k]!, [bx, by] = ring[k + 1]!; if ((ax - sx) * (bx - sx) <= 0 && ax !== bx) best = Math.max(best, ay + ((by - ay) * (sx - ax)) / (bx - ax)); }
+      return best;
+    };
+    // no point at the top: in the top fifth of the head, the clear view's top turns from one column to the next by at most 30 degrees (an apex of 150 degrees or
+    // more; the head's own outline turns by about a degree a column there, and a cusp turns it all at once)
+    const turn = (ys: (sx: number) => number): number => {
+      let worst = 0;
+      for (let i = 0; i + 2 < tops.length; i++) {
+        const [a, b, c] = [tops[i]!, tops[i + 1]!, tops[i + 2]!];
+        if (Math.min(a[1], b[1], c[1]) < y0 + 0.8 * H || c[0] - a[0] > 2.5 * step) continue; // the top fifth, three neighbouring columns
+        worst = Math.max(worst, (Math.abs(Math.atan((ys(c[0]) - ys(b[0])) / (c[0] - b[0])) - Math.atan((ys(b[0]) - ys(a[0])) / (b[0] - a[0]))) * 180) / Math.PI);
+      }
+      return worst;
+    };
+    const at = new Map(tops.map(([sx, y]) => [sx, y]));
+    const own = turn(outline), seen = turn(sx => at.get(sx)!);
+    assert.ok(seen <= 30, `the arch ${ahead} m ahead: the clear view's top turns ${seen.toFixed(0)} degrees in a column at its sharpest (its outline ${own.toFixed(1)})`);
+    // and it reaches the head's crown
+    const top = Math.max(...tops.map(t => t[1]));
+    assert.ok(y1 - top <= 0.04 * H, `the arch ${ahead} m ahead: the clear view stops ${((100 * (y1 - top)) / H).toFixed(0)}% of the head's height under its crown`);
   }
 });
