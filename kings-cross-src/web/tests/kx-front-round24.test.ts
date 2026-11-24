@@ -36,8 +36,8 @@ const halfAt = (y: number): number => entryR * Math.sqrt(Math.max(0, 1 - ((y - e
 const s1 = GROUND_Y + shed.FRONT_CANOPY.top - shed.FRONT_CANOPY.sheet - 0.02, s0 = s1 - shed.PORCH_INFILL.sign;
 const mats = infill.material as THREE.MeshLambertMaterial[];
 
-test('A2: each spandrel\'s panel is recessed 0.15-0.5 m behind the wall\'s face, inside its frame, and closed behind', () => {
-  assert.ok(T.recess >= 0.15 && T.recess <= 0.5, `FRONT_TYMPANUM.recess ${T.recess}`); // re-pinned round 25: 0.4 (front-round-4 score, A2: 0.2 did not read by day)
+test('A2: each spandrel\'s panel is recessed 0.15-0.7 m behind the wall\'s face, inside its frame, and closed behind', () => {
+  assert.ok(T.recess >= 0.15 && T.recess <= 0.7, `FRONT_TYMPANUM.recess ${T.recess}`); // re-pinned round 25: 0.4 (front-round-4 score, A2: 0.2 did not read by day); round 26: 0.6 (front-round-5 score: still no shadowed head square-on), half the 1.2 m wall
   const yBand = frontTop - 0.9 - 0.25 - 0.25 - 0.1 - T.band;
   for (const xa of [X0 + 1.0, layout.spine + shed.TOWER_SIZE / 2]) for (const [x, y] of [[xa + 2.5, yBand - 1.0], [xa + T.strip + 0.3, yBand - 2.0]] as const) {
     const h = ray([x, y, 10], [0, 0, -1], masonry);

@@ -89,16 +89,19 @@ test('A2: the spandrel\'s frame stands at least 0.25 m proud of its panel, so it
   }
 });
 
-test('A3: the concourse behind each porch\'s glass grows brighter from its floor to its ceiling', () => {
+test('A3: the concourse behind each porch\'s glass grows brighter from its floor to the figures\' heads, and is darker at its ceiling', () => {
   const infill = group.getObjectByName('shed-front-infill') as THREE.Mesh;
   const mats = infill.material as THREE.MeshLambertMaterial[], interior = mats[4]!;
   const map = interior.map as THREE.DataTexture | null;
   assert.ok(map, 'the interior plane carries a gradient map');
   const { data, height } = map.image as { data: Uint8Array; height: number };
-  const at = (row: number): number => data[row * 4]! / 255;
-  assert.ok(at(height - 1) - at(0) >= 0.2 && at(height - 1) >= 0.9, // re-pinned round 23: the foot lightened from 0.5 to 0.75, which dimmed the figures (score fp2)
-    `darker at its floor (${at(0).toFixed(2)}) than at its top (${at(height - 1).toFixed(2)})`);
-  for (let i = 1; i < height; i++) assert.ok(at(i) >= at(i - 1), 'rising all the way up');
+  // re-pinned round 26 (front-round-5 score, A3: the openings did not read as voids): the map two-dimensional, darker at its sides and over its top
+  // (PORCH_DEPTH.vignette), so its centre column is read here, rising to 0.85 of its height (the figures' heads) and darker above
+  const w = (map.image as { width: number }).width, at = (row: number): number => data[(row * w + Math.floor(w / 2)) * 4]! / 255, head = Math.floor(0.85 * (height - 1));
+  assert.ok(at(head) - at(0) >= 0.2 && at(head) >= 0.9, // re-pinned round 23: the foot lightened from 0.5 to 0.75, which dimmed the figures (score fp2)
+    `darker at its floor (${at(0).toFixed(2)}) than at the figures' heads (${at(head).toFixed(2)})`);
+  for (let i = 1; i <= head; i++) assert.ok(at(i) >= at(i - 1), 'rising up to the figures\' heads');
+  assert.ok(at(height - 1) < at(head), 'and darker at its ceiling');
   // the plane's v runs from its foot (0) to its top (1), so the map's rows run up it
   const g = infill.geometry, grp = g.groups.find(q => q.materialIndex === 4)!, idx = g.index, pos = g.getAttribute('position'), uv = g.getAttribute('uv');
   let lowV = 0, highV = 0, lowY = Infinity, highY = -Infinity;

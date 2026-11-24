@@ -20,14 +20,14 @@ if out == src or out.is_relative_to(src) or src.is_relative_to(out):
 out.mkdir(parents=True, exist_ok=True)
 
 MUTATIONS = [
-    ('no recess', 'web/src/shed.ts', "strip: 0.5, recess: 0.4 }", "strip: 0.5, recess: 0.0 }", "A2: each spandrel's panel"),
+    ('no recess', 'web/src/shed.ts', "strip: 0.5, recess: 0.6 }", "strip: 0.5, recess: 0.0 }", "A2: each spandrel's panel"),
     ('no panel holes', 'web/src/shed.ts', "    outline.holes.push(...panels);", "", "A2: each spandrel's panel"),
     ('holes left open', 'web/src/shed.ts', "  for (const h of panels) frontParts.push(", "  if (panels.length < 0) frontParts.push(", "A2: each spandrel's panel"),
     ('the shadow line back in the frames', 'web/src/shed.ts', "    shades.poly([[fx0, yb - FRONT_RELIEF.shadowLine, e]", "    frames.poly([[fx0, yb - FRONT_RELIEF.shadowLine, e]", "A2: the cornice's painted"),
     ('no night lift on the line', 'web/src/shed.ts', "FRONT_NIGHT.shade, 'kx-front-infill-shade'),", "FRONT_NIGHT.shade, 'kx-front-infill-sh'),", "A2: the cornice's painted"),
     ('a black night line', 'web/src/shed.ts', "shade: [0x8a6a48, 0.12] }", "shade: [0x8a6a48, 0.0] }", "A2: the cornice's painted"),
     ('a soffit unwashed', 'web/src/shed.ts', "(max(vKxWashNormal.z,0.0) + ${FRONT_WASH_SOFFIT.toFixed(2)}*max(-vKxWashNormal.y,0.0))", "max(vKxWashNormal.z,0.0)", "A2: the front's night wash"),
-    ('a tan soffit', 'web/src/shed.ts', "soffit: 0xa99a7c }", "soffit: 0xe6d6b4 }", "A3: each porch soffit"),
+    ('a tan soffit', 'web/src/shed.ts', "soffit: 0xa99a7c, vignette", "soffit: 0xe6d6b4, vignette", "A3: each porch soffit"),
     ('the soffit past the band', 'web/src/shed.ts', "    const sw = fw;", "    const sw = 2 * halfAt(s0) - 0.04;", "A3: each porch soffit"),
     ('a glowing soffit by day', 'web/src/shed.ts', "new THREE.MeshLambertMaterial({ color: PORCH_DEPTH.soffit })", "new THREE.MeshLambertMaterial({ color: PORCH_DEPTH.soffit, emissive: 0x3a3020 })", "A3: each porch soffit"),
     ('the head reveal covered in charcoal again', 'web/src/shed.ts', "    // the signage fascia: navy, across the top of the opening", "    frames.poly([[x - entryR, headY(0) - 0.01, 0], [x + entryR, headY(0) - 0.01, 0], [x + entryR, headY(0) - 0.01, -PORCH_DEPTH.glass], [x - entryR, headY(0) - 0.01, -PORCH_DEPTH.glass]], undefined, { facing: [0, -1, 0] });\n    // the signage fascia: navy, across the top of the opening", "A3: each opening's arched head"),

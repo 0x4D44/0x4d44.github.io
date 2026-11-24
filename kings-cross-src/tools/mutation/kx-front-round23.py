@@ -20,10 +20,10 @@ if out == src or out.is_relative_to(src) or src.is_relative_to(out):
 out.mkdir(parents=True, exist_ok=True)
 
 MUTATIONS = [
-    ('returns back at 0.45', 'web/src/shed.ts', "PORCH_DEPTH = { glass: 0.8,", "PORCH_DEPTH = { glass: 0.45,", 'A3: each opening'),
+    ('returns back at 0.45', 'web/src/shed.ts', "PORCH_DEPTH = { glass: 1.05,", "PORCH_DEPTH = { glass: 0.45,", 'A3: each opening'),
     ('returns stop short of the glass', 'web/src/shed.ts', "[rx, entryFoot, -PORCH_DEPTH.glass], [rx, yj, -PORCH_DEPTH.glass]", "[rx, entryFoot, -0.4], [rx, yj, -0.4]", 'A3: each opening'),
     ('no soffits', 'web/src/shed.ts', "    soffits.poly([[x - sw / 2,", "    if (x > 1e9) soffits.poly([[x - sw / 2,", 'A3: a pale soffit'),
-    ('a dark soffit', 'web/src/shed.ts', "soffit: 0xa99a7c }", "soffit: 0x2a2c2e }", 'A3: a pale soffit'),
+    ('a dark soffit', 'web/src/shed.ts', "soffit: 0xa99a7c, vignette", "soffit: 0x2a2c2e, vignette", 'A3: a pale soffit'),
     ('a soffit without its glow', 'web/src/shed.ts', "FRONT_NIGHT.downlight, 'kx-front-infill-soffit'),", "FRONT_NIGHT.downlight, 'kx-front-infill-sof'),", 'A3: a pale soffit'),
     ('the gradient foot back at 0.5', 'web/src/shed.ts', "gradient: [0.75, 1.0] as const", "gradient: [0.5, 1.0] as const", "A3: the interior's foot"),
     ('a cap overhanging 0.5 m', 'web/src/shed.ts', "[width + 0.5, cap, FRONT_THICK + 0.5 + po]", "[width + 1.0, cap, FRONT_THICK + 1.0 + po]", "A1: each pier's cap"),

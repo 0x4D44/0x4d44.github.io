@@ -36,7 +36,7 @@ const P = S.FRONT_PIERS as { rise: number; cap: number; width: number; out: numb
 const entryFoot = GROUND_Y + shed.SOUTH_FRONT_ARCADES.footAboveGround, entryR = shed.SOUTH_FRONT_ARCADES.openingWidth / 2;
 
 test('A3: each opening\'s glass stands 0.7 m or more back, its reveal\'s dark returns running all the way to it', () => {
-  assert.ok(D.glass >= 0.7 && D.glass <= 0.9, `PORCH_DEPTH.glass ${D.glass}`);
+  assert.ok(D.glass >= 0.7 && D.glass <= 1.15, `PORCH_DEPTH.glass ${D.glass}`); // re-pinned round 26 (front-round-5 score, A3: the openings did not read as voids): 1.05 m, inside the 1.2 m wall
   for (const x of doors) for (const sd of [-1, 1]) {
     const r = ray([x, entryFoot + 1.0, -D.glass + 0.32], [sd, 0, 0], [infill]); // just in front of the jambs' frames, 0.3 m deep
     assert.ok(r && Math.abs(Math.abs(r.x - x) - entryR) < 0.05 && r.mat === 1, `the ${sd > 0 ? 'east' : 'west'} return dark near the glass (${r?.name} ${r?.mat} at ${r?.x.toFixed(2)})`);

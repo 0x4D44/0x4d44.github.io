@@ -95,7 +95,7 @@ export const SOUTH_FRONT_ARCADES = { perSide: 3, openingWidth: 6.8, jambHeight: 
  * opening, flush with the wall's face, the glass's lunette 0.4 m narrower behind it (the opening's outline and springing unchanged); and a
  * stone bed mould under the parapet cornice, `bedMould` proud, so the cornice's 0.7 m overhang reads as a stepped soffit, not a block.
  */
-export const FRONT_RELIEF = { orders: 3, orderWidth: 0.4, orderStep: 0.28, innerOrder: true, bedMould: { height: 0.25, out: 0.35 }, impost: { height: 0.35, out: 1.0, past: 0.15 }, shadowLine: 0.25, springing: { height: 0.3, out: 1.0 }, corona: { height: 0.3, out: 1.1 }, impostAboveGround: 4.95, impostHeight: 0.25, impostOut: 0.2 } as const;
+export const FRONT_RELIEF = { orders: 3, orderWidth: 0.4, orderStep: 0.28, splay: 0.22, innerOrder: true, bedMould: { height: 0.25, out: 0.35 }, impost: { height: 0.35, out: 1.0, past: 0.15 }, shadowLine: 0.25, springing: { height: 0.3, out: 1.0 }, corona: { height: 0.3, out: 1.1 }, impostAboveGround: 4.95, impostHeight: 0.25, impostOut: 0.2 } as const;
 /**
  * The porch openings' infill (A3), from R-kx-front-a: dark-framed glazed screens set back in each opening, glazed doors with a push rail,
  * a deep transom (the signage fascia) at about 2.5 m, and glazing over it in the arch head. Five bays to an opening and the frame sizes are
@@ -119,8 +119,8 @@ export const FRONT_PIERS = { rise: 2.8, cap: 0.4, step: 0.6, stepRun: 3.0, width
 /** Round 21 (A2): each great arch's spandrel a recessed panel, framed by brick `out` m proud: a `band` m band under the cornice, `strip` m strips at its sides (ASSUMED). */
 /** Round 25: the tone of the front's returns (the orders' step faces, the spandrel panels' and porch openings' reveals) against its brick face (ASSUMED). */
 export const FRONT_RETURN = 0.55;
-export const FRONT_TYMPANUM = { out: 0.5, band: 0.45, strip: 0.5, recess: 0.4 } as const; // round 22 (A2: 0.15 m read about 1 px square-on): 0.3; round 23b (the painted line was black at night): 0.5, the band's own soffit casting the shadow line
-export const PORCH_DEPTH = { glass: 0.8, frame: 0.3, interior: 0x7a6a55, barriers: 6, barrier: [0.22, 1.0] as const, figures: 2, figure: [0.45, 1.7] as const, gradient: [0.75, 1.0] as const, soffit: 0xa99a7c } as const; // round 24: `soffit` the stone dressings' tone (was 0xe6d6b4, a light tan shelf); // round 21: figures (ASSUMED); round 22: `gradient`, the interior's brightness at its foot and at its top (ASSUMED); round 23 (A3): the glass 0.8 m back (was 0.45: the returns read about 1 px), the gradient's foot 0.75 (0.5 dimmed the figures), and `soffit`, the lit ceiling over each opening's head
+export const FRONT_TYMPANUM = { out: 0.5, band: 0.45, strip: 0.5, recess: 0.6 } as const; // round 22 (A2: 0.15 m read about 1 px square-on): 0.3; round 23b (the painted line was black at night): 0.5, the band's own soffit casting the shadow line
+export const PORCH_DEPTH = { glass: 1.05, frame: 0.3, interior: 0x7a6a55, barriers: 6, barrier: [0.22, 1.0] as const, figures: 2, figure: [0.45, 1.7] as const, gradient: [0.75, 1.0] as const, soffit: 0xa99a7c, vignette: { edge: 0.45, edgeWidth: 0.2, top: 0.5, from: 0.85 } as const } as const; // round 26 (front-round-5 score, A3: the openings did not read as voids): the glass 1.05 m back (was 0.8), and `vignette`, the interior darker toward its sides (to `edge` of its centre, over its outer `edgeWidth` of the width either side) and over its top (from `from` of its height to `top` at the ceiling), the figures (at 0.33 and 0.78 of the width, up to 0.85 of its height) clear of both; // round 24: `soffit` the stone dressings' tone (was 0xe6d6b4, a light tan shelf); // round 21: figures (ASSUMED); round 22: `gradient`, the interior's brightness at its foot and at its top (ASSUMED); round 23 (A3): the glass 0.8 m back (was 0.45: the returns read about 1 px), the gradient's foot 0.75 (0.5 dimmed the figures), and `soffit`, the lit ceiling over each opening's head
 /**
  * The low canopy along the front (R-kx-front-a, 2026, and R-kx-front-b, 2016): a flat dark steel roof on slender columns at the bay lines,
  * passing in front of the tower's foot. Its top at 3.85 m (MEASURED from R-a by the same scale as FRONT_RELIEF); its fascia, depth and
@@ -257,9 +257,16 @@ function glassStructureTexture(foot: number): THREE.DataTexture {
 }
 /** Round 22 (A3: a flat interior plane): the concourse behind the porch glass darker at the floor and brighter toward its ceiling, a 1 x 16 map over the plane's 0..1 v. */
 function interiorGradientTexture(): THREE.DataTexture {
-  const n = 16, [lo, hi] = PORCH_DEPTH.gradient, data = new Uint8Array(n * 4);
-  for (let i = 0; i < n; i++) { const v = Math.round(255 * (lo + ((hi - lo) * i) / (n - 1))); data.set([v, v, v, 255], i * 4); }
-  const t = new THREE.DataTexture(data, 1, n);
+  // rows up the plane (its v), columns across it (its u); round 26: two-dimensional, the vignette (PORCH_DEPTH.vignette) over the rising gradient
+  const n = 16, w = 16, [lo, hi] = PORCH_DEPTH.gradient, V = PORCH_DEPTH.vignette, data = new Uint8Array(n * w * 4);
+  const ramp = (a: number, b: number, x: number): number => Math.min(1, Math.max(0, (x - a) / (b - a)));
+  for (let i = 0; i < n; i++) for (let j = 0; j < w; j++) {
+    const t = i / (n - 1), u = j / (w - 1), d = Math.min(u, 1 - u);
+    const up = (lo + (hi - lo) * Math.min(t, V.from) / V.from) * (1 - (1 - V.top) * ramp(V.from, 1, t)), side = V.edge + (1 - V.edge) * ramp(0, V.edgeWidth, d);
+    const v = Math.round(255 * up * side);
+    data.set([v, v, v, 255], (i * w + j) * 4);
+  }
+  const t = new THREE.DataTexture(data, w, n);
   t.colorSpace = THREE.SRGBColorSpace;
   t.magFilter = THREE.LinearFilter;
   t.needsUpdate = true;
@@ -1335,9 +1342,21 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   // (FRONT_RELIEF); round 22 (A2: the orders stopped in mid-air at the front's end) each runs down onto the springing course at both ends, its
   // feet at the front's end standing on the impost against the end pier's mass (FRONT_PIERS)
   centres.forEach((uc, vault) => {
+    // round 26 (front-round-5 score, A2: "one broad ring with thin lines" square-on): each order is a layer on the one inside it (the wall's face behind
+    // the first, its hole the arch's own), out to the band's outer edge, and its inner edge splayed: its face's inner edge FRONT_RELIEF.splay out from its foot, so its step is a
+    // chamfer seen square-on as a band of the return tone (FRONT_RETURN). The same contours and triangles as the square steps; only vertices move
+    const rOut = R + FRONT_RELIEF.orders * FRONT_RELIEF.orderWidth, { orderStep: st, splay } = FRONT_RELIEF;
     for (let i = 0; i < FRONT_RELIEF.orders; i++) {
-      const r0 = R + i * FRONT_RELIEF.orderWidth;
-      frontParts.push(new THREE.ExtrudeGeometry(archRing(uc - fx0, sp, r0, r0 + FRONT_RELIEF.orderWidth), { depth: FRONT_THICK + (i + 1) * FRONT_RELIEF.orderStep, bevelEnabled: false, curveSegments: 12 }));
+      const r0 = R + i * FRONT_RELIEF.orderWidth, zBack = FRONT_THICK + i * st, zFace = FRONT_THICK + (i + 1) * st;
+      const g = new THREE.ExtrudeGeometry(archRing(uc - fx0, sp, r0, rOut), { depth: zFace - zBack, bevelEnabled: false, curveSegments: 12 });
+      g.translate(0, 0, zBack);
+      const pos = g.getAttribute('position') as THREE.BufferAttribute;
+      for (let k = 0; k < pos.count; k++) {
+        const dx = pos.getX(k) - (uc - fx0), dy = pos.getY(k) - sp, r = Math.hypot(dx, dy);
+        if (Math.abs(pos.getZ(k) - zFace) < 1e-6 && Math.abs(r - r0) < 1e-4) pos.setXY(k, uc - fx0 + (dx * (r0 + splay)) / r, sp + (dy * (r0 + splay)) / r);
+      }
+      g.computeVertexNormals();
+      frontParts.push(g);
     }
     if (FRONT_RELIEF.innerOrder) {
       // the fourth order, inside the opening and a step back from the third: flush with the wall's face, to the springing. Only its face

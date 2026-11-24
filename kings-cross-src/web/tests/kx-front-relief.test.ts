@@ -59,8 +59,16 @@ test('A2: each great arch\'s reveal steps back in three orders toward the glass,
       for (let r = R + 0.02; r <= R + 2.5; r += 0.02) rs.push(r);
       const zs = rs.map(r => hitZ(uc + r * Math.cos(a), layout.springing + r * Math.sin(a), masonry));
       // plateaus of constant face depth, from the glass outward
+      // re-pinned round 26 (front-round-5 score, A2): each order's step is splayed, a slope of ever-changing depth between the faces, so a level is a
+      // plateau, three or more samples (0.06 m) at one depth, not every depth sampled
       const levels: number[] = [];
-      for (const z of zs) { if (z === null) continue; const q = Math.round(z * 100) / 100; if (levels[levels.length - 1] !== q) levels.push(q); }
+      let run = 0, last: number | null = null;
+      for (const z of zs) {
+        const q = z === null ? null : Math.round(z * 100) / 100;
+        run = q !== null && q === last ? run + 1 : 1;
+        last = q;
+        if (q !== null && run === 3 && levels[levels.length - 1] !== q) levels.push(q);
+      }
       assert.ok(levels.length >= 4, `three orders and the wall at ${(a * 180 / Math.PI).toFixed(0)} degrees, found ${levels.length} levels`);
       const orders = levels.slice(0, 3);
       for (let i = 1; i < 3; i++) {

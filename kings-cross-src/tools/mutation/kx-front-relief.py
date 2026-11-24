@@ -24,7 +24,7 @@ MUTATIONS = [
      "  proud(spine, GROUND_Y + FRONT_RELIEF.impostAboveGround, FW + toMass, FRONT_RELIEF.impostHeight, FRONT_RELIEF.impostOut); // string course over the arcade's crowns\n",
      '', 'proud stone string courses'),
     ('arch orders flattened to one depth', 'web/src/shed.ts',
-     'depth: FRONT_THICK + (i + 1) * FRONT_RELIEF.orderStep', 'depth: FRONT_THICK + FRONT_RELIEF.orderStep',
+     'zBack = FRONT_THICK + i * st, zFace = FRONT_THICK + (i + 1) * st;', 'zBack = FRONT_THICK, zFace = FRONT_THICK + st;',  # round 26: the orders are stacked layers, each from zBack to zFace
      'reveal steps back in three orders'),
     ('porch glass omitted (pushed 5 m back, out of the opening)', 'web/src/shed.ts',
      'g.translate(0, 0, -PORCH_DEPTH.glass); // round 20', 'g.translate(0, 0, -PORCH_DEPTH.glass - 5); // round 20',
