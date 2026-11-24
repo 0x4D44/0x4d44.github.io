@@ -43,22 +43,26 @@ const FRONT_THICK = 1.2;
 const FRONT_ABOVE_CROWN = 2.4;
 export const TOWER_SIZE = 6.4; // ASSUMED
 /**
- * How far the tower's south face stands in front of the south front, metres. Until round 5 the whole 6.4 m tower stood in front of the
- * front (6.55 m proud); R-kx-front-b (oblique, from the south-west) shows only a narrow west side to its lower shaft, about a fifth of its
- * front, which at that view's angle is 1 to 2 m, and R-night-a (from the south-east) the same. 1.5 m is ASSUMED within that. The rest of
- * the tower stands behind the front: below the front's top only the part in front of the front's back face is built, and over the valley
- * behind it a stepped brick fill carries the shaft down onto the two roofs (buildTower's `behind`).
+ * How far the tower's south face stands in front of the south front, metres: the whole tower, 0.15 m clear of it. Round 5's tower pass
+ * cut this to 1.5 m, reading only the strip from the screen to the first edge in R-kx-front-b; its scorer measured the shaft's west face
+ * there at about 0.8 of its south face, wide enough to carry its own slit window, so the tower projects about its own width (held, round
+ * 1a), as the first build had it.
  */
-export const TOWER_PROJECTION = 1.5;
+export const TOWER_PROJECTION = TOWER_SIZE + 0.15;
 /**
  * The clock tower's top (rubric A4), from R-kx-front-c (2019, close up) with R-kx-front-a and -b. MEASURED (counted): the clock stage is
  * plain brick, set back on the stone cornice of the shaft below (no panelling shows on it in any of the three photographs), a clock in a
  * stone surround on each face just under a stone frieze; over the frieze about nine two-tier stone brackets to a face carry a deep corona;
  * over that a thin dark metal roof edge and a near-flat hipped top, the vane on a short mast. Sizes ASSUMED, read against the clock's
- * 4.3 m surround: setback 0.25 m, frieze 0.3 m, brackets 0.7 m tall, corona 0.2 m, an overhang of 1.2 m past the stage's brick, the roof
- * rising 0.3 m. The total height (CLOCK_TOWER_HEIGHT, to the vane's top) is published.
+ * 4.3 m surround: frieze 0.3 m, brackets 0.8 m tall, corona 0.2 m, an overhang of 1.2 m past the stage's brick, the roof rising 0.3 m.
+ * The held round 1a: the stage is narrower against the shaft (R-kx-front-a: about 0.72 of it by my reading, 0.6 by the scorer's; 0.72 is
+ * kept, since the clock's 4.3 m surround has to fit on its 4.6 m face), fewer and larger brackets (seven to a face, R-kx-front-c), a heavier
+ * stepped cornice at the shaft's top with a weathered slope in to the stage, and a gilded banner vane. The total height (CLOCK_TOWER_HEIGHT, to the vane's top) is published.
  */
-export const TOWER_TOP = { setback: 0.25, clockBelowFrieze: 2.2, frieze: 0.3, bracket: { width: 0.32, height: 0.7, lower: 0.55 }, perFace: 9, corona: 0.2, overhang: 1.2, edge: 0.15, rise: 0.3 } as const;
+export const TOWER_TOP = {
+  setback: 0.9, clockBelowFrieze: 2.2, frieze: 0.3, bracket: { width: 0.45, height: 0.8, lower: 0.6 }, perFace: 7, corona: 0.2, overhang: 1.2, edge: 0.15, rise: 0.3,
+  transition: { lower: { height: 0.3, out: 0.15 }, upper: { height: 0.35, out: 0.35 }, weather: 0.45 },
+} as const;
 /**
  * Network Rail records six porch arches, three each side of the tower:
  * https://www.networkrail.co.uk/who-we-are/our-history/iconic-infrastructure/the-history-of-london-kings-cross-station/
@@ -85,11 +89,10 @@ export const PORCH_INFILL = { bays: 5, mullion: 0.12, frameDepth: 0.12, rail: 1.
  * passing in front of the tower's foot. Its top at 3.85 m (MEASURED from R-a by the same scale as FRONT_RELIEF); its fascia, depth and
  * columns ASSUMED (the depth just clears the model tower's south face).
  */
-export const FRONT_CANOPY = { top: 3.85, fascia: 0.35, sheet: 0.15, depth: 5.0, column: 0.3, lightPitch: 2.4, lightRows: [0.3, 0.7] as const, lamp: [0.6, 0.18] as const } as const;
+export const FRONT_CANOPY = { top: 3.85, fascia: 0.35, sheet: 0.15, depth: 8.6, column: 0.3, lightPitch: 2.4, lightRows: [0.3, 0.7] as const, lamp: [0.6, 0.18] as const } as const;
 /**
  * Round 5's second pass at the front (the scorer of round 1): the canopy's sheet runs unbroken in front of the tower's foot. Since round 5's
- * tower pass the tower stands TOWER_PROJECTION (1.5 m) proud, not 6.55 m, so the canopy is 5.0 m deep again (ASSUMED): 3.5 m of it in
- * front of the tower. It stops at the front's west end: the city's grey canopy beyond it (a 'city-roof' building, x -18.7 to -5.7 m from
+ * tower pass the tower stands TOWER_PROJECTION (6.55 m) proud, so the canopy is 8.6 m deep (ASSUMED): 2 m of it in front of the tower. It stops at the front's west end: the city's grey canopy beyond it (a 'city-roof' building, x -18.7 to -5.7 m from
  * the front's end) is the part front-b shows running on west, and the second pass's extra bay ran into it (the round-2a hold).
  * Colours, sampled in memory: the canopy and the screens' frames are charcoal (R-a, the fascia and soffit in shade); the screens' glass is dark
  * tinted (R-a); the signage fascia over each entrance is a mid blue (R-a, the 'Entrance / Exit only' boards). At night (R-night-a, 2025) a row of
@@ -1152,9 +1155,7 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   disposables.push(...rings, ...lunGlass, ...gableGeos);
 
   // ---- the clock tower, centred on the spine, standing just in front of the south front --------
-  // the tower stands TOWER_PROJECTION proud of the front; behind the front, its shaft is carried on the roofs either side of the valley
-  const towerZ = TOWER_PROJECTION - TOWER_SIZE / 2;
-  group.add(buildTower(spine, { z: -FRONT_THICK - towerZ, top: frontTop, roof: (d: number) => sp + Math.sqrt(Math.max(0, (R + ROOF_SKIN) ** 2 - (R - d) ** 2)) }));
+  group.add(buildTower(spine));
 
   // ---- the Western Range -----------------------------------------------------------------------
   if (opts.range !== false) group.add(buildWesternRange());
@@ -1374,12 +1375,7 @@ export function buildNorthPier(brick: Batch, stone: Batch, x: number, length: nu
  * diameter are ASSUMED from that appearance, not a surveyed elevation. ASSUMED: the published
  * 112 ft overall height includes the vane; the previous model allocated it all to the cap.
  */
-/**
- * `behind`, when the tower stands in the front: `z` is the front's back face in the tower's frame, `top` the front's top, and `roof(d)` the
- * roofs' height `d` metres either side of the tower's axis (the valley). Below `top` nothing of the shaft is built behind `z` but a stepped
- * fill down onto the roofs.
- */
-export function buildTower(x: number, behind?: { z: number; top: number; roof: (d: number) => number }): THREE.Group {
+export function buildTower(x: number): THREE.Group {
   const tower = new THREE.Group();
   tower.name = 'clock-tower';
   const tb = new Batch();
@@ -1390,35 +1386,21 @@ export function buildTower(x: number, behind?: { z: number; top: number; roof: (
   const eavesY = CLOCK_TOWER_HEIGHT - 3.3;
   const cw = tw - 2 * TOWER_TOP.setback; // the clock stage, set back on the shaft's cornice
   const clockY = eavesY - TOWER_TOP.clockBelowFrieze;
-  if (!behind) {
-    tb.box([0, (shaftTop + GROUND_Y) / 2, 0], [tw, shaftTop - GROUND_Y, tw]);
-    ts.box([0, GROUND_Y + 0.9, 0], [tw + 0.7, 1.8, tw + 0.7]); // plinth
-    for (const sx of [-1, 1]) for (const sz of [-1, 1]) ts.box([sx * (tw / 2 + 0.05), (shaftTop + GROUND_Y) / 2 + 0.9, sz * (tw / 2 + 0.05)], [0.9, shaftTop - GROUND_Y - 1.8, 0.9]); // quoins
-  } else {
-    const { z: zb, top: yt, roof } = behind, front = tw / 2 - zb;
-    tb.box([0, (yt + GROUND_Y) / 2, (zb + tw / 2) / 2], [tw, yt - GROUND_Y, front]); // the shaft in front of the front's back face
-    tb.box([0, (shaftTop + yt) / 2, 0], [tw, shaftTop - yt, tw]); // over the front's top, the whole shaft
-    ts.box([0, GROUND_Y + 0.9, (zb + tw / 2 + 0.35) / 2], [tw + 0.7, 1.8, front + 0.35]); // plinth
-    for (const sx of [-1, 1]) {
-      ts.box([sx * (tw / 2 + 0.05), (shaftTop + GROUND_Y) / 2 + 0.9, tw / 2 + 0.05], [0.9, shaftTop - GROUND_Y - 1.8, 0.9]); // the front quoins
-      ts.box([sx * (tw / 2 + 0.05), (shaftTop + yt) / 2, -(tw / 2 + 0.05)], [0.9, shaftTop - yt, 0.9]); // the back quoins, over the front's top
-    }
-    // the fill behind the front, over the valley, from the front's top down onto the roofs: its foot follows the roofs' curve a hair under
-    // them; a north face, a foot and two sides (its south face is against the front)
-    const steps = 16, zn = -tw / 2;
-    const xs = Array.from({ length: 2 * steps + 1 }, (_, i) => -tw / 2 + (tw * i) / (2 * steps));
-    const foot = (x: number): number => roof(Math.abs(x)) - 0.1;
-    for (let i = 0; i < xs.length - 1; i++) {
-      const a = xs[i] as number, b = xs[i + 1] as number, fa = foot(a), fb = foot(b);
-      tb.poly([[a, fa, zn], [b, fb, zn], [b, yt, zn], [a, yt, zn]], [[a, fa], [b, fb], [b, yt], [a, yt]], { facing: [0, 0, -1] });
-      tb.poly([[a, fa, zb], [b, fb, zb], [b, fb, zn], [a, fa, zn]], [[a, zb], [b, zb], [b, zn], [a, zn]], { facing: [0, -1, 0] });
-    }
-    for (const side of [-1, 1]) {
-      const x = (side * tw) / 2, f = foot(x);
-      tb.poly([[x, f, zb], [x, f, zn], [x, yt, zn], [x, yt, zb]], [[zb, f], [zn, f], [zn, yt], [zb, yt]], { facing: [side, 0, 0] });
+  tb.box([0, (shaftTop + GROUND_Y) / 2, 0], [tw, shaftTop - GROUND_Y, tw]);
+  ts.box([0, GROUND_Y + 0.9, 0], [tw + 0.7, 1.8, tw + 0.7]); // plinth
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) ts.box([sx * (tw / 2 + 0.05), (shaftTop + GROUND_Y) / 2 + 0.9, sz * (tw / 2 + 0.05)], [0.9, shaftTop - GROUND_Y - 1.8, 0.9]); // quoins
+  // the shaft's cornice under the clock stage (R-kx-front-c): two stepped stone courses, then a weathered top sloping in to the stage
+  const { lower, upper, weather } = TOWER_TOP.transition;
+  ts.box([0, shaftTop - upper.height - lower.height / 2, 0], [tw + 2 * lower.out, lower.height, tw + 2 * lower.out], { skip: ['+y'] });
+  ts.box([0, shaftTop - upper.height / 2, 0], [tw + 2 * upper.out, upper.height, tw + 2 * upper.out]);
+  {
+    const a = tw / 2 + upper.out, b = cw / 2, y0 = shaftTop, y1 = shaftTop + weather, sl = Math.hypot(a - b, weather);
+    const ring: [number, number][] = [[-1, 1], [1, 1], [1, -1], [-1, -1]];
+    for (let i = 0; i < 4; i++) {
+      const [px, pz] = ring[i]!, [qx, qz] = ring[(i + 1) % 4]!;
+      ts.poly([[px * a, y0, pz * a], [qx * a, y0, qz * a], [qx * b, y1, qz * b], [px * b, y1, pz * b]], [[0, 0], [2 * a, 0], [a + b, sl], [a - b, sl]]);
     }
   }
-  ts.box([0, shaftTop, 0], [tw + 0.4, 0.4, tw + 0.4]);
   tb.box([0, (shaftTop + eavesY) / 2, 0], [cw, eavesY - shaftTop, cw]); // the clock stage
   // the bracketed cornice (TOWER_TOP, R-kx-front-c): a stone frieze, a row of two-tier stone brackets on every face, the corona they carry,
   // then the dark metal roof's edge and its near-flat hipped top
@@ -1462,14 +1444,17 @@ export function buildTower(x: number, behind?: { z: number; top: number; roof: (
   tower.userData.clockDials = dirs.map(([nx, nz]): ClockDial => ({ centre: [nx * (cw / 2 + 0.06), clockY, nz * (cw / 2 + 0.06)], normal: [nx, 0, nz], up: [0, 1, 0], radius: 1.7 })); // clocks.ts
   // ASSUMED simplified vane: mast, cardinal cross and arrow; its precise metalwork is not surveyed.
   const vane = new Batch(), vaneY = CLOCK_TOWER_HEIGHT - 0.65;
+  const gilt = (material('steel') as THREE.MeshLambertMaterial).clone();
+  gilt.color.set(0xc8a24a); // gilded (the vane's own mesh: no new draw)
   vane.box([0, (capTop - 0.15 + CLOCK_TOWER_HEIGHT) / 2, 0], [0.045, CLOCK_TOWER_HEIGHT - capTop + 0.15, 0.045]);
   vane.box([0, vaneY, 0], [1.8, 0.04, 0.04]);
   vane.box([0, vaneY, 0], [0.04, 0.04, 1.8]);
-  const arrow: V3[] = [[0.8, vaneY - 0.18, 0], [1.35, vaneY, 0], [0.8, vaneY + 0.18, 0]];
-  vane.poly(arrow); vane.poly([...arrow].reverse());
+  // a banner on the mast, swallow-tailed (R-kx-front-a, R-kx-front-c show a gilded vane; its outline is ASSUMED)
+  const banner: V3[] = [[0.05, vaneY + 0.08, 0], [1.2, vaneY + 0.08, 0], [0.95, vaneY + 0.34, 0], [1.2, vaneY + 0.6, 0], [0.05, vaneY + 0.6, 0]];
+  vane.poly(banner, undefined, { facing: [0, 0, 1] }); vane.poly(banner, undefined, { facing: [0, 0, -1] });
   const brick = withBuildingNightMaterial(mesh(tb.build(), material('brickFoot'), 'tower-brick'), frontWash('brickFoot', 'tower', tw));
   const stone = withBuildingNightMaterial(mesh(ts.build(), material('stoneFoot'), 'tower-stone'), frontWash('stoneFoot', 'tower', tw));
-  tower.add(brick, stone, mesh(tslate.build(), material('slate'), 'tower-cap'), faces, mesh(vane.build(), material('steel'), 'tower-vane'));
+  tower.add(brick, stone, mesh(tslate.build(), material('slate'), 'tower-cap'), faces, mesh(vane.build(), gilt, 'tower-vane'));
   tower.position.set(x, 0, TOWER_PROJECTION - tw / 2);
   return tower;
 }

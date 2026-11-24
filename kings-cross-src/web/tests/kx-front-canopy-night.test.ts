@@ -6,7 +6,7 @@ import { readFileSync } from 'node:fs';
 import { SHED_SPAN_WIDTH, shedLayout } from '../../core/station.ts';
 import type { CityData } from '../../core/city.ts';
 import { addCity } from '../src/city.ts';
-import { buildShed, FRONT_CANOPY, TOWER_PROJECTION, TOWER_SIZE } from '../src/shed.ts';
+import { buildShed, FRONT_CANOPY, TOWER_SIZE } from '../src/shed.ts';
 import { material, windowNight } from '../src/materials.ts';
 import { GROUND_Y } from '../src/world.ts';
 
@@ -38,7 +38,7 @@ const hit = (target: THREE.Mesh, index: number, from: [number, number, number], 
 
 test('the canopy\'s roof sheet runs unbroken at least 1.5 m in front of the tower\'s foot', () => {
   assert.ok(steelIndex > 0, 'the canopy is the porch mesh\'s steel');
-  const towerFace = TOWER_PROJECTION; // re-pinned 2026-11-24 (round 5, tower pass): the tower's face is 1.5 m proud now, not 6.55 m
+  const towerFace = TOWER_SIZE + 0.15;
   for (let dz = 0.1; dz <= 1.5; dz += 0.1) {
     for (const dx of [-2, 0, 2]) {
       const p = hit(porch, steelIndex, [layout.spine + dx, 12, towerFace + dz], [0, -1, 0]);

@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import type { KxData } from '../../core/osm.ts';
 import { readFileSync } from 'node:fs';
 import { SHED_SPAN_WIDTH, shedLayout } from '../../core/station.ts';
-import { buildShed, TOWER_PROJECTION, TOWER_SIZE } from '../src/shed.ts';
+import { buildShed, TOWER_SIZE } from '../src/shed.ts';
 import { material } from '../src/materials.ts';
 import { SHADOW_CASTERS } from '../src/lighting.ts';
 import { GROUND_Y } from '../src/world.ts';
@@ -109,8 +109,7 @@ test('A3: the low canopy of the current front runs across the six openings at th
   group.updateMatrixWorld(true);
   assert.ok(b.max.y - GROUND_Y > 3.6 && b.max.y - GROUND_Y < 4.2, `its top 3.6 to 4.2 m up (${(b.max.y - GROUND_Y).toFixed(2)})`);
   assert.ok(b.min.x < (centres[0] as number) - 3.4 && b.max.x > (centres[5] as number) + 3.4, 'across all six openings');
-  // re-pinned 2026-11-24 (round 5, tower pass): the tower's face is TOWER_PROJECTION (1.5 m) proud now, not 6.55 m
-  assert.ok(b.max.z > TOWER_PROJECTION + 1 && b.max.z < 9, 'deep enough to pass in front of the tower, no deeper than 9 m');
+  assert.ok(b.max.z > TOWER_SIZE + 0.15 && b.max.z < 9, 'deep enough to pass in front of the tower, no deeper than 9 m');
   assert.ok(b.min.z >= -0.01, 'nothing of it north of the front, toward the buffer stops');
   for (const x of centres) assert.ok(hitZ(x, foot + 1.6, [canopy]) === null, 'its columns stand clear of the doorways');
   group.remove(canopy);

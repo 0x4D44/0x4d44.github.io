@@ -20,7 +20,7 @@ if out == src or out.is_relative_to(src) or src.is_relative_to(out):
 out.mkdir(parents=True, exist_ok=True)
 
 MUTATIONS = [
-    ('canopy too shallow to pass the tower', 'web/src/shed.ts', 'depth: 5.0,', 'depth: 2.0,', 'roof sheet runs unbroken'),
+    ('canopy back to 7.2 m deep', 'web/src/shed.ts', 'depth: 8.6,', 'depth: 7.2,', 'roof sheet runs unbroken'),
     ('the west bay back, into the grey canopy', 'web/src/shed.ts', 'cx0 = fx0 + 0.3, cx1 = fx1 - 0.3;', 'cx0 = fx0 - 9.6, cx1 = fx1 - 0.3;', 'stops short of the city'),
     ('canopy back to the ribs\' slate blue', 'web/src/shed.ts', 'frontSteel.color.set(FRONT_COLOURS.steel);', 'frontSteel.color.set(0x343b42);', 'are charcoal'),
     ('fascia saturated blue', 'web/src/shed.ts', 'fascia: 0x1b2a4a', 'fascia: 0x1c3c78', 'are charcoal'),

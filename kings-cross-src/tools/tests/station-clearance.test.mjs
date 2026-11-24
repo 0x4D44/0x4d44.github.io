@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
 import { shedLayout, shedToWorld } from '../../core/station.ts';
-import { TOWER_SIZE } from '../../web/src/shed.ts';
+import { TOWER_SIZE, TOWER_TOP } from '../../web/src/shed.ts';
 import { kingsCrossLandingView } from '../../web/src/station-framing.ts';
 import { camerasToCheck, clearanceOptions, main as clearanceMain } from '../camera-clearance.mjs';
 import { ELEMENT_VIEWS, stationCameras } from '../evidence.mjs';
@@ -94,8 +94,12 @@ test('the real station scene: the clock tower view is clear, and the same aim on
   const tower = cameras['tower-close'];
   assert.deepEqual(clearanceFaults('tower-close', viewClearance(tower, occluders, ground, { grid: 4 })), []);
   // re-pinned 2026-11-24: the tower stands on the spine (it stood at width / 2 before the shed realignment)
-  const s = shedLayout(data), [x, z] = shedToWorld(s, s.spine, -(TOWER_SIZE + .15) - 1);
-  const pressed = clearanceFaults('tower-close-moved', viewClearance({ ...tower, pos: [x, tower.pos[1], z] }, occluders, ground, { grid: 4 }));
+  // re-pinned 2026-11-24 (round 5, tower pass): the camera is at the clock stage's height (28 m), and the stage is set back TOWER_TOP.setback
+  // (0.9 m) on the shaft since the held round 1a, so 'one metre off the tower's south face' is one metre off the stage's face
+  const s = shedLayout(data), [x, z] = shedToWorld(s, s.spine, -(TOWER_SIZE + .15 - TOWER_TOP.setback) - 1);
+  // (and the aim moves with it: the camera's target is a fixed point on the old dial, which a camera this close would otherwise pass)
+  const shift = [x - tower.pos[0], 0, z - tower.pos[2]], target = tower.target.map((t, i) => t + shift[i]);
+  const pressed = clearanceFaults('tower-close-moved', viewClearance({ ...tower, pos: [x, tower.pos[1], z], target }, occluders, ground, { grid: 4 }));
   assert.ok(pressed.some(f => /more than half occluded|inside or touching/.test(f)), `pressed against the tower: ${pressed.join(' | ')}`);
 });
 
