@@ -33,7 +33,7 @@ MUTATIONS = [
     ('glow ignores the night level', 'web/src/shed.ts', 'uFrontGlow * uWinNight * mix(', 'uFrontGlow * mix(', 'at night a row of downlights'),
     ('flat entrance glow, no fade', 'web/src/shed.ts', 'head: 0.3 }', 'head: 1.0 }', 'at night a row of downlights'),
     ('frames glow at night', 'web/src/shed.ts', 'frontSteel.emissive.set(FRONT_COLOURS.steelLift);', 'frontSteel.emissive.set(0x806040);', 'at night a row of downlights'),
-    ('sill course back to 0.3 m proud', 'web/src/shed.ts', 'proud(spine, sp - 0.325, FW + 0.6, 0.65, 0.5)', 'proud(spine, sp - 0.3, FW + 0.4, 0.6, 0.3)', 'sill course is the front'),
+    ('sill course back to 0.3 m proud', 'web/src/shed.ts', 'proud(spine, sp - 0.325, FW + toMass, 0.65, 0.5)', 'proud(spine, sp - 0.3, FW + 0.4, 0.6, 0.3)', 'sill course is the front'),
     # re-pointed in round 9: round 8 made the cap the springing course (FRONT_RELIEF.springing), a stone.box of its own
     ('sill course\'s cap omitted', 'web/src/shed.ts', "  stone.box([spine, sp - sc.height / 2,", "  void ([spine, sp - sc.height / 2,", 'sill course is the front'),
 ]

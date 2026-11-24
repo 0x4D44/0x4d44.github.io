@@ -109,11 +109,16 @@ export const PORCH_INFILL = { bays: 5, mullion: 0.12, frameDepth: 0.12, rail: 1.
  */
 /** Round 20: the parapet cornice's face, metres proud of the front (0.7 until round 20; FRONT_RELIEF.corona.out over it). */
 export const FRONT_CORNICE = { out: 0.9, height: 0.9 } as const;
-/** Round 21 (A1, R-kx-front-a): the end piers run up `rise` m past the parapet's coping under a `cap` m stone cap; the parapet steps up `step` m for `stepRun` m either side of the tower (ASSUMED). */
-export const FRONT_PIERS = { rise: 1.2, cap: 0.3, step: 0.6, stepRun: 3.0 } as const;
+/**
+ * Round 21 (A1, R-kx-front-a): the end piers run up `rise` m past the parapet's coping under a `cap` m stone cap; the parapet steps up `step` m for `stepRun` m
+ * either side of the tower (ASSUMED). Round 22 (front-piers-round-1 score, A1: chimney stubs, not masses): each pier `width` m in all, 2.8 m over the coping:
+ * a `face` m-proud strip under the great arch's orders' feet, and outside it a brick mass `out` m proud whose returns read obliquely (ASSUMED, read in memory
+ * from R-kx-front-a/b against the tower's 6.4 m: a pier about 0.8 of the tower's width, so about 5 m, and in R-b about 3-3.5 m over the parapet).
+ */
+export const FRONT_PIERS = { rise: 2.8, cap: 0.45, step: 0.6, stepRun: 3.0, width: 5.2, out: 0.75, face: 0.15 } as const;
 /** Round 21 (A2): each great arch's spandrel a recessed panel, framed by brick `out` m proud: a `band` m band under the cornice, `strip` m strips at its sides (ASSUMED). */
-export const FRONT_TYMPANUM = { out: 0.15, band: 0.45, strip: 0.5 } as const;
-export const PORCH_DEPTH = { glass: 0.45, frame: 0.3, interior: 0x7a6a55, barriers: 6, barrier: [0.22, 1.0] as const, figures: 2, figure: [0.45, 1.7] as const } as const; // round 21: figures (ASSUMED)
+export const FRONT_TYMPANUM = { out: 0.3, band: 0.45, strip: 0.5 } as const; // round 22 (A2: 0.15 m read about 1 px square-on): 0.3
+export const PORCH_DEPTH = { glass: 0.45, frame: 0.3, interior: 0x7a6a55, barriers: 6, barrier: [0.22, 1.0] as const, figures: 2, figure: [0.45, 1.7] as const, gradient: [0.5, 1.0] as const } as const; // round 21: figures (ASSUMED); round 22: `gradient`, the interior's brightness at its foot and at its top (ASSUMED)
 /**
  * The low canopy along the front (R-kx-front-a, 2026, and R-kx-front-b, 2016): a flat dark steel roof on slender columns at the bay lines,
  * passing in front of the tower's foot. Its top at 3.85 m (MEASURED from R-a by the same scale as FRONT_RELIEF); its fascia, depth and
@@ -241,6 +246,16 @@ function glassStructureTexture(foot: number): THREE.DataTexture {
   t.magFilter = THREE.LinearFilter;
   t.repeat.set(0, 1 / GLASS_STRUCTURE.height);
   t.offset.set(0.5, -foot / GLASS_STRUCTURE.height);
+  t.needsUpdate = true;
+  return t;
+}
+/** Round 22 (A3: a flat interior plane): the concourse behind the porch glass darker at the floor and brighter toward its ceiling, a 1 x 16 map over the plane's 0..1 v. */
+function interiorGradientTexture(): THREE.DataTexture {
+  const n = 16, [lo, hi] = PORCH_DEPTH.gradient, data = new Uint8Array(n * 4);
+  for (let i = 0; i < n; i++) { const v = Math.round(255 * (lo + ((hi - lo) * i) / (n - 1))); data.set([v, v, v, 255], i * 4); }
+  const t = new THREE.DataTexture(data, 1, n);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.magFilter = THREE.LinearFilter;
   t.needsUpdate = true;
   return t;
 }
@@ -933,28 +948,6 @@ function segmentalArchRing(uc: number, spring: number, halfWidth: number, rise: 
   return s;
 }
 
-/**
- * The band r0..r1 (r0 >= R) about (uc, springing), cut by the vertical line through uc + side * R (the front's end, where the model's lunette
- * meets it): the reveal of a great arch, so that it runs down to the springing without standing past the front.
- */
-function endCutRing(uc: number, springing: number, r0: number, r1: number, side: -1 | 1): THREE.Shape {
-  const a0 = Math.acos(Math.min(1, R / r0)), a1 = Math.acos(R / r1);
-  const s = new THREE.Shape();
-  if (side < 0) {
-    s.moveTo(uc - R, springing + r1 * Math.sin(a1));
-    s.absarc(uc, springing, r1, Math.PI - a1, 0, true);
-    s.lineTo(uc + r0, springing);
-    s.absarc(uc, springing, r0, 0, Math.PI - a0, false);
-  } else {
-    s.moveTo(uc - r1, springing);
-    s.absarc(uc, springing, r1, Math.PI, a1, true);
-    s.lineTo(uc + R, springing + r0 * Math.sin(a0));
-    s.absarc(uc, springing, r0, a0, Math.PI, false);
-  }
-  s.closePath();
-  return s;
-}
-
 /** An arched band of radius r0..r1 about (uc, springing): the stone moulding round an arch. */
 function archRing(uc: number, springing: number, r0: number, r1: number): THREE.Shape {
   const s = new THREE.Shape();
@@ -1297,11 +1290,12 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   for (const x of entryCentres) outline.holes.push(segmentalArchOpening(x - fx0, entryFoot, entryR, SOUTH_FRONT_ARCADES.jambHeight, SOUTH_FRONT_ARCADES.archRise));
   const frontParts: THREE.BufferGeometry[] = [new THREE.ExtrudeGeometry(outline, { depth: FRONT_THICK, bevelEnabled: false, curveSegments: 40 })];
   // each great arch's reveal: three brick orders, the outermost standing furthest forward, each inner one a step back toward the glass
-  // (FRONT_RELIEF); cut off at the front's end, which the model's lunettes reach at their springing
+  // (FRONT_RELIEF); round 22 (A2: the orders stopped in mid-air at the front's end) each runs down onto the springing course at both ends, its
+  // feet at the front's end standing on the impost against the end pier's mass (FRONT_PIERS)
   centres.forEach((uc, vault) => {
     for (let i = 0; i < FRONT_RELIEF.orders; i++) {
       const r0 = R + i * FRONT_RELIEF.orderWidth;
-      frontParts.push(new THREE.ExtrudeGeometry(endCutRing(uc - fx0, sp, r0, r0 + FRONT_RELIEF.orderWidth, vault === 0 ? -1 : 1), { depth: FRONT_THICK + (i + 1) * FRONT_RELIEF.orderStep, bevelEnabled: false, curveSegments: 12 }));
+      frontParts.push(new THREE.ExtrudeGeometry(archRing(uc - fx0, sp, r0, r0 + FRONT_RELIEF.orderWidth), { depth: FRONT_THICK + (i + 1) * FRONT_RELIEF.orderStep, bevelEnabled: false, curveSegments: 12 }));
     }
     if (FRONT_RELIEF.innerOrder) {
       // the fourth order, inside the opening and a step back from the third: flush with the wall's face, to the springing. Only its face
@@ -1325,48 +1319,56 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   group.add(frontMesh);
   // stone dressings that stand proud of the front plane (z = 0) by `out` metres
   const proud = (cx: number, cy: number, sx: number, sy: number, out: number): void => stone.box([cx, cy, (out - FRONT_THICK) / 2], [sx, sy, FRONT_THICK + out]);
-  let plinthStart = fx0 - 0.4;
+  // round 22: the end piers stand outside the front's ends (FRONT_PIERS), the orders' feet on the springing course at x fx0 - feet .. fx0; the courses
+  // under the cornice run on to the piers' masses (`toMass` each side), the springing course, cornice and corona across them (`across`)
+  const feet = FRONT_RELIEF.orders * FRONT_RELIEF.orderWidth, toMass = 2 * feet + 0.2, across = 2 * (FRONT_PIERS.width - 1.0);
+  let plinthStart = fx0 - feet - 0.1;
   for (const x of entryCentres) {
     const left = x - entryR, right = x + entryR;
     if (left > plinthStart) proud((plinthStart + left) / 2, GROUND_Y + 0.7, left - plinthStart, 1.4, 0.35);
     plinthStart = right;
   }
-  if (plinthStart < fx1 + 0.4) proud((plinthStart + fx1 + 0.4) / 2, GROUND_Y + 0.7, fx1 + 0.4 - plinthStart, 1.4, 0.35); // plinth interrupted at each entrance
-  proud(spine, sp - 0.325, FW + 0.6, 0.65, 0.5); // sill course at the springing: bolder since round 5's second pass (R-kx-front-a, the main band of the front)
+  if (plinthStart < fx1 + feet + 0.1) proud((plinthStart + fx1 + feet + 0.1) / 2, GROUND_Y + 0.7, fx1 + feet + 0.1 - plinthStart, 1.4, 0.35); // plinth interrupted at each entrance
+  proud(spine, sp - 0.325, FW + toMass, 0.65, 0.5); // sill course at the springing: bolder since round 5's second pass (R-kx-front-a, the main band of the front)
   // its weathered cap, overhanging: the shadow line under it is what makes the band read (the round-2a hold); round 8 (R-kx-front-b: the
   // great arches spring from a proud course running across the screen) makes it the springing course, 0.3 m thick and `springing.out` proud
   const { springing: sc, corona } = FRONT_RELIEF;
-  stone.box([spine, sp - sc.height / 2, (sc.out - FRONT_THICK) / 2], [FW + 0.8, sc.height, FRONT_THICK + sc.out], { skip: ['-z'] });
-  proud(spine, GROUND_Y + FRONT_RELIEF.impostAboveGround, FW + 0.4, FRONT_RELIEF.impostHeight, FRONT_RELIEF.impostOut); // string course over the arcade's crowns
+  stone.box([spine, sp - sc.height / 2, (sc.out - FRONT_THICK) / 2], [FW + 0.8 + across, sc.height, FRONT_THICK + sc.out], { skip: ['-z'] });
+  proud(spine, GROUND_Y + FRONT_RELIEF.impostAboveGround, FW + toMass, FRONT_RELIEF.impostHeight, FRONT_RELIEF.impostOut); // string course over the arcade's crowns
   // cornice: round 20 (cornice-round-1 score, A2: in south-front the whole face under the corona sat in shadow, where front-a shows it lit but for a crisp
   // band under the corona) its face brought to FRONT_CORNICE.out, so the corona (`corona.out`) overhangs it by 0.2 m, not 0.4: the band its soffit throws
   // is about half as deep, and no longer the face's whole 0.6 m at a summer sun
-  proud(spine, frontTop - 0.45, FW + 1.0, 0.9, FRONT_CORNICE.out);
+  proud(spine, frontTop - 0.45, FW + 1.0 + across, 0.9, FRONT_CORNICE.out);
   // its corona (round 8: real overhang, casting): a slab over the cornice's top `corona.out` proud, its soffit throwing a shadow down the
   // cornice's face and onto the bed mould
-  stone.box([spine, frontTop - corona.height / 2, (corona.out - FRONT_THICK) / 2], [FW + 1.2, corona.height, FRONT_THICK + corona.out], { skip: ['-z'] });
+  stone.box([spine, frontTop - corona.height / 2, (corona.out - FRONT_THICK) / 2], [FW + 1.2 + across, corona.height, FRONT_THICK + corona.out], { skip: ['-z'] });
   const { height: bh, out: bo } = FRONT_RELIEF.bedMould;
-  proud(spine, frontTop - 0.9 - bh / 2, FW + 0.8, bh, bo); // its bed mould: a step under the overhang, so its soffit reads
+  proud(spine, frontTop - 0.9 - bh / 2, FW + toMass, bh, bo); // its bed mould: a step under the overhang, so its soffit reads
   // the great arches' impost (round 7, R-kx-front-b): a stone block at the springing over each end pier (the front's ends, where the
-  // orders, cut by the front's end, come down onto the pier), prouder than the outer order (FRONT_RELIEF.impost), so the arch has a
+  // orders come down onto the pier; since round 22 it runs under their feet too), prouder than the outer order (FRONT_RELIEF.impost), so the arch has a
   // defined springing there (the spine's ends are behind the tower)
   {
     const { height: ih, out: io, past } = FRONT_RELIEF.impost, span = 1.0 + past; // the end pier's 1 m, and a little past it
-    for (const [x0, x1] of [[fx0 - 0.05, fx0 + span], [fx1 - span, fx1 + 0.05]]) stone.box([(x0 + x1) / 2, sp + ih / 2, (io - FRONT_THICK) / 2], [x1 - x0, ih, FRONT_THICK + io], { skip: ['-z'] });
+    for (const [x0, x1] of [[fx0 - feet - 0.05, fx0 + span], [fx1 - span, fx1 + feet + 0.05]]) stone.box([(x0 + x1) / 2, sp + ih / 2, (io - FRONT_THICK) / 2], [x1 - x0, ih, FRONT_THICK + io], { skip: ['-z'] });
   }
-  proud(spine, frontTop + 0.15, FW + 0.6, 0.3, 0.4); // its coping
+  proud(spine, frontTop + 0.15, FW + toMass, 0.3, 0.4); // its coping
   // end piers: round 21 (front-infill-round-1 score, A1; R-kx-front-a: the end piers rise as taller blocks over the cornice) the same box run up past the
   // coping by FRONT_PIERS.rise, its own stone cap on it; and the parapet steps up FRONT_PIERS.step either side of the tower for FRONT_PIERS.stepRun (both ASSUMED,
   // read from R-a against the tower's 6.4 m width: the piers about 1.2 m over the parapet, the step about 0.6 m)
-  const { rise, cap, step, stepRun } = FRONT_PIERS, coped = frontTop + 0.3;
-  for (const x of [fx0 + 0.5, fx1 - 0.5]) {
-    proud(x, (GROUND_Y + 0.5 + coped + rise) / 2, 1.0, coped + rise - GROUND_Y - 0.5, 0.25);
-    stone.box([x, coped + rise + cap / 2, 0.125 - FRONT_THICK / 2], [1.3, cap, FRONT_THICK + 0.55], { skip: ['-y', '-z'] }); // its cap
+  // round 22 (A1): each pier FRONT_PIERS.width wide: its face strip from 1 m inside the front's end out over the orders' feet, `face` proud, and outside
+  // that a brick mass `out` proud, from the ground; both rise `rise` past the coping under one stone cap that overhangs them 0.2 m, its soffit casting
+  const { rise, cap, step, stepRun, width, out: po, face } = FRONT_PIERS, coped = frontTop + 0.3, top = coped + rise;
+  for (const sd of [-1, 1]) {
+    const end = sd < 0 ? fx0 : fx1, inner = end - sd * 1.0, mid = end + sd * feet, outer = end + sd * (width - 1.0);
+    proud((inner + mid) / 2, (GROUND_Y + 0.5 + top) / 2, 1.0 + feet, top - GROUND_Y - 0.5, face);
+    brick.box([(mid + outer) / 2, (GROUND_Y + top) / 2, (po - FRONT_THICK - 0.02) / 2], [width - 1.0 - feet, top - GROUND_Y, FRONT_THICK + 0.02 + po]);
+    stone.box([(inner + outer) / 2, top + cap / 2, (po + 0.2 - FRONT_THICK - 0.22) / 2], [width + 0.4, cap, FRONT_THICK + 0.42 + po], { skip: ['-z'] }); // its cap
   }
   for (const sd of [-1, 1]) {
     const x0 = spine + sd * (TOWER_SIZE / 2), x1 = x0 + sd * stepRun, xc = (x0 + x1) / 2;
     brick.box([xc, coped + step / 2, -FRONT_THICK / 2], [stepRun, step, FRONT_THICK], { skip: ['-y', '-z'] }); // the parapet's step at the tower
-    stone.box([xc, coped + step + 0.1, 0.1 - FRONT_THICK / 2], [stepRun, 0.2, FRONT_THICK + 0.2], { skip: ['-y', '-z'] }); // its coping
+    // its coping: round 22 (A1: plain dark tops) the parapet's own, 0.3 m deep and 0.4 m proud, overhanging the step's end 0.15 m
+    stone.box([xc + sd * 0.075, coped + step + 0.15, (0.4 - FRONT_THICK) / 2], [stepRun + 0.15, 0.3, FRONT_THICK + 0.4], { skip: ['-z'] });
   }
   // the great arches' spandrels: round 21 (A2: one flat plane of brick) a recessed panel, read by a brick frame FRONT_TYMPANUM.out proud round it: a band
   // under the cornice's shadow line, and strips down the end pier's and the tower's sides to the outer order; the arch's orders close it below
@@ -1506,7 +1508,7 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
     frontNightGlow(fasciaMaterial(), FRONT_NIGHT.fascia, 'kx-front-infill-fascia'),
     frontNightGlow(new THREE.MeshLambertMaterial({ color: FRONT_COLOURS.downlight, emissive: 0x141414 }), FRONT_NIGHT.downlight, 'kx-front-downlight'),
     // round 20: the concourse behind the screens, dim and warm by day, glowing warm after dark (the glass's night colour and its fade)
-    frontNightGlow(new THREE.MeshLambertMaterial({ color: PORCH_DEPTH.interior, emissive: 0x140e08 }), FRONT_NIGHT.glass, 'kx-front-infill-interior', [entryFoot + FRONT_GLOW_FADE.from, entryFoot + FRONT_GLOW_FADE.to, FRONT_GLOW_FADE.head]),
+    frontNightGlow(new THREE.MeshLambertMaterial({ color: PORCH_DEPTH.interior, emissive: 0x140e08, map: interiorGradientTexture() }), FRONT_NIGHT.glass, 'kx-front-infill-interior', [entryFoot + FRONT_GLOW_FADE.from, entryFoot + FRONT_GLOW_FADE.to, FRONT_GLOW_FADE.head]),
   ];
   const infill = new THREE.Mesh(mergeGeometries(infillParts, true), infillMats);
   infill.name = 'shed-front-infill';

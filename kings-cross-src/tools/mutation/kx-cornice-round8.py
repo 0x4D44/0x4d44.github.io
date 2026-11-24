@@ -22,7 +22,7 @@ out.mkdir(parents=True, exist_ok=True)
 
 MUTATIONS = [
     ('springing course back to 0.8 m', 'web/src/shed.ts', 'springing: { height: 0.3, out: 1.0 }', 'springing: { height: 0.3, out: 0.8 }', 'springing course'),
-    ('springing course stops short of the ends', 'web/src/shed.ts', '[FW + 0.8, sc.height, FRONT_THICK + sc.out]', '[FW - 4, sc.height, FRONT_THICK + sc.out]', 'springing course'),
+    ('springing course stops short of the ends', 'web/src/shed.ts', '[FW + 0.8 + across, sc.height, FRONT_THICK + sc.out]', '[FW - 4, sc.height, FRONT_THICK + sc.out]', 'springing course'),
     ('no corona', 'web/src/shed.ts', 'corona: { height: 0.3, out: 1.1 }', 'corona: { height: 0.3, out: 0.5 }', "parapet's cornice"),
     ('corona as a thin lip', 'web/src/shed.ts', 'corona: { height: 0.3, out: 1.1 }', 'corona: { height: 0.02, out: 1.1 }', "parapet's cornice"),
 ]

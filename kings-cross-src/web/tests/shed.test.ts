@@ -7,7 +7,7 @@ import { CLOCK_TOWER_HEIGHT, SHED_LENGTH, SHED_SPAN_WIDTH, shedLayout, shedToWor
 import { shedRoofY } from '../src/furniture.ts';
 import { createSunShadow, SHADOW_CASTERS } from '../src/lighting.ts';
 import { ARCADE_FRAME, ARCADE_GLASS, material, PANE_UV, TEXTURES, windowNight } from '../src/materials.ts';
-import { westArcadeOpenings, WEST_GLAZING } from '../src/shed.ts';
+import { FRONT_RELIEF, westArcadeOpenings, WEST_GLAZING } from '../src/shed.ts';
 import { buildShed, buildTower, EAST_ARCADE, eastArcadeOpenings, eastArcadeU, NORTH_PIER, RIB_FOOT, ribLanding, spineLowerOpenings, spineUpperOpenings, valleyTop, buildWesternRange, gableBars, GABLE_GLASS_FROM, glazedHalfAngle, GLAZED_STRIP_WIDTH, GLASS_OPACITY, glazingOpacity, lunetteBars, MEMBER_SIZE, RIB_SPACING, ribMembers, ribPositions, ROOF_SKIN, roofOpacity, SPINE_WALL, spineOpenings, TOWER_SIZE, TOWER_TOP, valleyCut, vaultBand, vaultPoint, WESTERN_RANGE, WESTERN_RANGE_DEPTH_BEFORE, westernArches, westernBays, westernBlock, westernWindows, XRAY_OPACITY } from '../src/shed.ts';
 
 const data: KxData = JSON.parse(readFileSync(new URL('../src/data/kx-track.json', import.meta.url), 'utf8'));
@@ -428,7 +428,9 @@ test('buildShed: the published dimensions, in the shed frame', () => {
   // centred on the spine; it spanned the whole width W before, aisles included)
   const front = bbox(byName(group, 'shed-front'));
   close(front.max.y, layout.crown + 2.4, EPS);
-  close(front.max.x - front.min.x, 2 * SHED_SPAN_WIDTH, EPS);
+  // re-pinned 2026-11-24 (round 22, A2): the great arches' orders now run down onto the springing course at the front's ends too, so their feet
+  // stand their own width (orders x orderWidth) past each end, against the end piers' masses; the wall itself still spans the two vaults
+  close(front.max.x - front.min.x, 2 * SHED_SPAN_WIDTH + 2 * FRONT_RELIEF.orders * FRONT_RELIEF.orderWidth, EPS);
   close(byName(group, 'shed-front').position.x + (front.min.x + front.max.x) / 2, layout.spine, EPS);
   assert.ok(W > 2 * SHED_SPAN_WIDTH, 'the east aisle lies beyond it');
   // 40 ribs on each of the two vaults

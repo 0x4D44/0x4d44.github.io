@@ -21,7 +21,7 @@ out.mkdir(parents=True, exist_ok=True)
 
 MUTATIONS = [
     ('impost string course omitted', 'web/src/shed.ts',
-     "  proud(spine, GROUND_Y + FRONT_RELIEF.impostAboveGround, FW + 0.4, FRONT_RELIEF.impostHeight, FRONT_RELIEF.impostOut); // string course over the arcade's crowns\n",
+     "  proud(spine, GROUND_Y + FRONT_RELIEF.impostAboveGround, FW + toMass, FRONT_RELIEF.impostHeight, FRONT_RELIEF.impostOut); // string course over the arcade's crowns\n",
      '', 'proud stone string courses'),
     ('arch orders flattened to one depth', 'web/src/shed.ts',
      'depth: FRONT_THICK + (i + 1) * FRONT_RELIEF.orderStep', 'depth: FRONT_THICK + FRONT_RELIEF.orderStep',
@@ -36,7 +36,7 @@ MUTATIONS = [
     ('orders back to the 0.15 m step', 'web/src/shed.ts', 'orderStep: 0.28,', 'orderStep: 0.15,', 'reveal steps back in three orders'),
     ('no fourth order', 'web/src/shed.ts', 'innerOrder: true,', 'innerOrder: false,', 'reveal steps back in three orders'),
     ('no bed mould under the cornice', 'web/src/shed.ts',
-     "  proud(spine, frontTop - 0.9 - bh / 2, FW + 0.8, bh, bo); // its bed mould: a step under the overhang, so its soffit reads\n", '',
+     "  proud(spine, frontTop - 0.9 - bh / 2, FW + toMass, bh, bo); // its bed mould: a step under the overhang, so its soffit reads\n", '',
      'parapet cornice overhangs'),
     ('canopy dropped from the porch mesh', 'web/src/shed.ts',
      "mergeGeometries([entryRingGeo, canopyGeo], true), [material('stone'), frontSteel]",

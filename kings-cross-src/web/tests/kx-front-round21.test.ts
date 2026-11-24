@@ -30,9 +30,9 @@ const ray = (o: [number, number, number], d: [number, number, number], targets: 
 const masonry = ['shed-front', 'shed-brick', 'shed-stone'].map(n => group.getObjectByName(n)!);
 const zAt = (x: number, y: number) => ray([x, y, 10], [0, 0, -1], masonry);
 
-test('A2: each great arch\'s spandrel is a recessed panel in a brick frame 0.1-0.2 m proud: a band under the cornice and strips at its sides', () => {
+test('A2: each great arch\'s spandrel is a recessed panel in a brick frame 0.1-0.4 m proud: a band under the cornice and strips at its sides', () => {
   const T = S.FRONT_TYMPANUM as { out: number; band: number; strip: number } | undefined;
-  assert.ok(T && T.out >= 0.1 && T.out <= 0.2, 'FRONT_TYMPANUM, 0.1 to 0.2 m');
+  assert.ok(T && T.out >= 0.1 && T.out <= 0.4, 'FRONT_TYMPANUM, 0.1 to 0.4 m'); // re-pinned round 22: 0.15 m read about 1 px square-on, so A2 asked for about 2 px (0.3 m)
   const yBandMid = frontTop - 0.9 - 0.25 - 0.25 - 0.1 - T.band / 2;
   for (const [xa, xb] of [[X0 + 1.0, layout.spine - shed.TOWER_SIZE / 2], [layout.spine + shed.TOWER_SIZE / 2, X1 - 1.0]] as const) {
     const xm = xa + 2.5; // over the outer order's foot: the plain spandrel
@@ -47,7 +47,7 @@ test('A2: each great arch\'s spandrel is a recessed panel in a brick frame 0.1-0
 
 test('A1: the end piers rise over the parapet\'s coping under caps, and the parapet steps up either side of the tower', () => {
   const P = S.FRONT_PIERS as { rise: number; step: number; stepRun: number } | undefined;
-  assert.ok(P && P.rise >= 0.8 && P.rise <= 1.8 && P.step >= 0.3 && P.step <= 1.0, 'FRONT_PIERS');
+  assert.ok(P && P.rise >= 0.8 && P.rise <= 3.5 && P.step >= 0.3 && P.step <= 1.0, 'FRONT_PIERS'); // re-pinned round 22: the piers as masses, 2.5-3 m over the coping (A1)
   const coped = frontTop + 0.3;
   for (const x of [X0 + 0.5, X1 - 0.5]) {
     const h = zAt(x, coped + P.rise * 0.7);

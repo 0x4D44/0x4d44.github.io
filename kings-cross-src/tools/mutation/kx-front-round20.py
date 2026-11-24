@@ -28,7 +28,7 @@ MUTATIONS = [
     ('no barriers', 'web/src/shed.ts', "for (let k = 0; k < PORCH_DEPTH.barriers; k++) {", "for (let k = 0; k < 0; k++) {", 'A3: behind the glass'),
     ('barriers behind the plane', 'web/src/shed.ts', "bz = gz + 0.003,", "bz = gz - 0.003,", 'A3: behind the glass'),
     ('the cornice face back at 0.7', 'web/src/shed.ts', "FRONT_CORNICE = { out: 0.9,", "FRONT_CORNICE = { out: 0.7,", 'A2: the corona'),
-    ('the cornice built at 0.7', 'web/src/shed.ts', "FW + 1.0, 0.9, FRONT_CORNICE.out);", "FW + 1.0, 0.9, 0.7);", 'A2: the corona'),
+    ('the cornice built at 0.7', 'web/src/shed.ts', "FW + 1.0 + across, 0.9, FRONT_CORNICE.out);", "FW + 1.0 + across, 0.9, 0.7);", 'A2: the corona'),
 ]
 
 def run(work: Path) -> subprocess.CompletedProcess[str]:
