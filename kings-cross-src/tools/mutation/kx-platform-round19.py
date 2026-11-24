@@ -20,14 +20,17 @@ if out == src or out.is_relative_to(src) or src.is_relative_to(out):
 out.mkdir(parents=True, exist_ok=True)
 
 MUTATIONS = [
-    ('splayed: no nesting', 'web/src/furniture.ts', "export const TROLLEY = { n: 4, pitch: 0.27,", "export const TROLLEY = { n: 4, pitch: 0.6,", 'B5: the trolleys'),
+    ('splayed: no nesting', 'web/src/furniture.ts', "export const TROLLEY = { n: 3, pitch: 0.22,", "export const TROLLEY = { n: 3, pitch: 0.6,", 'B5: the trolleys'),
     ('no castors', 'web/src/furniture.ts', "for (const z of [z0 + 0.03, z1 - 0.06]) b.aabb(sx - 0.025, 0, z,", "for (const z of [z0 + 0.03, z1 - 0.06]) b.aabb(sx - 0.025, 0.07, z,", 'B5: the trolleys'),
     ('upright handles', 'web/src/furniture.ts', "bar(sx, 0.08, z0, 1.02, z0 - 0.16, TROLLEY_GREY);", "bar(sx, 0.08, z0, 1.02, z0 - 0.001, TROLLEY_GREY);", 'B5: the trolleys'),
     ('no base frame', 'web/src/furniture.ts', "b.aabb(sx - q, 0.07, z0, sx + q, 0.07 + 2 * q, z1, TROLLEY_GREY, true);", "", 'B5: the trolleys'),
     ('handle over the nose', 'web/src/furniture.ts', "b.aabb(-hw - 0.03, 1.0, z0 - 0.17, hw + 0.03, 1.0 + 3 * q, z0 - 0.17 + 3 * q, IRON, true);", "b.aabb(-hw - 0.03, 1.0, z1, hw + 0.03, 1.0 + 3 * q, z1 + 3 * q, IRON, true);", 'B5: the trolleys'),
-    ('the trolley point on the centreline', 'web/src/furniture.ts', "side === 'mid' ? b.mid : !b.loTrack && b.hiTrack ? b.s0 : b.s1", "b.mid", 'B5: the trolley point'),
-    ('the island averaged back', 'web/src/furniture.ts', "const pick = side === 'wall' ? [pts.reduce(", "const pick = side === 'never' ? [pts.reduce(", 'B5: the trolley point'),
-    ('not beside its group', 'web/src/furniture.ts', "for (const d of [...first, ...spec.offsets]) {", "for (const d of [...spec.offsets]) {", 'B5: the trolley point'),
+    ('the trolley point in the middle', 'web/src/furniture.ts', "const at = aside ? edgesAt(", "const at = false ? edgesAt(", 'B5: each trolley point'),
+    ('the board in front of the post', 'web/src/furniture.ts', "const at = aside ? edgesAt(", "const at = false ? edgesAt(", 'B5: from platform-furniture'),
+    ('the row unturned', 'web/src/furniture.ts', ".rotateY(Math.PI / 2)", ".rotateY(0)", 'B5: the trolleys'),
+    ('aside by too little', 'web/src/furniture.ts', "export const TROLLEY_ASIDE = 1.3,", "export const TROLLEY_ASIDE = 0.6,", 'B5: each trolley point'),
+    ('beside the bins on the blade\'s side', 'web/src/furniture.ts', "{ d: binsD - away * TROLLEY_ALONG, aside: true }", "{ d: binsD + away * TROLLEY_ALONG, aside: true }", 'B5: each trolley point'),
+    ('not beside its group', 'web/src/furniture.ts', "for (const { d, aside } of tries) {", "for (const { d, aside } of tries.slice(2)) {", 'B5: each trolley point'),
     ('the dial blue again', 'web/src/night.ts', "= [1.18, 1.1, 0.96];", "= [1.1, 1.1, 1.1];", 'B5: the platform clock\'s night dial'),
     ('the dial overwarm', 'web/src/night.ts', "= [1.18, 1.1, 0.96];", "= [1.3, 1.1, 0.85];", 'B5: the platform clock\'s night dial'),
     ('the roundels small again', 'web/src/shed.ts', "[[0.15, -0.15, 0.13],", "[[0.15, -0.15, 0.075],", 'B5: the platform clock has'),

@@ -32,8 +32,8 @@ MUTATIONS = [
     ('the strip v off by 2 cm', 'web/src/furniture.ts', "return [dot2(rel, e.inward), worldV ? -p[1] : s0 + dot2(rel, e.dir)];", "return [dot2(rel, e.inward), worldV ? -p[1] + 0.02 : s0 + dot2(rel, e.dir)];", 'B4: the same slab joint'),
     ('the post through the faces', 'web/src/furniture.ts', "b.aabb(-0.05, 0, -0.05, 0.05, BLADE.top - BLADE.size, 0.05, IRON);", "b.aabb(-0.05, 0, -0.05, 0.05, BLADE.top, 0.05, IRON);", 'B5: no blade post'),
     ('the post 30 cm into the panel', 'web/src/furniture.ts', "b.aabb(-0.05, 0, -0.05, 0.05, BLADE.top - BLADE.size, 0.05, IRON);", "b.aabb(-0.05, 0, -0.05, 0.05, BLADE.top - BLADE.size + 0.3, 0.05, IRON);", 'B5: no blade post'),
-    ('thick wire: slabs', 'web/src/furniture.ts', "export const TROLLEY = { n: 4, pitch: 0.27, len: 0.9, wire: 0.012,", "export const TROLLEY = { n: 4, pitch: 0.27, len: 0.9, wire: 0.2,", 'B5: no blade post'),
-    ('one trolley', 'web/src/furniture.ts', "export const TROLLEY = { n: 4, pitch: 0.27, len: 0.9, wire: 0.012,", "export const TROLLEY = { n: 1, pitch: 0.27, len: 0.9, wire: 0.012,", 'B5: no blade post'),
+    ('thick wire: slabs', 'web/src/furniture.ts', "export const TROLLEY = { n: 3, pitch: 0.22, len: 0.8, wire: 0.012,", "export const TROLLEY = { n: 3, pitch: 0.22, len: 0.8, wire: 0.2,", 'B5: no blade post'),
+    ('one trolley', 'web/src/furniture.ts', "export const TROLLEY = { n: 3, pitch: 0.22, len: 0.8, wire: 0.012,", "export const TROLLEY = { n: 1, pitch: 0.22, len: 0.8, wire: 0.012,", 'B5: no blade post'),
 ]
 
 def run(work: Path) -> subprocess.CompletedProcess[str]:

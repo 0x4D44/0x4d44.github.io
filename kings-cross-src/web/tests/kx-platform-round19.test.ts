@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import * as THREE from 'three';
 import type { KxData } from '../../core/osm.ts';
+import { PLATFORM_HEIGHT } from '../../core/scene.ts';
 import { shedLayout, worldToShed } from '../../core/station.ts';
 import * as furniture from '../src/furniture.ts';
 import * as night from '../src/night.ts';
@@ -21,46 +22,77 @@ test('B5: the trolleys are a nested row: parallel, 70% overlapped, each on four 
   const g = furniture.extraGeometry({ kind: 'trolley', label: '1' });
   const p = g.getAttribute('position'), tris = g.index!.count / 3;
   assert.ok(tris <= 600, `${tris} triangles a trolley point`);
-  // castors: vertices on the ground (y = 0) in front of the board, in 4 x n separate feet; base: something below 0.15 m; handle: the highest bar behind each base
+  // re-pinned (round 19, second pass, the lead: end-on to platform-furniture the nesting did not read): the row runs across the platform (local x), side-on to
+  // a camera looking along it, so the trolleys' lengths, rails and sloped uprights are measured in x
+  const xs: number[] = [], zsF: number[] = [];
+  for (let i = 0; i < p.count; i++) if (p.getZ(i) > 0.1 && p.getY(i) < 1.2) { xs.push(p.getX(i)); zsF.push(p.getZ(i)); }
+  const spanX = Math.max(...xs) - Math.min(...xs), spanZ = Math.max(...zsF) - Math.min(...zsF);
+  assert.ok(spanX > 1.4 && spanZ < 0.8, `the row ${spanX.toFixed(2)} m across the platform, ${spanZ.toFixed(2)} m along it`);
+  // castors: vertices on the ground (y = 0) in front of the board, in 4 x n separate feet
   const feet = new Set<string>();
-  let handleZ = -Infinity, low = 0;
-  for (let i = 0; i < p.count; i++) {
-    const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
-    if (z > 0.1 && y < 1e-6) feet.add(`${Math.round(x * 10)},${Math.round(z * 20)}`);
-    if (y > 0.98 && y < 1.1 && Math.abs(x) < 0.4) handleZ = Math.max(handleZ, z);
-  }
+  for (let i = 0; i < p.count; i++) if (p.getZ(i) > 0.1 && p.getY(i) < 1e-6) feet.add(`${Math.round(p.getX(i) * 20)},${Math.round(p.getZ(i) * 10)}`);
   assert.ok(feet.size >= 4 * T.n, `${feet.size} castor feet on the ground`);
-  // the base frame: low bars (under 0.15 m) running the trolley's length
+  // the base frame: low bars (under 0.15 m) running each trolley's length
+  let low = 0, sloped = 0;
   for (let i = 0; i + 3 < p.count; i += 4) {
-    const ys = [0, 1, 2, 3].map((k) => p.getY(i + k)), zs = [0, 1, 2, 3].map((k) => p.getZ(i + k));
-    if (Math.max(...ys) < 0.15 && Math.min(...ys) > 0.05 && Math.max(...zs) - Math.min(...zs) > 0.8 * T.len) low++;
+    const ys = [0, 1, 2, 3].map((k) => p.getY(i + k)), xq = [0, 1, 2, 3].map((k) => p.getX(i + k));
+    if (Math.max(...ys) < 0.15 && Math.min(...ys) > 0.05 && Math.max(...xq) - Math.min(...xq) > 0.8 * T.len) low++;
+    // a sloped bar: a face whose corners differ in both y and x (round 18's posts were upright)
+    const dy = Math.abs(p.getY(i + 2) - p.getY(i + 1)), dx = Math.abs(p.getX(i + 2) - p.getX(i + 1));
+    if (dy > 0.5 && dx > 0.1 && p.getZ(i) > 0.1) sloped++;
   }
   assert.ok(low >= 2 * T.n, `${low} faces of low side rails: a base frame under each trolley`);
-  // the handle sits behind the first trolley's back (its uprights slope back), not over its basket
-  assert.ok(handleZ < 0.3 + (T.n - 1) * T.pitch, `the last handle at z ${handleZ.toFixed(2)}, behind that trolley's back`);
-  // a sloped bar: some quad corner pairs differ in both y and z (round 18's posts were upright)
-  let sloped = 0;
-  for (let i = 0; i + 3 < p.count; i += 4) {
-    const dy = Math.abs(p.getY(i + 2) - p.getY(i + 1)), dz = Math.abs(p.getZ(i + 2) - p.getZ(i + 1));
-    if (dy > 0.5 && dz > 0.1) sloped++;
-  }
   assert.ok(sloped >= 2 * T.n, `${sloped} sloped faces: the uprights lean back to the handle`);
+  // the handles at the backs: every vertex at handle height (1.0-1.05 m) in front of the board lies between the first trolley's back and the last's, less the
+  // handle's lean (0.17 m), never over a basket or a nose
+  const zc = (0.3 - 0.17 + 0.3 + (T.n - 1) * T.pitch + T.len) / 2, back0 = 0.3 - 0.17 - zc, backN = 0.3 + (T.n - 1) * T.pitch - zc;
+  for (let i = 0; i < p.count; i++) {
+    if (p.getZ(i) < 0.1 || p.getY(i) < 0.995 || p.getY(i) > 1.05) continue;
+    assert.ok(p.getX(i) > back0 - 0.05 && p.getX(i) < backN + 0.05, `a handle vertex at x ${p.getX(i).toFixed(2)}, beyond the backs ${back0.toFixed(2)} to ${backN.toFixed(2)}`);
+  }
 });
 
-test('B5: the trolley point closes its group\'s line, EXTRA_BESIDE past the blade or the bins, at the side of its band (off the bins\' line)', () => {
+test('B5: each trolley point stands beside its bins, TROLLEY_ASIDE across from the blade post\'s line, or past the bins on the far side from the blade', () => {
   const plan = furniture.furniturePlan(data, layout as never);
-  const beside = F.EXTRA_BESIDE as number;
-  assert.ok(beside >= 2.3 && beside <= 3, `EXTRA_BESIDE ${beside} m`);
-  const trolleys = plan.extras.filter((e) => e.kind === 'trolley');
-  let grouped = 0;
-  for (const t of trolleys) {
+  const aside = F.TROLLEY_ASIDE as number, beside = F.EXTRA_BESIDE as number;
+  assert.ok(aside >= 1.3, `TROLLEY_ASIDE ${aside} m: the board's width and 0.3 m`);
+  let placed = 0;
+  for (const t of plan.extras.filter((e) => e.kind === 'trolley')) {
     const at = worldToShed(layout, [t.x, t.z]);
-    const mates = plan.extras.filter((e) => e.label === t.label && (e.kind === 'bins' || e.kind === 'blade')).map((e) => ({ e, s: worldToShed(layout, [e.x, e.z]) }));
-    if (mates.some(({ s }) => Math.abs(Math.abs(s.v - at.v) - beside) < 0.05)) grouped++;
-    const bins = mates.find(({ e }) => e.kind === 'bins');
-    if (bins) assert.ok(Math.abs(at.u - bins.s.u) > 0.05, `platform ${t.label}: the trolley point ${(at.u - bins.s.u).toFixed(2)} m across from the bins' line`);
+    const bins = plan.extras.find((e) => e.kind === 'bins' && e.label === t.label), blade = plan.extras.find((e) => e.kind === 'blade' && e.label === t.label);
+    if (!bins || !blade) continue;
+    const b = worldToShed(layout, [bins.x, bins.z]), k = worldToShed(layout, [blade.x, blade.z]);
+    const off = Math.abs(at.u - k.u), past = (at.v - b.v) * Math.sign(b.v - k.v); // > 0: past the bins, on the far side from the blade
+    if (Math.abs(at.v - b.v) > 6) continue; // no room beside the bins (a narrow band): one of EXTRAS.trolley's own places along the platform, as before
+    assert.ok(off >= aside - 1e-6 || Math.abs(past - beside) < 0.05, `platform ${t.label}: ${off.toFixed(2)} m across from the post, ${past.toFixed(2)} m past the bins`);
+    assert.ok(past > 0, `platform ${t.label}: on the far side of the bins from the blade (${past.toFixed(2)} m)`);
+    placed++;
   }
-  assert.ok(grouped >= 5, `${grouped} of ${trolleys.length} trolley points beside their bins or blade`);
+  assert.ok(placed >= 4, `${placed} trolley points with their group`);
+  const six = plan.extras.find((e) => e.kind === 'trolley' && e.label === '6 7')!, post = plan.extras.find((e) => e.kind === 'blade' && e.label === '6 7')!;
+  assert.ok(Math.abs(worldToShed(layout, [six.x, six.z]).u - worldToShed(layout, [post.x, post.z]).u) >= aside - 1e-6, 'the 6-7 island\'s stands aside of its blade post');
+});
+
+test('B5: from platform-furniture the 6-7 trolley board does not overlap the blade post on the screen', () => {
+  const cams = JSON.parse(readFileSync(new URL('../../tools/tests/frozen-station-cameras.json', import.meta.url), 'utf8')) as Record<string, { pos: number[]; target: number[]; fov?: number }>;
+  const cam = cams['platform-furniture']!;
+  const camera = new THREE.PerspectiveCamera(cam.fov ?? 50, 1280 / 800, 0.1, 9000);
+  camera.position.set(cam.pos[0]!, cam.pos[1]!, cam.pos[2]!);
+  camera.lookAt(cam.target[0]!, cam.target[1]!, cam.target[2]!);
+  camera.updateMatrixWorld();
+  const plan = furniture.furniturePlan(data, layout as never);
+  const of = (kind: string) => plan.extras.find((e) => e.kind === kind && e.label === '6 7');
+  const board = of('trolley'), blade = of('blade');
+  assert.ok(board && blade, 'the 6-7 group has a trolley point and a blade');
+  const B = F.BLADE as { top: number; size: number };
+  const screenX = (e: { x: number; z: number; rotY: number }, box: [number, number, number, number, number, number]): [number, number] => {
+    const m = new THREE.Matrix4().compose(new THREE.Vector3(e.x, PLATFORM_HEIGHT, e.z), new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), e.rotY), new THREE.Vector3(1, 1, 1));
+    const xs: number[] = [];
+    for (const x of [box[0], box[3]]) for (const y of [box[1], box[4]]) for (const z of [box[2], box[5]]) xs.push(new THREE.Vector3(x, y, z).applyMatrix4(m).project(camera).x);
+    return [Math.min(...xs), Math.max(...xs)];
+  };
+  const b = screenX(board, [-0.5, 1.0, -0.045, 0.5, 2.25, 0.045]), post = screenX(blade, [-0.05, 0, -0.05, 0.05, B.top - B.size, 0.05]);
+  assert.ok(b[1] < post[0] || post[1] < b[0], `the board at x ${b.map((v) => v.toFixed(3))} and the post at ${post.map((v) => v.toFixed(3))} (NDC) overlap`);
 });
 
 test('B5: the platform clock\'s night dial comes out neutral (blue minus red under 5), on round 17\'s capture of it', () => {
