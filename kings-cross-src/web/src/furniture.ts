@@ -96,6 +96,11 @@ export const FIGURES = {
   lampSpacing: 24,
   /** Radius of the base, metres. ASSUMED. */
   lampRadius: 0.15,
+  /** Platforms 9 and 10: pendant lamps under the canopy's longitudinal beam, one every half column bay, midway between the columns and
+   *  the bay middles, metres. shed-f (R-kx-shed-interior-f) shows industrial pendants hung from the roof steel, one or two to a bay:
+   *  MEASURED in memory (rough); the half-bay pitch is what gives the platform even pools at night. The lamp itself (the bell's glass at
+   *  lampHeight - 0.14, the height the night layer lights from) is ASSUMED. */
+  pendantSpacing: 7.5,
 
   // --- benches
   /** Slatted bench with a back, 1.8 m long (ASSUMED: the brief), 0.5 m deep, seat 0.45 m up, back 0.9 m up (ASSUMED). */
@@ -740,6 +745,8 @@ export interface Placement {
   r: number;
   /** half-width across the platform, metres */
   across: number;
+  /** hung from the roof (the canopies' pendant lamps): nothing on the floor, so the floor furniture does not keep clear of it */
+  overhead?: true;
 }
 
 
@@ -918,22 +925,34 @@ export function furniturePlan(data: FurnitureData, layout: FurnitureLayout): Fur
       }
     }
 
-    // 2. lamp standards
+    // 2. lamp standards; on 9 and 10 pendant lamps hung under the canopy, a quarter bay either side of each column, over the roof's length
     const lampT: number[] = [];
+    const canopy = plan.canopies.find((c) => c.ref === ref);
     if (canopyPlatform) {
-      // the first midway between the first two columns; 24 m against the columns' 15 m keeps every lamp at least 1.5 m along from a column
-      for (let t = f.tLo + FIGURES.canopyEnd + FIGURES.canopyColumnSpacing; t <= f.tHi - FIGURES.canopyEnd - 6; t += FIGURES.lampSpacing) lampT.push(t);
+      if (canopy) {
+        const lo = (canopy.ts[0] as number) + 1;
+        const hi = (canopy.ts[canopy.ts.length - 1] as number) - 1;
+        const t0 = f.tLo + FIGURES.canopyEnd + FIGURES.pendantSpacing / 2;
+        for (let t = t0 + Math.ceil((lo - t0) / FIGURES.pendantSpacing) * FIGURES.pendantSpacing; t <= hi + 1e-9; t += FIGURES.pendantSpacing) lampT.push(t);
+      }
     } else {
       lampT.push(...slots(f, FIGURES.lampSpacing, index * STAGGER.lamp, FIGURES.endSouth, FIGURES.endNorth));
     }
     lampT.forEach((t, k) => {
+      if (canopy) {
+        // a pendant hangs over the roof's middle line, wherever the roof is (it needs no floor band), facing along the platform
+        const l = lineAt(canopy.ts, canopy.left, t);
+        const r = lineAt(canopy.ts, canopy.right, t);
+        plan.lamps.push({ ref, x: (l[0] + r[0]) / 2, z: (l[1] + r[1]) / 2, rotY: axisFacing, r: FIGURES.lampRadius + 0.05, across: FIGURES.lampRadius, overhead: true });
+        return;
+      }
       const b = bandAt(f, t, FIGURES.lampRadius);
       if (!b) return;
       const [x, z] = worldPoint(f, t, b.mid);
       if (!canopyPlatform && underShed([x, z])) return;
       const side = faceSide(b, k);
       const p: Placement = { ref, x, z, rotY: facing([f.n[0] * side, f.n[1] * side]), r: FIGURES.lampRadius + 0.05, across: FIGURES.lampRadius };
-      if (free(placed, p) && behindSafetyLine(f, p)) {
+      if (!canopyPlatform && free(placed, p) && behindSafetyLine(f, p)) {
         plan.lamps.push(p);
         placed.push(p);
       }
@@ -1083,6 +1102,19 @@ function lampGeometry(): THREE.BufferGeometry {
 }
 
 /** A slatted bench with a back on four legs; the sitter faces +z. Three seat slats, two back slats. */
+/** A pendant lamp under a canopy: a rod down from the longitudinal beam over the columns, an iron bell and its glass, the glass's middle at
+ *  lampHeight - 0.14 over the platform (where the night layer lights from, as a standard's lantern). */
+export function pendantGeometry(): THREE.BufferGeometry {
+  const b = newBatch();
+  const h = FIGURES.lampHeight;
+  const beam = FIGURES.canopyHeight - FIGURES.canopyTrussDepth - 0.4;
+  addPrism(b, 0, 0, 0.02, h + 0.12, beam, 4, IRON);
+  addPrism(b, 0, 0, 0.3, h - 0.1, h + 0.04, 8, IRON);
+  addPrism(b, 0, 0, 0.12, h + 0.04, h + 0.12, 8, IRON);
+  addPrism(b, 0, 0, 0.24, h - 0.18, h - 0.1, 8, PLATFORM_LANTERN_GLASS);
+  return b.build();
+}
+
 function benchGeometry(): THREE.BufferGeometry {
   const b = newBatch();
   const hl = FIGURES.benchLength / 2;
@@ -1287,7 +1319,11 @@ let canopyGlassMat: THREE.Material | null = null;
 function canopyGlass(): THREE.Material {
   if (!canopyGlassMat) {
     const m = material('glass').clone() as THREE.MeshPhongMaterial;
-    m.emissive.set(0x3a5670);
+    // shed-f's strips read bright and near-white, a translucent (wired or ribbed) glass lit by the sky, not clear blue: a pale glass,
+    // more opaque, with a near-white glow (the atmosphere scales a built emissive by the daylight, so it fades after dark)
+    m.color.set(0xe9ecee);
+    m.opacity = 0.78;
+    m.emissive.set(0xa4abb0);
     m.name = 'canopyGlass';
     canopyGlassMat = m;
   }
@@ -1296,7 +1332,10 @@ function canopyGlass(): THREE.Material {
 
 /** The canopies' colours, sampled from R-kx-shed-interior-f (see FIGURES): near-black steel, a dark grey corrugated sheet. */
 export const CANOPY_STEEL: Rgb = [0.149, 0.161, 0.173];
-export const CANOPY_SHEET = 0x4a4b4a;
+export const CANOPY_SHEET = 0x6a6b68;
+/** The sheet's underside is lit only by what the platform bounces (the sun is above it): this lift, sampled as the mid-grey of shed-f's
+ *  corrugated soffit (about #4a4b48 where it is not by a glazed strip), keeps it from rendering black. Faded after dark by the atmosphere. */
+export const CANOPY_SHEET_GLOW = 0x4a4b48;
 let canopySteelMat: THREE.Material | null = null;
 const canopySteel = (): THREE.Material => {
   if (!canopySteelMat) {
@@ -1308,7 +1347,7 @@ const canopySteel = (): THREE.Material => {
 let canopySheetMat: THREE.Material | null = null;
 const canopySheet = (): THREE.Material => {
   if (!canopySheetMat) {
-    canopySheetMat = new THREE.MeshLambertMaterial({ color: CANOPY_SHEET, side: THREE.DoubleSide });
+    canopySheetMat = new THREE.MeshLambertMaterial({ color: CANOPY_SHEET, emissive: CANOPY_SHEET_GLOW, side: THREE.DoubleSide });
     canopySheetMat.name = 'canopySheet';
   }
   return canopySheetMat;
@@ -1361,7 +1400,7 @@ function canopyMeshes(c: CanopyPlan): { glass: Batch; sheet: Batch; steel: Batch
     const mid = (t0 + t1) / 2;
     const into = c.glazing.some(([lo, hi]) => mid > lo && mid < hi) ? glass : sheet;
     const l0 = at(c.left, t0), l1 = at(c.left, t1), r0 = at(c.right, t0), r1 = at(c.right, t1);
-    into.poly([[l0[0], y - 0.05, l0[1]], [l1[0], y - 0.05, l1[1]], [r1[0], y - 0.05, r1[1]], [r0[0], y - 0.05, r0[1]]], undefined, { normal: [0, 1, 0] });
+    into.poly([[l0[0], y - 0.05, l0[1]], [l1[0], y - 0.05, l1[1]], [r1[0], y - 0.05, r1[1]], [r0[0], y - 0.05, r0[1]]], undefined, { normal: [0, 1, 0], color: S });
   }
   // glazing bars: along the platform, every 0.8 m across each strip, just under the glass
   for (const [lo, hi] of c.glazing) {
@@ -1461,7 +1500,8 @@ export function buildFurniture(data: FurnitureData, layout: FurnitureLayout): TH
   const add = (m: THREE.Object3D | null): void => {
     if (m) group.add(m);
   };
-  add(instanced('lamps', lampGeometry(), lit, plan.lamps, PLATFORM_HEIGHT));
+  add(instanced('lamps', lampGeometry(), lit, plan.lamps.filter((l) => !l.overhead), PLATFORM_HEIGHT));
+  add(instanced('lamps-pendant', pendantGeometry(), lit, plan.lamps.filter((l) => l.overhead), PLATFORM_HEIGHT));
   add(instanced('benches', benchGeometry(), lit, plan.benches, PLATFORM_HEIGHT));
   add(instanced('help-points', helpPointGeometry(), lit, plan.helpPoints, PLATFORM_HEIGHT));
 
@@ -1487,13 +1527,14 @@ export function buildFurniture(data: FurnitureData, layout: FurnitureLayout): TH
       steel.append(m.steel);
       lattice.append(m.lattice);
     }
-    // one draw per material: the roof is the glazed strips (group 0) and the sheet between them (group 1), one mesh so the weather's cover reads it whole
-    const roofGeometry = mergeGeometries([glass.build(), sheet.build()], true);
-    const roof = new THREE.Mesh(roofGeometry, [canopyGlass(), canopySheet()]);
+    // the glazed strips and the opaque sheet between them are two meshes: the sheet, a second material of the steel's mesh, casts the sun's
+    // shadow (lighting.ts SHADOW_CASTERS, which has room for no new name), the glass lets it through, so the platform is in shade with sunlit
+    // bands under the strips; both are roofs to the weather (cover.ts)
+    const roof = new THREE.Mesh(glass.build(), canopyGlass());
     roof.name = 'canopy-glass';
     roof.renderOrder = 2;
     add(roof);
-    const frame = new THREE.Mesh(steel.build(), canopySteel());
+    const frame = new THREE.Mesh(mergeGeometries([steel.build(), sheet.build()], true), [canopySteel(), canopySheet()]);
     frame.name = 'canopy-steel';
     add(frame);
     const web = new THREE.Mesh(lattice.build(), canopySteel());

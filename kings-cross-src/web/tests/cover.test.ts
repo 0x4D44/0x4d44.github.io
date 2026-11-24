@@ -57,7 +57,8 @@ const sceneOf = (...meshes: THREE.Object3D[]): THREE.Scene => { const s = new TH
 
 test('the roofs the cover is drawn from are the real builders\' meshes, by name: a renamed roof would let the rain through', () => {
   const found = findRoofs(scene).map((m) => m.name).sort();
-  assert.deepEqual(found, ['canopy-glass', 'concourse-glass', 'concourse-panels', 'shed-aisle-roofs', 'shed-roof-cladding', 'shed-roof-glass'], 'the shed, the concourse and the canopies');
+  // Re-pinned 2026-11-24 (B6): the canopies' opaque sheet is the second material of canopy-steel (it casts the sun's shadow), so that mesh is a roof too.
+  assert.deepEqual(found, ['canopy-glass', 'canopy-steel', 'concourse-glass', 'concourse-panels', 'shed-aisle-roofs', 'shed-roof-cladding', 'shed-roof-glass'], 'the shed, the concourse and the canopies');
   const landmarks = new THREE.Scene();
   addLandmarks(landmarks, data, {});
   assert.deepEqual(findRoofs(landmarks).map((m) => m.name).sort(), ['landmarks-roofGlass', 'landmarks-slate'], 'and the Barlow shed (the hotels\' slate comes with it)');

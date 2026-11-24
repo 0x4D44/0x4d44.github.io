@@ -33,12 +33,18 @@ M = [
     ('canopy columns 12 m apart again', F, [('  canopyColumnSpacing: 15,', '  canopyColumnSpacing: 12,')]),
     ('canopy roof back at 5.2 m', F, [('  canopyHeight: 6.4,', '  canopyHeight: 5.2,')]),
     ('canopy roof all sheet, no glazed strips', F, [('    if (hi - lo > 0.2) glazing.push([lo, hi]);', '')]),
-    ('canopy roof all glass again', F, [('const roof = new THREE.Mesh(roofGeometry, [canopyGlass(), canopySheet()]);', 'const roof = new THREE.Mesh(roofGeometry, [canopyGlass(), canopyGlass()]);')]),
+    ('canopy roof all glass again (the sheet drawn as glass)', F, [('sheet.build()], true), [canopySteel(), canopySheet()]);', 'sheet.build()], true), [canopySteel(), canopyGlass()]);')]),
     ('canopy steel painted white again', F, [('export const CANOPY_STEEL: Rgb = [0.149, 0.161, 0.173];', 'export const CANOPY_STEEL: Rgb = [1, 1, 1];')]),
     ('canopy edge girders without their lattice', F, [('      addBeam(lattice, [p[0], ya, p[1]], [q[0], yq, q[1]], 0.08, 0.08, S);\n', '')]),
     ('canopy columns without base plates', F, [('    uprightBox(steel, col.x, col.z, ax, 0.25, 0.25, PLATFORM_HEIGHT, PLATFORM_HEIGHT + 0.04, S);\n', '')]),
     ('canopy columns plain posts, no flanges', F, [('    for (const s of [-1, 1]) uprightBox(steel, col.x + ax[0] * 0.1 * s,', '    for (const s of [] as number[]) uprightBox(steel, col.x + ax[0] * 0.1 * s,')]),
     ('canopy columns as small as their post in the overlap check', F, [('r: Math.SQRT2 * 0.25, across: FIGURES.columnSize / 2 });', 'r: FIGURES.columnSize, across: FIGURES.columnSize / 2 });')]),
+    # B6 round 2: the sheet shades, its underside is mid-grey, the strips near-white, pendants under the roof
+    ('canopy sheet out of the casting steel mesh', F, [('new THREE.Mesh(mergeGeometries([steel.build(), sheet.build()], true), [canopySteel(), canopySheet()]);', 'new THREE.Mesh(steel.build(), canopySteel());')]),
+    ('canopy sheet underside unlit (black) again', F, [('emissive: CANOPY_SHEET_GLOW, ', '')]),
+    ('canopy strips clear sky-blue again', F, [('    m.emissive.set(0xa4abb0);', '    m.emissive.set(0x3a5670);')]),
+    ('canopy pendants 24 m apart', F, [('  pendantSpacing: 7.5,', '  pendantSpacing: 24,')]),
+    ('canopy pendants drawn as standards on the floor', F, [("instanced('lamps-pendant', pendantGeometry(),", "instanced('lamps-pendant', lampGeometry(),")]),
 ]
 TESTS = ['web/tests/furniture.test.ts']
 tally = kxmut.Tally()

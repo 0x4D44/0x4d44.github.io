@@ -84,7 +84,7 @@ if (uKxNightFog > 0.0) {
         if (mesh.isMesh) {
           const variants = buildingNightMaterialsOf(mesh);
           const original = variants?.night ?? mesh.material;
-          const patch = mesh.name === 'lamps' && mesh.parent?.name === 'furniture' ? lantern : window;
+          const patch = (mesh.name === 'lamps' || mesh.name === 'lamps-pendant') && mesh.parent?.name === 'furniture' ? lantern : window;
           const next = Array.isArray(original) ? original.map(patch) : patch(original);
           const changed = Array.isArray(original) ? (next as THREE.Material[]).some((m, i) => m !== original[i]) : next !== original;
           if (changed) {

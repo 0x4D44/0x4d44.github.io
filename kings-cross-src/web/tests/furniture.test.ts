@@ -27,6 +27,8 @@ import {
   surfacePlatforms,
   trackSegments,
 } from '../src/furniture.ts';
+import { SHADOW_CASTERS } from '../src/lighting.ts';
+import { ROOF_MESHES } from '../src/cover.ts';
 import type { Placement, TrackSegment } from '../src/furniture.ts';
 import { EAST_ARCADE, eastArcadeU, NORTH_PIER, spineOpenings, SPINE_WALL, westernPassages } from '../src/shed.ts';
 // Re-pinned 2026-11-24 (shed realignment, signed off): the vault centres are the spine -/+ R (aisle + R and aisle + 3R before, the same points while the aisles were even), the valley is the spine, and there is no west aisle, so a probe of 'the aisle' stands in the east aisle.
@@ -385,14 +387,18 @@ test('furniture: every piece stands inside its own platform outline and keeps th
     const at: Pt = [p.x, p.z];
     assert.ok(pointInPolygon(at, pts), `a piece on platform ${p.ref} at ${at} is outside it`);
     const d = distanceToEdges(at, edgesOf(pts));
-    assert.ok(d >= FIGURES.safetyLine, `a piece on platform ${p.ref} is ${d.toFixed(2)} m from a track-facing edge`);
-    assert.ok(d - p.across >= FIGURES.safetyLine - 0.05, `a piece on platform ${p.ref} reaches ${(d - p.across).toFixed(2)} m from a track-facing edge`);
+    // Re-pinned 2026-11-24 (B6 pendants): a pendant hangs 4.4 m up from the canopy, so it keeps the roof's own rule (inside the canopy's inset
+    // from the edge, its bell's half-width added), not the floor's safety line; everything on the floor keeps the safety line as before.
+    const keep = p.overhead ? FIGURES.canopyInset + p.across : FIGURES.safetyLine;
+    assert.ok(d >= keep, `a piece on platform ${p.ref} is ${d.toFixed(2)} m from a track-facing edge`);
+    if (!p.overhead) assert.ok(d - p.across >= FIGURES.safetyLine - 0.05, `a piece on platform ${p.ref} reaches ${(d - p.across).toFixed(2)} m from a track-facing edge`);
     assert.ok(Number.isFinite(p.rotY));
   }
 });
 
 test('furniture: no two pieces on the platform overlap', () => {
-  const ground = [...plan.lamps, ...plan.benches, ...plan.helpPoints, ...plan.canopies.flatMap((c) => c.columns)];
+  // Re-pinned 2026-11-24 (B6 pendants): the lamps hung from the canopies over 9 and 10 (`overhead`) stand on no floor, so a bench may sit under one.
+  const ground = [...plan.lamps.filter((l) => !l.overhead), ...plan.benches, ...plan.helpPoints, ...plan.canopies.flatMap((c) => c.columns)];
   for (const [i, a] of ground.entries()) {
     for (const b of ground.slice(i + 1)) {
       assert.ok(Math.hypot(a.x - b.x, a.z - b.z) >= a.r + b.r, `two pieces on platform ${a.ref}/${b.ref} overlap near (${a.x.toFixed(1)}, ${a.z.toFixed(1)})`);
@@ -416,11 +422,13 @@ function assertShiftedSpacing(gap: number, spacing: number, steps: number, what:
   assert.ok(Math.abs(k - Math.round(k)) < 1e-6 && Math.abs(Math.round(k)) <= steps, `${what}: a gap of ${gap} m is not ${spacing} m plus a whole number (at most ${steps}) of ${step} m steps`);
 }
 
-test('furniture: lamps stand 24 m apart on platforms 9 and 10, and elsewhere only on the open ends north of the shed', () => {
+// Re-pinned 2026-11-24 (B6, R-kx-shed-interior-f): 9 and 10 have pendant lamps under the canopy every FIGURES.pendantSpacing (7.5 m), not
+// standards every 24 m; the count floor of 5 stands, the spacing is held to the same 1e-6.
+test('furniture: pendants hang 7.5 m apart on platforms 9 and 10, and elsewhere lamps stand only on the open ends north of the shed', () => {
   for (const ref of ['9', '10']) {
     const ts = alongOf(ref, plan.lamps);
     assert.ok(ts.length >= 5, `platform ${ref} has ${ts.length} lamps`);
-    for (const g of gaps(ts)) near(g, FIGURES.lampSpacing, 1e-6, `lamp spacing on ${ref}`);
+    for (const g of gaps(ts)) near(g, FIGURES.pendantSpacing, 1e-6, `lamp spacing on ${ref}`);
   }
   for (const l of plan.lamps) {
     const { u, v } = worldToShed(layout, [l.x, l.z]);
@@ -699,20 +707,26 @@ test('canopies (B6): the roof is sheet with glazed strips across it, two to a co
     const glazed = c.glazing.reduce((s, [lo, hi]) => s + hi - lo, 0) / (t1 - t0);
     assert.ok(glazed > 0.2 && glazed < 0.4, `canopy ${c.ref}: ${(glazed * 100).toFixed(0)}% of the roof glazed`);
   }
-  // built: one mesh, the glass (group 0) and an opaque sheet (group 1) in their measured shares of the roof's area
+  // built (re-pinned 2026-11-24, the sheet moved to cast a shadow): the glass is canopy-glass, the opaque sheet is the second material of
+  // canopy-steel, in their measured shares of the roof's area (the sheet: the roof-level triangles of that group)
   const roof = part(furniture, 'canopy-glass');
-  const mats = Array.isArray(roof.material) ? roof.material : [roof.material];
-  assert.deepEqual(mats.map((m) => m.name), ['canopyGlass', 'canopySheet']);
+  const steel = part(furniture, 'canopy-steel');
+  assert.equal((roof.material as THREE.Material).name, 'canopyGlass');
+  const mats = steel.material as THREE.Material[];
+  assert.deepEqual(mats.map((m) => m.name), ['canopySteel', 'canopySheet']);
   assert.ok(!(mats[1] as THREE.Material).transparent, 'the sheet is opaque');
-  const pos = roof.geometry.getAttribute('position');
-  const index = roof.geometry.index as THREE.BufferAttribute;
-  const area = [0, 0];
-  for (const [g, grp] of roof.geometry.groups.entries()) {
+  const areaOf = (mesh: THREE.Mesh, group: number): number => {
+    const pos = mesh.geometry.getAttribute('position');
+    const index = mesh.geometry.index as THREE.BufferAttribute;
+    const grp = mesh.geometry.groups[group] ?? { start: 0, count: index.count };
+    let s = 0;
     for (let i = grp.start; i < grp.start + grp.count; i += 3) {
       const [a, b, d] = [0, 1, 2].map((k) => new THREE.Vector3().fromBufferAttribute(pos, index.getX(i + k)));
-      area[g] = (area[g] as number) + new THREE.Vector3().crossVectors(b!.clone().sub(a!), d!.clone().sub(a!)).length() / 2;
+      s += new THREE.Vector3().crossVectors(b!.clone().sub(a!), d!.clone().sub(a!)).length() / 2;
     }
-  }
+    return s;
+  };
+  const area = [areaOf(roof, -1), areaOf(steel, 1)];
   const share = (area[0] as number) / ((area[0] as number) + (area[1] as number));
   assert.ok(share > 0.2 && share < 0.4, `the built roof is ${(share * 100).toFixed(0)}% glass`);
 });
@@ -769,6 +783,62 @@ test('canopies (B6): every column\'s flanges (0.11 m) keep the safety line from 
   }
 });
 
+// B6 round 2 (the canopies-round-1 score): the sheet shades the platform, its underside is shed-f's mid-grey, the glazed strips are bright
+// near-white, and pendants hung under the trusses light the platform evenly.
+test('canopies (B6): the opaque sheet casts the sun\'s shadow and the glazed strips do not', () => {
+  const holder = (mat: string): string[] => {
+    const out: string[] = [];
+    furniture.traverse((o) => {
+      const m = o as THREE.Mesh;
+      if (m.isMesh && (Array.isArray(m.material) ? m.material : [m.material]).some((x) => x.name === mat)) out.push(m.name);
+    });
+    return out;
+  };
+  const sheet = holder('canopySheet'), glass = holder('canopyGlass');
+  assert.ok(sheet.length === 1 && SHADOW_CASTERS.has(sheet[0] as string), `the sheet is in ${sheet.join(',') || 'no mesh'}, which must cast`);
+  assert.ok(glass.length === 1 && !SHADOW_CASTERS.has(glass[0] as string) && glass[0] !== sheet[0], `the glass is in ${glass.join(',')}, which must not cast nor hold the sheet`);
+  assert.ok(ROOF_MESHES.includes(sheet[0] as string) && ROOF_MESHES.includes(glass[0] as string), 'both are roofs to the weather');
+});
+
+test('canopies (B6): the sheet\'s underside is lifted to a mid-grey and the glazed strips glow a bright near-white, not clear blue', () => {
+  let sheet: THREE.MeshLambertMaterial | undefined, glass: THREE.MeshPhongMaterial | undefined;
+  furniture.traverse((o) => {
+    const m = o as THREE.Mesh;
+    if (!m.isMesh) return;
+    for (const x of Array.isArray(m.material) ? m.material : [m.material]) {
+      if (x.name === 'canopySheet') sheet = x as THREE.MeshLambertMaterial;
+      if (x.name === 'canopyGlass') glass = x as THREE.MeshPhongMaterial;
+    }
+  });
+  // in sRGB, as the photograph was sampled
+  const srgb = (c: THREE.Color): THREE.Color => c.clone().convertLinearToSRGB();
+  const lum = (c: THREE.Color): number => { const s = srgb(c); return 0.2126 * s.r + 0.7152 * s.g + 0.0722 * s.b; };
+  const sat = (c: THREE.Color): number => { const s = srgb(c); return Math.max(s.r, s.g, s.b) - Math.min(s.r, s.g, s.b); };
+  assert.ok(sheet && glass, 'both materials');
+  const e = lum(sheet!.emissive);
+  assert.ok(e > 0.2 && e < 0.45 && sat(sheet!.emissive) < 0.05, `the sheet's lift is a mid-grey (${sheet!.emissive.getHexString()})`);
+  assert.ok(lum(glass!.emissive) > 0.5 && sat(glass!.emissive) < 0.08, `the strips glow near-white (${glass!.emissive.getHexString()})`);
+  assert.ok(lum(glass!.color) > 0.85 && sat(glass!.color) < 0.05 && glass!.opacity >= 0.6, `the strips are a pale translucent glass (${glass!.color.getHexString()}, ${glass!.opacity})`);
+});
+
+test('canopies (B6): pendants hang under the canopy over 9 and 10, no gap between pools over FIGURES.pendantSpacing, none a standard', () => {
+  for (const c of plan.canopies) {
+    const lamps = plan.lamps.filter((l) => l.ref === c.ref);
+    assert.ok(lamps.length > 0 && lamps.every((l) => l.overhead), `canopy ${c.ref}: ${lamps.length} lamps, all hung`);
+    const ts = alongOf(c.ref, lamps);
+    const axis = platformFrame(c.ref, outline(c.ref), [], layout).axis;
+    const roof = c.left.map((p) => p[0] * axis[0] + p[1] * axis[1]).sort((a, b) => a - b);
+    for (const g of gaps(ts)) assert.ok(g <= FIGURES.pendantSpacing + 1e-6, `canopy ${c.ref}: a ${g.toFixed(1)} m gap between pendants`);
+    assert.ok((ts[0] as number) - (roof[0] as number) <= FIGURES.pendantSpacing + 1 && (roof[roof.length - 1] as number) - (ts[ts.length - 1] as number) <= FIGURES.pendantSpacing + 1,
+      `canopy ${c.ref}: the pendants reach the roof's ends`);
+    for (const l of lamps) for (const p of c.columns) assert.ok(Math.hypot(l.x - p.x, l.z - p.z) >= 3, `canopy ${c.ref}: a pendant over a column`);
+  }
+  const pendants = part(furniture, 'lamps-pendant');
+  const box = new THREE.Box3().setFromBufferAttribute(pendants.geometry.getAttribute('position') as THREE.BufferAttribute);
+  near(box.max.y, FIGURES.canopyHeight - FIGURES.canopyTrussDepth - 0.4, 1e-6, 'the rod meets the beam over the columns');
+  assert.ok(box.min.y > 3.5, `a pendant hangs from the roof, its lowest point ${box.min.y.toFixed(2)} m over the platform`);
+});
+
 // ---------------------------------------------------------------------------------------------
 // the built meshes
 
@@ -793,7 +863,9 @@ function counts(root: THREE.Object3D): { calls: number; triangles: number } {
 
 test('buildFurniture: one instanced mesh per kind, counts as planned', () => {
   const named = (name: string): THREE.InstancedMesh => part(furniture, name) as unknown as THREE.InstancedMesh;
-  assert.equal(named('lamps').count, plan.lamps.length);
+  // Re-pinned 2026-11-24 (B6): the plan's lamps are two meshes, the standards and the canopies' pendants.
+  assert.equal(named('lamps').count, plan.lamps.filter((l) => !l.overhead).length);
+  assert.equal(named('lamps-pendant').count, plan.lamps.filter((l) => l.overhead).length);
   assert.equal(named('benches').count, plan.benches.length);
   assert.equal(named('help-points').count, plan.helpPoints.length);
   assert.deepEqual(furniture.userData.counts, { lamps: plan.lamps.length, benches: plan.benches.length, helpPoints: plan.helpPoints.length, totems: plan.totems.length, clocks: plan.clocks.length, canopies: 2, columns: plan.canopies.reduce((n, c) => n + c.columns.length, 0) });
@@ -834,7 +906,8 @@ test('furniture: runs with the platforms alone as well (no rails: every long edg
   const p = furniturePlan(bare, layout);
   assert.ok(p.benches.length > 0 && p.canopies.length === 2);
   // with every long edge a track edge the safety line is kept on both sides of platform 9 and 10 too
-  for (const piece of [...p.lamps, ...p.benches, ...p.helpPoints, ...p.canopies.flatMap((c) => c.columns)]) {
+  // Re-pinned 2026-11-24 (B6 pendants): the canopies' hung lamps keep the roof's inset, not the floor's safety line (see the test above).
+  for (const piece of [...p.lamps.filter((l) => !l.overhead), ...p.benches, ...p.helpPoints, ...p.canopies.flatMap((c) => c.columns)]) {
     const pts = outline(piece.ref);
     const d = distanceToEdges([piece.x, piece.z], classifyEdges(pts, outlines.filter((o) => o !== pts), layout, undefined));
     assert.ok(d >= FIGURES.safetyLine, `platform ${piece.ref}: ${d} m from a track edge`);
@@ -862,7 +935,7 @@ test('FIGURES: the working figures the titles above quote, written out so a slip
   // (see the comments in furniture.ts), so a change here is a decision, not a fix: change both together.
   const want = {
     safetyLine: 1.6, stripWidth: 1.6, minTrackRun: 12,
-    lampHeight: 4.5, lampSpacing: 24,
+    lampHeight: 4.5, lampSpacing: 24, pendantSpacing: 7.5,
     benchLength: 1.8, benchPairGap: 2.4, benchSpacing: 45,
     helpHeight: 1.8, helpSpacing: 80,
     totemWidth: 1.0, totemHeight: 2.5, totemHeader: 0.65, screenWidth: 0.85, screenHeight: 1.1, totemSpacing: 100, totemSouth: 20, totemBenchGap: 3.5,

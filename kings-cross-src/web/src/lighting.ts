@@ -124,7 +124,8 @@ export const SHADOW_CASTERS: ReadonlySet<string> = new Set([
   // the city (city.ts): every building's walls and roofs, and the trees (one instanced draw of about 30 triangles a tree: without them the forecourt's trees stand in the sun and
   // cast nothing, and float on the ground in the picture, R-lighting-materials-b and the round 3 score)
   'city-stock', 'city-red', 'city-stone', 'city-panel', 'city-glass', 'city-shop', 'city-roof', 'city-trees',
-  // the platform canopies (furniture.ts)
+  // the platform canopies (furniture.ts): the columns and chords and, a second material of the same mesh, the opaque sheet between the
+  // glazed strips (the strips are canopy-glass and let the sun through)
   'canopy-steel',
 ]);
 

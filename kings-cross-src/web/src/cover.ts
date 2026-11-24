@@ -15,7 +15,7 @@ import * as THREE from 'three';
 export const ROOF_MESHES: readonly string[] = [
   'shed-roof-cladding', 'shed-roof-glass', 'shed-aisle-roofs', // web/src/shed.ts: the slate flanks and glazed crown of both vaults, the two flat aisle roofs
   'concourse-glass', 'concourse-panels', // web/src/concourse.ts: the Western Concourse's dome
-  'canopy-glass', // web/src/furniture.ts: the canopies over platforms 9 and 10
+  'canopy-glass', 'canopy-steel', // web/src/furniture.ts: the canopies over platforms 9 and 10, their glazed strips and (with the steel) the sheet between
   'waverley-mapped-roofs', 'waverley-building-tops', // Scottish station glazing and the mapped solid building roofs
   'perth-station-roof', 'perth-mapped-roofs', 'perth-city-roofs', // web/src/perth-scene.ts: Perth's station roof, the town's mapped roofs and its building tops
   'perth-tite-roof', // web/src/perth-station.ts: Tite's 1848 block's slate roof and its tower's spire, outside the station glazing
