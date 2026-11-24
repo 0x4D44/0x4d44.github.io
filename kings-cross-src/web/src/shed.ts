@@ -103,6 +103,14 @@ export const FRONT_RELIEF = { orders: 3, orderWidth: 0.4, orderStep: 0.28, inner
  */
 export const PORCH_INFILL = { bays: 5, mullion: 0.12, frameDepth: 0.12, rail: 1.1, transom: [2.3, 2.7] as const, sign: 0.5 } as const;
 /**
+ * Round 20 (cornice-round-1 score, section 5, A3: infill depth instead of lettering): the screens' glass `glass` m behind the front's face (until round 20
+ * at mid-wall, 0.7 m), its frame (the jambs, the mullions and the head transom) `frame` m deep in front of it (not casting: the shadow pass is full); behind the glass (drawn on it) the concourse read as a dim warm plane under the transom (`interior`, sRGB) and a row of ticket
+ * barriers' silhouettes (`barriers` an opening, `barrier` [width, height] m). Sizes ASSUMED.
+ */
+/** Round 20: the parapet cornice's face, metres proud of the front (0.7 until round 20; FRONT_RELIEF.corona.out over it). */
+export const FRONT_CORNICE = { out: 0.9, height: 0.9 } as const;
+export const PORCH_DEPTH = { glass: 0.45, frame: 0.3, interior: 0x7a6a55, barriers: 6, barrier: [0.22, 1.0] as const } as const;
+/**
  * The low canopy along the front (R-kx-front-a, 2026, and R-kx-front-b, 2016): a flat dark steel roof on slender columns at the bay lines,
  * passing in front of the tower's foot. Its top at 3.85 m (MEASURED from R-a by the same scale as FRONT_RELIEF); its fascia, depth and
  * columns ASSUMED (the depth just clears the model tower's south face).
@@ -1326,7 +1334,10 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   const { springing: sc, corona } = FRONT_RELIEF;
   stone.box([spine, sp - sc.height / 2, (sc.out - FRONT_THICK) / 2], [FW + 0.8, sc.height, FRONT_THICK + sc.out], { skip: ['-z'] });
   proud(spine, GROUND_Y + FRONT_RELIEF.impostAboveGround, FW + 0.4, FRONT_RELIEF.impostHeight, FRONT_RELIEF.impostOut); // string course over the arcade's crowns
-  proud(spine, frontTop - 0.45, FW + 1.0, 0.9, 0.7); // cornice
+  // cornice: round 20 (cornice-round-1 score, A2: in south-front the whole face under the corona sat in shadow, where front-a shows it lit but for a crisp
+  // band under the corona) its face brought to FRONT_CORNICE.out, so the corona (`corona.out`) overhangs it by 0.2 m, not 0.4: the band its soffit throws
+  // is about half as deep, and no longer the face's whole 0.6 m at a summer sun
+  proud(spine, frontTop - 0.45, FW + 1.0, 0.9, FRONT_CORNICE.out);
   // its corona (round 8: real overhang, casting): a slab over the cornice's top `corona.out` proud, its soffit throwing a shadow down the
   // cornice's face and onto the bed mould
   stone.box([spine, frontTop - corona.height / 2, (corona.out - FRONT_THICK) / 2], [FW + 1.2, corona.height, FRONT_THICK + corona.out], { skip: ['-z'] });
@@ -1398,21 +1409,33 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   const infillGlass: THREE.BufferGeometry[] = [];
   const frames = new Batch();
   const fasciae = new Batch();
-  const zIn = -FRONT_THICK / 2;
+  const interior = new Batch();
+  const zIn = -PORCH_DEPTH.glass + PORCH_INFILL.frameDepth / 2 + 0.01; // round 20: the doors' leaves, rail and cill on the glass, PORCH_DEPTH.glass back (was mid-wall)
   const headY = (dx: number): number => entryFoot + SOUTH_FRONT_ARCADES.jambHeight + SOUTH_FRONT_ARCADES.archRise * Math.sqrt(Math.max(0, 1 - (dx / entryR) ** 2));
   const fd = PORCH_INFILL.frameDepth, m = PORCH_INFILL.mullion;
   for (const x of entryCentres) {
     const g = new THREE.ShapeGeometry(segmentalArchOpening(x, entryFoot, entryR - 0.02, SOUTH_FRONT_ARCADES.jambHeight, SOUTH_FRONT_ARCADES.archRise), 24);
-    g.translate(0, 0, zIn - 0.1);
+    g.translate(0, 0, -PORCH_DEPTH.glass); // round 20: PORCH_DEPTH.glass behind the face (was mid-wall)
     infillGlass.push(g);
-    for (const side of [-1, 1]) frames.box([x + side * (entryR - m / 2), entryFoot + SOUTH_FRONT_ARCADES.jambHeight / 2, zIn], [m, SOUTH_FRONT_ARCADES.jambHeight, fd]); // the jambs
+    // round 20: the jambs, the mullions up into the arch head and the doors' head transom PORCH_DEPTH.frame deep in front of the glass (they do not cast: the
+    // concourse's shadow pass has no room; they shade by their depth, their sides lit or not); their backs against the glass are left out
+    const fr = PORCH_DEPTH.frame, zf = -PORCH_DEPTH.glass + fr / 2;
+    for (const side of [-1, 1]) frames.box([x + side * (entryR - m / 2), entryFoot + SOUTH_FRONT_ARCADES.jambHeight / 2, zf], [m, SOUTH_FRONT_ARCADES.jambHeight, fr], { skip: ['-z'] });
     for (let k = 1; k < PORCH_INFILL.bays; k++) {
       const dx = -entryR + (2 * entryR * k) / PORCH_INFILL.bays, top = headY(Math.abs(dx) + m / 2);
-      frames.box([x + dx, (entryFoot + top) / 2, zIn], [m, top - entryFoot, fd]); // the mullions, up into the arch head
+      frames.box([x + dx, (entryFoot + top) / 2, zf], [m, top - entryFoot, fr], { skip: ['-z'] });
     }
     const [t0, t1] = PORCH_INFILL.transom;
     const halfAt = (y: number): number => entryR * Math.sqrt(Math.max(0, 1 - ((y - entryFoot - SOUTH_FRONT_ARCADES.jambHeight) / SOUTH_FRONT_ARCADES.archRise) ** 2));
-    frames.box([x, entryFoot + (t0 + t1) / 2, zIn], [2 * halfAt(entryFoot + t1) - 0.04, (t1 - t0) / 3, fd]); // the doors' head transom
+    frames.box([x, entryFoot + (t0 + t1) / 2, zf], [2 * halfAt(entryFoot + t1) - 0.04, (t1 - t0) / 3, fr], { skip: ['-z'] });
+    // round 20: the concourse behind the glass, under the transom: a dim warm plane on the glass, and the ticket barriers' silhouettes on it
+    const gz = -PORCH_DEPTH.glass + 0.004, bz = gz + 0.003, [bw, bh] = PORCH_DEPTH.barrier; // the barriers a hair in front of the plane
+    interior.poly([[x - entryR + 0.02, entryFoot + 0.3, gz], [x + entryR - 0.02, entryFoot + 0.3, gz], [x + entryR - 0.02, entryFoot + t0, gz], [x - entryR + 0.02, entryFoot + t0, gz]], [[0, 0], [1, 0], [1, 1], [0, 1]], { facing: [0, 0, 1] });
+    for (let k = 0; k < PORCH_DEPTH.barriers; k++) {
+      const bx = x - entryR + ((k + 0.5) * 2 * entryR) / PORCH_DEPTH.barriers;
+      frames.poly([[bx - bw / 2, entryFoot + 0.3, bz], [bx + bw / 2, entryFoot + 0.3, bz], [bx + bw / 2, entryFoot + 0.3 + bh, bz], [bx - bw / 2, entryFoot + 0.3 + bh, bz]], undefined, { facing: [0, 0, 1] }); // a barrier's cabinet
+      frames.poly([[bx + bw / 2, entryFoot + 0.3 + bh * 0.7, bz], [bx + bw / 2 + 0.3, entryFoot + 0.3 + bh * 0.7, bz], [bx + bw / 2 + 0.3, entryFoot + 0.3 + bh * 0.82, bz], [bx + bw / 2, entryFoot + 0.3 + bh * 0.82, bz]], undefined, { facing: [0, 0, 1] }); // its paddle
+    }
     // the signage fascia: navy, across the top of the opening right under the canopy's sheet, near the face (R-kx-front-a)
     const s1 = GROUND_Y + FRONT_CANOPY.top - FRONT_CANOPY.sheet - 0.02, s0 = s1 - PORCH_INFILL.sign;
     const fw = 2 * halfAt(s1) - 0.04;
@@ -1431,16 +1454,18 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   // band of the wall's face under the bed mould, in the frames' charcoal (they do not cast: no shadow-pass cost)
   {
     const yc = frontTop - 0.9, yb = yc - FRONT_RELIEF.bedMould.height, out = FRONT_RELIEF.bedMould.out, x0 = fx0 - 0.4, x1 = fx1 + 0.4, e = 0.004;
-    frames.poly([[x0, yc - e, out], [x1, yc - e, out], [x1, yc - e, 0.7], [x0, yc - e, 0.7]], undefined, { facing: [0, -1, 0] }); // the cornice's soffit
+    frames.poly([[x0, yc - e, out], [x1, yc - e, out], [x1, yc - e, FRONT_CORNICE.out], [x0, yc - e, FRONT_CORNICE.out]], undefined, { facing: [0, -1, 0] }); // the cornice's soffit
     frames.poly([[x0 + 0.1, yb - e, 0], [x1 - 0.1, yb - e, 0], [x1 - 0.1, yb - e, out], [x0 + 0.1, yb - e, out]], undefined, { facing: [0, -1, 0] }); // the bed mould's
     frames.poly([[fx0, yb - FRONT_RELIEF.shadowLine, e], [fx1, yb - FRONT_RELIEF.shadowLine, e], [fx1, yb, e], [fx0, yb, e]], undefined, { facing: [0, 0, 1] }); // the shadow line
   }
-  const infillParts = [mergeGeometries(infillGlass, false), plainGeometry(frames.build()), plainGeometry(fasciae.build()), plainGeometry(downlights.build())];
+  const infillParts = [mergeGeometries(infillGlass, false), plainGeometry(frames.build()), plainGeometry(fasciae.build()), plainGeometry(downlights.build()), plainGeometry(interior.build())];
   const infillMats = [
     frontNightGlow(Object.assign(new THREE.MeshLambertMaterial({ color: FRONT_COLOURS.glass, emissive: FRONT_COLOURS.glassSky, map: glassStructureTexture(entryFoot) }), { defines: { KX_GLOW_BY_MAP: '' } }), FRONT_NIGHT.glass, 'kx-front-infill-glass', [entryFoot + FRONT_GLOW_FADE.from, entryFoot + FRONT_GLOW_FADE.to, FRONT_GLOW_FADE.head]),
     frontSteel,
     frontNightGlow(fasciaMaterial(), FRONT_NIGHT.fascia, 'kx-front-infill-fascia'),
     frontNightGlow(new THREE.MeshLambertMaterial({ color: FRONT_COLOURS.downlight, emissive: 0x141414 }), FRONT_NIGHT.downlight, 'kx-front-downlight'),
+    // round 20: the concourse behind the screens, dim and warm by day, glowing warm after dark (the glass's night colour and its fade)
+    frontNightGlow(new THREE.MeshLambertMaterial({ color: PORCH_DEPTH.interior, emissive: 0x140e08 }), FRONT_NIGHT.glass, 'kx-front-infill-interior', [entryFoot + FRONT_GLOW_FADE.from, entryFoot + FRONT_GLOW_FADE.to, FRONT_GLOW_FADE.head]),
   ];
   const infill = new THREE.Mesh(mergeGeometries(infillParts, true), infillMats);
   infill.name = 'shed-front-infill';

@@ -27,7 +27,7 @@ MUTATIONS = [
      'depth: FRONT_THICK + (i + 1) * FRONT_RELIEF.orderStep', 'depth: FRONT_THICK + FRONT_RELIEF.orderStep',
      'reveal steps back in three orders'),
     ('porch glass omitted (pushed 5 m back, out of the opening)', 'web/src/shed.ts',
-     'g.translate(0, 0, zIn - 0.1);\n    infillGlass.push(g);', 'g.translate(0, 0, zIn - 5.1);\n    infillGlass.push(g);',
+     'g.translate(0, 0, -PORCH_DEPTH.glass); // round 20', 'g.translate(0, 0, -PORCH_DEPTH.glass - 5); // round 20',
      'each of the six lower openings carries glazing'),
     ('porch mullions omitted', 'web/src/shed.ts',
      'for (let k = 1; k < PORCH_INFILL.bays; k++)', 'for (let k = 1; k < 1; k++)',
