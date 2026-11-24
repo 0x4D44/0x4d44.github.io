@@ -802,22 +802,27 @@ const mixHex = (a: number, b: number, t: number): string => '#' + new THREE.Colo
  * `bezel` paints the bezel another colour: black for the night glow's mask, so only the ivory field lights (night.ts, createDialLights).
  * A small `size` (a mip level) gets its band's ground pre-darkened (dialFarBand).
  */
-export function paintDial(g: DialPainter, size: number, bezel: string = DIAL_BEZEL): void {
-  const c = size / 2, R0 = c * (1 - 4 / 512), R = R0 * DIAL_LAYOUT.bezel, ink = '#141210', ivory = 0xefe8d4;
+/** A dial's field and its inner chapter ring: the tower's ivory and black; round 16, the platform clock's white with a gold ring (R-kx-shed-interior-d, viewed). */
+export interface DialLook { face: string; chapter?: string }
+export const TOWER_DIAL_LOOK: DialLook = { face: '#efe8d4' };
+export const PLATFORM_DIAL_LOOK: DialLook = { face: '#fbfbf8', chapter: '#c9a03a' }; // ASSUMED tones
+export function paintDial(g: DialPainter, size: number, bezel: string = DIAL_BEZEL, look: DialLook = TOWER_DIAL_LOOK): void {
+  const c = size / 2, R0 = c * (1 - 4 / 512), R = R0 * DIAL_LAYOUT.bezel, ink = '#141210', ivory = parseInt(look.face.slice(1), 16);
   const ring = ([a, b]: readonly [number, number]): void => { g.lineWidth = (b - a) * R; g.beginPath(); g.arc(c, c, ((a + b) / 2) * R, 0, Math.PI * 2); g.stroke(); };
   g.fillStyle = bezel; g.beginPath(); g.arc(c, c, R0, 0, Math.PI * 2); g.fill(); // the bezel
-  g.fillStyle = '#efe8d4'; g.beginPath(); g.arc(c, c, R, 0, Math.PI * 2); g.fill(); // the face
+  g.fillStyle = look.face; g.beginPath(); g.arc(c, c, R, 0, Math.PI * 2); g.fill(); // the face
   const far = dialFarBand(size);
   if (far > 0) { // the band's ground, pre-darkened on a distant mip level
     g.strokeStyle = mixHex(ivory, 0x141210, far);
     ring([DIAL_LAYOUT.inner[0], DIAL_LAYOUT.outer[1]]);
   }
-  g.strokeStyle = ink;
+  g.strokeStyle = look.chapter ?? ink; // the inner chapter ring
   ring(DIAL_LAYOUT.inner);
+  g.strokeStyle = ink;
   ring(DIAL_LAYOUT.outer);
   ring(DIAL_LAYOUT.track); // the minute track, solid black
   const [t0, t1] = DIAL_LAYOUT.track;
-  g.strokeStyle = '#efe8d4'; // its ticks, white in it
+  g.strokeStyle = look.face; // its ticks, the field's colour in it
   g.lineCap = 'butt';
   for (let i = 0; i < 60; i++) {
     const a = (i * Math.PI) / 30;
@@ -848,15 +853,15 @@ export function paintDial(g: DialPainter, size: number, bezel: string = DIAL_BEZ
   });
 }
 
-function clockMaterial(): THREE.Material {
-  if (!isBrowser) return new THREE.MeshLambertMaterial({ color: 0xefe8d4 });
+function clockMaterial(look: DialLook = TOWER_DIAL_LOOK): THREE.Material {
+  if (!isBrowser) return new THREE.MeshLambertMaterial({ color: parseInt(look.face.slice(1), 16) });
   // every mip level painted at its own size (paintDial pre-darkens the band on the small ones), not averaged down from the 512 one
   const texture = (bezel?: string): THREE.CanvasTexture => {
     const levels: HTMLCanvasElement[] = [];
     for (let size = 512; size >= 1; size /= 2) {
       const c = document.createElement('canvas');
       c.width = c.height = size;
-      paintDial(c.getContext('2d') as CanvasRenderingContext2D, size, bezel);
+      paintDial(c.getContext('2d') as CanvasRenderingContext2D, size, bezel, look);
       levels.push(c);
     }
     const t = new THREE.CanvasTexture(levels[0]!);
@@ -1707,13 +1712,17 @@ export const PLATFORM_CLOCK = { v: 0.638, y: 5.2, out: 1.3, radius: 0.6, drum: 0
  * pier's face; until round 15 the iron started at the wall's line, buried in the pier). `v` snaps to the nearest rib, so the beam is fixed to a pier's face
  * clear of the arches (WEST_ARCADE), in a bay with no platform furniture within 6 m (until round 15 a pole clock stood beside it). Sizes ASSUMED.
  */
+/** Round 16: the spandrel web's roundels, [out from the arcade's face, up from the beam's centre line, radius], metres (ASSUMED, after R-kx-shed-interior-d). */
+export const SPANDREL_ROUNDELS: readonly (readonly [number, number, number])[] = [[0.11, -0.27, 0.075], [0.25, -0.17, 0.04], [0.06, -0.45, 0.045]];
+/** Round 16: the cresting scroll's outer edge, a quarter ellipse `a` out and `b` up from the foot of the dial's side (ASSUMED). */
+export const CRESTING = { a: 0.57, b: 0.36 } as const;
 export function buildPlatformClock(length: number): THREE.Group {
   const { v, y, out, radius, drum, rim, beam, beamDrop, spandrel: R, wall: x0 } = PLATFORM_CLOCK;
   const ribs = ribPositions(length), rib = ribs.reduce((best, r) => (Math.abs(r - v * length) < Math.abs(best - v * length) ? r : best));
   const z = -rib, cx = x0 + out, g = new THREE.Group();
   g.name = 'shed-platform-clock';
   // each face its own CircleGeometry disc (as the tower's), so the night dial lights (night.ts createDialLights) give it a glow after dark
-  const clockMat = clockMaterial(), faceGeo = new THREE.CircleGeometry(radius, 40);
+  const clockMat = clockMaterial(PLATFORM_DIAL_LOOK), faceGeo = new THREE.CircleGeometry(radius, 40); // round 16: a white face, a gold chapter ring
   clockMat.userData.glowScale = PLATFORM_CLOCK.glow; // its glow capped (night.ts), its field under clipping after dark so the numerals' ring survives
   const faces = [1, -1].map((s) => {
     const f = mesh(faceGeo, clockMat, 'shed-platform-clock-faces');
@@ -1737,14 +1746,39 @@ export function buildPlatformClock(length: number): THREE.Group {
     const [ax, ay] = at(Math.PI - (Math.PI / 2) * (k / 8)), [bx, by] = at(Math.PI - (Math.PI / 2) * ((k + 1) / 8));
     iron.box([(ax + bx) / 2, (ay + by) / 2, z], [Math.hypot(bx - ax, by - ay) + 0.02, 0.07, 0.08], { rotZ: Math.atan2(by - ay, bx - ax) });
   }
-  for (let k = 0; k < 6; k++) {
-    const sx = x0 + (R * (k + 0.5)) / 6, low = beamY - R + Math.sqrt(R * R - (sx - x0 - R) ** 2);
-    iron.box([sx, (low + beamY) / 2, z], [(R / 6) * 0.6, beamY - low, 0.03]);
+  // the web, pierced (round 16, R-kx-shed-interior-d viewed): a plate of close slats from the curve up to the beam, open where its roundels are, each roundel
+  // ringed in 8 chords (sizes and places ASSUMED)
+  const ring = (rx: number, ry: number, rr: number, depth: number): void => {
+    for (let i = 0; i < 8; i++) {
+      const am = (2 * Math.PI * (i + 0.5)) / 8;
+      iron.box([rx + rr * Math.cos(am), ry + rr * Math.sin(am), z], [2 * rr * Math.sin(Math.PI / 8) + 0.01, 0.025, depth], { rotZ: am + Math.PI / 2 });
+    }
+  };
+  const roundels = SPANDREL_ROUNDELS.map(([dx, dy, rr]): [number, number, number] => [x0 + dx, beamY + dy, rr]);
+  for (let k = 0; k < 12; k++) {
+    const sx = x0 + (R * (k + 0.5)) / 12, low = beamY - R + Math.sqrt(R * R - (sx - x0 - R) ** 2);
+    const edge = (rx: number): number => Math.max(0, Math.abs(sx - rx) - R / 24); // the slat's side nearest the roundel's centre
+    const cuts = roundels.filter(([rx, , rr]) => edge(rx) < rr).map(([rx, ry, rr]): [number, number] => { const h = Math.sqrt(rr * rr - edge(rx) ** 2); return [ry - h, ry + h]; }).sort((p, q) => p[0] - q[0]);
+    let y = low;
+    for (const [c0, c1] of [...cuts, [beamY, beamY] as [number, number]]) {
+      if (c0 > y + 0.005) iron.box([sx, (y + c0) / 2, z], [R / 12 + 0.002, c0 - y, 0.03]);
+      y = Math.max(y, c1);
+    }
   }
-  // the cresting: a stepped scroll either side of the dial's base, from the beam's top up its sides
-  for (const s of [-1, 1]) for (let k = 0; k < 3; k++) {
-    const w = 0.55 - 0.15 * k, xin = cx + s * radius * 0.55;
-    iron.box([xin + (s * w) / 2, top + 0.06 + 0.12 * k, z], [w, 0.12, 0.06]);
+  for (const [rx, ry, rr] of roundels) ring(rx, ry, rr, 0.04);
+  // the cresting (round 16): a scroll either side of the dial's base, its outer edge a quarter ellipse from high against the dial down and out to the beam,
+  // the field under it pierced by bars, and a curl at its outer foot (ASSUMED shapes)
+  for (const s of [-1, 1]) {
+    const xc = cx + s * radius * 0.55, { a, b } = CRESTING, pt = (u: number): [number, number] => [xc + s * a * Math.sin(u), top + b * Math.cos(u)];
+    for (let k = 0; k < 6; k++) {
+      const [ax, ay] = pt((Math.PI / 2) * (k / 6)), [bx, by] = pt((Math.PI / 2) * ((k + 1) / 6));
+      iron.box([(ax + bx) / 2, (ay + by) / 2, z], [Math.hypot(bx - ax, by - ay) + 0.02, 0.05, 0.06], { rotZ: Math.atan2(by - ay, bx - ax) });
+    }
+    for (let k = 0; k < 5; k++) {
+      const off = (a * (k + 0.5)) / 5, hgt = b * Math.sqrt(1 - (off / a) ** 2);
+      iron.box([xc + s * off, top + hgt / 2, z], [0.035, hgt, 0.04]);
+    }
+    ring(xc + s * (a - 0.02), top + 0.07, 0.06, 0.05); // the curl
   }
   g.add(...faces, mesh(iron.build(), material('ribPaint'), 'shed-platform-clock-iron'));
   g.userData.clockDials = [1, -1].map((s): ClockDial => ({ centre: [cx, y, z + s * (drum / 2 + 0.005)], normal: [0, 0, s], up: [0, 1, 0], radius })); // clocks.ts

@@ -191,7 +191,7 @@ test('crossSection and bandAt: the safety line, with its slack, is kept from a t
 
 test('buildPlatforms: three meshes with the shared materials, and a strip material with a polygon offset', () => {
   assert.deepEqual(platforms.children.map((c) => c.name), ['platform-tops', 'platform-walls', 'platform-edges']);
-  assert.equal(part(platforms, 'platform-tops').material, material('asphalt'));
+  assert.equal(part(platforms, 'platform-tops').material, material('platformTop')); // re-pinned round 16: the shed's tops have their own slab-jointed texture
   assert.equal(part(platforms, 'platform-walls').material, material('concrete'));
   const strip = part(platforms, 'platform-edges').material as THREE.MeshLambertMaterial;
   const edge = material('platformEdge') as THREE.MeshLambertMaterial;
@@ -868,7 +868,8 @@ test('buildFurniture: one instanced mesh per kind, counts as planned', () => {
   assert.equal(named('lamps-pendant').count, plan.lamps.filter((l) => l.overhead).length);
   assert.equal(named('benches').count, plan.benches.length);
   assert.equal(named('help-points').count, plan.helpPoints.length);
-  assert.deepEqual(furniture.userData.counts, { lamps: plan.lamps.length, benches: plan.benches.length, helpPoints: plan.helpPoints.length, totems: plan.totems.length, clocks: plan.clocks.length, canopies: 2, columns: plan.canopies.reduce((n, c) => n + c.columns.length, 0) });
+  // re-pinned round 16: the counts carry the extras (bins, number blades, trolley points)
+  assert.deepEqual(furniture.userData.counts, { lamps: plan.lamps.length, benches: plan.benches.length, helpPoints: plan.helpPoints.length, totems: plan.totems.length, clocks: plan.clocks.length, extras: plan.extras.length, canopies: 2, columns: plan.canopies.reduce((n, c) => n + c.columns.length, 0) });
   // a totem faces along the platform: its two screens are the last group and the same picture shows from both sides
   const totems = totemMesh();
   assert.equal(totems.geometry.groups.length, 2);

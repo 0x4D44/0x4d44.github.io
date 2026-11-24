@@ -58,7 +58,7 @@ test('B4: the strip is one tile across, clamped so its inner edge samples no cop
 });
 
 test('B5: the dial sits on a beam from the arcade\'s face, a curved spandrel under the beam back to the wall, cresting either side of the dial\'s base', () => {
-  const { spec, pts, cx } = build();
+  const { spec, pts, cx, z } = build();
   const beamY = spec.y - spec.beamDrop, R = spec.spandrel, x0 = spec.wall, dialFoot = spec.y - spec.radius - spec.rim;
   // the beam: its top just under the dial's foot, running from the arcade's face past the dial
   const onBeam = pts.filter((p) => Math.abs(p.y - beamY) < 0.1);
@@ -72,7 +72,8 @@ test('B5: the dial sits on a beam from the arcade\'s face, a curved spandrel und
   // the spandrel: iron on the quarter circle from (wall, beamY - R) to (wall + R, beamY), its hollow down and out, at 30, 45 and 60 degrees
   for (const deg of [30, 45, 60]) {
     const a = Math.PI - (deg * Math.PI) / 180, q = new THREE.Vector2(x0 + R + R * Math.cos(a), beamY - R + R * Math.sin(a));
-    assert.ok(pts.some((p) => Math.hypot(p.x - q.x, p.y - q.y) < 0.08), `the curved bracket through ${q.x.toFixed(2)}, ${q.y.toFixed(2)}`);
+    // tightened round 16: the bracket's own flange (deeper than the web's plate, which since round 16 also follows the curve)
+    assert.ok(pts.some((p) => Math.hypot(p.x - q.x, p.y - q.y) < 0.08 && Math.abs(p.z - z) > 0.035), `the curved bracket through ${q.x.toFixed(2)}, ${q.y.toFixed(2)}`);
   }
   assert.ok(pts.some((p) => p.x <= x0 + 0.01 && p.y <= beamY - R + 0.05), 'its foot on the wall, R under the beam');
   // the cresting: iron beside the dial's base on both sides, above the beam

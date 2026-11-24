@@ -27,7 +27,7 @@ MUTATIONS = [  # re-anchored rounds 14 and 15: the edge layout and the clock's f
     ('a yellow line back', 'web/src/materials.ts', "band(0.5, 0.9, '#92886a'); // the tactile strip, a muted yellow-khaki", "band(0.5, 0.9, '#92886a'); band(0.6, 0.7, '#d9b21a'); // the tactile strip, a muted yellow-khaki", 'B4'),
     ('the tactile straight behind the coping, as round 13 had it', 'web/src/materials.ts', "band(0.5, 0.9, '#92886a');", "band(0.2, 0.6, '#92886a');", 'B4'),
     ('no clock', 'web/src/shed.ts', '  group.add(buildPlatformClock(L));\n', '', 'B5'),
-    ('the clock floats off the wall', 'web/src/shed.ts', "iron.box([x0 + beam / 2, beamY, z], [beam, bd, 0.12]);", "iron.box([x0 + beam / 2 + 0.5, beamY, z], [beam - 1, bd, 0.12]);", 'B5'),
+    ('the clock floats off the wall', 'web/src/shed.ts', "beamDrop, spandrel: R, wall: x0 } = PLATFORM_CLOCK;", "beamDrop, spandrel: R, wall } = PLATFORM_CLOCK, x0 = wall + 0.5;", 'B5'),
     ('one face', 'web/src/shed.ts', "  const faces = [1, -1].map((s) => {", "  const faces = [1].map((s) => {", 'B5'),
     ('no hands', 'web/src/shed.ts', "  g.userData.clockDials = [1, -1].map(", "  g.userData.clockDials = [].map(", 'B5'),
     ('the clock casts', 'web/src/lighting.ts', "'shed-arch-rings',", "'shed-arch-rings', 'shed-platform-clock-iron',", 'B5'),

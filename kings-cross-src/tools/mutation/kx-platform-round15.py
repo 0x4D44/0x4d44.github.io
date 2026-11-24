@@ -25,8 +25,8 @@ MUTATIONS = [
     ('the dial lifted off the beam', 'web/src/shed.ts', 'beamDrop: 0.82,', 'beamDrop: 1.2,', 'B5: the dial sits'),
     ('a short beam, not past the dial', 'web/src/shed.ts', "  iron.box([x0 + beam / 2, beamY, z], [beam, bd, 0.12]);", "  iron.box([x0 + 0.4, beamY, z], [0.8, bd, 0.12]);", 'B5: the dial sits'),
     ('a straight strut, not the curved bracket', 'web/src/shed.ts', "const at = (a: number): [number, number] => [x0 + R + R * Math.cos(a), beamY - R + R * Math.sin(a)];", "const at = (a: number): [number, number] => [x0 + R * (1 - (a - Math.PI / 2) / (Math.PI / 2)), beamY - R * ((a - Math.PI / 2) / (Math.PI / 2))];", 'B5: the dial sits'),
-    ('no cresting', 'web/src/shed.ts', "  for (const s of [-1, 1]) for (let k = 0; k < 3; k++) {", "  for (const s of [-1, 1]) for (let k = 0; k < 0; k++) {", 'B5: the dial sits'),
-    ('cresting one side only', 'web/src/shed.ts', "  for (const s of [-1, 1]) for (let k = 0; k < 3; k++) {", "  for (const s of [1]) for (let k = 0; k < 3; k++) {", 'B5: the dial sits'),
+    ('no cresting', 'web/src/shed.ts', "  for (const s of [-1, 1]) {\n    const xc = cx", "  for (const s of [] as number[]) {\n    const xc = cx", 'B5: the dial sits'),
+    ('cresting one side only', 'web/src/shed.ts', "  for (const s of [-1, 1]) {\n    const xc = cx", "  for (const s of [1]) {\n    const xc = cx", 'B5: the dial sits'),
     ('off the rib, mid-bay over an arch', 'web/src/shed.ts', "  const z = -rib, cx = x0 + out,", "  const z = -(rib + 3.05), cx = x0 + out,", 'B5: fixed to a pier'),
     ('back beside the pole clock', 'web/src/shed.ts', 'export const PLATFORM_CLOCK = { v: 0.638,', 'export const PLATFORM_CLOCK = { v: 0.55,', 'B5: fixed to a pier'),
     ('the glow uncapped', 'web/src/shed.ts', 'wall: WEST_ARCADE.depth, glow: 0.6 }', 'wall: WEST_ARCADE.depth, glow: 1 }', 'B5: fixed to a pier'),
@@ -35,7 +35,7 @@ MUTATIONS = [
     ('the strip wraps across again (the hairline back)', 'web/src/materials.ts', "average: 0x878479, repeat: true, clampU: true,", "average: 0x878479, repeat: true,", 'B4'),
     ('the clamp not honoured', 'web/src/materials.ts', "        if (spec.clampU) t.wrapS = THREE.ClampToEdgeWrapping;", "        if (spec.clampU) t.wrapT = THREE.ClampToEdgeWrapping;", 'B4'),
     ('the tactile back to round 14', 'web/src/materials.ts', "band(0.5, 0.9, '#92886a');", "band(0.5, 0.9, '#8a8270');", 'B4'),
-    ('the coping back to round 14', 'web/src/materials.ts', "band(0, 0.2, '#c4c4bd');", "band(0, 0.2, '#b4b4ae');", 'B4'),
+    ('the coping back to round 14', 'web/src/materials.ts', "band(0, 0.2, '#d4d4ce');", "band(0, 0.2, '#b4b4ae');", 'B4'),
 ]
 
 def run(work: Path) -> subprocess.CompletedProcess[str]:

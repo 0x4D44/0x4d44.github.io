@@ -25,7 +25,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 export const IN = 0.0254; // metres per inch
 
-export type TextureName = 'brick' | 'brickRed' | 'stone' | 'slate' | 'asphalt' | 'platformEdge' | 'ballast' | 'roofGlass' | 'window' | 'windowArch' | 'floorSlab' | 'lining' | 'shedGlass';
+export type TextureName = 'brick' | 'brickRed' | 'stone' | 'slate' | 'asphalt' | 'platformTop' | 'platformEdge' | 'ballast' | 'roofGlass' | 'window' | 'windowArch' | 'floorSlab' | 'lining' | 'shedGlass';
 
 export interface TextureSpec {
   /** metres one tile covers: [along u, along v] */
@@ -67,10 +67,15 @@ export const TEXTURES: Readonly<Record<TextureName, TextureSpec>> = {
   // and the road are grey, never navy). The city's roads are the same texture at four-fifths of the light (cityMaterial 'asphalt').
   asphalt: { tile: [2, 2], px: [256, 256], density: [100, 160], average: 0x767571, repeat: true,
     source: 'ASSUMED: tarmac platform surface, grain drawn at 128 texels per metre; the tone about 0.17 reflectance' },
+  // Round 16 (rubric shed-interior B4, R-kx-shed-interior-e): the shed's platform tops, the asphalt with transverse slab joints at PLATFORM_JOINT (0.75 m,
+  // ASSUMED from shed-e's joints, about 0.6-0.9 m) across the platform (the tops' UVs are world x and -z, and the platforms run within a degree of the
+  // shed's axis). Its own texture: the asphalt is shared with the city's roads and Perth's bridge.
+  platformTop: { tile: [2, 2.25], px: [256, 288], density: [100, 160], average: 0x767571, repeat: true,
+    source: 'ASSUMED: the asphalt (paintAsphalt) with slab joints every 0.75 m along the platform (R-kx-shed-interior-e)' },
   // Platform edge, drawn across the strip (u, 0..1.6 m from the edge inboard) and tiled along it
-  // (v, 0.5 m). ASSUMED widths: coping 0.2 m, yellow tactile warning strip 0.2-0.6 m (the UK strip
+  // (v, 0.75 m since round 16, one slab joint a tile: 0.5 m before). ASSUMED widths: coping 0.2 m, yellow tactile warning strip 0.2-0.6 m (the UK strip
   // is about 0.4 m wide: DfT, Guidance on the use of tactile paving surfaces), white line 1.05-1.15 m.
-  platformEdge: { tile: [1.6, 0.5], px: [320, 100], density: [150, 250], average: 0x878479, repeat: true, clampU: true,
+  platformEdge: { tile: [1.6, 0.75], px: [320, 150], density: [150, 250], average: 0x878479, repeat: true, clampU: true,
     source: 'tactile strip about 0.4 m wide (DfT tactile paving guidance); offsets ASSUMED' },
   ballast: { tile: [2, 2], px: [256, 256], density: [100, 160], average: 0x5f5b54, repeat: true,
     source: 'ASSUMED: crushed stone drawn at 128 texels per metre' },
@@ -281,13 +286,29 @@ function paintAsphalt(g: Ctx, w: number, h: number): void {
     const ph = 20 + r() * 60;
     wrapped(w, h, x, y, 100, (px, py) => g.fillRect(px, py, pw, ph));
   }
-  for (let i = 0; i < 5200; i++) {
+  for (let i = 0, n = Math.round((5200 * w * h) / (256 * 256)); i < n; i++) { // 5,200 on the 256 px tile: the same density on any other
     const x = r() * w;
     const y = r() * h;
     const v = r();
     g.fillStyle = v < 0.45 ? `rgba(24,23,22,${0.2 + r() * 0.25})` : `rgba(${160 + r() * 70},${160 + r() * 68},${156 + r() * 64},${0.12 + r() * 0.2})`;
     wrapped(w, h, x, y, 4, (px, py) => g.fillRect(px, py, 1 + (r() < 0.2 ? 1 : 0), 1 + (r() < 0.2 ? 1 : 0)));
   }
+}
+
+/** The slab joints' pitch along the shed's platforms, metres (ASSUMED, R-kx-shed-interior-e: about 0.6-0.9 m); the edge strip's tile along is the same. */
+export const PLATFORM_JOINT = 0.75;
+/** A transverse joint: a dark line one texel and a half wide across the whole tile at v (metres), and a faint lit lip beside it. */
+function joint(g: Ctx, w: number, y: number): void {
+  g.fillStyle = 'rgba(20,20,18,0.42)';
+  g.fillRect(0, y, w, 1.5);
+  g.fillStyle = 'rgba(255,255,250,0.06)';
+  g.fillRect(0, y + 1.5, w, 1);
+}
+
+function paintPlatformTop(g: Ctx, w: number, h: number): void {
+  paintAsphalt(g, w, h);
+  const pxm = h / TEXTURES.platformTop.tile[1];
+  for (let v = 0; v < TEXTURES.platformTop.tile[1] - 1e-6; v += PLATFORM_JOINT) joint(g, w, v * pxm);
 }
 
 function paintBallast(g: Ctx, w: number, h: number): void {
@@ -329,7 +350,9 @@ function paintPlatformEdge(g: Ctx, w: number, h: number): void {
   // (Round 13 had the tactile straight behind the coping and a yellow line behind it.) All widths and tones by eye: ASSUMED.
   // round 15 (platform-round-2 score, section 5): the coping paler again, for the night (it read too dim in p8-south after dark), and the tactile warmed a
   // little toward shed-e's yellow-khaki, so it separates from the surface at platform-eye range (both ASSUMED)
-  band(0, 0.2, '#c4c4bd'); // coping stones, pale enough to read under the night lights
+  // round 16 (platform-round-3 score, section 5): paler again, so the coping reads as a pale line under the night lights (ASSUMED; no emissive: the atmosphere
+  // fades a built emissive after dark)
+  band(0, 0.2, '#d4d4ce'); // coping stones, pale enough to read under the night lights
   band(0.2, 1.6, '#767571'); // the platform surface (paintAsphalt's base tone)
   band(0.5, 0.9, '#92886a'); // the tactile strip, a muted yellow-khaki
   // the surface's speckle: paintAsphalt's 5,200 specks on a 2 m tile is 1,300 a square metre, each 1/128 m; here 200 px a metre
@@ -348,7 +371,7 @@ function paintPlatformEdge(g: Ctx, w: number, h: number): void {
   // truncated domes on a 0.0625 m pitch, drawn lit on top and shaded under, a shade off the strip's own tone
   const pitch = 0.0625 * pxm;
   for (let ix = 0; ix < 7; ix++) {
-    for (let iy = 0; iy < 8; iy++) {
+    for (let iy = 0; iy < Math.round(TEXTURES.platformEdge.tile[1] / 0.0625); iy++) {
       const cx = 0.52 * pxm + (ix + 0.5) * pitch + ((iy % 2) * pitch) / 2;
       const cy = (iy + 0.5) * pitch;
       if (cx > 0.88 * pxm) continue;
@@ -358,6 +381,7 @@ function paintPlatformEdge(g: Ctx, w: number, h: number): void {
       g.beginPath(); g.arc(cx, cy, 2.3, 0, Math.PI * 2); g.fill();
     }
   }
+  joint(g, w, 0); // round 16: the slab joint, once a tile (PLATFORM_JOINT), through the coping, the surface and the tactile
 }
 
 function paintRoofGlass(g: Ctx, w: number, h: number): void {
@@ -531,6 +555,7 @@ const PAINTERS: Readonly<Record<TextureName, (g: Ctx, w: number, h: number) => v
   stone: paintStone,
   slate: paintSlate,
   asphalt: paintAsphalt,
+  platformTop: paintPlatformTop,
   platformEdge: paintPlatformEdge,
   ballast: paintBallast,
   roofGlass: paintRoofGlass,
@@ -576,7 +601,7 @@ export function texture(name: TextureName): THREE.CanvasTexture | null {
 }
 
 export type MaterialName =
-  | 'brick' | 'stone' | 'slate' | 'asphalt' | 'platformEdge' | 'ballast'
+  | 'brick' | 'stone' | 'slate' | 'asphalt' | 'platformTop' | 'platformEdge' | 'ballast'
   | 'roofGlass' | 'glass' | 'window' | 'windowArch'
   | 'concrete' | 'steel' | 'whiteSteel' | 'ribPaint' | 'lining' | 'valleyLining' | 'shedGlass' | 'panel' | 'concourseFloor'
   | 'brickRed' | 'slateBothSides' | 'sash' | 'sashArch' | 'pane' | 'platformEdgeStrip' | 'brickFoot' | 'stoneFoot' | 'stoneDressing' | 'arcadeGlass' | 'arcadeFrame';
@@ -1388,6 +1413,7 @@ const makers: Readonly<Record<MaterialName, () => THREE.Material>> = {
   stone: () => tiled('stone'),
   slate: () => tiled('slate'),
   asphalt: () => tiled('asphalt'),
+  platformTop: () => tiled('platformTop'),
   platformEdge: () => tiled('platformEdge'),
   ballast: () => tiled('ballast'),
   // The glazing of the shed roof: tinted, see-through, with astragal bars. Never writes depth, so

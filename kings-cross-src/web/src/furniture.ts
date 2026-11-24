@@ -42,7 +42,7 @@ import type { Pt } from '../../core/geo.ts';
 import type { KxData } from '../../core/osm.ts';
 import { PLATFORM_HEIGHT } from '../../core/scene.ts';
 import { isSurfacePlatform, longAxis, platformDrawingOutline, PLATFORM_9_OUTLINE_BASIS, PLATFORM_REFS, pointInPolygon, SHED_PLATFORM_REFS, SHED_SPAN_WIDTH, shedToWorld, stationPlatforms, worldToShed } from '../../core/station.ts';
-import { eastArcadeU, ribPositions, SPINE_WALL, westernPassages } from './shed.ts';
+import { eastArcadeU, PLATFORM_CLOCK, ribPositions, SPINE_WALL, westernPassages } from './shed.ts';
 import type { ShedLayout } from '../../core/station.ts';
 import { Batch, material, rgb, rng, TEXTURES } from './materials.ts';
 import type { Rgb, V3 } from './materials.ts';
@@ -562,7 +562,7 @@ export function buildPlatforms(data: FurnitureData, layout: Pick<ShedLayout, 'or
     }
   }
   const parts: [string, Batch, THREE.Material][] = [
-    ['platform-tops', tops, material('asphalt')],
+    ['platform-tops', tops, material('platformTop')], // round 16: the asphalt with slab joints, its own texture (materials.ts platformTop)
     ['platform-walls', walls, material('concrete')],
     ['platform-edges', strips, material('platformEdgeStrip')],
   ];
@@ -798,6 +798,8 @@ export interface FurniturePlan {
   totems: TotemPlacement[];
   /** pole clocks, one beside a totem of each platform or shared island */
   clocks: Placement[];
+  /** round 16: bins, platform-number blades and trolley points, one of each a platform or shared island (EXTRAS) */
+  extras: ExtraPlacement[];
   canopies: CanopyPlan[];
 }
 
@@ -901,7 +903,7 @@ export function furniturePlan(data: FurnitureData, layout: FurnitureLayout): Fur
   // Reconstructing the platform end does not locate a longer canopy or new furniture.
   const outlines = surfacePlatforms({ platforms: data.platforms }).map((p) => p.pts);
   const tracks = trackSegments(data);
-  const plan: FurniturePlan = { lamps: [], benches: [], helpPoints: [], totems: [], clocks: [], canopies: [] };
+  const plan: FurniturePlan = { lamps: [], benches: [], helpPoints: [], totems: [], clocks: [], extras: [], canopies: [] };
   const kx = stationPlatforms(data);
   const underShed = (p: Pt): boolean => {
     const { u, v } = worldToShed(layout, p);
@@ -1075,6 +1077,26 @@ export function furniturePlan(data: FurnitureData, layout: FurnitureLayout): Fur
         }
       }
     }
+    // round 16 (rubric shed-interior B5, R-kx-shed-interior-e and -a): a pair of bins, a platform-number blade and a trolley point, each clear of everything
+    // (benches by the totems' gap), behind the safety lines, and out of the platform clock's bay (EXTRA_CLOCK_CLEAR of its rib, any platform)
+    const clockV = ribs.reduce((b, v) => (Math.abs(v - PLATFORM_CLOCK.v * layout.length) < Math.abs(b - PLATFORM_CLOCK.v * layout.length) ? v : b));
+    for (const [kind, spec] of Object.entries(EXTRAS) as [ExtraKind, (typeof EXTRAS)[ExtraKind]][]) {
+      extra: for (const by of byOrder) {
+        const v0 = worldToShed(layout, [by.x, by.z]).v;
+        for (const d of spec.offsets) {
+          if (Math.abs(v0 + d - clockV) < EXTRA_CLOCK_CLEAR) continue;
+          const at = pointAt(v0 + d, spec.across);
+          if (!at) continue;
+          const c: ExtraPlacement = { ref: at.home.ref, x: at.x, z: at.z, rotY: by.rotY, r: spec.r, across: spec.across, kind, label: refs.join(' ') };
+          const clear = near.every((q) => Math.hypot(q.x - c.x, q.z - c.z) >= q.r + c.r + (benches.has(q) ? FIGURES.totemBenchGap : FIGURES.gap));
+          if (clear && group.every(({ f }) => behindSafetyLine(f, c))) {
+            plan.extras.push(c);
+            near.push(c);
+            break extra;
+          }
+        }
+      }
+    }
   }
   return plan;
 }
@@ -1214,6 +1236,67 @@ function clockGeometry(): THREE.BufferGeometry {
   a.dispose();
   b.dispose();
   return merged;
+}
+
+export type ExtraKind = 'bins' | 'blade' | 'trolley';
+export interface ExtraPlacement extends Placement {
+  kind: ExtraKind;
+  /** the platform numbers a blade shows */
+  label: string;
+}
+/**
+ * Round 16 (rubric shed-interior B5; R-kx-shed-interior-e, viewed: a blue platform-number blade, "7", on a post among the island's columns; a pair of green
+ * wheelie bins against a column; a "Trolley Point" board on two legs with a stack of trolleys; R-kx-shed-interior-a: a trolley point board in the middle distance,
+ * blue bins at the platform's south end). One of each a platform or shared island, along it from its middle totem by `offsets` (metres), `r` the footprint
+ * radius, `across` the half-width. Counts and sizes ASSUMED from the two photographs: neither shows a platform's full length.
+ */
+export const EXTRAS = {
+  bins: { offsets: [18.3, -18.3, 24.4, -24.4, 30.5, -30.5], r: 0.8, across: 0.4 },
+  blade: { offsets: [9.15, -9.15, 15.25, -15.25, 21.35, -21.35], r: 0.45, across: 0.4 },
+  trolley: { offsets: [-27.45, 27.45, -33.55, 33.55, -39.65, 39.65], r: 1.5, across: 0.55 },
+} as const;
+/** the platform clock's bay is left clear: no extra within this of its rib, metres (round 15's scorer: nothing within about 6 m of the clock) */
+export const EXTRA_CLOCK_CLEAR = 9;
+const SIGN_BLUE = rgb(0x1f3c88);
+const SIGN_WHITE = rgb(0xf1f2f0);
+const BIN_GREEN = rgb(0x2f7a3c);
+const TROLLEY_GREY = rgb(0x9aa1a8);
+/** seven-segment digits: which of a, b, c, d, e, f, g each lights */
+const SEGMENTS: Record<string, string> = { '0': 'abcdef', '1': 'bc', '2': 'abged', '3': 'abgcd', '4': 'fgbc', '5': 'afgcd', '6': 'afgedc', '7': 'abc', '8': 'abcdefg', '9': 'abcdfg' };
+/** One extra at y = 0, local z along the platform; nothing floats: every part stands on the platform or on another part. */
+export function extraGeometry(e: { kind: ExtraKind; label: string }): THREE.BufferGeometry {
+  const b = newBatch();
+  if (e.kind === 'bins') {
+    for (const sx of [-0.33, 0.33]) {
+      b.aabb(sx - 0.29, 0, -0.35, sx + 0.29, 1.0, 0.35, BIN_GREEN);
+      b.aabb(sx - 0.31, 1.0, -0.37, sx + 0.31, 1.06, 0.37, IRON, true);
+    }
+  } else if (e.kind === 'trolley') {
+    for (const sx of [-0.42, 0.42]) b.aabb(sx - 0.04, 0, -0.04, sx + 0.04, 2.2, 0.04, IRON);
+    b.aabb(-0.5, 1.0, -0.035, 0.5, 2.25, 0.035, SIGN_BLUE, true);
+    b.aabb(-0.42, 1.95, -0.045, 0.42, 2.12, 0.045, SIGN_WHITE, true); // the board's heading strip, both faces
+    b.aabb(-0.35, 0, 0.25, 0.35, 1.0, 1.45, TROLLEY_GREY); // the nested trolleys in front of it
+  } else {
+    const top = 3.4, size = 0.7;
+    b.aabb(-0.05, 0, -0.05, 0.05, top, 0.05, IRON);
+    const digits = e.label.replace(/[^0-9]/g, '').slice(0, 2);
+    const w = Math.max(size, 0.42 * digits.length + 0.28);
+    b.aabb(-w / 2, top - size, -0.03, w / 2, top, 0.03, SIGN_BLUE, true);
+    // the numbers in white seven-segment strokes on both faces
+    const sh = 0.4, sw = 0.24, t = 0.05, y0 = top - size / 2 - sh / 2;
+    [...digits].forEach((ch, i) => {
+      const cx = -((digits.length - 1) * 0.42) / 2 + i * 0.42, x0 = cx - sw / 2, x1 = cx + sw / 2, ym = y0 + sh / 2, y1 = y0 + sh;
+      const seg: Record<string, [number, number, number, number]> = {
+        a: [x0, y1 - t, x1, y1], g: [x0, ym - t / 2, x1, ym + t / 2], d: [x0, y0, x1, y0 + t],
+        f: [x0, ym, x0 + t, y1], b: [x1 - t, ym, x1, y1], e: [x0, y0, x0 + t, ym], c: [x1 - t, y0, x1, ym],
+      };
+      for (const s of SEGMENTS[ch] ?? '') for (const side of [-1, 1]) {
+        const [a0, b0, a1, b1] = seg[s]!;
+        b.aabb(a0, b0, side > 0 ? 0.03 : -0.036, a1, b1, side > 0 ? 0.036 : -0.03, SIGN_WHITE, true);
+      }
+    });
+  }
+  return b.build();
 }
 
 /** Every totem and pole clock in one mesh, in place: the bodies (group 0), then the faces (group 1), so all of them are two draw calls whatever their numbers. */
@@ -1479,6 +1562,7 @@ export function describePlan(plan: FurniturePlan): Record<string, number> {
     helpPoints: plan.helpPoints.length,
     totems: plan.totems.length,
     clocks: plan.clocks.length,
+    extras: plan.extras.length,
     canopies: plan.canopies.length,
     columns: plan.canopies.reduce((n, c) => n + c.columns.length, 0),
   };
@@ -1513,6 +1597,18 @@ export function buildFurniture(data: FurnitureData, layout: FurnitureLayout): TH
     const totems = new THREE.Mesh(totemsGeometry(plan.totems, plan.clocks), [lit, face]);
     totems.name = 'totems';
     add(totems);
+  }
+  if (plan.extras.length > 0) {
+    // round 16: every bin pair, number blade and trolley point merged in place: one draw, vertex-coloured, casting no shadow (lighting.ts SHADOW_CASTERS)
+    const m = new THREE.Matrix4(), parts = plan.extras.map((e) => {
+      const g = extraGeometry(e);
+      g.applyMatrix4(m.compose(new THREE.Vector3(e.x, PLATFORM_HEIGHT, e.z), new THREE.Quaternion().setFromAxisAngle(_up, e.rotY), new THREE.Vector3(1, 1, 1)));
+      return g;
+    });
+    const extras = new THREE.Mesh(mergeGeometries(parts) as THREE.BufferGeometry, lit);
+    for (const p of parts) p.dispose();
+    extras.name = 'platform-extras';
+    add(extras);
   }
 
   if (plan.canopies.length > 0) {

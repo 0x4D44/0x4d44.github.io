@@ -51,6 +51,7 @@ export const REFERENCE: ReferenceRig = {
  */
 export const SURFACES: ReadonlyMap<string, { dark: number; sheen: number; snow: number }> = new Map([
   ['asphalt', { dark: 0.42, sheen: 1, snow: 1 }],
+  ['platformTop', { dark: 0.42, sheen: 1, snow: 1 }], // the shed's platform tops since round 16: the asphalt's
   ['platformEdge', { dark: 0.3, sheen: 0.8, snow: 0.7 }],
   ['platformEdgeStrip', { dark: 0.3, sheen: 0.8, snow: 0.7 }],
   ['ballast', { dark: 0.4, sheen: 0.15, snow: 0.8 }],
