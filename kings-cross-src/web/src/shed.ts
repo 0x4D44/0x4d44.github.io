@@ -62,34 +62,46 @@ export const FRONT_RELIEF = { orders: 3, orderWidth: 0.4, orderStep: 0.15, impos
  * a deep transom (the signage fascia) at about 2.5 m, and glazing over it in the arch head. Five bays to an opening and the frame sizes are
  * ASSUMED; the glass is the lunettes' and sits at their depth in the wall.
  */
-export const PORCH_INFILL = { bays: 5, mullion: 0.12, frameDepth: 0.12, rail: 1.1, transom: [2.3, 2.7] as const } as const;
+export const PORCH_INFILL = { bays: 5, mullion: 0.12, frameDepth: 0.12, rail: 1.1, transom: [2.3, 2.7] as const, sign: 0.5 } as const;
 /**
  * The low canopy along the front (R-kx-front-a, 2026, and R-kx-front-b, 2016): a flat dark steel roof on slender columns at the bay lines,
  * passing in front of the tower's foot. Its top at 3.85 m (MEASURED from R-a by the same scale as FRONT_RELIEF); its fascia, depth and
  * columns ASSUMED (the depth just clears the model tower's south face).
  */
-export const FRONT_CANOPY = { top: 3.85, fascia: 0.35, sheet: 0.15, depth: 8.6, column: 0.3, westBeyond: 9.6, lightPitch: 2.4, lightRows: [0.3, 0.7] as const } as const;
+export const FRONT_CANOPY = { top: 3.85, fascia: 0.35, sheet: 0.15, depth: 8.6, column: 0.3, lightPitch: 2.4, lightRows: [0.3, 0.7] as const, lamp: [0.6, 0.18] as const } as const;
 /**
  * Round 5's second pass at the front (the scorer of round 1): the model tower stands 6.55 m proud of the front (its position is pinned by
  * shed.test), where front-a and front-b suggest one to two metres, so the canopy is 8.6 m deep: its sheet runs unbroken 2 m in front of the
- * tower's foot (ASSUMED depth). It carries one bay (9.6 m, ASSUMED from R-kx-front-b, where it runs on past the west end pier) west of the front.
+ * tower's foot (ASSUMED depth). It stops at the front's west end: the city's grey canopy beyond it (a 'city-roof' building, x -18.7 to -5.7 m from
+ * the front's end) is the part front-b shows running on west, and the second pass's extra bay ran into it (the round-2a hold).
  * Colours, sampled in memory: the canopy and the screens' frames are charcoal (R-a, the fascia and soffit in shade); the screens' glass is dark
  * tinted (R-a); the signage fascia over each entrance is a mid blue (R-a, the 'Entrance / Exit only' boards). At night (R-night-a, 2025) a row of
  * downlights shows under the canopy's soffit and the entrances are lit: warm, steady (no flicker term), from the shared night level.
+ * The round-2a hold: the dark glass read as voids by day, so it is a mid-dark grey-blue that the charcoal frames stand out against; the fascia
+ * is navy and sits at the top of each opening right under the canopy (R-a); the lamps are drums hung below the canopy's fascia line, so they
+ * show from eye height; the entrances' night glow fades from the doors up into the arch head (FRONT_GLOW_FADE).
  */
-export const FRONT_COLOURS = { steel: 0x2a2c2e, steelLift: 0x0c0d0e, glass: 0x1e262b, fascia: 0x1c3c78, downlight: 0xcfcac0 } as const;
+export const FRONT_COLOURS = { steel: 0x2a2c2e, steelLift: 0x0c0d0e, glass: 0x56687a, glassSky: 0x111820, fascia: 0x1b2a4a, downlight: 0xf2eee4 } as const;
+/** The entrances' night glow, full up to `from` metres above the threshold, falling to `head` of it at `to` (the arch head). ASSUMED. */
+export const FRONT_GLOW_FADE = { from: 1.6, to: 4.0, head: 0.3 } as const;
 export const FRONT_NIGHT = { glass: [0xffc98a, 0.45], fascia: [0x2a5cc0, 0.35], downlight: [0xffe2b8, 1.1] } as const;
 
 /** `m` with a steady glow `colour * gain` scaled by the night level (materials.ts windowNight); `key` names its program. */
-function frontNightGlow(m: THREE.MeshLambertMaterial, [colour, gain]: readonly [number, number], key: string): THREE.MeshLambertMaterial {
+function frontNightGlow(m: THREE.MeshLambertMaterial, [colour, gain]: readonly [number, number], key: string, fade?: [number, number, number]): THREE.MeshLambertMaterial {
   const glow = { value: new THREE.Color(colour).multiplyScalar(gain) };
+  // a vertical fade (y0, y1 in the shed's frame, the share left at y1); none is (big, bigger, 1): the glow is the same at every height
+  const grad = { value: new THREE.Vector3(...(fade ?? [1e6, 2e6, 1])) };
   m.userData.nightGlow = glow.value;
   m.onBeforeCompile = (shader) => {
     shader.uniforms.uWinNight = windowNight;
     shader.uniforms.uFrontGlow = glow;
+    shader.uniforms.uFrontFade = grad;
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying float vFrontY;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvFrontY = position.y;');
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nuniform float uWinNight;\nuniform vec3 uFrontGlow;')
-      .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance += uFrontGlow * uWinNight;');
+      .replace('#include <common>', '#include <common>\nuniform float uWinNight;\nuniform vec3 uFrontGlow;\nuniform vec3 uFrontFade;\nvarying float vFrontY;')
+      .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance += uFrontGlow * uWinNight * mix( 1.0, uFrontFade.z, smoothstep( uFrontFade.x, uFrontFade.y, vFrontY ) );');
   };
   m.customProgramCacheKey = () => key;
   return m;
@@ -998,6 +1010,7 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   }
   if (plinthStart < fx1 + 0.4) proud((plinthStart + fx1 + 0.4) / 2, GROUND_Y + 0.7, fx1 + 0.4 - plinthStart, 1.4, 0.35); // plinth interrupted at each entrance
   proud(spine, sp - 0.325, FW + 0.6, 0.65, 0.5); // sill course at the springing: bolder since round 5's second pass (R-kx-front-a, the main band of the front)
+  proud(spine, sp - 0.1, FW + 0.8, 0.2, 0.8); // its weathered cap, overhanging: the shadow line under it is what makes the band read (the round-2a hold)
   proud(spine, GROUND_Y + FRONT_RELIEF.impostAboveGround, FW + 0.4, FRONT_RELIEF.impostHeight, FRONT_RELIEF.impostOut); // string course over the arcade's crowns
   proud(spine, frontTop - 0.45, FW + 1.0, 0.9, 0.7); // cornice
   proud(spine, frontTop + 0.15, FW + 0.6, 0.3, 0.4); // its coping
@@ -1017,17 +1030,21 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   frontSteel.color.set(FRONT_COLOURS.steel);
   frontSteel.emissive.set(FRONT_COLOURS.steelLift);
   {
-    const top = GROUND_Y + FRONT_CANOPY.top, d = FRONT_CANOPY.depth, cx0 = fx0 - FRONT_CANOPY.westBeyond, cx1 = fx1 - 0.3;
+    const top = GROUND_Y + FRONT_CANOPY.top, d = FRONT_CANOPY.depth, cx0 = fx0 + 0.3, cx1 = fx1 - 0.3;
     canopy.box([(cx0 + cx1) / 2, top - FRONT_CANOPY.sheet / 2, d / 2], [cx1 - cx0, FRONT_CANOPY.sheet, d]); // the roof sheet
     canopy.box([(cx0 + cx1) / 2, top - FRONT_CANOPY.fascia / 2, d - 0.1], [cx1 - cx0, FRONT_CANOPY.fascia, 0.2]); // the front fascia
     canopy.box([cx0 + 0.1, top - FRONT_CANOPY.fascia / 2, d / 2], [0.2, FRONT_CANOPY.fascia, d]); // the west end's fascia
     const bayW = (FW - TOWER_SIZE) / (2 * SOUTH_FRONT_ARCADES.perSide), c = FRONT_CANOPY.column;
-    const columnXs = [cx0 + 0.3 + c / 2, fx0 - bayW / 2];
+    const columnXs: number[] = [];
     for (let k = 0; k <= SOUTH_FRONT_ARCADES.perSide; k++) columnXs.push(fx0 + Math.max(k * bayW, 0.3 + c / 2), fx1 - Math.max(k * bayW, 0.3 + c / 2));
     for (const x of columnXs) canopy.box([x, (GROUND_Y + top - FRONT_CANOPY.fascia) / 2, d - 0.3], [c, top - FRONT_CANOPY.fascia - GROUND_Y, c], { skip: ['-y'] });
-    // the soffit's downlights: square lamps a hair under the sheet, in rows along the canopy (R-night-a)
+    // the soffit's downlights (R-night-a): drums hung on short stems so that they show under the fascia line from eye height, in rows along the canopy
+    const [lw, lh] = FRONT_CANOPY.lamp, ly = top - FRONT_CANOPY.fascia - 0.05 - lh / 2;
     for (const row of FRONT_CANOPY.lightRows) {
-      for (let x = cx0 + FRONT_CANOPY.lightPitch / 2; x < cx1; x += FRONT_CANOPY.lightPitch) downlights.box([x, top - FRONT_CANOPY.sheet - 0.02, d * row], [0.45, 0.04, 0.45], { skip: ['+y'] });
+      for (let x = cx0 + 0.6; x < cx1; x += FRONT_CANOPY.lightPitch) {
+        downlights.box([x, ly, d * row], [lw, lh, lw], { skip: ['+y'] });
+        canopy.box([x, (ly + lh / 2 + top - FRONT_CANOPY.sheet) / 2, d * row], [0.05, top - FRONT_CANOPY.sheet - ly - lh / 2, 0.05], { skip: ['+y', '-y'] }); // the stem
+      }
     }
   }
   const canopyGeo = plainGeometry(canopy.build().toNonIndexed());
@@ -1065,17 +1082,20 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
       frames.box([x + dx, (entryFoot + top) / 2, zIn], [m, top - entryFoot, fd]); // the mullions, up into the arch head
     }
     const [t0, t1] = PORCH_INFILL.transom;
-    const tw = 2 * entryR * Math.sqrt(1 - ((entryFoot + t1 - entryFoot - SOUTH_FRONT_ARCADES.jambHeight) / SOUTH_FRONT_ARCADES.archRise) ** 2);
-    fasciae.box([x, entryFoot + (t0 + t1) / 2, zIn], [tw - 0.04, t1 - t0, fd + 0.04]); // the transom: the signage fascia
+    const halfAt = (y: number): number => entryR * Math.sqrt(Math.max(0, 1 - ((y - entryFoot - SOUTH_FRONT_ARCADES.jambHeight) / SOUTH_FRONT_ARCADES.archRise) ** 2));
+    frames.box([x, entryFoot + (t0 + t1) / 2, zIn], [2 * halfAt(entryFoot + t1) - 0.04, (t1 - t0) / 3, fd]); // the doors' head transom
+    // the signage fascia: navy, across the top of the opening right under the canopy's sheet, near the face (R-kx-front-a)
+    const s1 = GROUND_Y + FRONT_CANOPY.top - FRONT_CANOPY.sheet - 0.02, s0 = s1 - PORCH_INFILL.sign;
+    fasciae.box([x, (s0 + s1) / 2, -0.2], [2 * halfAt(s1) - 0.04, s1 - s0, 0.1]);
     frames.box([x, entryFoot + PORCH_INFILL.rail, zIn + fd / 2], [(4 * entryR) / PORCH_INFILL.bays, 0.06, 0.06]); // the doors' push rail, across the middle two bays
     frames.box([x, entryFoot + 0.15, zIn], [2 * entryR, 0.3, fd]); // the doors' kick rail and the screens' cill
   }
   const infillParts = [mergeGeometries(infillGlass, false), plainGeometry(frames.build()), plainGeometry(fasciae.build()), plainGeometry(downlights.build())];
   const infillMats = [
-    frontNightGlow(new THREE.MeshLambertMaterial({ color: FRONT_COLOURS.glass, emissive: 0x05070a }), FRONT_NIGHT.glass, 'kx-front-infill-glass'),
+    frontNightGlow(new THREE.MeshLambertMaterial({ color: FRONT_COLOURS.glass, emissive: FRONT_COLOURS.glassSky }), FRONT_NIGHT.glass, 'kx-front-infill-glass', [entryFoot + FRONT_GLOW_FADE.from, entryFoot + FRONT_GLOW_FADE.to, FRONT_GLOW_FADE.head]),
     frontSteel,
     frontNightGlow(new THREE.MeshLambertMaterial({ color: FRONT_COLOURS.fascia }), FRONT_NIGHT.fascia, 'kx-front-infill-fascia'),
-    frontNightGlow(new THREE.MeshLambertMaterial({ color: FRONT_COLOURS.downlight, emissive: 0x202020 }), FRONT_NIGHT.downlight, 'kx-front-downlight'),
+    frontNightGlow(new THREE.MeshLambertMaterial({ color: FRONT_COLOURS.downlight, emissive: 0x303030 }), FRONT_NIGHT.downlight, 'kx-front-downlight'),
   ];
   const infill = new THREE.Mesh(mergeGeometries(infillParts, true), infillMats);
   infill.name = 'shed-front-infill';
