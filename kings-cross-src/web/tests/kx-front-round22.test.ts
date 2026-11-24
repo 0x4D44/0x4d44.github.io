@@ -96,7 +96,8 @@ test('A3: the concourse behind each porch\'s glass grows brighter from its floor
   assert.ok(map, 'the interior plane carries a gradient map');
   const { data, height } = map.image as { data: Uint8Array; height: number };
   const at = (row: number): number => data[row * 4]! / 255;
-  assert.ok(at(height - 1) - at(0) >= 0.3 && at(height - 1) >= 0.9, `darker at its floor (${at(0).toFixed(2)}) than at its top (${at(height - 1).toFixed(2)})`);
+  assert.ok(at(height - 1) - at(0) >= 0.2 && at(height - 1) >= 0.9, // re-pinned round 23: the foot lightened from 0.5 to 0.75, which dimmed the figures (score fp2)
+    `darker at its floor (${at(0).toFixed(2)}) than at its top (${at(height - 1).toFixed(2)})`);
   for (let i = 1; i < height; i++) assert.ok(at(i) >= at(i - 1), 'rising all the way up');
   // the plane's v runs from its foot (0) to its top (1), so the map's rows run up it
   const g = infill.geometry, grp = g.groups.find(q => q.materialIndex === 4)!, idx = g.index, pos = g.getAttribute('position'), uv = g.getAttribute('uv');

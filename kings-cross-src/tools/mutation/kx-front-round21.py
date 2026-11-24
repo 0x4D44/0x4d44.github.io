@@ -25,7 +25,7 @@ MUTATIONS = [
     ('a frame too proud', 'web/src/shed.ts', "FRONT_TYMPANUM = { out: 0.3,", "FRONT_TYMPANUM = { out: 0.6,", 'A2: each great arch'),
     ('piers stop at the coping', 'web/src/shed.ts', "proud((inner + mid) / 2, (GROUND_Y + 0.5 + top) / 2, 1.0 + feet, top - GROUND_Y - 0.5, face);", "proud((inner + mid) / 2, (GROUND_Y + 0.5 + frontTop - 0.5) / 2, 1.0 + feet, frontTop - 0.5 - GROUND_Y - 0.5, face);", 'A1: the end piers'),
     ('no parapet step', 'web/src/shed.ts', "    brick.box([xc, coped + step / 2, -FRONT_THICK / 2], [stepRun, step, FRONT_THICK], { skip: ['-y', '-z'] });", "", 'A1: the end piers'),
-    ('the step all along', 'web/src/shed.ts', "FRONT_PIERS = { rise: 2.8, cap: 0.45, step: 0.6, stepRun: 3.0,", "FRONT_PIERS = { rise: 2.8, cap: 0.45, step: 0.6, stepRun: 30.0,", 'A1: the end piers'),
+    ('the step all along', 'web/src/shed.ts', "FRONT_PIERS = { rise: 2.8, cap: 0.9, step: 0.6, stepRun: 3.0,", "FRONT_PIERS = { rise: 2.8, cap: 0.9, step: 0.6, stepRun: 30.0,", 'A1: the end piers'),
     ('no figures', 'web/src/shed.ts', "for (let k = 0; k < PORCH_DEPTH.figures; k++) {", "for (let k = 0; k < 0; k++) {", 'A3: each porch opening'),
     ('no dark returns', 'web/src/shed.ts', "      frames.poly([[rx, entryFoot, 0], [rx, entryFoot, -PORCH_DEPTH.glass]", "      if (x > 1e9) frames.poly([[rx, entryFoot, 0], [rx, entryFoot, -PORCH_DEPTH.glass]", 'A3: each porch opening'),
 ]

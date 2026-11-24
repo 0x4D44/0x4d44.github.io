@@ -21,14 +21,14 @@ out.mkdir(parents=True, exist_ok=True)
 
 MUTATIONS = [
     ('the glass at mid-wall again', 'web/src/shed.ts', "g.translate(0, 0, -PORCH_DEPTH.glass); // round 20", "g.translate(0, 0, -0.7); // round 20", 'A3: each lower opening'),
-    ('shallow frames', 'web/src/shed.ts', "PORCH_DEPTH = { glass: 0.45, frame: 0.3,", "PORCH_DEPTH = { glass: 0.45, frame: 0.12,", 'A3: each lower opening'),
+    ('shallow frames', 'web/src/shed.ts', "PORCH_DEPTH = { glass: 0.8, frame: 0.3,", "PORCH_DEPTH = { glass: 0.8, frame: 0.12,", 'A3: each lower opening'),
     ('no interior plane', 'web/src/shed.ts', "    interior.poly([[x - entryR", "    if (x > 1e9) interior.poly([[x - entryR", 'A3: behind the glass'),
     ('a cold interior', 'web/src/shed.ts', "interior: 0x7a6a55", "interior: 0x556a7a", 'A3: behind the glass'),
     ('the interior glowing blue', 'web/src/shed.ts', "FRONT_NIGHT.glass, 'kx-front-infill-interior'", "[0x2040ff, 0.45], 'kx-front-infill-interior'", 'A3: behind the glass'),
     ('no barriers', 'web/src/shed.ts', "for (let k = 0; k < PORCH_DEPTH.barriers; k++) {", "for (let k = 0; k < 0; k++) {", 'A3: behind the glass'),
     ('barriers behind the plane', 'web/src/shed.ts', "bz = gz + 0.003,", "bz = gz - 0.003,", 'A3: behind the glass'),
     ('the cornice face back at 0.7', 'web/src/shed.ts', "FRONT_CORNICE = { out: 0.9,", "FRONT_CORNICE = { out: 0.7,", 'A2: the corona'),
-    ('the cornice built at 0.7', 'web/src/shed.ts', "FW + 1.0 + across, 0.9, FRONT_CORNICE.out);", "FW + 1.0 + across, 0.9, 0.7);", 'A2: the corona'),
+    ('the cornice built at 0.7', 'web/src/shed.ts', "FW + toMass, 0.9, FRONT_CORNICE.out);", "FW + toMass, 0.9, 0.7);", 'A2: the corona'),
 ]
 
 def run(work: Path) -> subprocess.CompletedProcess[str]:

@@ -23,13 +23,14 @@ const hit = (x: number, y: number, target: THREE.Object3D, mats: number[]): numb
   return h ? group.worldToLocal(h.point.clone()).z : null;
 };
 
-test('A3: each lower opening\'s glass stands 0.3-0.5 m behind the front\'s face, its mullions about 0.3 m deep in front of it', () => {
+test('A3: each lower opening\'s glass stands 0.3-0.9 m behind the front\'s face, its mullions about 0.3 m deep in front of it', () => {
   const infill = group.getObjectByName('shed-front-infill') as THREE.Mesh;
   const D = S.PORCH_DEPTH as { glass: number; frame: number } | undefined;
   assert.ok(D, 'PORCH_DEPTH');
   for (const x of centres) {
     const g = hit(x + 0.3, foot + 2.6, infill, [0]); // over the transom: the glass, no interior plane there
-    assert.ok(g !== null && g <= -0.3 && g >= -0.5, `the glass at z ${g?.toFixed(2)}`);
+    assert.ok(g !== null && g <= -0.3 && g >= -0.9, // re-pinned round 23 (A3): 0.8 m, so the reveal's dark returns read 2-3 px at the pedestrian view
+      `the glass at z ${g?.toFixed(2)}`);
     // a mullion of the fixed screen (bay 1 of 5): its face well in front of the glass
     const dx = -3.4 + (2 * 3.4) / 5, m = hit(x + dx, foot + 1.6, infill, [1]);
     assert.ok(m !== null && m - g >= 0.25, `the mullion's face ${m === null ? 'missing' : (m - g).toFixed(2)} m in front of the glass`);

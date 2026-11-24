@@ -23,15 +23,15 @@ MUTATIONS = [
     ('no pier mass', 'web/src/shed.ts', "    brick.box([(mid + outer) / 2, (GROUND_Y + top) / 2, (po - FRONT_THICK - 0.02) / 2], [width - 1.0 - feet, top - GROUND_Y, FRONT_THICK + 0.02 + po]);", "", 'A1: each end pier is a mass'),
     ('the mass flush with the screen', 'web/src/shed.ts', "(po - FRONT_THICK - 0.02) / 2], [width - 1.0 - feet, top - GROUND_Y, FRONT_THICK + 0.02 + po]);", "(0 - FRONT_THICK - 0.02) / 2], [width - 1.0 - feet, top - GROUND_Y, FRONT_THICK + 0.02 + 0]);", 'A1: each end pier is a mass'),
     ('the mass stops at the coping', 'web/src/shed.ts', "[(mid + outer) / 2, (GROUND_Y + top) / 2, (po - FRONT_THICK - 0.02) / 2], [width - 1.0 - feet, top - GROUND_Y,", "[(mid + outer) / 2, (GROUND_Y + coped) / 2, (po - FRONT_THICK - 0.02) / 2], [width - 1.0 - feet, coped - GROUND_Y,", 'A1: each end pier is a mass'),
-    ('no cap', 'web/src/shed.ts', "    stone.box([(inner + outer) / 2, top + cap / 2,", "    if (top < 0) stone.box([(inner + outer) / 2, top + cap / 2,", 'A1: each end pier is a mass'),
-    ('a cap flush with the mass', 'web/src/shed.ts', "[width + 0.4, cap, FRONT_THICK + 0.42 + po], { skip: ['-z'] }); // its cap", "[width + 0.4, cap, FRONT_THICK + 0.02 + po], { skip: ['-z'] }); // its cap", 'A1: each end pier is a mass'),
+    ('no cap', 'web/src/shed.ts', "      stone.box([(inner + outer) / 2, top + (y0 + y1) / 2,", "      if (top < 0) stone.box([(inner + outer) / 2, top + (y0 + y1) / 2,", 'A1: each end pier is a mass'),
+    ('a cap flush with the mass', 'web/src/shed.ts', "[width + 2 * o, y1 - y0, FRONT_THICK + 2 * o + po]", "[width + 2 * o, y1 - y0, FRONT_THICK + po]", 'A1: each end pier is a mass'),
     ('the step coped as before', 'web/src/shed.ts', "stone.box([xc + sd * 0.075, coped + step + 0.15, (0.4 - FRONT_THICK) / 2], [stepRun + 0.15, 0.3, FRONT_THICK + 0.4], { skip: ['-z'] });", "stone.box([xc, coped + step + 0.1, 0.1 - FRONT_THICK / 2], [stepRun, 0.2, FRONT_THICK + 0.2], { skip: ['-y', '-z'] });", "A1: the parapet's step"),
     ('orders spring above the course', 'web/src/shed.ts', "archRing(uc - fx0, sp, r0, r0 + FRONT_RELIEF.orderWidth)", "archRing(uc - fx0, sp + 1.0, r0, r0 + FRONT_RELIEF.orderWidth)", 'A2: at the front'),
     ('no impost under the feet', 'web/src/shed.ts', "[[fx0 - feet - 0.05, fx0 + span], [fx1 - span, fx1 + feet + 0.05]]", "[[fx0 - 0.05, fx0 + span], [fx1 - span, fx1 + 0.05]]", 'A2: at the front'),
     ('the springing course stops at the front', 'web/src/shed.ts', "[FW + 0.8 + across, sc.height,", "[FW + 0.8, sc.height,", 'A2: at the front'),
     ('the frame back at 0.15', 'web/src/shed.ts', "FRONT_TYMPANUM = { out: 0.3,", "FRONT_TYMPANUM = { out: 0.15,", "A2: the spandrel's frame"),
     ('no interior gradient', 'web/src/shed.ts', "emissive: 0x140e08, map: interiorGradientTexture() })", "emissive: 0x140e08 })", 'A3: the concourse behind'),
-    ('a flat interior', 'web/src/shed.ts', "gradient: [0.5, 1.0] as const", "gradient: [1.0, 1.0] as const", 'A3: the concourse behind'),
+    ('a flat interior', 'web/src/shed.ts', "gradient: [0.75, 1.0] as const", "gradient: [1.0, 1.0] as const", 'A3: the concourse behind'),
     ('the gradient upside down', 'web/src/shed.ts', "entryFoot + t0, gz]], [[0, 0], [1, 0], [1, 1], [0, 1]]", "entryFoot + t0, gz]], [[0, 1], [1, 1], [1, 0], [0, 0]]", 'A3: the concourse behind'),
 ]
 
