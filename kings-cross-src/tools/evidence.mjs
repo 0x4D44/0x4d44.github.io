@@ -62,7 +62,7 @@ export const AXES = [
 export const ELEMENT_VIEWS = {
   'lighting-materials': ['overview', 'south-front', 'front-oblique-solid-slate', 'platform-eye', 'concourse', 'great-northern-hotel', 'midland-grand-front', 'gasworks-portals', 'facade-brick-close'],
   'kx-front': ['south-front', 'front-oblique', 'front-oblique-solid-slate', 'roof-above-solid-slate', 'north-gable', 'tower-close', 'front-southwest-pedestrian', 'shed-east-flank', 'gable-oblique'],
-  'shed-interior': ['platform-eye', 'platform-eye-south', 'shed-interior', 'platform-eye-p1-north', 'platform-eye-p8-south', 'roof-underside', 'furniture-close', 'suburban-p9'],
+  'shed-interior': ['platform-eye', 'platform-eye-south', 'shed-interior', 'platform-eye-p1-north', 'platform-eye-p8-south', 'roof-underside', 'furniture-close', 'suburban-p9', 'platform-clock'],
   'western-concourse': ['concourse', 'concourse-roof-detail', 'western-range', 'western-range-gateline', 'concourse-hotel-junction', 'concourse-exterior-square', 'concourse-funnel-up', 'western-range-full', 'concourse-exterior-west'],
   'historic-neighbours': ['great-northern-hotel', 'midland-grand-front', 'st-pancras-shed', 'st-pancras-shed-oblique', 'gnh-from-square', 'midland-euston-road', 'midland-clock-tower', 'barlow-interior'],
   'city-surroundings': ['overview', 'gasworks-portals', 'front-oblique', 'granary-square', 'gasholders', 'canal-lock', 'kings-boulevard', 'euston-road-east'],
@@ -486,6 +486,14 @@ const FROZEN_STATION_CAMERAS = {
     pos: [15.408333333333333, 2.5, -216.2666666666667],
     target: [14.286999265243583, 2.5, -176.28238713198283],
     source: 'OSM platform 8 polygon midpoint, eye 1.6 m above platform, looking south at the inner south screen; R-kx-shed-interior-b standpoint (shed-b-south-screen-2019.jpg)',
+  },
+  // Round 14 (platform-round-1 score, section 5): the platform clock (shed.ts buildPlatformClock) from platform 8, 13 m south of it along its south face's
+  // normal and 3 m east of its centre, eye 1.6 m above the platform, looking at the dial's centre; R-kx-shed-interior-d (shed-d-platform-furniture-2022.jpg)
+  'platform-clock': {
+    pos: [13.5005, 2.5, -133.6341],
+    target: [10.2309, 5.2, -146.6305],
+    source: 'R-kx-shed-interior-d (shed-d-platform-furniture-2022.jpg): platform 8, 13 m south of the platform clock along its south face\'s normal and 3 m east, eye 1.6 m, looking at the dial',
+    fov: 50, near: 0.1,
   },
   // R-kx-shed-interior-a (shed-a-north-from-footbridge-2019.jpg): the roof underside, ribs and glazing. Platform 4 midpoint,
   // eye 1.6 m, pitched up 55 degrees and turned north-east so the sight line crosses the east vault.

@@ -239,7 +239,7 @@ test('the King\'s Cross tower: each of its four dials gets a glow DIAL_LIFT out 
   const shed = buildShed(layout);
   const owners: THREE.Object3D[] = [];
   shed.traverse((o) => { if (o.userData.clockDials) owners.push(o); });
-  // round 13: the shed also carries the platform clock's two dials; its faces are one merged mesh, not CircleGeometry discs, so they take no glow (the scan below stays at 4)
+  // round 13: the shed also carries the platform clock's two dials; since round 14 its faces are CircleGeometry discs too, so they take a glow (the scan below finds 6)
   assert.deepEqual(owners.map((o) => o.name).sort(), ['clock-tower', 'shed-platform-clock'], 'the shed carries the tower\'s dials, and the platform clock\'s');
   const kx = owners.find((o) => o.name === 'clock-tower') as THREE.Object3D;
   const dials = kx.userData.clockDials as ClockDial[];
@@ -247,9 +247,9 @@ test('the King\'s Cross tower: each of its four dials gets a glow DIAL_LIFT out 
   const scene = new THREE.Scene();
   scene.add(shed);
   const lights = createDialLights();
-  assert.equal(lights.scan(scene), 4, 'four faces: the rings are not discs');
+  assert.equal(lights.scan(scene), 6, 'four faces and the platform clock\'s two: the rings are not discs'); // re-pinned round 14: the platform clock\'s faces are discs now, lit after dark as the tower\'s
   const glows = glowsOf(scene);
-  assert.equal(glows.length, 4);
+  assert.equal(glows.length, 6);
   for (const dial of dials) {
     const centre = kx.localToWorld(new THREE.Vector3(...dial.centre));
     const normal = new THREE.Vector3(...dial.normal).transformDirection(kx.matrixWorld);

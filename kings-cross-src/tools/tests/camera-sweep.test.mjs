@@ -29,10 +29,10 @@ test('--stations: all, none, or a list of names, and nothing else', () => {
   assert.throws(() => sweepCameraList(CAMERAS, 'overview,overview'), /twice/);
 });
 
-test('the real station cameras: all 44 are in the sweep, each with a finite lens', () => {
+test('the real station cameras: all 45 are in the sweep, each with a finite lens', () => {
   const cameras = stationCameras(stationData().data), list = sweepCameraList(cameras);
   assert.equal(list.length, Object.keys(cameras).length, 'every fixed station camera is swept');
-  assert.equal(list.length, 44, 'the existing 42 station cameras, the N2 Euston Road lamp view and gable-oblique'); // re-pinned 2026-11-24 (round 10): the new gable-oblique view
+  assert.equal(list.length, 45, 'the existing 42 station cameras, the N2 Euston Road lamp view, gable-oblique and platform-clock'); // re-pinned 2026-11-24 (round 10): the new gable-oblique view; (round 14): platform-clock
   assert.ok(list.some(c => c.name === 'western-range') && list.some(c => c.name === 'western-range-full') && list.some(c => c.name === 'canal-lock'));
   for (const c of list) assert.ok([...c.pos, ...c.target, c.fov, c.near].every(Number.isFinite), c.name);
 });

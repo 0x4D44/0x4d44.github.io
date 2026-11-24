@@ -375,6 +375,21 @@
     ],
     "source": "OSM platform 8 polygon midpoint, eye 1.6 m above platform, looking south at the inner south screen; R-kx-shed-interior-b standpoint (shed-b-south-screen-2019.jpg)"
   },
+  "platform-clock": {
+    "pos": [
+      13.5005,
+      2.5,
+      -133.6341
+    ],
+    "target": [
+      10.2309,
+      5.2,
+      -146.6305
+    ],
+    "source": "R-kx-shed-interior-d (shed-d-platform-furniture-2022.jpg): platform 8, 13 m south of the platform clock along its south face's normal and 3 m east, eye 1.6 m, looking at the dial",
+    "fov": 50,
+    "near": 0.1
+  },
   "roof-underside": {
     "pos": [
       44.38716973020361,

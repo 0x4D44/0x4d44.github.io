@@ -1705,13 +1705,14 @@ export function buildPlatformClock(length: number): THREE.Group {
   const { v, y, out, radius, drum, rim, arm } = PLATFORM_CLOCK;
   const z = -v * length, g = new THREE.Group();
   g.name = 'shed-platform-clock';
-  const faceGeos = [1, -1].map((s) => {
-    const c = new THREE.CircleGeometry(radius, 40);
-    if (s < 0) c.rotateY(Math.PI);
-    c.translate(out, y, z + (s * drum) / 2);
-    return c;
+  // round 14: each face its own CircleGeometry disc (as the tower's), so the night dial lights (night.ts createDialLights) give it a glow after dark
+  const clockMat = clockMaterial(), faceGeo = new THREE.CircleGeometry(radius, 40);
+  const faces = [1, -1].map((s) => {
+    const f = mesh(faceGeo, clockMat, 'shed-platform-clock-faces');
+    f.position.set(out, y, z + (s * drum) / 2);
+    if (s < 0) f.rotation.y = Math.PI;
+    return f;
   });
-  const faces = mesh(mergeGeometries(faceGeos, false), clockMaterial(), 'shed-platform-clock-faces');
   // the iron: the drum's rim in 24 chords, the bracket's arm from the wall over the drum and a strut under it to the wall, a hanger to the drum's top
   const iron = new Batch(), n = 24, rr = radius + rim / 2;
   for (let i = 0; i < n; i++) {
@@ -1719,12 +1720,18 @@ export function buildPlatformClock(length: number): THREE.Group {
     iron.box([out + rr * Math.cos(am), y + rr * Math.sin(am), z], [2 * rr * Math.sin(Math.PI / n) + 0.02, rim, drum + 0.02], { rotZ: am + Math.PI / 2 });
   }
   const armY = y + radius + rim + 0.35, armEnd = out + radius * 0.6;
-  iron.box([armEnd / 2, armY, z], [armEnd, arm, arm]); // the arm, from the wall's face (x = 0)
+  iron.box([armEnd / 2, armY, z], [armEnd, arm * 1.5, arm]); // the arm, from the wall's face (x = 0): round 14, a deeper cast-iron section (ASSUMED)
   const sx = armEnd * 0.75, sy = 1.1; // the strut, from the wall under the arm up to it
   iron.box([sx / 2, armY - sy / 2, z], [Math.hypot(sx, sy), arm * 0.8, arm * 0.8], { rotZ: Math.atan2(sy, sx) });
   iron.box([out, (armY + y + rr) / 2, z], [arm * 0.6, armY - y - rr + 0.02, arm * 0.6]); // the hanger
   iron.box([0.05, armY - 0.4, z], [0.1, 1.2, 0.4]); // the wall plate
-  g.add(faces, mesh(iron.build(), material('ribPaint'), 'shed-platform-clock-iron'));
+  // round 14: the spandrel between the strut and the arm, five cast-iron bars (ASSUMED pattern), so the bracket reads as a solid cast-iron bracket at platform-eye range
+  for (let k = 1; k <= 5; k++) {
+    const bx = (sx * k) / 6, low = armY - sy + (sy * bx) / sx;
+    iron.box([bx, (low + armY) / 2, z], [0.04, armY - low, arm * 0.5]);
+  }
+  iron.box([out, y + rr + 0.06, z], [0.18, 0.08, drum + 0.04]); // a cap on the drum's crown where the hanger meets it
+  g.add(...faces, mesh(iron.build(), material('ribPaint'), 'shed-platform-clock-iron'));
   g.userData.clockDials = [1, -1].map((s): ClockDial => ({ centre: [out, y, z + s * (drum / 2 + 0.005)], normal: [0, 0, s], up: [0, 1, 0], radius })); // clocks.ts
   return g;
 }

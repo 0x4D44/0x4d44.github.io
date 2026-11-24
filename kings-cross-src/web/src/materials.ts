@@ -68,7 +68,7 @@ export const TEXTURES: Readonly<Record<TextureName, TextureSpec>> = {
   // Platform edge, drawn across the strip (u, 0..1.6 m from the edge inboard) and tiled along it
   // (v, 0.5 m). ASSUMED widths: coping 0.2 m, yellow tactile warning strip 0.2-0.6 m (the UK strip
   // is about 0.4 m wide: DfT, Guidance on the use of tactile paving surfaces), white line 1.05-1.15 m.
-  platformEdge: { tile: [1.6, 0.5], px: [320, 100], density: [150, 250], average: 0x938b74, repeat: true,
+  platformEdge: { tile: [1.6, 0.5], px: [320, 100], density: [150, 250], average: 0x83807a, repeat: true,
     source: 'tactile strip about 0.4 m wide (DfT tactile paving guidance); offsets ASSUMED' },
   ballast: { tile: [2, 2], px: [256, 256], density: [100, 160], average: 0x5f5b54, repeat: true,
     source: 'ASSUMED: crushed stone drawn at 128 texels per metre' },
@@ -321,31 +321,38 @@ function paintPlatformEdge(g: Ctx, w: number, h: number): void {
     g.fillStyle = fill;
     g.fillRect(a * pxm, 0, (b - a) * pxm, h);
   };
-  // round 13 (rubric shed-interior B4, R-kx-shed-interior-d and -a): the band order is coping, tactile strip, yellow line, then the platform's own surface; until
-  // round 13 a saturated yellow tactile strip ran into a metre of dark tarmac with a white line in it, a band the shed's platforms do not have
-  band(0, 0.2, '#a6a6a0'); // coping stones
-  band(0.2, 0.6, '#bba77a'); // the tactile strip, buff (ASSUMED tone)
-  band(0.6, 0.7, '#d9b21a'); // the yellow line, 0.1 m (ASSUMED width)
-  band(0.7, 1.6, '#767571'); // the platform surface: the asphalt texture's own base tone (paintAsphalt), so the strip runs into the tops without a seam
-  g.fillStyle = 'rgba(0,0,0,0.35)'; // the joint between coping and strip, and the coping's own joints
+  // round 14 (rubric shed-interior B4, R-kx-shed-interior-e and -a): pale coping, then surface-tone concrete, then the tactile strip set back 0.5-0.9 m from the
+  // edge in a muted ochre only a little warmer and lighter than the surface, then the surface again; no yellow line (shed-e shows none inward of the tactile). The
+  // surface bands are the asphalt texture's own base tone with its speckle at the same density and size on the ground, so the strip runs into the tops without a seam.
+  // (Round 13 had the tactile straight behind the coping and a yellow line behind it.) All widths and tones by eye: ASSUMED.
+  band(0, 0.2, '#b4b4ae'); // coping stones, pale enough to read under the night lights
+  band(0.2, 1.6, '#767571'); // the platform surface (paintAsphalt's base tone)
+  band(0.5, 0.9, '#8a8270'); // the tactile strip, muted ochre
+  // the surface's speckle: paintAsphalt's 5,200 specks on a 2 m tile is 1,300 a square metre, each 1/128 m; here 200 px a metre
+  const speck = pxm / 128, area = (1.6 - 0.2) * TEXTURES.platformEdge.tile[1];
+  for (let i = 0, n = Math.round(1300 * area); i < n; i++) {
+    const x = (0.2 + r() * 1.4) * pxm, y = r() * h, v = r();
+    if (x >= 0.5 * pxm && x < 0.9 * pxm) continue; // the tactile's domes carry its texture
+    g.fillStyle = v < 0.45 ? `rgba(24,23,22,${0.2 + r() * 0.25})` : `rgba(${160 + r() * 70},${160 + r() * 68},${156 + r() * 64},${0.12 + r() * 0.2})`;
+    g.fillRect(x, y, speck * (1 + (r() < 0.2 ? 1 : 0)), speck * (1 + (r() < 0.2 ? 1 : 0)));
+  }
+  g.fillStyle = 'rgba(0,0,0,0.35)'; // the joint between coping and surface, the tactile slabs' edges, and the coping's own joints
   g.fillRect(0.2 * pxm - 1, 0, 2, h);
+  g.fillRect(0.5 * pxm - 0.5, 0, 1, h);
+  g.fillRect(0.9 * pxm - 0.5, 0, 1, h);
   for (let y = 0; y < h; y += 0.25 * pxm) g.fillRect(0, y, 0.2 * pxm, 1.5);
-  // truncated domes on a 0.06 m pitch, two flat rows of dots per 0.12 m, drawn lit on top and shaded under
+  // truncated domes on a 0.0625 m pitch, drawn lit on top and shaded under, a shade off the strip's own tone
   const pitch = 0.0625 * pxm;
-  for (let ix = 0; ix < 6; ix++) {
+  for (let ix = 0; ix < 7; ix++) {
     for (let iy = 0; iy < 8; iy++) {
-      const cx = 0.23 * pxm + (ix + 0.5) * pitch + ((iy % 2) * pitch) / 2;
+      const cx = 0.52 * pxm + (ix + 0.5) * pitch + ((iy % 2) * pitch) / 2;
       const cy = (iy + 0.5) * pitch;
-      if (cx > 0.58 * pxm) continue;
-      g.fillStyle = 'rgba(90,72,30,0.45)';
+      if (cx > 0.88 * pxm) continue;
+      g.fillStyle = 'rgba(60,52,36,0.4)';
       g.beginPath(); g.arc(cx + 0.7, cy + 0.9, 2.6, 0, Math.PI * 2); g.fill();
-      g.fillStyle = '#cdbb8c';
+      g.fillStyle = '#968e7b';
       g.beginPath(); g.arc(cx, cy, 2.3, 0, Math.PI * 2); g.fill();
     }
-  }
-  for (let i = 0; i < 500; i++) { // wear
-    g.fillStyle = `rgba(${r() < 0.5 ? '0,0,0' : '255,255,255'},${0.05 + r() * 0.1})`;
-    g.fillRect(r() * w, r() * h, 1.5, 1.5);
   }
 }
 
