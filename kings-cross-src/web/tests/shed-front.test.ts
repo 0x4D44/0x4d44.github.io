@@ -38,8 +38,9 @@ const rayHits = (group: THREE.Group, x: number, y: number, target: THREE.Object3
   const direction = new THREE.Vector3(0, 0, -1).transformDirection(group.matrixWorld);
   // Re-pinned 2026-11-24 (round 5, A3): the openings now carry glazed screens (PORCH_INFILL), glass the rays would meet; these checks are of the
   // masonry hole, so the glass is not a hit. The frames stay hits: the rays pass between them. (Round 5's second pass: the glass is the
-  // first material of 'shed-front-infill' now.)
-  return new THREE.Raycaster(origin, direction, 0, 3).intersectObject(target, true).some(h => h.object.name !== 'shed-front-glass' && !(h.object.name === 'shed-front-infill' && h.face?.materialIndex === 0));
+  // first material of 'shed-front-infill' now.) Re-pinned again in the tower pass: the doors' meeting stile stands on the opening's centre
+  // line, so the infill as a whole (glass, frames, doors) is not a hit: these checks are of the masonry.
+  return new THREE.Raycaster(origin, direction, 0, 3).intersectObject(target, true).some(h => h.object.name !== 'shed-front-glass' && h.object.name !== 'shed-front-infill');
 };
 
 test('the ground-floor porch has six broad arches, three in evenly spaced bays on each side of the tower', () => {

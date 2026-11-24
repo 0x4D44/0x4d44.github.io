@@ -8,7 +8,7 @@ import { shedRoofY } from '../src/furniture.ts';
 import { createSunShadow, SHADOW_CASTERS } from '../src/lighting.ts';
 import { ARCADE_FRAME, ARCADE_GLASS, material, PANE_UV, TEXTURES, windowNight } from '../src/materials.ts';
 import { westArcadeOpenings, WEST_GLAZING } from '../src/shed.ts';
-import { buildShed, buildTower, EAST_ARCADE, eastArcadeOpenings, eastArcadeU, NORTH_PIER, RIB_FOOT, ribLanding, spineLowerOpenings, spineUpperOpenings, valleyTop, buildWesternRange, gableBars, GABLE_GLASS_FROM, glazedHalfAngle, GLAZED_STRIP_WIDTH, GLASS_OPACITY, glazingOpacity, lunetteBars, MEMBER_SIZE, RIB_SPACING, ribMembers, ribPositions, ROOF_SKIN, roofOpacity, SPINE_WALL, spineOpenings, TOWER_SIZE, valleyCut, vaultBand, vaultPoint, WESTERN_RANGE, WESTERN_RANGE_DEPTH_BEFORE, westernArches, westernBays, westernBlock, westernWindows, XRAY_OPACITY } from '../src/shed.ts';
+import { buildShed, buildTower, EAST_ARCADE, eastArcadeOpenings, eastArcadeU, NORTH_PIER, RIB_FOOT, ribLanding, spineLowerOpenings, spineUpperOpenings, valleyTop, buildWesternRange, gableBars, GABLE_GLASS_FROM, glazedHalfAngle, GLAZED_STRIP_WIDTH, GLASS_OPACITY, glazingOpacity, lunetteBars, MEMBER_SIZE, RIB_SPACING, ribMembers, ribPositions, ROOF_SKIN, roofOpacity, SPINE_WALL, spineOpenings, TOWER_PROJECTION, TOWER_SIZE, TOWER_TOP, valleyCut, vaultBand, vaultPoint, WESTERN_RANGE, WESTERN_RANGE_DEPTH_BEFORE, westernArches, westernBays, westernBlock, westernWindows, XRAY_OPACITY } from '../src/shed.ts';
 
 const data: KxData = JSON.parse(readFileSync(new URL('../src/data/kx-track.json', import.meta.url), 'utf8'));
 const layout = shedLayout(data);
@@ -436,7 +436,9 @@ test('buildShed: the published dimensions, in the shed frame', () => {
   // the tower stands on the spine, just in front of the front plane
   const tower = group.getObjectByName('clock-tower') as THREE.Object3D;
   close(tower.position.x, layout.spine, EPS); // re-pinned 2026-11-24: the tower is on the spine, which is no longer W / 2
-  close(tower.position.z, TOWER_SIZE / 2 + 0.15, EPS);
+  // re-pinned 2026-11-24 (round 5, tower pass): the tower stands TOWER_PROJECTION (1.5 m, R-kx-front-b) proud of the front, its back half
+  // behind it, where it stood whole in front of it (6.55 m proud)
+  close(tower.position.z, TOWER_PROJECTION - TOWER_SIZE / 2, EPS);
 });
 
 test('buildShed: every mesh has finite positions and the roof skin never crosses the valley line', () => {
@@ -530,7 +532,8 @@ test('buildTower: 112 ft overall including the vane, a clock on each of the four
     // a clock faces away from the tower's axis
     return n.x * c.position.x + n.z * c.position.z;
   });
-  for (const f of faces) assert.ok(f > TOWER_SIZE / 2, 'a clock faces into the tower');
+  // re-pinned 2026-11-24 (round 5, tower pass): the clock stage is set back TOWER_TOP.setback (0.25 m) on the shaft (R-kx-front-c)
+  for (const f of faces) assert.ok(f > TOWER_SIZE / 2 - TOWER_TOP.setback, 'a clock faces into the tower');
 });
 
 test('buildWesternRange: three storeys of brick west of the shed wall, between its OSM limits', () => {
