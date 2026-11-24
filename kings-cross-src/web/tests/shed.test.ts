@@ -204,6 +204,51 @@ test('the roof glazing follows the roof cladding: bright from inside the shed, t
   assert.equal(material('shedGlass').opacity, 1, 'the shared material is never changed');
 });
 
+test('the roof outside (rubric A5, R-kx-front-e): the glazed crown 72% +-6% of the arc, slate flanks darker than the glass, rib caps every rib, crown bars every 2.7 m of arc, gutters', async () => {
+  const { ROOF_EXTERIOR, crownBarAngles } = await import('../src/shed.ts') as typeof import('../src/shed.ts') & { ROOF_EXTERIOR: { barPitch: number; ribCap: readonly number[]; gutter: readonly number[] }; crownBarAngles: () => number[] };
+  assert.ok(ROOF_EXTERIOR && typeof crownBarAngles === 'function', 'the roof outside has a spec (ROOF_EXTERIOR, crownBarAngles)');
+  const rs = SHED_SPAN_WIDTH / 2 + ROOF_SKIN;
+  const phi = glazedHalfAngle();
+  const cut = valleyCut(rs);
+  const share = (2 * phi) / (Math.PI - cut);
+  assert.ok(share > 0.66 && share < 0.78, `glazed share of the skin's arc ${share.toFixed(3)}, 0.72 +-0.06`);
+  const group = buildShed(layout);
+  const lum = (m: THREE.Material): number => { const c = (m as THREE.MeshLambertMaterial).color; return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b; };
+  const clad = lum(byName(group, 'shed-roof-cladding').material as THREE.Material), glass = lum(byName(group, 'shed-roof-glass').material as THREE.Material);
+  assert.ok(2 * clad < glass, `slate flanks (${clad.toFixed(3)}) at most half the glass's tone (${glass.toFixed(3)})`);
+  // the crown's bars: evenly 2.7 m of arc apart, inside the glazed strip, at least ten a vault
+  assert.equal(ROOF_EXTERIOR.barPitch, 2.7);
+  const angles = crownBarAngles();
+  assert.ok(angles.length >= 10, `${angles.length} crown bars a vault`);
+  for (let i = 1; i < angles.length; i++) close(rs * (angles[i]! - angles[i - 1]!), ROOF_EXTERIOR.barPitch, 1e-9);
+  for (const a of angles) assert.ok(Math.abs(a - Math.PI / 2) < phi, `bar at ${a.toFixed(3)} rad is on the glass`);
+  // the mesh: dark like the ribs, its vertices on or just outside the skin, a cap over every rib on both vaults
+  const bars = byName(group, 'shed-roof-bars');
+  const m = bars.material as THREE.MeshLambertMaterial;
+  assert.ok(lum(m) <= lum(material('ribPaint')) + 1e-9 && m.emissive.r + m.emissive.g + m.emissive.b < 0.2, 'dark steel, no glow');
+  assert.equal(m.transparent, true, 'it thins with the cladding');
+  const p = bars.geometry.getAttribute('position');
+  const crownZ: number[] = [];
+  let gutterW = 0, gutterE = 0;
+  for (let i = 0; i < p.count; i++) {
+    const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
+    const r = Math.min(Math.hypot(x - (layout.spine - SHED_SPAN_WIDTH / 2), y - layout.springing), Math.hypot(x - (layout.spine + SHED_SPAN_WIDTH / 2), y - layout.springing));
+    if (y > layout.springing + 2 && Math.abs(x - layout.spine) > 1) assert.ok(r > rs - 0.05 && r < rs + 0.4, `vertex ${i} off the skin (r ${r.toFixed(2)})`);
+    if (y > layout.crown - 1) crownZ.push(z);
+    if (x < layout.spine - SHED_SPAN_WIDTH - 0.6) gutterW++; // past the rib caps' feet (0.48 m out): only the gutter reaches there
+    if (x > layout.spine + SHED_SPAN_WIDTH + 0.6) gutterE++;
+  }
+  const capped = ribPositions(layout.length).filter(v => crownZ.some(z => Math.abs(Math.abs(z + v) - ROOF_EXTERIOR.ribCap[0]! / 2) < 1e-3));
+  assert.equal(capped.length, ribPositions(layout.length).length, `a cap over every rib at the crown (${capped.length})`);
+  assert.ok(gutterW > 0 && gutterE > 0, 'an eaves gutter outside each outer springing');
+  // x-ray changes its opacity only, as for the cladding
+  group.updateMatrixWorld(true);
+  const cam = new THREE.PerspectiveCamera();
+  cam.position.set(900, 600, 500);
+  byName(group, 'shed-roof-cladding').onBeforeRender({} as never, {} as never, cam, {} as never, {} as never, {} as never);
+  close(m.opacity, (byName(group, 'shed-roof-cladding').material as THREE.Material).opacity, 1e-12);
+});
+
 test('ribMembers: slender sections, as the restored shed has (the first build\'s 0.38 x 0.30 booms read as heavy girders)', () => {
   const ms = ribMembers(5.6388);
   for (const m of ms) {

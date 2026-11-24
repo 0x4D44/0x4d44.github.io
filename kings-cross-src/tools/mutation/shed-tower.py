@@ -64,6 +64,13 @@ M = [
  ('the west arcade\'s bars dark after dark: no floor', "ARCADE_FRAME.night, 'arcadeFrame', false)", "0, 'arcadeFrame', false)", 'web/src/materials.ts'),
  ('the west arcade\'s glass floor over the lit panes too', "'arcadeGlass', true)", "'arcadeGlass', false)", 'web/src/materials.ts'),
  ('the west arcade\'s bars dim by day', 'ARCADE_FRAME = { color: 0xc8c6ba,', 'ARCADE_FRAME = { color: 0x707070,', 'web/src/materials.ts'),
+ # the roof's outside (ROOF_EXTERIOR, rubric A5): rib caps, crown bars, gutters, dark and thinning with the cladding
+ ('the rib caps over half the ribs only', 'for (const v of ribPositions(L)) {\n      for (let i = 0; i < ARC_STEPS * 2; i++) {', 'for (const v of ribPositions(L).slice(0, 20)) {\n      for (let i = 0; i < ARC_STEPS * 2; i++) {'),
+ ('the crown bars twice as far apart', 'barPitch: 2.7,', 'barPitch: 5.4,'),
+ ('the roof bars solid in x-ray', '    barsMat.opacity = o;\n', ''),
+ ('no eaves gutters', '    outer.box([edge, sp + gh / 2 - 0.1, -L / 2], [gw, gh, L]);\n', ''),
+ ('the roof bars pale and self-lit', "const barsMat = (material('ribPaint')", "const barsMat = (material('lining')"),
+ ('the rib caps a metre off the skin', 'const capR = rs + ROOF_EXTERIOR.ribCap[1] / 2;', 'const capR = rs + 1;'),
 ]
 def run(name):
  try: r = kxmut.run_process(['node','--test','--test-reporter=tap','--test-timeout=10000','web/tests/shed-tower.test.ts','web/tests/shed.test.ts'],cwd=work,timeout=30)
