@@ -16,7 +16,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { CLOCK_TOWER_HEIGHT, SHED_SPAN_WIDTH } from '../../core/station.ts';
 import type { ClockDial } from './clocks.ts';
 import type { ShedLayout } from '../../core/station.ts';
-import { addCrownBelow, setShedGlass } from './lighting.ts';
+import { addCrownAbove, addCrownBelow, setShedGlass } from './lighting.ts';
 import { Batch, material, paneUv, windowNight, withBuildingNightMaterial } from './materials.ts';
 import type { V2, V3 } from './materials.ts';
 import { GROUND_Y } from './world.ts';
@@ -725,9 +725,14 @@ export function insideShed(cam: V3, layout: Pick<ShedLayout, 'width' | 'length' 
 export function roofBarsOpacity(cam: V3, layout: Pick<ShedLayout, 'width' | 'length' | 'crown' | 'spine'>, mode: RoofMode = 'auto'): number {
   // continuous across the shed's boundary (until roof-exterior-round-2 a step there, a pop as the camera crossed the south screen): 0 anywhere inside, rising
   // smoothly to the cladding's opacity ROOF_EXTERIOR.fade metres out
+  return roofOpacity(cam, layout, mode) * crownOutside(cam, layout);
+}
+
+/** How far outside the shed `cam` is, 0 anywhere inside it to 1 ROOF_EXTERIOR.fade metres out (a camera rising above the crown counts four times), in every roof mode. */
+export function crownOutside(cam: V3, layout: Pick<ShedLayout, 'width' | 'length' | 'crown'>): number {
   const [x, y, z] = cam;
   const dx = Math.max(-x, x - layout.width, 0), dz = Math.max(z, -layout.length - z, 0), dy = 4 * Math.max(y - (layout.crown + 1), 0);
-  return roofOpacity(cam, layout, mode) * smoothstep(0, ROOF_EXTERIOR.fade, Math.hypot(dx, dy, dz));
+  return smoothstep(0, ROOF_EXTERIOR.fade, Math.hypot(dx, dy, dz));
 }
 
 /** Opacity of the roof glazing: a bright daylit panel inside and close up, the see-through tint it had before from far off. ASSUMED look. */
@@ -1069,6 +1074,8 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   const glassMat = (material('shedGlass') as THREE.MeshLambertMaterial).clone();
   glassMat.opacity = glazingOpacity(1);
   addCrownBelow(glassMat); // grey-white from below by day (lighting.ts CROWN_BELOW)
+  const crownAbove = { value: 0 }; // pale from above, outside only (lighting.ts CROWN_ABOVE): crownOutside, set before each draw of the glass
+  addCrownAbove(glassMat, crownAbove);
   cladding.onBeforeRender = (_renderer, _scene, camera) => {
     inverse.copy(group.matrixWorld).invert();
     local.copy(camera.position).applyMatrix4(inverse);
@@ -1158,6 +1165,11 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   group.add(cladding);
   const glassMesh = mesh(mergeGeometries(glass, false), glassMat, 'shed-roof-glass');
   glassMesh.renderOrder = 3;
+  glassMesh.onBeforeRender = (_renderer, _scene, camera) => {
+    inverse.copy(group.matrixWorld).invert();
+    local.copy(camera.position).applyMatrix4(inverse);
+    crownAbove.value = crownOutside([local.x, local.y, local.z], layout);
+  };
   group.add(glassMesh);
   group.add(mesh(mergeGeometries(lining, false), material('lining'), 'shed-roof-lining'));
   disposables.push(...flanks, ...glass, ...lining);

@@ -490,6 +490,37 @@ export function addCrownBelow(material: THREE.MeshLambertMaterial): void {
   material.needsUpdate = true;
 }
 
+/**
+ * The crown's glass seen from outside, from above (round 11, the end-rib-round-2 score: from outside the crown strip read as a grid, the dark astragal lines
+ * painted in the shedGlass tile; R-kx-front-e shows a pale glazed strip with fine bars). On a face that looks up, by `uCrownAbove` (shed.ts sets it from
+ * crownOutside: 0 anywhere inside the shed, rising over ROOF_EXTERIOR.fade metres out, so there is no pop), a bar is lifted `bar` times and a pane `pane`
+ * times (the pane mask is CROWN_BELOW's, crownPaneK): the bars stay a little darker than the glass, fine lines, not a grid. ASSUMED amounts. From inside the
+ * level is 0 and the face seen looks down, so the branch is skipped twice over and the glass is drawn as before.
+ */
+export const CROWN_ABOVE = { bar: 2.0, pane: 1.15, full: 0.35 } as const;
+export const CROWN_ABOVE_GLSL = /* glsl */`
+vec3 crownAbove( vec3 c, float w, float pane ) {
+  return c * mix( 1.0, mix( ${CROWN_ABOVE.bar.toFixed(2)}, ${CROWN_ABOVE.pane.toFixed(2)}, pane ), w );
+}
+`;
+
+/** Give the shed's crown glass its look from above (`CROWN_ABOVE`), after addCrownBelow (it reads that patch's pane mask), with the material's own level. */
+export function addCrownAbove(material: THREE.MeshLambertMaterial, level: THREE.IUniform<number>): void {
+  const before = material.onBeforeCompile;
+  const ownKey = material.customProgramCacheKey();
+  material.onBeforeCompile = (shader, renderer) => {
+    before.call(material, shader, renderer);
+    shader.uniforms.uCrownAbove = level;
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', `#include <common>\nuniform float uCrownAbove;\n${CROWN_ABOVE_GLSL}`)
+      .replace('#include <opaque_fragment>', `${CROWN_ABOVE_LINE}\n#include <opaque_fragment>`);
+  };
+  material.customProgramCacheKey = () => `${ownKey}+crownAbove`;
+  material.needsUpdate = true;
+}
+/** the one line addCrownAbove puts before the output: by the level, by day only (CROWN_BELOW's shared level: off by night, under the moon, elsewhere), and by how far the face seen looks up */
+export const CROWN_ABOVE_LINE = `if ( uCrownAbove * uCrownBelow > 0.0 ) outgoingLight = crownAbove( outgoingLight, uCrownAbove * uCrownBelow * smoothstep( 0.0, ${CROWN_ABOVE.full.toFixed(2)}, clamp( dot( normal, viewMatrix[ 1 ].xyz ), 0.0, 1.0 ) ), crownPaneK );`;
+
 /** The directional light's shadow line in three's lights chunk (as this module's patch above leaves it), with the crown's sky fill wrapped round it: the shade lifted, the sun's streaks left at 1. */
 function shedSoftenedLights(): string {
   const chunk = (THREE.ShaderChunk as unknown as Record<string, string>).lights_fragment_begin as string;
