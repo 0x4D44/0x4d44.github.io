@@ -21,7 +21,11 @@ test('tower clock occupies the upper turret immediately below the cap eaves', ()
   assert.equal(clocks.length, 4);
   const cap = all.find(m => m.name === 'tower-cap')!;
   assert.ok(cap, 'slate cap exists');
-  const eaves = bounds(cap).min.y;
+  // re-pinned 2026-11-24 (tower second pass): the cap's mesh also carries the shaft's dark slits (the same slate, no extra draw), so the
+  // eaves are the lowest of its vertices above the clock's centre, not its whole bounding box
+  const p = cap.geometry.getAttribute('position'), ys: number[] = [];
+  for (let i = 0; i < p.count; i++) if (p.getY(i) > clocks[0]!.position.y) ys.push(p.getY(i));
+  const eaves = Math.min(...ys);
   for (const clock of clocks) {
     const radius = bounds(clock).max.y;
     assert.ok(clock.position.y > CLOCK_TOWER_HEIGHT * .8, `clock at ${clock.position.y} is below the upper turret`);

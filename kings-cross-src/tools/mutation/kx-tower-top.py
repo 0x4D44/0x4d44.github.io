@@ -1,4 +1,4 @@
-"""Catch the clock tower's top, projection and the front's lamp/door regressions (round 5, tower pass) through web/tests/kx-tower-top.test.ts only.
+"""Catch the clock tower's top, projection, dials and slits, and the front's lamp/door regressions (round 5, tower passes) through web/tests/kx-tower-top.test.ts only.
 Usage: python3 -I -u tools/mutation/kx-tower-top.py SOURCE WORKTREE_SCRATCH
 Source stays untouched; all baseline and mutation logs go to WORKTREE_SCRATCH.
 """
@@ -30,6 +30,14 @@ MUTATIONS = [
     ('black vane', 'web/src/shed.ts', 'gilt.color.set(0xc8a24a);', 'gilt.color.set(0x3d4650);', 'heavy stepped stone cornice'),
     ('lamps white by day', 'web/src/shed.ts', 'downlight: 0xb0aca4', 'downlight: 0xf2eee4', 'cheap ones'),
     ('no door stiles', 'web/src/shed.ts', 'for (const dx of [-dw / 2 + 0.06, 0, dw / 2 - 0.06]) frames.box(', 'for (const dx of [] as number[]) frames.box(', 'cheap ones'),
+    ('dials back to 4.3 m across', 'web/src/shed.ts', 'export const TOWER_DIAL = { dial: 1.2, surround: 1.43 }', 'export const TOWER_DIAL = { dial: 1.7, surround: 2.15 }', 'dials are about 0.62'),
+    ('no brick above the dials', 'web/src/shed.ts', 'clockBelowFrieze: 1.8,', 'clockBelowFrieze: 1.5,', 'dials are about 0.62'),
+    ('hands drawn to the old dial', 'web/src/shed.ts', 'up: [0, 1, 0], radius: dial }', 'up: [0, 1, 0], radius: 1.7 }', 'dials are about 0.62'),
+    ('no numerals', 'web/src/shed.ts', 'g.fillText(n, c', 'g.moveTo(c', 'dial is painted'),
+    ('no gilt bezel', 'web/src/shed.ts', "g.fillStyle = '#c8a24a';", "g.fillStyle = '#efe8d4';", 'dial is painted'),
+    ('no slits', 'web/src/shed.ts', 'of [TOWER_SLITS.slit, TOWER_SLITS.slot])', 'of [TOWER_SLITS.slit, TOWER_SLITS.slot].slice(2))', 'round-headed slits'),
+    ('south slit only', 'web/src/shed.ts', 'for (const [nx, nz] of [[0, 1], [1, 0], [-1, 0]] as [number, number][]) {', 'for (const [nx, nz] of [[0, 1]] as [number, number][]) {', 'round-headed slits'),
+    ('a slit as wide as the shaft', 'web/src/shed.ts', 'slit: { from: 13.5, to: 18.5, width: 0.6 }', 'slit: { from: 13.5, to: 18.5, width: 3.4 }', 'round-headed slits'),
 ]
 
 def run(work: Path) -> subprocess.CompletedProcess[str]:
@@ -72,4 +80,4 @@ with tempfile.TemporaryDirectory(prefix='kx-tower-top-', dir=out) as tmp:
             failures.append(label)
             print(f'[SURVIVED] {label}', flush=True)
     print(f'{caught}/{len(MUTATIONS)} mutations caught; baseline {len(passing)} tests passed; survivors: {failures}')
-    raise SystemExit(1 if failures or len(passing) != 6 else 0)
+    raise SystemExit(1 if failures or len(passing) != 9 else 0)

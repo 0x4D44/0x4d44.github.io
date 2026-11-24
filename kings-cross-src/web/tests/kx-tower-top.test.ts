@@ -55,7 +55,11 @@ test('a deep bracketed cornice: five to eight large stone brackets to a face (R-
 });
 
 test('the cap is near-flat, its dark edge overhanging the stage, under the vane at the published height', () => {
-  const cap = box(named('tower-cap')), brick = named('tower-brick');
+  // re-pinned 2026-11-24 (tower second pass): the cap's mesh also carries the shaft's dark slits (the same slate, no extra draw), so the
+  // cap is its vertices above the clock, not its whole bounding box
+  const capMesh = named('tower-cap'), pos = capMesh.geometry.getAttribute('position'), cap = new THREE.Box3();
+  for (let i = 0; i < pos.count; i++) if (pos.getY(i) > clockY) cap.expandByPoint(new THREE.Vector3().fromBufferAttribute(pos, i));
+  const brick = named('tower-brick');
   const stage = hitZ(0, clockY - 2.35, brick)!;
   assert.ok(cap.max.y - cap.min.y <= 0.6, `a near-flat top, not a pitched hip: ${(cap.max.y - cap.min.y).toFixed(2)} m from edge to apex`);
   assert.ok(cap.max.z - stage >= 1.0, 'its edge overhangs the stage by a metre or more');
@@ -114,5 +118,45 @@ test('the round-2 scorer\'s cheap ones: the canopy lamps are not bright by day, 
     let stiles = 0, prev = false;
     for (let dx = -dw / 2 + 0.02; dx < dw / 2 - 0.02; dx += 0.01) { const on = frameAt(c + dx, foot + 1.6); if (on && !prev) stiles++; prev = on; }
     assert.ok(stiles >= 3, `the doors' leaf and meeting stiles: ${stiles}`);
+  }
+});
+
+test('the dials are about 0.62 of the stage\'s face (R-kx-front-a, -c), brick above them under the frieze, and clocks.ts drives them at their size', () => {
+  const meshes = tower.getObjectsByProperty('type', 'Mesh') as THREE.Mesh[];
+  const ring = meshes.find(m => m.geometry instanceof THREE.RingGeometry)!, dial = meshes.find(m => m.geometry instanceof THREE.CircleGeometry)!;
+  const outer = (ring.geometry as THREE.RingGeometry).parameters.outerRadius, r = (dial.geometry as THREE.CircleGeometry).parameters.radius;
+  const stage = hitZ(0, clockY - 2.35, named('tower-brick'))!;
+  const ratio = (2 * outer) / (2 * stage);
+  assert.ok(ratio >= 0.55 && ratio <= 0.7, `the surround ${ratio.toFixed(2)} of the stage's face`);
+  const frieze = CLOCK_TOWER_HEIGHT - 3.3;
+  assert.ok(frieze - (clockY + outer) >= 0.25, `brick above the surround: ${(frieze - (clockY + outer)).toFixed(2)} m`);
+  const brickAbove = hitZ(0, (clockY + outer + frieze) / 2, named('tower-brick'));
+  assert.ok(brickAbove !== null && Math.abs(brickAbove - stage) < 0.02, 'and it is the stage\'s brick');
+  for (const d of tower.userData.clockDials as { radius: number }[]) assert.ok(Math.abs(d.radius - r) < 1e-6, 'clocks.ts draws to the dial\'s radius');
+});
+
+test('the dial is painted with a gilt bezel, a black chapter ring and Roman numerals (R-kx-front-c)', async () => {
+  const { paintDial } = await import('../src/shed.ts');
+  const texts: string[] = [], fills: unknown[] = [];
+  let strokes = 0;
+  const g = {
+    fillStyle: '' as unknown, strokeStyle: '' as unknown, lineWidth: 1, lineCap: '' as unknown, font: '', textAlign: '' as unknown, textBaseline: '' as unknown,
+    beginPath() {}, arc() {}, moveTo() {}, lineTo() {},
+    fill() { fills.push(this.fillStyle); }, stroke() { strokes++; }, fillText(t: string) { texts.push(t); },
+  };
+  paintDial(g as never, 512);
+  assert.ok(['XII', 'III', 'VI', 'IX', 'IIII', 'IV'].filter(n => texts.includes(n)).length >= 4 && texts.length === 12, `numerals painted: ${texts.join(' ')}`);
+  assert.ok(fills.includes('#c8a24a'), 'a gilt bezel');
+  assert.ok(strokes >= 60, `a chapter ring of minute ticks: ${strokes} strokes`);
+});
+
+test('the shaft has its tall round-headed slits on the south face and both side faces (R-kx-front-a, -b)', () => {
+  const cap = named('tower-cap');
+  const ray = (o: THREE.Vector3, d: THREE.Vector3): boolean => new THREE.Raycaster(o, d, 0, 40).intersectObject(cap, false).length > 0;
+  for (const y of [15, 17]) {
+    assert.ok(ray(new THREE.Vector3(0, y, 20), new THREE.Vector3(0, 0, -1)), `a slit on the south face at ${y} m`);
+    assert.ok(ray(new THREE.Vector3(20, y, 0), new THREE.Vector3(-1, 0, 0)), `a slit on the east face at ${y} m`);
+    assert.ok(ray(new THREE.Vector3(-20, y, 0), new THREE.Vector3(1, 0, 0)), `a slit on the west face at ${y} m`);
+    assert.ok(!ray(new THREE.Vector3(1.5, y, 20), new THREE.Vector3(0, 0, -1)), 'narrow: brick each side of it');
   }
 });

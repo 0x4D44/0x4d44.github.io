@@ -60,9 +60,22 @@ export const TOWER_PROJECTION = TOWER_SIZE + 0.15;
  * stepped cornice at the shaft's top with a weathered slope in to the stage, and a gilded banner vane. The total height (CLOCK_TOWER_HEIGHT, to the vane's top) is published.
  */
 export const TOWER_TOP = {
-  setback: 0.9, clockBelowFrieze: 2.2, frieze: 0.3, bracket: { width: 0.45, height: 0.8, lower: 0.6 }, perFace: 7, corona: 0.2, overhang: 1.2, edge: 0.15, rise: 0.3,
+  setback: 0.9, clockBelowFrieze: 1.8, frieze: 0.3, bracket: { width: 0.45, height: 0.8, lower: 0.6 }, perFace: 7, corona: 0.2, overhang: 1.2, edge: 0.15, rise: 0.3,
   transition: { lower: { height: 0.3, out: 0.15 }, upper: { height: 0.35, out: 0.35 }, weather: 0.45 },
 } as const;
+/**
+ * The clock dials (round 5, tower second pass): R-kx-front-a and R-kx-front-c show each dial's surround about 0.6 to 0.65 of the stage's face,
+ * brick each side, below and above it under the frieze; it was 4.3 m across, 0.93 of the 4.6 m face. Now the dial is 1.2 m in radius and its
+ * stone surround 1.43 m (0.62 of the face, MEASURED ratio; the sizes follow from it). The dial is painted (clockMaterial, paintDial) with a gilt
+ * bezel, a black chapter ring and Roman numerals; clocks.ts draws the black hands to `radius`.
+ */
+export const TOWER_DIAL = { dial: 1.2, surround: 1.43 } as const;
+/**
+ * The shaft's slit windows (R-kx-front-a square on, R-kx-front-b oblique): one tall round-headed slit on the south face and on each side face
+ * in the shaft's upper half, and a short slot above it. MEASURED in memory against the front's top (24 m) and the paving: the slit from about
+ * 13.5 to 18.5 m, about 0.6 m wide; the slot about 21.5 to 23 m, 0.2 m wide. Dark (the cap's slate), a hair proud of the brick.
+ */
+export const TOWER_SLITS = { slit: { from: 13.5, to: 18.5, width: 0.6 }, slot: { from: 21.5, to: 23, width: 0.2 } } as const;
 /**
  * Network Rail records six porch arches, three each side of the tower:
  * https://www.networkrail.co.uk/who-we-are/our-history/iconic-infrastructure/the-history-of-london-kings-cross-station/
@@ -618,27 +631,43 @@ function windowQuad(batch: Batch, at: V3, facing: '+x' | '-x' | '+z' | '-z', w =
 
 const isBrowser = typeof document !== 'undefined';
 
+/** The 2D canvas calls paintDial makes, so a test can record them. */
+export type DialPainter = Pick<CanvasRenderingContext2D, 'beginPath' | 'arc' | 'fill' | 'stroke' | 'moveTo' | 'lineTo' | 'fillText'> & {
+  fillStyle: unknown; strokeStyle: unknown; lineWidth: number; lineCap: unknown; font: string; textAlign: unknown; textBaseline: unknown;
+};
+export const DIAL_NUMERALS = ['XII', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI'] as const;
+/**
+ * The tower's dial face on a canvas `size` pixels square (R-kx-front-c): a gilt bezel, an ivory face, a black chapter ring of minute ticks
+ * outside black Roman numerals; the hands are clocks.ts's.
+ */
+export function paintDial(g: DialPainter, size: number): void {
+  const c = size / 2, R0 = c - 2;
+  g.fillStyle = '#c8a24a'; g.beginPath(); g.arc(c, c, R0, 0, Math.PI * 2); g.fill(); // the gilt bezel
+  g.fillStyle = '#efe8d4'; g.beginPath(); g.arc(c, c, R0 * 0.9, 0, Math.PI * 2); g.fill(); // the face
+  g.strokeStyle = '#1c1a17';
+  g.lineWidth = size * 0.012;
+  for (const f of [0.86, 0.76]) { g.beginPath(); g.arc(c, c, R0 * f, 0, Math.PI * 2); g.stroke(); } // the chapter ring's two lines
+  g.lineCap = 'butt';
+  for (let i = 0; i < 60; i++) {
+    const a = (i * Math.PI) / 30, w = i % 5 === 0 ? 0.02 : 0.008;
+    g.lineWidth = size * w;
+    g.beginPath();
+    g.moveTo(c + Math.sin(a) * R0 * 0.76, c - Math.cos(a) * R0 * 0.76);
+    g.lineTo(c + Math.sin(a) * R0 * 0.86, c - Math.cos(a) * R0 * 0.86);
+    g.stroke();
+  }
+  g.fillStyle = '#1c1a17';
+  g.font = `bold ${Math.round(size * 0.085)}px serif`;
+  g.textAlign = 'center';
+  g.textBaseline = 'middle';
+  DIAL_NUMERALS.forEach((n, i) => { const a = (i * Math.PI) / 6; g.fillText(n, c + Math.sin(a) * R0 * 0.62, c - Math.cos(a) * R0 * 0.62); });
+}
+
 function clockMaterial(): THREE.Material {
   if (!isBrowser) return new THREE.MeshLambertMaterial({ color: 0xefe8d4 });
   const c = document.createElement('canvas');
-  c.width = c.height = 256;
-  const g = c.getContext('2d') as CanvasRenderingContext2D;
-  g.fillStyle = '#efe8d4';
-  g.beginPath();
-  g.arc(128, 128, 124, 0, Math.PI * 2);
-  g.fill();
-  g.strokeStyle = '#22201c';
-  g.lineWidth = 8;
-  g.stroke();
-  g.lineCap = 'round';
-  for (let i = 0; i < 12; i++) {
-    const a = (i * Math.PI) / 6;
-    g.lineWidth = i % 3 === 0 ? 8 : 5;
-    g.beginPath();
-    g.moveTo(128 + Math.sin(a) * 96, 128 - Math.cos(a) * 96);
-    g.lineTo(128 + Math.sin(a) * 114, 128 - Math.cos(a) * 114);
-    g.stroke();
-  }
+  c.width = c.height = 512;
+  paintDial(c.getContext('2d') as CanvasRenderingContext2D, 512);
   // the hands are clocks.ts's, turned to the scene clock
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
@@ -1401,6 +1430,16 @@ export function buildTower(x: number): THREE.Group {
       ts.poly([[px * a, y0, pz * a], [qx * a, y0, qz * a], [qx * b, y1, qz * b], [px * b, y1, pz * b]], [[0, 0], [2 * a, 0], [a + b, sl], [a - b, sl]]);
     }
   }
+  // the shaft's slits (TOWER_SLITS) on its south, east and west faces: dark, round-headed, a hair proud of the brick (the north face is
+  // against the front)
+  for (const [nx, nz] of [[0, 1], [1, 0], [-1, 0]] as [number, number][]) {
+    for (const { from, to, width } of [TOWER_SLITS.slit, TOWER_SLITS.slot]) {
+      const r = width / 2, y0 = GROUND_Y + from, y1 = GROUND_Y + to - r, o = tw / 2 + 0.02;
+      const pts: [number, number][] = [[-r, y0], [r, y0], ...Array.from({ length: 7 }, (_, k): [number, number] => [r * Math.cos((k * Math.PI) / 6), y1 + r * Math.sin((k * Math.PI) / 6)])];
+      const at = ([u, y]: [number, number]): V3 => (nx === 0 ? [u, y, nz * o] : [nx * o, y, -nx * u]);
+      tslate.poly(pts.map(at), pts, { facing: [nx, 0, nz] });
+    }
+  }
   tb.box([0, (shaftTop + eavesY) / 2, 0], [cw, eavesY - shaftTop, cw]); // the clock stage
   // the bracketed cornice (TOWER_TOP, R-kx-front-c): a stone frieze, a row of two-tier stone brackets on every face, the corona they carry,
   // then the dark metal roof's edge and its near-flat hipped top
@@ -1428,8 +1467,9 @@ export function buildTower(x: number): THREE.Group {
   for (let i = 0; i < 4; i++) tslate.poly([corners[i] as V3, corners[(i + 1) % 4] as V3, apex], [[0, 0], [2 * hb, 0], [hb, slant]]);
   // a clock on every face, in a stone surround directly below the eaves
   const clockMat = clockMaterial();
-  const clockGeo = new THREE.CircleGeometry(1.7, 40);
-  const surroundGeo = new THREE.RingGeometry(1.7, 2.15, 40);
+  const { dial, surround } = TOWER_DIAL;
+  const clockGeo = new THREE.CircleGeometry(dial, 40);
+  const surroundGeo = new THREE.RingGeometry(dial, surround, 40);
   const faces = new THREE.Group();
   const dirs: [number, number][] = [[0, 1], [1, 0], [0, -1], [-1, 0]]; // south, east, north, west: (x, z)
   for (const [nx, nz] of dirs) {
@@ -1441,7 +1481,7 @@ export function buildTower(x: number): THREE.Group {
     ring.rotation.y = face.rotation.y;
     faces.add(ring, face);
   }
-  tower.userData.clockDials = dirs.map(([nx, nz]): ClockDial => ({ centre: [nx * (cw / 2 + 0.06), clockY, nz * (cw / 2 + 0.06)], normal: [nx, 0, nz], up: [0, 1, 0], radius: 1.7 })); // clocks.ts
+  tower.userData.clockDials = dirs.map(([nx, nz]): ClockDial => ({ centre: [nx * (cw / 2 + 0.06), clockY, nz * (cw / 2 + 0.06)], normal: [nx, 0, nz], up: [0, 1, 0], radius: dial })); // clocks.ts
   // ASSUMED simplified vane: mast, cardinal cross and arrow; its precise metalwork is not surveyed.
   const vane = new Batch(), vaneY = CLOCK_TOWER_HEIGHT - 0.65;
   const gilt = (material('steel') as THREE.MeshLambertMaterial).clone();
