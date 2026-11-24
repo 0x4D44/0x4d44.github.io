@@ -31,7 +31,7 @@ const RET = S.FRONT_RETURN as number;
 test('A2: the front\'s returns are a darker shade of its brick, by day and at night, on the brick\'s own texture and program', () => {
   assert.ok(RET >= 0.4 && RET <= 0.7, `FRONT_RETURN ${RET}`);
   const day = front.material as THREE.MeshLambertMaterial[], night = [buildingNightMaterialsOf(front)!.night].flat() as THREE.MeshLambertMaterial[];
-  assert.ok(Array.isArray(day) && day.length === 2 && night.length === 2, 'faces and returns');
+  assert.ok(Array.isArray(day) && day.length >= 2 && night.length === day.length, 'faces and returns'); // re-pinned round 27: a third, the orders' lighter faces (FRONT_ORDER_FACE, kx-front-round27)
   const brick = material('brickFoot') as THREE.MeshLambertMaterial;
   assert.equal(day[0], brick, 'the faces in the brick itself');
   assert.ok(day[1]!.map === brick.map && day[1]!.customProgramCacheKey() === brick.customProgramCacheKey(), 'the returns on its texture and program');
@@ -48,7 +48,8 @@ test('A2: each order\'s step face is a return: under the crown, between one orde
     const sy = (F as typeof F & { splay?: number }).splay ?? 0; // re-pinned round 26 (front-round-5 score, A2): the step splayed, so halfway up it stands half the splay out from its foot
     assert.ok(up && up.mat === 1 && Math.abs(up.y - (sp + R + i * F.orderWidth + sy / 2)) < 0.05, `order ${i}'s step face over x ${uc.toFixed(1)}: ${up?.mat} at ${up?.y.toFixed(2)}`);
     const face = ray([uc, sp + R + i * F.orderWidth + (sy + F.orderWidth) / 2, 5], [0, 0, -1], [front]); // re-pinned round 26: the face's middle, outside the splayed step
-    assert.ok(face && face.mat === 0 && Math.abs(face.z - (i + 1) * F.orderStep) < 0.02, `and its face in the brick (${face?.mat} at ${face?.z.toFixed(2)})`);
+    assert.ok(face && face.mat !== 1 && Math.abs(face.z - (i + 1) * F.orderStep) < 0.02, // re-pinned round 27: the orders' faces in their own lighter brick (mat 2, kx-front-round27), still not the return tone
+      `and its face in the brick (${face?.mat} at ${face?.z.toFixed(2)})`);
   }
 });
 

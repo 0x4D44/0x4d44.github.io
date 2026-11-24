@@ -34,7 +34,8 @@ test('A2: square-on, each order shows a band of its splayed step in the return t
     assert.ok(step && step.mat === 1 && step.z > i * F.orderStep + 0.02 && step.z < (i + 1) * F.orderStep - 0.02 && step.nz > 0.3,
       `order ${i}'s step at x ${uc.toFixed(1)}, ${(a * 180 / Math.PI).toFixed(0)} deg: ${step?.mat} at ${step?.z.toFixed(2)} facing ${step?.nz.toFixed(2)}`);
     const face = ray(at(r0 + (F.splay + F.orderWidth) / 2), [0, 0, -1], [front]);
-    assert.ok(face && face.mat === 0 && Math.abs(face.z - (i + 1) * F.orderStep) < 0.01, `and its face: ${face?.mat} at ${face?.z.toFixed(2)}`);
+    assert.ok(face && face.mat !== 1 && Math.abs(face.z - (i + 1) * F.orderStep) < 0.01, // re-pinned round 27: the orders' faces in their own lighter brick (mat 2, kx-front-round27), still not the return tone
+      `and its face: ${face?.mat} at ${face?.z.toFixed(2)}`);
   }
   // the opening's clear width kept: inside the inner order nothing of the front
   const clear = ray([layout.spine - R - (R - F.orderWidth) + 0.1, sp + 0.3, 5], [0, 0, -1], [front]);

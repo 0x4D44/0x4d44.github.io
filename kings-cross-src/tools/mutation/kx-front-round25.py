@@ -21,10 +21,10 @@ out.mkdir(parents=True, exist_ok=True)
 
 MUTATIONS = [
     ('returns in the face tone', 'web/src/shed.ts', "export const FRONT_RETURN = 0.55;", "export const FRONT_RETURN = 1.0;", "A2: the front's returns"),
-    ('faces and returns swapped', 'web/src/shed.ts', "(grp.materialIndex === 1 ? returns : faces).push(part);", "(grp.materialIndex === 0 ? returns : faces).push(part);", "A2: each order's step face"),
+    ('faces and returns swapped', 'web/src/shed.ts', "(grp.materialIndex === 1 ? returns : orderParts.has(g) ? orderFaces : faces).push(part);", "(grp.materialIndex === 0 ? returns : orderParts.has(g) ? orderFaces : faces).push(part);", "A2: each order's step face"),
     ('day returns untinted', 'web/src/shed.ts', "  m.color.multiplyScalar(FRONT_RETURN);\n  frontReturnMaterial = m;", "  frontReturnMaterial = m;", "A2: the front's returns"),
     ('night returns untinted', 'web/src/shed.ts', "  m.color.multiplyScalar(tint); // round 25", "  m.color.multiplyScalar(1); // round 25", "A2: the front's returns"),
-    ('the returns in the plain brick', 'web/src/shed.ts', "[material('brickFoot'), frontReturn()], 'shed-front')", "[material('brickFoot'), material('brickFoot')], 'shed-front')", "A2: the front's returns"),
+    ('the returns in the plain brick', 'web/src/shed.ts', "[material('brickFoot'), frontReturn(), frontOrderFace()], 'shed-front')", "[material('brickFoot'), material('brickFoot'), frontOrderFace()], 'shed-front')", "A2: the front's returns"),
     ('the panels back at 0.2', 'web/src/shed.ts', "strip: 0.5, recess: 0.6 }", "strip: 0.5, recess: 0.2 }", "A2: each spandrel panel"),
     ('the fascia glowing all over', 'web/src/shed.ts', "Object.assign(fasciaMaterial(), { defines: { KX_GLOW_BY_MAP: '' } })", "fasciaMaterial()", "A3: the fascia glows"),
     ('the fascia glowing blue', 'web/src/shed.ts', "fascia: [0xdfe8ff, 0.4],", "fascia: [0x2a5cc0, 0.35],", "A3: the fascia glows"),

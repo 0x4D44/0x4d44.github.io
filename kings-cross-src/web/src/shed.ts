@@ -119,8 +119,13 @@ export const FRONT_PIERS = { rise: 2.8, cap: 0.4, step: 0.6, stepRun: 3.0, width
 /** Round 21 (A2): each great arch's spandrel a recessed panel, framed by brick `out` m proud: a `band` m band under the cornice, `strip` m strips at its sides (ASSUMED). */
 /** Round 25: the tone of the front's returns (the orders' step faces, the spandrel panels' and porch openings' reveals) against its brick face (ASSUMED). */
 export const FRONT_RETURN = 0.55;
+/** Round 27 (front-round-6 score, A2: the rings should read light, with shadow lines): the orders' faces this much lighter than the front's brick
+ * (toward front-a's light stock brick; ASSUMED), the splayed steps staying in FRONT_RETURN. */
+export const FRONT_ORDER_FACE = 1.25;
+/** Round 27 (A2: the spandrel's head showed no shadow square-on): the panel's top `height` m, under the frame's band, in the return tone. */
+export const FRONT_PANEL_HEAD = { height: 0.4 } as const;
 export const FRONT_TYMPANUM = { out: 0.5, band: 0.45, strip: 0.5, recess: 0.6 } as const; // round 22 (A2: 0.15 m read about 1 px square-on): 0.3; round 23b (the painted line was black at night): 0.5, the band's own soffit casting the shadow line
-export const PORCH_DEPTH = { glass: 1.05, frame: 0.3, interior: 0x7a6a55, barriers: 6, barrier: [0.22, 1.0] as const, figures: 2, figure: [0.45, 1.7] as const, gradient: [0.75, 1.0] as const, soffit: 0xa99a7c, vignette: { edge: 0.45, edgeWidth: 0.2, top: 0.5, from: 0.85 } as const } as const; // round 26 (front-round-5 score, A3: the openings did not read as voids): the glass 1.05 m back (was 0.8), and `vignette`, the interior darker toward its sides (to `edge` of its centre, over its outer `edgeWidth` of the width either side) and over its top (from `from` of its height to `top` at the ceiling), the figures (at 0.33 and 0.78 of the width, up to 0.85 of its height) clear of both; // round 24: `soffit` the stone dressings' tone (was 0xe6d6b4, a light tan shelf); // round 21: figures (ASSUMED); round 22: `gradient`, the interior's brightness at its foot and at its top (ASSUMED); round 23 (A3): the glass 0.8 m back (was 0.45: the returns read about 1 px), the gradient's foot 0.75 (0.5 dimmed the figures), and `soffit`, the lit ceiling over each opening's head
+export const PORCH_DEPTH = { glass: 1.05, frame: 0.3, interior: 0x7a6a55, barriers: 6, barrier: [0.22, 1.0] as const, figures: 2, figure: [0.45, 1.7] as const, gradient: [0.75, 1.0] as const, soffit: 0xa99a7c, dayDark: 0.55, vignette: { edge: 0.45, edgeWidth: 0.2, top: 0.5, from: 0.85 } as const } as const; // round 27 (front-round-6 score, A3: the openings still not voids by day): `dayDark`, the interior's diffuse by day (KX_DAY_DARK; its night glow unchanged); round 26 (front-round-5 score, A3: the openings did not read as voids): the glass 1.05 m back (was 0.8), and `vignette`, the interior darker toward its sides (to `edge` of its centre, over its outer `edgeWidth` of the width either side) and over its top (from `from` of its height to `top` at the ceiling), the figures (at 0.33 and 0.78 of the width, up to 0.85 of its height) clear of both; // round 24: `soffit` the stone dressings' tone (was 0xe6d6b4, a light tan shelf); // round 21: figures (ASSUMED); round 22: `gradient`, the interior's brightness at its foot and at its top (ASSUMED); round 23 (A3): the glass 0.8 m back (was 0.45: the returns read about 1 px), the gradient's foot 0.75 (0.5 dimmed the figures), and `soffit`, the lit ceiling over each opening's head
 /**
  * The low canopy along the front (R-kx-front-a, 2026, and R-kx-front-b, 2016): a flat dark steel roof on slender columns at the bay lines,
  * passing in front of the tower's foot. Its top at 3.85 m (MEASURED from R-a by the same scale as FRONT_RELIEF); its fascia, depth and
@@ -184,7 +189,9 @@ function frontNightGlow(m: THREE.MeshLambertMaterial, [colour, gain]: readonly [
         // the entrance glass's glow is shaped by its map (GLASS_STRUCTURE); the fascia's lettering map is not a glow mask
         + `#if defined( USE_MAP ) && defined( KX_GLOW_BY_MAP )\nfrontGlowAdd *= texture2D( map, vMapUv ).rgb * ${GLASS_STRUCTURE.gain.toFixed(3)};\n#endif\n`
         // round 24b: a material defining KX_GLOW_DOWN glows only on its faces turned down (the canopy's underside, lit by spill; its top stays dark)
-        + `#ifdef KX_GLOW_DOWN\nfrontGlowAdd *= max( -vFrontNy, 0.0 );\n#endif\ntotalEmissiveRadiance += frontGlowAdd;`);
+        + `#ifdef KX_GLOW_DOWN\nfrontGlowAdd *= max( -vFrontNy, 0.0 );\n#endif\ntotalEmissiveRadiance += frontGlowAdd;`
+        // round 27: a material defining KX_DAY_DARK has its diffuse scaled by that factor by day, back to 1 at night (its night glow as it was)
+        + `\n#ifdef KX_DAY_DARK\ndiffuseColor.rgb *= mix( KX_DAY_DARK, 1.0, uWinNight );\n#endif`);
   };
   m.customProgramCacheKey = () => key;
   return m;
@@ -1005,6 +1012,17 @@ function frontReturn(): THREE.MeshLambertMaterial {
   frontReturnMaterial = m;
   return m;
 }
+let frontOrderMaterial: THREE.MeshLambertMaterial | undefined;
+/** Round 27: the orders' faces, the front's brick lightened by FRONT_ORDER_FACE (its texture and program). */
+function frontOrderFace(): THREE.MeshLambertMaterial {
+  if (frontOrderMaterial) return frontOrderMaterial;
+  const original = material('brickFoot') as THREE.MeshLambertMaterial;
+  const m = original.clone();
+  m.defines = { ...original.defines };
+  m.color.multiplyScalar(FRONT_ORDER_FACE);
+  frontOrderMaterial = m;
+  return m;
+}
 function frontWash(source: 'brickFoot' | 'stoneFoot', kind: 'front' | 'tower', width: number, tint = 1): THREE.MeshLambertMaterial {
   const key = `kx-front-wash-${source}-${kind}-${width}${tint === 1 ? '' : `-${tint}`}`;
   const cached = frontWashMaterials.get(key);
@@ -1319,6 +1337,7 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   // wall's face: a hole in the wall under the frame's band, inside its side strips and outside the outer order (each edge hidden behind the frame or the
   // order), plugged by a slab whose face stands `recess` back; the arc is six straight steps (the order covers it), so the shadow pass stays in budget
   const panels: THREE.Path[] = [];
+  const heads: [number, number, number][] = []; // round 27: each panel's top edge, (x from, x to, y) in the mesh's frame
   {
     const { band, strip } = FRONT_TYMPANUM, rH = R + FRONT_RELIEF.orders * FRONT_RELIEF.orderWidth - 0.1;
     const yH = frontTop - 0.9 - FRONT_RELIEF.bedMould.height - FRONT_RELIEF.shadowLine - 0.1 - band + 0.05, n = 6;
@@ -1330,12 +1349,14 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
         const ao = Math.atan2(Math.sqrt(Math.max(0, rH * rH - (xo - uc) ** 2)), xo - uc), ai = Math.atan2(yH - sp, xi - uc);
         const pts = [new THREE.Vector2(xo - fx0, yH)];
         for (let k = 0; k <= n; k++) { const a = ai + ((ao - ai) * k) / n; pts.push(new THREE.Vector2(uc + rH * Math.cos(a) - fx0, sp + rH * Math.sin(a))); }
+        heads.push([xo - fx0, xi - fx0, yH]);
         if (xo > uc) pts.reverse();
         panels.push(new THREE.Path(xo < uc ? pts : [pts[pts.length - 1]!, ...pts.slice(0, -1)]));
       }
     });
     outline.holes.push(...panels);
   }
+  const orderParts = new Set<THREE.BufferGeometry>(); // round 27: the orders, their faces in FRONT_ORDER_FACE
   const frontParts: THREE.BufferGeometry[] = [new THREE.ExtrudeGeometry(outline, { depth: FRONT_THICK, bevelEnabled: false, curveSegments: 40 })];
   for (const h of panels) frontParts.push(new THREE.ExtrudeGeometry(new THREE.Shape(h.getPoints()), { depth: FRONT_THICK - FRONT_TYMPANUM.recess, bevelEnabled: false }));
   // each great arch's reveal: three brick orders, the outermost standing furthest forward, each inner one a step back toward the glass
@@ -1357,11 +1378,12 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
       }
       g.computeVertexNormals();
       frontParts.push(g);
+      orderParts.add(g);
     }
     if (FRONT_RELIEF.innerOrder) {
       // the fourth order, inside the opening and a step back from the third: flush with the wall's face, to the springing. Only its face
       // and its inner side are built (its outer side is the opening's own, its back is unseen): the shadow pass has 335 triangles to spare
-      const u = uc - fx0, w = FRONT_RELIEF.orderWidth, n = 16, inner = new Batch();
+      const u = uc - fx0, w = FRONT_RELIEF.orderWidth, n = 14, inner = new Batch(); // round 27: 14 steps (was 16), its 16 triangles a vault paying for the panels' heads
       for (let k = 0; k < n; k++) {
         const [a0, a1] = [(k * Math.PI) / n, ((k + 1) * Math.PI) / n];
         const p = (r: number, a: number, z: number): V3 => [u + r * Math.cos(a), sp + r * Math.sin(a), z];
@@ -1375,7 +1397,14 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   // round 25 (front-round-4 score, A2: the orders' steps and the spandrel recess did not read; A3: the porches did not read as voids): every extruded part's
   // side walls (its returns: the orders' step faces, the spandrel panels' and the porch openings' reveals) in a darker shade of the brick
   // (FRONT_RETURN), its caps (the faces) in the brick itself: the mesh's two groups, no new triangle
-  const faces: THREE.BufferGeometry[] = [], returns: THREE.BufferGeometry[] = [];
+  // round 27 (front-round-6 score, A2): each spandrel panel's head, under the frame's band, in the return tone (FRONT_PANEL_HEAD): a strip on the panel's
+  // face, its inner end behind the orders; 2 triangles a panel, paid for by the inner order's coarser arc
+  {
+    const head = new Batch(), z = FRONT_THICK - FRONT_TYMPANUM.recess + 0.005, h = FRONT_PANEL_HEAD.height;
+    for (const [x0, x1, y] of heads) head.poly([[x0, y - h, z], [x1, y - h, z], [x1, y, z], [x0, y, z]], undefined, { facing: [0, 0, 1] });
+    if (heads.length) { const hg = plainGeometry(head.build().toNonIndexed()); hg.addGroup(0, hg.getAttribute('position').count, 1); frontParts.push(hg); }
+  }
+  const faces: THREE.BufferGeometry[] = [], returns: THREE.BufferGeometry[] = [], orderFaces: THREE.BufferGeometry[] = [];
   for (const g of frontParts) {
     const ng = g.index ? g.toNonIndexed() : g;
     if (!ng.groups.length) { faces.push(ng); continue; }
@@ -1385,13 +1414,13 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
         const a = ng.getAttribute(name) as THREE.BufferAttribute | undefined;
         if (a) part.setAttribute(name, new THREE.BufferAttribute((a.array as Float32Array).slice(grp.start * a.itemSize, (grp.start + grp.count) * a.itemSize), a.itemSize));
       }
-      (grp.materialIndex === 1 ? returns : faces).push(part);
+      (grp.materialIndex === 1 ? returns : orderParts.has(g) ? orderFaces : faces).push(part);
     }
   }
-  const frontGeo = mergeGeometries([mergeGeometries(faces, false), mergeGeometries(returns, false)], true);
+  const frontGeo = mergeGeometries([mergeGeometries(faces, false), mergeGeometries(returns, false), mergeGeometries(orderFaces, false)], true);
   frontGeo.translate(0, 0, -FRONT_THICK);
   disposables.push(...frontParts);
-  const frontMesh = withBuildingNightMaterial(mesh(frontGeo, [material('brickFoot'), frontReturn()], 'shed-front'), [frontWash('brickFoot', 'front', FW), frontWash('brickFoot', 'front', FW, FRONT_RETURN)]);
+  const frontMesh = withBuildingNightMaterial(mesh(frontGeo, [material('brickFoot'), frontReturn(), frontOrderFace()], 'shed-front'), [frontWash('brickFoot', 'front', FW), frontWash('brickFoot', 'front', FW, FRONT_RETURN), frontWash('brickFoot', 'front', FW, FRONT_ORDER_FACE)]);
   frontMesh.position.x = fx0;
   group.add(frontMesh);
   // stone dressings that stand proud of the front plane (z = 0) by `out` metres
@@ -1608,7 +1637,7 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
     frontNightGlow(Object.assign(fasciaMaterial(), { defines: { KX_GLOW_BY_MAP: '' } }), FRONT_NIGHT.fascia, 'kx-front-infill-fascia'), // round 25: its glow by its map, so the pale lettering glows and the navy hardly (blue on blue before)
     frontNightGlow(new THREE.MeshLambertMaterial({ color: FRONT_COLOURS.downlight, emissive: 0x141414 }), FRONT_NIGHT.downlight, 'kx-front-downlight'),
     // round 20: the concourse behind the screens, dim and warm by day, glowing warm after dark (the glass's night colour and its fade)
-    frontNightGlow(new THREE.MeshLambertMaterial({ color: PORCH_DEPTH.interior, emissive: 0x140e08, map: interiorGradientTexture() }), FRONT_NIGHT.glass, 'kx-front-infill-interior', [entryFoot + FRONT_GLOW_FADE.from, entryFoot + FRONT_GLOW_FADE.to, FRONT_GLOW_FADE.head]),
+    frontNightGlow(Object.assign(new THREE.MeshLambertMaterial({ color: PORCH_DEPTH.interior, emissive: 0x140e08, map: interiorGradientTexture() }), { defines: { KX_DAY_DARK: PORCH_DEPTH.dayDark.toFixed(3) } }), FRONT_NIGHT.glass, 'kx-front-infill-interior', [entryFoot + FRONT_GLOW_FADE.from, entryFoot + FRONT_GLOW_FADE.to, FRONT_GLOW_FADE.head]),
     // round 23: the heads' soffits, pale stone lit from inside by day, warm after dark (the downlights' night colour)
     frontNightGlow(new THREE.MeshLambertMaterial({ color: PORCH_DEPTH.soffit }), FRONT_NIGHT.downlight, 'kx-front-infill-soffit'), // round 24: no day emissive (it read as a light tan shelf)
     frontNightGlow(new THREE.MeshLambertMaterial({ color: FRONT_COLOURS.steel, emissive: FRONT_COLOURS.steelLift }), FRONT_NIGHT.shade, 'kx-front-infill-shade'),
