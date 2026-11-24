@@ -25,6 +25,8 @@ MUTATIONS = [
     ('end rib cap back on the skin', 'web/src/shed.ts', 'const endR = (rs + ROOF_EXTERIOR.endRib[1] / 2) / Math.cos((a1 - a0) / (ARC_STEPS * 4));', 'const endR = rs + ROOF_EXTERIOR.endRib[1] / 2;', 'wholly over'),
     ('seams sunk into the glass', 'web/src/shed.ts', 'const seamR = rs + ROOF_EXTERIOR.seam[1];', 'const seamR = rs + ROOF_EXTERIOR.seam[1] - 0.06;', 'wholly over'),
     ('the ribs\' top boom through the glass', 'web/src/shed.ts', '  const rt = r + 0.1;', '  const rt = r + 0.25;', 'wholly under'),
+    ('outside structure without depth again', 'web/src/shed.ts', '    barsMat.depthWrite = o > 0;\n', '    barsMat.depthWrite = o > 0.98;\n', 'writes depth'),
+    ('outside structure writing depth inside', 'web/src/shed.ts', '    barsMat.depthWrite = o > 0;\n', '    barsMat.depthWrite = true;\n', 'writes depth'),
     ('the ribs\' top boom just touching it', 'web/src/shed.ts', '  const rt = r + 0.1;', '  const rt = r + 0.14;', 'wholly under'),
 ]
 
@@ -68,4 +70,4 @@ with tempfile.TemporaryDirectory(prefix='kx-crown-round12-', dir=out) as tmp:
             failures.append(label)
             print(f'[SURVIVED] {label}', flush=True)
     print(f'{caught}/{len(MUTATIONS)} mutations caught; baseline {len(passing)} tests passed; survivors: {failures}')
-    raise SystemExit(1 if failures or len(passing) != 2 else 0)
+    raise SystemExit(1 if failures or len(passing) != 3 else 0)

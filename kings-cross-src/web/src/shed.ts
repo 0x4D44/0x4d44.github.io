@@ -1165,7 +1165,10 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
     local.copy(camera.position).applyMatrix4(inverse);
     const o = roofBarsOpacity([local.x, local.y, local.z], layout, roofMode);
     barsMat.opacity = o;
-    barsMat.depthWrite = o > 0.98;
+    // round 12 (the gable-oblique stipple): it draws after the glass (renderOrder 4) and, from outside, often partly transparent (0.82 at gable-oblique); without
+    // depth its own faces (rail posts, caps' sides, seams) overdrew one another in index order, far over near. Outside it writes depth at any opacity; inside
+    // (opacity 0) it writes none, as before
+    barsMat.depthWrite = o > 0;
   };
   // after the glass (3): drawn before it, the milky crown glass blended over the caps and bars and hid them from outside (the scorer's roof-exterior-1a)
   roofBars.renderOrder = 4;

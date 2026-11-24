@@ -502,11 +502,12 @@ export function addCrownBelow(material: THREE.MeshLambertMaterial): void {
  * 11 times. ASSUMED amounts. From inside the level is 0 and the face seen looks down, so the branch is skipped twice over and the glass is drawn as before.
  */
 /**
- * Round 12 (crown-glass-round-1 score, items 4 and 5): from outside by day the glass read a tone too light and flat (front-d: mid grey, reflective), so `pane`
- * is 1.05 (was 1.3: about 18 sRGB levels darker at a pane's tone) and the sky is reflected by the view's angle (`sky`, Schlick's Fresnel from `f0`, mixed in at
+ * Round 12 (crown-glass-round-1 score, items 4 and 5): from outside by day the glass read a tone too light and flat (front-d: mid grey, reflective). The pane
+ * was over `max` by day (the scorer's 184-209 sRGB on screen; 1.3 and then 1.05 changed only the channels under the cap, a warm shift), so the lift never
+ * reached it: `pane` is 0.75, a darkening, which the cap does not touch; through ACES filmic about 17 sRGB levels darker at a pane's 184-209 and the sky is reflected by the view's angle (`sky`, Schlick's Fresnel from `f0`, mixed in at
  * up to `reflect`: almost nothing looking straight down, toward the sky's grey-blue at a glancing view). ASSUMED amounts.
  */
-export const CROWN_ABOVE = { pane: 1.05, share: 0.9, paneLuma: 0.602, barLuma: 0.0667, max: 0.83, full: 0.35, sky: [0.5, 0.56, 0.64], f0: 0.04, reflect: 0.35 } as const;
+export const CROWN_ABOVE = { pane: 0.75, share: 0.9, paneLuma: 0.602, barLuma: 0.0667, max: 0.83, full: 0.35, sky: [0.5, 0.56, 0.64], f0: 0.04, reflect: 0.35 } as const;
 /**
  * Round 11, step 3: from outside the grid was mostly what shows through the glass far off (platforms, tracks, tactile strips under the glazing's far
  * opacity, GLASS_OPACITY.far): from outside the glass is drawn at least `CROWN_ALPHA` opaque (shed.ts crownAlpha: by crownOutside, and by the x-ray mode's

@@ -23,8 +23,8 @@ out.mkdir(parents=True, exist_ok=True)
 MUTATIONS = [
     ('level ignores the inside', 'web/src/shed.ts', "  return smoothstep(0, ROOF_EXTERIOR.fade, Math.hypot(dx, dy, dz));\n}", "  return smoothstep(-ROOF_EXTERIOR.fade, ROOF_EXTERIOR.fade, Math.hypot(dx, dy, dz));\n}", 'crownOutside is 0'),
     ('crownOutside takes the roof mode', 'web/src/shed.ts', "export function crownOutside(cam: V3, layout: Pick<ShedLayout, 'width' | 'length' | 'crown'>): number {", "export function crownOutside(cam: V3, layout: Pick<ShedLayout, 'width' | 'length' | 'crown'>, _mode?: RoofMode): number {", 'crownOutside is 0'),
-    ('bars left dark', 'web/src/lighting.ts', 'pane: 1.05, share: 0.9,', 'pane: 1.05, share: 0.5,', 'crownAbove: nothing at level 0'),
-    ('panes lifted too far', 'web/src/lighting.ts', 'pane: 1.05, share: 0.9,', 'pane: 1.3, share: 0.9,', 'crownAbove: nothing at level 0'),
+    ('bars left dark', 'web/src/lighting.ts', 'pane: 0.75, share: 0.9,', 'pane: 0.75, share: 0.5,', 'crownAbove: nothing at level 0'),
+    ('panes lifted too far', 'web/src/lighting.ts', 'pane: 0.75, share: 0.9,', 'pane: 1.3, share: 0.9,', 'crownAbove: nothing at level 0'),
     ('lift applied at level 0', 'web/src/lighting.ts', 'return min( mix( c, lifted, w ),', 'return min( mix( c, lifted, w + 0.3 ),', 'crownAbove: nothing at level 0'),
     ('no cap', 'web/src/lighting.ts', 'return min( mix( c, lifted, w ), max( c, vec3(', 'return max( mix( c, lifted, w ), min( c, vec3(', 'crownAbove: nothing at level 0'),
     ('pane tone not the painted one', 'web/src/lighting.ts', 'paneLuma: 0.602,', 'paneLuma: 0.7,', 'crownAbove: nothing at level 0'),
@@ -44,7 +44,7 @@ MUTATIONS = [
     ('no sky reflection', 'web/src/lighting.ts', 'f0: 0.04, reflect: 0.35', 'f0: 0.04, reflect: 0.0', 'round 12'),
     ('reflection inverted', 'web/src/lighting.ts', 'pow( 1.0 - clamp( ndv, 0.0, 1.0 ), 5.0 )', 'pow( clamp( ndv, 0.0, 1.0 ), 5.0 )', 'round 12'),
     ('reflection to the sky', 'web/src/lighting.ts', 'f0: 0.04, reflect: 0.35', 'f0: 0.04, reflect: 1.0', 'round 12'),
-    ('pane tone back to 1.3', 'web/src/lighting.ts', 'pane: 1.05, share: 0.9,', 'pane: 1.3, share: 0.9,', 'round 12'),
+    ('pane tone back to 1.05', 'web/src/lighting.ts', 'pane: 0.75, share: 0.9,', 'pane: 1.05, share: 0.9,', 'round 12'),
     ('down faces not faded from outside', 'web/src/lighting.ts', 'diffuseColor.a * ( 1.0 - uCrownAbove )', 'diffuseColor.a', "the shed's glass carries it"),
     ('level the cladding opacity', 'web/src/shed.ts', '    crownAbove.value = crownOutside([local.x, local.y, local.z], layout);\n', '    crownAbove.value = roofOpacity([local.x, local.y, local.z], layout, roofMode);\n', "the shed's glass carries it"),
 ]

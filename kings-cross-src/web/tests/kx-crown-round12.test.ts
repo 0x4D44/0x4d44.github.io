@@ -45,3 +45,19 @@ test('the outside structure over the crown (rib caps, end ribs, seams, rail) sta
   assert.ok(d.length > 10000, `${d.length} points near the glass`);
   assert.ok(d.reduce((x, y) => Math.min(x, y), Infinity) >= -1e-4, `the lowest is ${d.reduce((x, y) => Math.min(x, y), Infinity).toFixed(3)} m from the glass`);
 });
+
+test('the outside structure, which draws after the glass, writes depth whenever it shows from outside, so its own faces do not overdraw, and none inside', () => {
+  const bars = group.getObjectByName('shed-roof-bars') as THREE.Mesh, m = bars.material as THREE.Material;
+  group.updateMatrixWorld(true);
+  const at = (x: number, y: number, z: number): [number, boolean] => {
+    const cam = new THREE.PerspectiveCamera();
+    cam.position.set(x, y, z).applyMatrix4(group.matrixWorld);
+    bars.onBeforeRender(undefined as never, undefined as never, cam, bars.geometry, m, null as never);
+    return [m.opacity, m.depthWrite];
+  };
+  assert.ok(bars.renderOrder > 3, 'after the glass');
+  const [o, dw] = at(layout.width + 40, 16, -layout.length - 30); // about gable-oblique's stand: partly transparent there
+  assert.ok(o > 0.3 && o < 0.98 && dw, `outside at opacity ${o.toFixed(2)}: writes depth ${dw}`);
+  const [oi, dwi] = at(layout.spine - 10, 2.5, -100);
+  assert.ok(oi === 0 && !dwi, `inside: opacity ${oi}, writes depth ${dwi}`);
+});

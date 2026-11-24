@@ -48,13 +48,15 @@ test('crownAbove: nothing at level 0; at full the pane is lifted about 1.3 times
   for (const t of [paneRgb, barRgb]) assert.deepEqual(above(lit(t, 0.6), 0, t), lit(t, 0.6), 'level 0: the colour as it was');
   const pane = above(lit(paneRgb, 0.6), 1, paneRgb), bar = above(lit(barRgb, 0.6), 1, barRgb);
   const lift = luma(pane) / luma(lit(paneRgb, 0.6)), was = luma(barRgb) / luma(paneRgb), now = luma(bar) / luma(pane);
-  // re-pinned 2026-11-24 (round 12, the score's item 5: a tone too light from outside): pane 1.3 -> 1.05, the band moved with it, the same 0.1 wide
-  assert.ok(lift >= 1.0 && lift <= 1.1, `a pane lifted ${lift.toFixed(2)} times`);
+  // re-pinned 2026-11-24 (round 12, the score's item 5: a tone too light from outside; the pane sat over the cap, so the lift never reached it): pane 1.3 ->
+  // 0.75, a darkening; the band moved with it, the same 0.1 wide
+  assert.ok(lift >= 0.7 && lift <= 0.8, `a pane taken to ${lift.toFixed(2)} of its tone`);
   assert.ok(was < 0.15 && now >= 0.85 && now <= 0.95, `a bar against the pane ${now.toFixed(3)}, from ${was.toFixed(3)}`);
   const half = paneRgb.map((x, i) => (x + (barRgb[i] as number)) / 2), mid = luma(above(lit(half, 0.6), 1, half)) / luma(pane);
   assert.ok(mid > now - 0.1 && mid < 1.05, `a texel half bar (a filtered edge) comes out with the rest, not as a bright line: ${mid.toFixed(3)}`);
   const bright = [0.8, 0.86, 0.95], capped = above(bright, 1, paneRgb);
-  capped.forEach((x, i) => assert.ok(x <= Math.max(bright[i] as number, A.max) + 1e-9 && x >= (bright[i] as number) - 1e-9, `channel ${i}: ${x.toFixed(3)} capped at ${A.max}, never darker`));
+  // re-pinned 2026-11-24 (round 12): a pane over the cap is darkened by `pane` (it used to be left as it was, the cap binding), still never pushed past the cap
+  capped.forEach((x, i) => assert.ok(x <= Math.max(bright[i] as number, A.max) + 1e-9 && Math.abs(x - A.pane * (bright[i] as number)) < 0.02, `channel ${i}: ${x.toFixed(3)}, the pane's ${A.pane} of ${bright[i]}`));
   const sheen = above(lit(paneRgb, 0.6), 1, paneRgb.map((x) => x * 1.15));
   assert.ok(Math.abs(luma(sheen) / luma(pane) - 1) < 1e-6, 'the lighter sheen band counts as pane');
 });
@@ -118,9 +120,14 @@ test('the shed\'s glass carries it, by day only and on a face that looks up; wit
 test('round 12: from outside the pane sits about 15 to 20 sRGB levels below round 11\'s, and the sky is reflected by the view\'s angle, subtly', () => {
   const src = L.CROWN_ABOVE_GLSL as string, A = L.CROWN_ABOVE as { pane: number; sky: number[]; reflect: number };
   const glsl = new Glsl(src), env = { vars: {}, fns: {} };
+  // on screen through three's ACES filmic (a grey's fit; exposure scales the input, so the ratio holds at any): a pane the scorer read at 184-209, over the cap,
+  // which left it as it was until now
   const enc = (x: number): number => 255 * (x <= 0.0031308 ? 12.92 * x : 1.055 * x ** (1 / 2.4) - 0.055);
-  const pane = 0.6 * 0.602, drop = enc(pane * 1.3) - enc(pane * A.pane);
-  assert.ok(drop >= 12 && drop <= 22, `a pane ${drop.toFixed(1)} sRGB levels darker than at 1.3`);
+  const aces = (x: number): number => { const v = x / 0.6; return Math.min(1, Math.max(0, (v * (v + 0.0245786) - 0.000090537) / (v * (0.983729 * v + 0.432951) + 0.238081))); };
+  for (const x of [0.4, 0.53, 0.64]) {
+    const drop = enc(aces(x)) - enc(aces(x * A.pane));
+    assert.ok(drop >= 14 && drop <= 22, `a pane at ${enc(aces(x)).toFixed(0)} goes ${drop.toFixed(1)} sRGB levels darker`);
+  }
   const c = [0.3, 0.34, 0.38], at = (ndv: number): number[] => glsl.call('crownAbove', [c, 1, 0.602, ndv], env) as number[];
   const towardSky = (o: number[]): number => { const base = c.map((x) => x * A.pane); return Math.hypot(...base.map((x, i) => x - (o[i] as number))) / Math.hypot(...base.map((x, i) => x - (A.sky[i] as number))); };
   const square = towardSky(at(1)), glancing = towardSky(at(0.05));
