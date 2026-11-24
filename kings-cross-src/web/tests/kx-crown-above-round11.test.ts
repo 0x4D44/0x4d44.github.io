@@ -42,12 +42,14 @@ test('crownAbove: nothing at level 0; at full the pane is lifted about 1.3 times
   const paneRgb = [178, 208, 230].map(lin), barRgb = [66, 74, 82].map(lin);
   assert.ok(Math.abs(luma(paneRgb) - A.paneLuma) < 0.002 && Math.abs(luma(barRgb) - A.barLuma) < 0.002, `the pane ${luma(paneRgb).toFixed(4)} and the bar ${luma(barRgb).toFixed(4)} as painted`);
   const glsl = new Glsl(src), env = { vars: {}, fns: {} };
-  const above = (c: number[], w: number, texel: number[]): number[] => glsl.call('crownAbove', [c, w, luma(texel)], env) as number[];
+  // re-pinned 2026-11-24 (round 12): crownAbove takes the view's cosine too (the sky's reflection); 1 here, looking straight at the face, where it is least
+  const above = (c: number[], w: number, texel: number[], ndv = 1): number[] => glsl.call('crownAbove', [c, w, luma(texel), ndv], env) as number[];
   const lit = (rgb: number[], k: number): number[] => rgb.map((x) => x * k); // the texel under a light: what outgoingLight is
   for (const t of [paneRgb, barRgb]) assert.deepEqual(above(lit(t, 0.6), 0, t), lit(t, 0.6), 'level 0: the colour as it was');
   const pane = above(lit(paneRgb, 0.6), 1, paneRgb), bar = above(lit(barRgb, 0.6), 1, barRgb);
   const lift = luma(pane) / luma(lit(paneRgb, 0.6)), was = luma(barRgb) / luma(paneRgb), now = luma(bar) / luma(pane);
-  assert.ok(lift >= 1.25 && lift <= 1.35, `a pane lifted ${lift.toFixed(2)} times`);
+  // re-pinned 2026-11-24 (round 12, the score's item 5: a tone too light from outside): pane 1.3 -> 1.05, the band moved with it, the same 0.1 wide
+  assert.ok(lift >= 1.0 && lift <= 1.1, `a pane lifted ${lift.toFixed(2)} times`);
   assert.ok(was < 0.15 && now >= 0.85 && now <= 0.95, `a bar against the pane ${now.toFixed(3)}, from ${was.toFixed(3)}`);
   const half = paneRgb.map((x, i) => (x + (barRgb[i] as number)) / 2), mid = luma(above(lit(half, 0.6), 1, half)) / luma(pane);
   assert.ok(mid > now - 0.1 && mid < 1.05, `a texel half bar (a filtered edge) comes out with the rest, not as a bright line: ${mid.toFixed(3)}`);
@@ -68,7 +70,7 @@ test('the shed\'s glass carries it, by day only and on a face that looks up; wit
   assert.equal(f.split(line).length - 1, 1, 'the line once');
   assert.ok(line.includes('\nif ( uCrownAbove * uCrownBelow > 0.0 )') && line.includes('clamp( dot( normal, viewMatrix[ 1 ].xyz ), 0.0, 1.0 )'), 'skipped at level 0 or by night; by how far the face looks up');
   assert.ok(line.includes('dot( sampledDiffuseColor.rgb,') && f.indexOf('#include <map_fragment>') < f.indexOf(line) && f.indexOf(line) < f.indexOf('#include <opaque_fragment>'), 'read off the texel after the map is sampled, before the output');
-  assert.ok(line.includes('), crownTexel );\n'), 'the lift is masked by that texel');
+  assert.ok(line.includes('), crownTexel, dot( normal, normalize( vViewPosition ) ) );\n'), 'the lift is masked by that texel, and reflects by the view\'s cosine');
   // the program before round 11: the same glass, given only the look from below
   const was = (material('shedGlass') as THREE.MeshLambertMaterial).clone();
   lighting.addCrownBelow(was);
@@ -79,7 +81,8 @@ test('the shed\'s glass carries it, by day only and on a face that looks up; wit
   for (const k of Object.keys(old.uniforms)) assert.ok(now.uniforms[k] === old.uniforms[k], `${k} the shared one`);
   // the level follows the camera: 0 for a platform eye and under the crown, 1 from the overview's distance
   const level = now.uniforms.uCrownAbove as THREE.IUniform<number>, alpha = now.uniforms.uCrownAlpha as THREE.IUniform<number>;
-  assert.ok(line.endsWith('\nif ( uCrownAlpha * uCrownBelow > 0.0 ) diffuseColor.a = max( diffuseColor.a, uCrownAlpha );'), 'by day, the alpha raised to at least uCrownAlpha, never lowered');
+  // re-pinned 2026-11-24 (round 12, the gable-oblique stipple): a face that looks down fades out with the level from outside; one that looks up is raised as before
+  assert.ok(line.endsWith('\nif ( uCrownAlpha * uCrownBelow > 0.0 ) diffuseColor.a = mix( max( diffuseColor.a, uCrownAlpha ), diffuseColor.a * ( 1.0 - uCrownAbove ), smoothstep( 0.0, 0.35, clamp( dot( normal, -viewMatrix[ 1 ].xyz ), 0.0, 1.0 ) ) );'), 'by day, raised to at least uCrownAlpha looking up, faded out with the level looking down');
   const clad = group.getObjectByName('shed-roof-cladding') as THREE.Mesh;
   const look = (g: THREE.Group, x: number, y: number, z: number): { level: number; alpha: number; opacity: number } => { // a point in the shed's frame
     const m = g.getObjectByName('shed-roof-glass') as THREE.Mesh, c = g.getObjectByName('shed-roof-cladding') as THREE.Mesh, mat = m.material as THREE.MeshLambertMaterial;
@@ -110,4 +113,19 @@ test('the shed\'s glass carries it, by day only and on a face that looks up; wit
   assert.equal(eye(layout.spine + 10, layout.crown - 1, -200), 0, 'just under the crown');
   assert.equal(eye(layout.spine, 60, 200), 1, 'from far off, outside');
   assert.ok(!((group.getObjectByName('shed-roof-cladding') as THREE.Mesh).material as THREE.Material).customProgramCacheKey().includes('crownAbove'), 'the glass only');
+});
+
+test('round 12: from outside the pane sits about 15 to 20 sRGB levels below round 11\'s, and the sky is reflected by the view\'s angle, subtly', () => {
+  const src = L.CROWN_ABOVE_GLSL as string, A = L.CROWN_ABOVE as { pane: number; sky: number[]; reflect: number };
+  const glsl = new Glsl(src), env = { vars: {}, fns: {} };
+  const enc = (x: number): number => 255 * (x <= 0.0031308 ? 12.92 * x : 1.055 * x ** (1 / 2.4) - 0.055);
+  const pane = 0.6 * 0.602, drop = enc(pane * 1.3) - enc(pane * A.pane);
+  assert.ok(drop >= 12 && drop <= 22, `a pane ${drop.toFixed(1)} sRGB levels darker than at 1.3`);
+  const c = [0.3, 0.34, 0.38], at = (ndv: number): number[] => glsl.call('crownAbove', [c, 1, 0.602, ndv], env) as number[];
+  const towardSky = (o: number[]): number => { const base = c.map((x) => x * A.pane); return Math.hypot(...base.map((x, i) => x - (o[i] as number))) / Math.hypot(...base.map((x, i) => x - (A.sky[i] as number))); };
+  const square = towardSky(at(1)), glancing = towardSky(at(0.05));
+  assert.ok(square < 0.03, `looking straight down, almost no sky: ${square.toFixed(3)} of the way`);
+  assert.ok(glancing > 0.2 && glancing <= 0.4, `at a glancing view, toward the sky but not to it: ${glancing.toFixed(3)} of the way`);
+  assert.ok(towardSky(at(0.4)) > square && towardSky(at(0.4)) < glancing, 'rising smoothly between');
+  assert.deepEqual(glsl.call('crownAbove', [c, 0, 0.602, 0.05], env), c, 'level 0: nothing, at any angle');
 });

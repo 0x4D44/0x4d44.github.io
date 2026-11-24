@@ -74,7 +74,7 @@ M = [
  ('the roof bars solid in x-ray', '    barsMat.opacity = o;\n', ''),
  ('no eaves gutters', '    outer.box([edge, sp + gh / 2 - 0.1, -L / 2], [gw, gh, L]);\n', ''),
  ('the roof bars pale and self-lit', "const barsMat = (material('ribPaint')", "const barsMat = (material('lining')"),
- ('the rib caps a metre off the skin', 'const capR = rs + ROOF_EXTERIOR.ribCap[1] / 2;', 'const capR = rs + 1;'),
+ ('the rib caps a metre off the skin', 'const capR = (rs + ROOF_EXTERIOR.ribCap[1] / 2) / Math.cos((a1 - a0) / (ARC_STEPS * 4));', 'const capR = rs + 1;'),
  ('the roof bars seen from inside again: the ghost lattice', 'return roofOpacity(cam, layout, mode) * smoothstep(0, ROOF_EXTERIOR.fade, Math.hypot(dx, dy, dz));', 'return roofOpacity(cam, layout, mode);'),
  ('the pop at the shed\'s edge back', 'return roofOpacity(cam, layout, mode) * smoothstep(0, ROOF_EXTERIOR.fade, Math.hypot(dx, dy, dz));', 'return Math.hypot(dx, dy, dz) > 0 ? roofOpacity(cam, layout, mode) : 0;'),
  ('the roof bars drawn under the crown glass again', 'roofBars.renderOrder = 4;', 'roofBars.renderOrder = 2;'),

@@ -1100,7 +1100,8 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   const rs = R + ROOF_SKIN;
   centres.forEach((uc, vault) => {
     const [a0, a1] = [vault === 1 ? cut : 0, vault === 0 ? Math.PI - cut : Math.PI];
-    const capR = rs + ROOF_EXTERIOR.ribCap[1] / 2;
+    // set out by the chords' sag (round 12): a cap's underside, straight between its ends, stays wholly over the glass, never dipping through it
+    const capR = (rs + ROOF_EXTERIOR.ribCap[1] / 2) / Math.cos((a1 - a0) / (ARC_STEPS * 4));
     for (const v of ribPositions(L)) {
       for (let i = 0; i < ARC_STEPS * 2; i++) {
         const p = vaultPoint(uc, sp, capR, a0 + ((a1 - a0) * i) / (ARC_STEPS * 2));
@@ -1109,7 +1110,7 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
       }
     }
     // the heavier end rib on the north gable's edge
-    const endR = rs + ROOF_EXTERIOR.endRib[1] / 2;
+    const endR = (rs + ROOF_EXTERIOR.endRib[1] / 2) / Math.cos((a1 - a0) / (ARC_STEPS * 4)); // as the caps: wholly over the glass
     for (let i = 0; i < ARC_STEPS * 2; i++) {
       const p = vaultPoint(uc, sp, endR, a0 + ((a1 - a0) * i) / (ARC_STEPS * 2));
       const q = vaultPoint(uc, sp, endR, a0 + ((a1 - a0) * (i + 1)) / (ARC_STEPS * 2));

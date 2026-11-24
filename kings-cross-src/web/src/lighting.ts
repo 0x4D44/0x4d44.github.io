@@ -501,7 +501,12 @@ export function addCrownBelow(material: THREE.MeshLambertMaterial): void {
  * CROWN_BELOW's wider pane mask) changed roof-above by about 3/255 and left the lines; a bar is a ninth of the pane's tone in linear light, so it needs about
  * 11 times. ASSUMED amounts. From inside the level is 0 and the face seen looks down, so the branch is skipped twice over and the glass is drawn as before.
  */
-export const CROWN_ABOVE = { pane: 1.3, share: 0.9, paneLuma: 0.602, barLuma: 0.0667, max: 0.83, full: 0.35 } as const;
+/**
+ * Round 12 (crown-glass-round-1 score, items 4 and 5): from outside by day the glass read a tone too light and flat (front-d: mid grey, reflective), so `pane`
+ * is 1.05 (was 1.3: about 18 sRGB levels darker at a pane's tone) and the sky is reflected by the view's angle (`sky`, Schlick's Fresnel from `f0`, mixed in at
+ * up to `reflect`: almost nothing looking straight down, toward the sky's grey-blue at a glancing view). ASSUMED amounts.
+ */
+export const CROWN_ABOVE = { pane: 1.05, share: 0.9, paneLuma: 0.602, barLuma: 0.0667, max: 0.83, full: 0.35, sky: [0.5, 0.56, 0.64], f0: 0.04, reflect: 0.35 } as const;
 /**
  * Round 11, step 3: from outside the grid was mostly what shows through the glass far off (platforms, tracks, tactile strips under the glazing's far
  * opacity, GLASS_OPACITY.far): from outside the glass is drawn at least `CROWN_ALPHA` opaque (shed.ts crownAlpha: by crownOutside, and by the x-ray mode's
@@ -509,10 +514,12 @@ export const CROWN_ABOVE = { pane: 1.3, share: 0.9, paneLuma: 0.602, barLuma: 0.
  */
 export const CROWN_ALPHA = 0.85;
 export const CROWN_ABOVE_GLSL = /* glsl */`
-vec3 crownAbove( vec3 c, float w, float texel ) {
+vec3 crownAbove( vec3 c, float w, float texel, float ndv ) {
   float bar = clamp( ( ${CROWN_ABOVE.paneLuma.toFixed(4)} - texel ) / ${(CROWN_ABOVE.paneLuma - CROWN_ABOVE.barLuma).toFixed(4)}, 0.0, 1.0 );
   float f = ${CROWN_ABOVE.pane.toFixed(2)} * ( 1.0 - bar + ${CROWN_ABOVE.share.toFixed(2)} * bar ) / ( 1.0 - bar + ${(CROWN_ABOVE.barLuma / CROWN_ABOVE.paneLuma).toFixed(4)} * bar );
-  return min( c * mix( 1.0, f, w ), max( c, vec3( ${CROWN_ABOVE.max.toFixed(2)} ) ) );
+  float fresnel = ${CROWN_ABOVE.f0.toFixed(2)} + ${(1 - CROWN_ABOVE.f0).toFixed(2)} * pow( 1.0 - clamp( ndv, 0.0, 1.0 ), 5.0 );
+  vec3 lifted = mix( c * f, vec3( ${CROWN_ABOVE.sky.map((v) => v.toFixed(2)).join(', ')} ), ${CROWN_ABOVE.reflect.toFixed(2)} * fresnel );
+  return min( mix( c, lifted, w ), max( c, vec3( ${CROWN_ABOVE.max.toFixed(2)} ) ) );
 }
 `;
 
@@ -533,7 +540,13 @@ export function addCrownAbove(material: THREE.MeshLambertMaterial, level: THREE.
 }
 /** what addCrownAbove puts before the output: the texel's luminance, the lift by the level, by day only (CROWN_BELOW's shared level: off by night, under the moon,
  * elsewhere), and by how far the face seen looks up; then, by day, the glass's alpha raised to at least uCrownAlpha */
-export const CROWN_ABOVE_LINE = `#ifdef USE_MAP\nfloat crownTexel = dot( sampledDiffuseColor.rgb, vec3( 0.2126, 0.7152, 0.0722 ) );\n#else\nfloat crownTexel = ${CROWN_ABOVE.paneLuma.toFixed(4)};\n#endif\nif ( uCrownAbove * uCrownBelow > 0.0 ) outgoingLight = crownAbove( outgoingLight, uCrownAbove * uCrownBelow * smoothstep( 0.0, ${CROWN_ABOVE.full.toFixed(2)}, clamp( dot( normal, viewMatrix[ 1 ].xyz ), 0.0, 1.0 ) ), crownTexel );\nif ( uCrownAlpha * uCrownBelow > 0.0 ) diffuseColor.a = max( diffuseColor.a, uCrownAlpha );`;
+/**
+ * Round 12, the gable-oblique stipple: from outside, through the near slope's glass, the program also drew the same barrel's far slope from below (the glass
+ * is double-sided and writes no depth, so whichever triangles come later in the mesh blend over the near ones): unlifted blue panes, punched through where a
+ * rib stands in front of them, laid over the lifted near glass. From outside a face of the glass that looks down now fades out with the level (the near glass
+ * already hides it at 0.85); one that looks up is raised to at least uCrownAlpha. Inside the level is 0 and the line is skipped.
+ */
+export const CROWN_ABOVE_LINE = `#ifdef USE_MAP\nfloat crownTexel = dot( sampledDiffuseColor.rgb, vec3( 0.2126, 0.7152, 0.0722 ) );\n#else\nfloat crownTexel = ${CROWN_ABOVE.paneLuma.toFixed(4)};\n#endif\nif ( uCrownAbove * uCrownBelow > 0.0 ) outgoingLight = crownAbove( outgoingLight, uCrownAbove * uCrownBelow * smoothstep( 0.0, ${CROWN_ABOVE.full.toFixed(2)}, clamp( dot( normal, viewMatrix[ 1 ].xyz ), 0.0, 1.0 ) ), crownTexel, dot( normal, normalize( vViewPosition ) ) );\nif ( uCrownAlpha * uCrownBelow > 0.0 ) diffuseColor.a = mix( max( diffuseColor.a, uCrownAlpha ), diffuseColor.a * ( 1.0 - uCrownAbove ), smoothstep( 0.0, ${CROWN_ABOVE.full.toFixed(2)}, clamp( dot( normal, -viewMatrix[ 1 ].xyz ), 0.0, 1.0 ) ) );`;
 
 /** The directional light's shadow line in three's lights chunk (as this module's patch above leaves it), with the crown's sky fill wrapped round it: the shade lifted, the sun's streaks left at 1. */
 function shedSoftenedLights(): string {
