@@ -664,6 +664,16 @@ export const ROOF_EXTERIOR = {
    * grey-blue, between the ribs' and the glass's, so they read as glazing texture (`seamColour`, the colour they are drawn in).
    */
   seamColour: 0x7d8a94,
+  /**
+   * Round 10 (the end-rib-round-1 score, section 5: the end rib reads as a flat black band; the crown strip still as a grid). R-kx-front-d shows the gable's
+   * rib as a built-up member, its edges picked out as lines, not one flat face: `ribLip` [radial width, how far proud of the rib's north face, how far the outer
+   * one overhangs the rib's top] is a flange along each edge of that face, 0.12 m by 0.12 m, the outer one 0.08 m past the top (ASSUMED: the photograph shows
+   * the edge lines, not their size). R-kx-front-e, from above, shows the rib's top catching the sky a little lighter than its face: `ribSheen` is the colour of
+   * that top (the ring's outer face and the end-rib cap's top), lighter than the ribs' paint, darker than the seams. Both are outside structure
+   * (shed-roof-bars), which fades to nothing inside, so the views from under the roof do not change and the shadow pass gains nothing.
+   */
+  ribLip: [0.12, 0.12, 0.08],
+  ribSheen: 0x5a646d,
   /** the distance outside the shed over which the outside structure fades in from nothing (a camera rising above the crown counts four times): see roofBarsOpacity */
   fade: 8,
 } as const;
@@ -1071,6 +1081,7 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   const outer = new Batch({ colored: true }); // white (the ribs' paint) but for the seams, paler (ROOF_EXTERIOR.seamColour)
   const ribRgb = (material('ribPaint') as THREE.MeshLambertMaterial).color, seamRgb = new THREE.Color(ROOF_EXTERIOR.seamColour);
   const seamPaint: [number, number, number] = [seamRgb.r / ribRgb.r, seamRgb.g / ribRgb.g, seamRgb.b / ribRgb.b]; // over 1: the vertex colour multiplies the paint
+  const sheenRgb = new THREE.Color(ROOF_EXTERIOR.ribSheen), sheenPaint: [number, number, number] = [sheenRgb.r / ribRgb.r, sheenRgb.g / ribRgb.g, sheenRgb.b / ribRgb.b];
   const rs = R + ROOF_SKIN;
   centres.forEach((uc, vault) => {
     const [a0, a1] = [vault === 1 ? cut : 0, vault === 0 ? Math.PI - cut : Math.PI];
@@ -1087,7 +1098,24 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
     for (let i = 0; i < ARC_STEPS * 2; i++) {
       const p = vaultPoint(uc, sp, endR, a0 + ((a1 - a0) * i) / (ARC_STEPS * 2));
       const q = vaultPoint(uc, sp, endR, a0 + ((a1 - a0) * (i + 1)) / (ARC_STEPS * 2));
-      outer.box([(p[0] + q[0]) / 2, (p[1] + q[1]) / 2, -L + ROOF_EXTERIOR.endRib[0] / 2], [Math.hypot(q[0] - p[0], q[1] - p[1]) + 0.1, ROOF_EXTERIOR.endRib[1], ROOF_EXTERIOR.endRib[0]], { rotZ: Math.atan2(q[1] - p[1], q[0] - p[0]), skip: ['+x', '-x', '-y'] });
+      const at = [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2, -L + ROOF_EXTERIOR.endRib[0] / 2] as V3, len = Math.hypot(q[0] - p[0], q[1] - p[1]) + 0.1, rotZ = Math.atan2(q[1] - p[1], q[0] - p[0]);
+      outer.box(at, [len, ROOF_EXTERIOR.endRib[1], ROOF_EXTERIOR.endRib[0]], { rotZ, skip: ['+x', '-x', '-y', '+y'] });
+      // its top in the lighter ribSheen, one face, as the seams are drawn
+      outer.box([at[0] + (-Math.sin(rotZ) * ROOF_EXTERIOR.endRib[1]) / 2, at[1] + (Math.cos(rotZ) * ROOF_EXTERIOR.endRib[1]) / 2, at[2]], [len, 0, ROOF_EXTERIOR.endRib[0]], { rotZ, skip: ['+x', '-x', '-y', '+z', '-z'], color: sheenPaint });
+    }
+    // the gable rib's (shed-arch-rings) flanges along both edges of its north face, and its top in ribSheen: the ring spans the whole half circle
+    const [gd, gt] = ROOF_EXTERIOR.gableRib, [lw, lp, over] = ROOF_EXTERIOR.ribLip;
+    const lipSteps = ARC_STEPS * 4, half = Math.PI / (2 * lipSteps), out = (1 + 1 / Math.cos(half)) / 2; // finer than the caps: a chord's sag is small beside the lip
+    for (let i = 0; i < lipSteps; i++) {
+      // each chord drawn in by half its sag (its ends stand r (1 / cos half - 1) beyond its middle), so it straddles the arc it stands for, and 0.04 m
+      // longer so neighbours overlap, except at the springing, where it stops as the ring does: below it is the shed's inside (lighting.ts shedInside)
+      const a = (Math.PI * (i + 0.5)) / lipSteps, rotZ = a - Math.PI / 2, end = i === 0 ? -1 : i === lipSteps - 1 ? 1 : 0;
+      const ring = (r: number, z: number, h: number, d: number, skip: string[], color?: [number, number, number]) => {
+        const c = r / out, along = (end * 0.04) / 4; // a springing end's chord is 0.02 m shorter, and moved off the springing by half of that
+        outer.box([uc + c * Math.cos(a) + along * Math.sin(a), sp + c * Math.sin(a) - along * Math.cos(a), z], [2 * r * Math.sin(half) + (end ? 0.02 : 0.04), h, d], { rotZ, skip, color });
+      };
+      for (const [r0, r1] of [[R, R + lw], [R + gd - lw, R + gd + over]]) ring((r0 + r1) / 2, -L - gt - lp / 2, r1 - r0, lp, ['+x', '-x', '+z']);
+      ring(R + gd + 0.005, -L - gt / 2, 0, gt, ['+x', '-x', '-y', '+z', '-z'], sheenPaint);
     }
     // the crown's fine seams down the slope, over the glass only: top faces only, so from below (inside) every face is a back face
     const [g0, g1] = [Math.PI / 2 - phi, Math.PI / 2 + phi];
@@ -1102,8 +1130,9 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
     // the crown walkway's rail: posts, a top and a mid rail
     const { height: rh, post, size } = ROOF_EXTERIOR.rail;
     const top = sp + rs;
-    for (let v = post / 2; v < L; v += post) outer.box([uc, top + rh / 2, -v], [size, rh, size], { skip: ['-y'] });
-    for (const h of [rh, rh / 2]) outer.box([uc, top + h, -L / 2], [size, size, L]);
+    // in the seams' paler paint (round 10: dark, its two lengthwise rails crossed the dark rib caps and the crown read as a grid, the score's "purlins")
+    for (let v = post / 2; v < L; v += post) outer.box([uc, top + rh / 2, -v], [size, rh, size], { skip: ['-y'], color: seamPaint });
+    for (const h of [rh, rh / 2]) outer.box([uc, top + h, -L / 2], [size, size, L], { color: seamPaint });
     // the eaves gutter on the vault's outer springing (the west vault's west side, the east vault's east side)
     const [gw, gh] = ROOF_EXTERIOR.gutter;
     const edge = vault === 0 ? uc - rs - gw / 2 + 0.1 : uc + rs + gw / 2 - 0.1;

@@ -61,7 +61,7 @@ export const AXES = [
  */
 export const ELEMENT_VIEWS = {
   'lighting-materials': ['overview', 'south-front', 'front-oblique-solid-slate', 'platform-eye', 'concourse', 'great-northern-hotel', 'midland-grand-front', 'gasworks-portals', 'facade-brick-close'],
-  'kx-front': ['south-front', 'front-oblique', 'front-oblique-solid-slate', 'roof-above-solid-slate', 'north-gable', 'tower-close', 'front-southwest-pedestrian', 'shed-east-flank'],
+  'kx-front': ['south-front', 'front-oblique', 'front-oblique-solid-slate', 'roof-above-solid-slate', 'north-gable', 'tower-close', 'front-southwest-pedestrian', 'shed-east-flank', 'gable-oblique'],
   'shed-interior': ['platform-eye', 'platform-eye-south', 'shed-interior', 'platform-eye-p1-north', 'platform-eye-p8-south', 'roof-underside', 'furniture-close', 'suburban-p9'],
   'western-concourse': ['concourse', 'concourse-roof-detail', 'western-range', 'western-range-gateline', 'concourse-hotel-junction', 'concourse-exterior-square', 'concourse-funnel-up', 'western-range-full', 'concourse-exterior-west'],
   'historic-neighbours': ['great-northern-hotel', 'midland-grand-front', 'st-pancras-shed', 'st-pancras-shed-oblique', 'gnh-from-square', 'midland-euston-road', 'midland-clock-tower', 'barlow-interior'],
@@ -462,6 +462,16 @@ const FROZEN_STATION_CAMERAS = {
     target: [82.52031206654229, 9, -132.53641407308544],
     source: 'R-kx-front-d standpoint (front-d2-north-york-way-2019.jpg): York Way side, 40 m east of the east flank wall at mid-length, y = 12 m, looking west',
     near: 0.1,
+  },
+  // Round 10 (end-rib-round-1 score, section 5): the north-east gable corner, so the end rib's projection and lip can be judged. R-kx-front-d
+  // (front-d-north-gables-2020.jpg) looks at the gables from the north; this eye stands 40 m out from the east vault's gable rib at 30 degrees of arc
+  // above its east springing (shedLayout: spine + 2 R, length + 0.6 m), 30 degrees east of the gable's normal, y = 16 m (12 m above the ground under it),
+  // looking back at that point of the rib.
+  'gable-oblique': {
+    pos: [94.9207, 16, -289.4115],
+    target: [73.9574, 13.8648, -255.3447],
+    source: 'R-kx-front-d (front-d-north-gables-2020.jpg): 40 m out from the east vault\'s north gable rib near its east springing, 30 degrees east of the gable\'s normal, y = 16 m, looking back at the rib',
+    fov: 40, near: 0.1,
   },
 
   // shed-interior. The platform eyes use platform 4's recipe (polygon midpoint, 1.6 m above the platform, looking along it).

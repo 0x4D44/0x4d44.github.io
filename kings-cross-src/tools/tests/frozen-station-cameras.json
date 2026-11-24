@@ -334,6 +334,21 @@
     "source": "R-kx-front-d standpoint (front-d2-north-york-way-2019.jpg): York Way side, 40 m east of the east flank wall at mid-length, y = 12 m, looking west",
     "near": 0.1
   },
+  "gable-oblique": {
+    "pos": [
+      94.9207,
+      16,
+      -289.4115
+    ],
+    "target": [
+      73.9574,
+      13.8648,
+      -255.3447
+    ],
+    "source": "R-kx-front-d (front-d-north-gables-2020.jpg): 40 m out from the east vault's north gable rib near its east springing, 30 degrees east of the gable's normal, y = 16 m, looking back at the rib",
+    "fov": 40,
+    "near": 0.1
+  },
   "platform-eye-p1-north": {
     "pos": [
       67.66190476190475,

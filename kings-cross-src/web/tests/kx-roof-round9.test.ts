@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import type { KxData } from '../../core/osm.ts';
 import { readFileSync } from 'node:fs';
 import { SHED_SPAN_WIDTH, shedLayout } from '../../core/station.ts';
-import { buildShed, ROOF_EXTERIOR } from '../src/shed.ts';
+import { buildShed, ROOF_EXTERIOR, ROOF_SKIN } from '../src/shed.ts';
 import { material } from '../src/materials.ts';
 import { SHADOW_CASTERS } from '../src/lighting.ts';
 
@@ -38,14 +38,21 @@ test('A5: the crown\'s seams are a paler paint than the rib caps, between the ri
   assert.ok(m.vertexColors && col, 'the bars carry a colour per vertex');
   const pos = bars.geometry.getAttribute('position');
   let seam = 0, other = 0, seamLum = 0, rMin = Infinity, rMax = -Infinity;
+  const { post, size } = ROOF_EXTERIOR.rail, top = layout.springing + R + ROOF_SKIN, posts: number[] = [];
+  for (let v = post / 2; v < L; v += post) posts.push(v);
+  const seamX = new THREE.Color(ROOF_EXTERIOR.seamColour).r / m.color.r, sheenX = new THREE.Color(ROOF_EXTERIOR.ribSheen).r / m.color.r;
   for (let i = 0; i < pos.count; i++) {
     const c = new THREE.Color(col.getX(i), col.getY(i), col.getZ(i)).multiply(m.color);
-    if (col.getX(i) > 1.01) {
+    // re-pinned 2026-11-24 (round 10): the crown rail is in the seams' paint too, and the end rib's top in ROOF_EXTERIOR.ribSheen (kx-roof-round10.test.ts
+    // pins both); the seams are still the only paler vertices on the shell, all on their one radius, and every other bar is still the ribs' paint
+    const x = pos.getX(i), uc = x < layout.spine ? layout.spine - R : layout.spine + R, r = Math.hypot(x - uc, pos.getY(i) - layout.springing);
+    const z = pos.getZ(i), onRail = Math.abs(x - uc) <= size / 2 + 1e-4 && pos.getY(i) >= top - 1e-4 && (Math.abs(z) < 1e-3 || Math.abs(z + L) < 1e-3 || posts.some(v => Math.abs(z + v) <= size / 2 + 1e-4));
+    if (Math.abs(col.getX(i) - seamX) < 1e-6 && !onRail) {
       seam++; seamLum += lum(c);
       // only the seams: every paler vertex on the seams' one radius about its vault's centre (a rib cap stands further out)
-      const x = pos.getX(i), uc = x < layout.spine ? layout.spine - R : layout.spine + R, r = Math.hypot(x - uc, pos.getY(i) - layout.springing);
       rMin = Math.min(rMin, r); rMax = Math.max(rMax, r);
-    } else { other++; assert.ok(Math.abs(col.getX(i) - 1) < 1e-6, 'every other bar the ribs\' paint'); }
+    } else if (onRail) continue;
+    else if (Math.abs(col.getX(i) - sheenX) > 1e-6) { other++; assert.ok(Math.abs(col.getX(i) - 1) < 1e-6, 'every other bar the ribs\' paint'); }
   }
   assert.ok(seam > 1000 && other > 1000, `${seam} seam vertices, ${other} others`);
   assert.ok(rMax - rMin < 0.01, `the paler paint on the seams alone: radii ${rMin.toFixed(3)} to ${rMax.toFixed(3)}`);

@@ -480,7 +480,8 @@ const trackData = JSON.parse(await readFile(path.join(root, 'kings-cross-src/web
 /** The cameras the six element rubrics add (gfx-rubrics/rubric-<element>.md, "Fixed views"), by element. */
 const NEW_CAMERAS = {
   'lighting-materials': ['facade-brick-close'],
-  'kx-front': ['tower-close', 'front-southwest-pedestrian', 'shed-east-flank'],
+  // gable-oblique added 2026-11-24 (round 10, end-rib-round-1 score section 5: the end rib's projection and lip need an oblique view of the north-east gable)
+  'kx-front': ['tower-close', 'front-southwest-pedestrian', 'shed-east-flank', 'gable-oblique'],
   'shed-interior': ['platform-eye-p1-north', 'platform-eye-p8-south', 'roof-underside', 'furniture-close', 'suburban-p9'],
   'western-concourse': ['concourse-funnel-up', 'concourse-exterior-square', 'western-range-full'],
   'historic-neighbours': ['gnh-from-square', 'midland-euston-road', 'midland-clock-tower', 'barlow-interior'],
@@ -727,8 +728,8 @@ test('the twenty cameras that were there before wave 0 are all still there, and 
 
 test('every camera the six rubrics add exists, looks somewhere, and names the photograph it was framed from', () => {
   const cameras = stationCameras(trackData), added = Object.values(NEW_CAMERAS).flat();
-  assert.equal(added.length, 21);
-  assert.equal(new Set(added).size, 21, 'no view is added twice');
+  assert.equal(added.length, 22); // re-pinned 2026-11-24 (round 10): 21 and gable-oblique
+  assert.equal(new Set(added).size, 22, 'no view is added twice');
   assert.deepEqual(Object.keys(cameras).slice(-1), ['kx-euston-road-lamp'], 'the night rubric view is appended after the six rubric sets');
   assert.equal(Object.keys(cameras).length, Object.keys(OLD_CAMERAS).length + added.length + EXTRA_CAMERAS.length + 1, 'only the night rubric view was appended');
   assert.deepEqual(EXTRA_CAMERAS.filter(name => added.includes(name)), [], 'an extra camera is not one a rubric names');
