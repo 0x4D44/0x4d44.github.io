@@ -1878,14 +1878,18 @@ export function buildEastArcade(brick: Batch, stone: Batch, x: number, length: n
   arcadeImposts(stone, x - h, -1, opens);
 }
 
-/** Round S1 (shed-gap-scan-1, B3): the cream stone impost block (ARCADE_IMPOST: along the wall, tall, out from the face; ASSUMED) under each arch's
- * springing, on the pier beside it, its top on the springing line: R-a's east arcade and R-b's west wall show one at every pier. Into the arcades'
- * stone (the spine's dressings, 'shed-spine-stone'), which does not cast. */
-export const ARCADE_IMPOST = { along: 0.6, tall: 0.35, out: 0.4 } as const;
+/** Round S1 (shed-gap-scan-1, B3): the cream stone impost (ARCADE_IMPOST: tall, out from the face; ASSUMED) on each pier between two arches, its top on
+ * their springing line: R-a's east arcade and R-b's west wall show one at every pier. Round S1b (platform-eye-p8-south: 0.4 m proud and butting the jambs,
+ * they read as shelves crossing the windows): one to a pier, its length the pier's less `margin` at each end, so it never reaches an opening, and only
+ * `out` proud. Into the arcades' stone (the spine's dressings, 'shed-spine-stone'), which does not cast. */
+export const ARCADE_IMPOST = { tall: 0.35, out: 0.08, margin: 0.15 } as const;
 function arcadeImposts(stone: Batch, f: number, side: -1 | 1, opens: { vc: number; r: number; jamb: number }[]): void {
-  const { along, tall, out } = ARCADE_IMPOST;
-  for (const { vc, r, jamb } of opens) for (const sd of [-1, 1])
-    stone.box([f + side * out / 2, jamb - tall / 2, -(vc + sd * (r + along / 2))], [out, tall, along], { skip: [side > 0 ? '-x' : '+x'] });
+  const { tall, out, margin } = ARCADE_IMPOST;
+  for (let i = 0; i + 1 < opens.length; i++) {
+    const a = opens[i]!, b = opens[i + 1]!, v0 = a.vc + a.r + margin, v1 = b.vc - b.r - margin, y = Math.min(a.jamb, b.jamb);
+    if (v1 - v0 < 0.2) continue;
+    stone.box([f + side * out / 2, y - tall / 2, -(v0 + v1) / 2], [out, tall, v1 - v0], { skip: [side > 0 ? '-x' : '+x'] });
+  }
 }
 
 /** The stone on a wall's face at u = `f`, facing `side`, that vault ribs land on: the band, and a stepped corbel (SPINE_WALL.corbel) under every rib. */

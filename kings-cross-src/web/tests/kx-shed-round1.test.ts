@@ -77,25 +77,37 @@ test('B1: a ring in each rib\'s haunch, both feet of every rib, instanced in the
   for (let i = 0; i < rings.count; i++) { rings.getMatrixAt(i, m); q.setFromMatrixPosition(m); assert.ok(ribZ.has(Math.round(q.z * 100)), `ring ${i} on a rib's plane`); }
 });
 
-test('B3: a cream stone impost under each arcade arch\'s springing, east and west, on the pier, its top on the springing line, not a caster', () => {
-  const I = S.ARCADE_IMPOST as { along: number; tall: number; out: number };
-  assert.ok(I.along >= 0.4 && I.along <= 0.8 && I.tall >= 0.25 && I.tall <= 0.5 && I.out >= 0.25 && I.out <= 0.5, JSON.stringify(I));
-  const stone = group.getObjectByName('shed-spine-stone')!;
+test('B3: a cream stone impost on each arcade pier, east and west, its top on the springing line, never over an opening, 0.05-0.1 m proud, not a caster', () => {
+  // re-pinned round S1b (platform-eye-p8-south: 0.4 m proud and butting the jambs, the imposts read as shelves crossing the windows): one to a pier, short of
+  // the openings by ARCADE_IMPOST.margin, 0.05-0.1 m proud
+  const I = S.ARCADE_IMPOST as { tall: number; out: number; margin: number };
+  assert.ok(I.tall >= 0.25 && I.tall <= 0.5 && I.out >= 0.05 && I.out <= 0.1 && I.margin >= 0.1, JSON.stringify(I));
+  const stone = group.getObjectByName('shed-spine-stone') as THREE.Mesh;
   assert.ok(!SHADOW_CASTERS.has('shed-spine-stone'));
+  assert.equal(stone.material, material('stoneDressing'), 'the stone dressings\' cream');
   const opens = shed.eastArcadeOpenings(L);
   const eastFace = shed.eastArcadeU(layout) - shed.SPINE_WALL.thick / 2, westFace = shed.WEST_ARCADE.depth;
   let n = 0;
-  for (const { vc, r, jamb } of opens) for (const sd of [-1, 1]) {
-    const v = vc + sd * (r + I.along / 2), y = jamb - I.tall / 2;
-    for (const [face, dir] of [[eastFace, -1], [westFace, 1]] as const) {
-      const h = hits([face + dir * 3, y, -v], [-dir, 0, 0], [stone], 3)[0];
-      assert.ok(h && Math.abs(local(h).x - (face + dir * I.out)) < 0.02, `the impost at v ${v.toFixed(1)} on the ${dir < 0 ? 'east' : 'west'} face: ${h && local(h).x.toFixed(2)}`);
-      const over = hits([face + dir * 3, jamb + 0.05, -v], [-dir, 0, 0], [stone], 3)[0];
-      assert.ok(!over || Math.abs(local(over).x - face) < Math.abs(local(over).x - (face + dir * I.out)), 'its top on the springing line');
+  for (const [face, dir] of [[eastFace, -1], [westFace, 1]] as const) {
+    const ray = (v: number, y: number): THREE.Intersection | undefined => hits([face + dir * 3, y, -v], [-dir, 0, 0], [stone], 3)[0];
+    for (let i = 0; i + 1 < opens.length; i++) {
+      const a = opens[i]!, b = opens[i + 1]!, y = Math.min(a.jamb, b.jamb) - I.tall / 2;
+      if (b.vc - b.r - (a.vc + a.r) < 2 * I.margin + 0.2) continue;
+      const h = ray((a.vc + a.r + b.vc - b.r) / 2, y);
+      const proud = h ? (local(h).x - face) * dir : NaN;
+      assert.ok(proud >= 0.05 - 1e-6 && proud <= 0.1 + 1e-6, `the impost on the pier at v ${((a.vc + b.vc) / 2).toFixed(1)}, ${dir < 0 ? 'east' : 'west'}: ${proud.toFixed(3)} m proud`);
       n++;
     }
+    // over every opening's span, at the imposts' height, no stone stands proud of the face
+    for (const { vc, r, jamb } of opens) for (let k = 0; k <= 20; k++) {
+      const v = vc - r - I.margin / 2 + ((2 * r + I.margin) * k) / 20;
+      for (const y of [jamb - 0.05, jamb - I.tall / 2, jamb - I.tall + 0.05]) {
+        const h = ray(v, y);
+        assert.ok(!h || (local(h).x - face) * dir < 0.01, `stone over the opening at v ${v.toFixed(2)} (${vc.toFixed(1)} +- ${r.toFixed(1)}), ${dir < 0 ? 'east' : 'west'}: ${h && ((local(h).x - face) * dir).toFixed(2)} m proud`);
+      }
+    }
   }
-  assert.ok(n >= 8, `${n} imposts`);
+  assert.ok(n >= 4, `${n} imposts`);
 });
 
 test('B1: the ribs and haunch rings a lighter blue-grey by day (RIB_DAY_LIFT), ribPaint itself at night; the bars, clock iron and front steel unmoved', () => {
