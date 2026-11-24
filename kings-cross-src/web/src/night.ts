@@ -4,8 +4,9 @@
 // lit windows are in the train meshes (train-geom.ts `trainNight`), the signals are self-lit already.
 import * as THREE from 'three';
 import { PLATFORM_HEIGHT } from '../../core/scene.ts';
-import { concourseHeight, pointInPolygon, SHED_SPAN_WIDTH, shedToWorld, worldToShed } from '../../core/station.ts';
+import { concourseHeight, pointInPolygon, SHED_PLATFORM_REFS, SHED_SPAN_WIDTH, shedToWorld, stationPlatforms, uRangeAtV, worldToShed } from '../../core/station.ts';
 import type { ConcourseCanopy, ShedLayout } from '../../core/station.ts';
+import type { KxData } from '../../core/osm.ts';
 import type { Pt } from '../../core/geo.ts';
 import type { ClockDial } from './clocks.ts';
 import { FIGURES } from './furniture.ts';
@@ -23,6 +24,8 @@ export interface NightLightSites {
 export interface NightLightInput {
   lamps: readonly Pick<Placement, 'x' | 'z'>[];
   layout: ShedLayout;
+  /** the station's platforms: the shed's lights hang over its islands (shedIslands) */
+  data: Pick<KxData, 'platforms'>;
   canopy: ConcourseCanopy;
   /** the station building's footprint (the concourse lights stay inside it) */
   footprint: readonly Pt[];
@@ -30,21 +33,58 @@ export interface NightLightInput {
 
 /** How far below the roof the shed's lights hang, metres. */
 const HANG = 1.8;
+/** A row whose line comes within this of a wall under the vaults (the spine, the east arcade: 1.0 m thick, furniture keeps 0.3 m off it) splits across it, metres. */
+const WALL_CLEAR = 1.5;
 
-export function nightLightSites({ lamps, layout, canopy, footprint }: NightLightInput): NightLightSites {
+/**
+ * The shed's islands, west to east: the platforms under the two vaults (SHED_PLATFORM_REFS) whose faces touch, as the u of the island's middle
+ * and of each platform's, averaged along the shed. An island is the platforms either side of no track (0/1, 2/3, 4/5, 6/7, and 8 on its own).
+ */
+export function shedIslands(data: Pick<KxData, 'platforms'>, layout: ShedLayout): { centre: number; platforms: number[] }[] {
+  const all = stationPlatforms(data);
+  const spans: [number, number][] = [];
+  for (const ref of SHED_PLATFORM_REFS) {
+    const p = all.get(ref);
+    if (!p) continue;
+    let lo = 0, hi = 0, n = 0;
+    for (let v = 12; v < layout.length; v += 6) {
+      const r = uRangeAtV(layout, p.pts, v);
+      if (r) { lo += r[0]; hi += r[1]; n++; }
+    }
+    if (n > 0) spans.push([lo / n, hi / n]);
+  }
+  spans.sort((a, b) => a[0] - b[0]);
+  const islands: [number, number][][] = [];
+  for (const s of spans) {
+    const last = islands[islands.length - 1];
+    if (last && s[0] - last[last.length - 1]![1] < 1) last.push(s); else islands.push([s]);
+  }
+  return islands.map((ps) => ({ centre: (ps[0]![0] + ps[ps.length - 1]![1]) / 2, platforms: ps.map(([lo, hi]) => (lo + hi) / 2) }));
+}
+
+export function nightLightSites({ lamps, layout, data, canopy, footprint }: NightLightInput): NightLightSites {
   const platform: number[] = [];
   for (const lamp of lamps) platform.push(lamp.x, PLATFORM_HEIGHT + FIGURES.lampHeight - 0.14, lamp.z);
 
-  // Two rows under each of the shed's two vaults, a light every second rib (12.2 m), 8 m either side of the vault's crown line.
+  // One row over each island under the vaults, a light every second rib (12.2 m), hung below the vault above it. A row that would meet a
+  // wall under the vaults zig-zags across it, a light over each platform in turn (4/5, either side of the spine), or, where a platform
+  // is beyond the vaults (0, east of the east arcade), stands off the wall on the vault's side.
   const shed: number[] = [];
   const radius = SHED_SPAN_WIDTH / 2;
-  for (const uc of [layout.spine - radius, layout.spine + radius]) {
-    for (const offset of [-8, 8]) {
-      const y = layout.springing + Math.sqrt(radius * radius - offset * offset) - HANG;
-      for (let v = 6.1; v < layout.length - 6; v += 12.2) {
-        const [x, z] = shedToWorld(layout, uc + offset, v);
-        shed.push(x, y, z);
-      }
+  const underVault = (u: number): boolean => u > 0 && u < layout.spine + radius * 2;
+  const walls = [layout.spine, layout.spine + 2 * radius];
+  for (const island of shedIslands(data, layout)) {
+    const wall = walls.find((w) => Math.abs(island.centre - w) < WALL_CLEAR);
+    const line = wall === undefined ? [island.centre]
+      : island.platforms.length > 1 && island.platforms.every(underVault) ? island.platforms
+      : [wall + Math.sign(island.centre - wall || -1) * WALL_CLEAR];
+    let k = 0;
+    for (let v = 6.1; v < layout.length - 6; v += 12.2, k++) {
+      const u = line[k % line.length]!;
+      if (!underVault(u)) continue;
+      const off = u - (u < layout.spine ? layout.spine - radius : layout.spine + radius);
+      const [x, z] = shedToWorld(layout, u, v);
+      shed.push(x, layout.springing + Math.sqrt(radius * radius - off * off) - HANG, z);
     }
   }
 

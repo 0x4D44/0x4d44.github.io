@@ -22,7 +22,7 @@ import type { NightLightSites } from '../src/night.ts';
 
 const data: KxData = JSON.parse(readFileSync(new URL('../src/data/kx-track.json', import.meta.url), 'utf8'));
 const layout = shedLayout(data);
-const SITES: NightLightSites = nightLightSites({ lamps: furniturePlan(data, layout).lamps, layout, canopy: concourseCanopy(data), footprint: stationBuilding(data)!.pts });
+const SITES: NightLightSites = nightLightSites({ lamps: furniturePlan(data, layout).lamps, layout, data, canopy: concourseCanopy(data), footprint: stationBuilding(data)!.pts });
 
 const NOON = '2026-06-21T12:00:00Z';
 const MIDNIGHT = '2026-12-21T00:00:00Z';

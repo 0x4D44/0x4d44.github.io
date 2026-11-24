@@ -96,7 +96,7 @@ test('a platform edge at an angle to the world axes clips its pool along a strai
 test('King\'s Cross: no platform lamp\'s pool lands beyond the drawn platform edge, and none is cut short inside it', () => {
   const data: KxData = JSON.parse(readFileSync(new URL('../src/data/kx-track.json', import.meta.url), 'utf8'));
   const layout = shedLayout(data);
-  const sites = nightLightSites({ lamps: furniturePlan(data, layout).lamps, layout, canopy: { centre: [0, 0], radius: 0 } as never, footprint: [] });
+  const sites = nightLightSites({ lamps: furniturePlan(data, layout).lamps, layout, data, canopy: { centre: [0, 0], radius: 0 } as never, footprint: [] });
   // The rings main.ts hands the atmosphere: the outlines the platform mesh is drawn from (furniture.ts buildPlatforms).
   const outlines = surfacePlatforms(data).map(p => p.pts);
   const lamps = createPlatformLamps([...sites.platform, ...sites.shed], outlines, PLATFORM_Y, 'kx');
@@ -131,7 +131,7 @@ test('King\'s Cross: no platform lamp\'s pool lands beyond the drawn platform ed
 test('King\'s Cross: where two drawn outlines share an edge (P4/P5 under the shed) the pool runs across the seam without a dark line', () => {
   const data: KxData = JSON.parse(readFileSync(new URL('../src/data/kx-track.json', import.meta.url), 'utf8'));
   const layout = shedLayout(data);
-  const sites = nightLightSites({ lamps: furniturePlan(data, layout).lamps, layout, canopy: { centre: [0, 0], radius: 0 } as never, footprint: [] });
+  const sites = nightLightSites({ lamps: furniturePlan(data, layout).lamps, layout, data, canopy: { centre: [0, 0], radius: 0 } as never, footprint: [] });
   const outlines = surfacePlatforms(data).map(p => p.pts);
   const heads = [...sites.platform, ...sites.shed];
   const lamps = createPlatformLamps(heads, outlines, PLATFORM_Y, 'kx');

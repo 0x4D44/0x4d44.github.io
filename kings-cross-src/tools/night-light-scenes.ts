@@ -114,7 +114,7 @@ export async function loadNightLightScene(station: LightStation): Promise<{
   if (footprint) scene.add(buildConcourse(canopy, footprint.pts, layout));
   const landmarks = addLandmarks(scene, data, { terrain: terrain.ground });
   const central = addKxCentral(scene, data, { terrain: terrain.ground });
-  const sites = nightLightSites({ lamps: (furniture.userData.plan as FurniturePlan).lamps, layout, canopy, footprint: footprint?.pts ?? [] });
+  const sites = nightLightSites({ lamps: (furniture.userData.plan as FurniturePlan).lamps, layout, data, canopy, footprint: footprint?.pts ?? [] });
   const atmosphere = createAtmosphere({ scene, world, sites, platformLampFloor: data.platforms.filter(p => !p.tunnel).map(p => p.pts),
     kingsCrossNightFog: true, cityFogTint: [.320, .266, .237], litFogCloud: true });
   const city = addCity(scene, data, readData('kx-city') as CityData, { hidden, terrain: terrain.ground, nightEffects: true, night: atmosphere.nightLights });

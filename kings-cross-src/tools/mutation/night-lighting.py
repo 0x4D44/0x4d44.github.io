@@ -60,6 +60,8 @@ LANES = {
     'landmarks': Lane(['web/tests/landmarks.test.ts'], ['windowId: a number of 0 to', 'addGlass: the flat shape of a window', "Midland Grand: the lit pane's windows", "the Midland's kinds of window each put lit glass",
                                                          "Midland Grand: the clock tower's lantern is open to the night", "Midland Grand: the front's brick and its stone are floodlit"]),
     'night': Lane(['web/tests/night.test.ts'], ['attach: a layer is handed the level']),
+    # the shed's lights over its islands (web/src/night.ts nightLightSites, shedIslands): the guard added 2026-11-24
+    'islands': Lane(['web/tests/night.test.ts'], ['every island under the shed has its own row of shed lights']),
     # the clock dials' glow (web/src/night.ts `createDialLights`, its wiring in web/src/atmosphere.ts): the whole file
     'dials': Lane(['web/tests/dial-lights.test.ts']),
     'atmosphere': Lane(['web/tests/atmosphere.test.ts'], ["a scene's own haze", 'fogFar: the range', 'the windows of the city light with the lamps']),
@@ -488,6 +490,13 @@ MUTATIONS += [
     ('the first layer cannot let go', NL, 'if (i >= 0) attached.splice(i, 1);', 'if (i > 0) attached.splice(i, 1);'),
     ('a layer that lets go takes the others with it', NL, 'if (i >= 0) attached.splice(i, 1);', 'if (i >= 0) attached.splice(i);'),
     ('the layers are kept when the lights are freed', NL, '      attached.length = 0;\n', ''),
+]
+
+# ------------------------------------------------------------------------------------------------ web/src/night.ts: the shed's lights over its islands
+SI = Where(NIGHT, 'islands')
+MUTATIONS += [
+    ('a shed row hangs at its vault\'s crown line, not over its island', SI, 'const u = line[k % line.length]!;', 'const u = line[k % line.length]! < layout.spine ? layout.spine - radius : layout.spine + radius;'),
+    ('the shed\'s rows stop half way along the shed', SI, 'for (let v = 6.1; v < layout.length - 6; v += 12.2, k++) {', 'for (let v = 6.1; v < layout.length / 2; v += 12.2, k++) {'),
 ]
 
 # ------------------------------------------------------------------------------------------------ web/src/night.ts: the clock dials' glow (createDialLights)
