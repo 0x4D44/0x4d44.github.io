@@ -652,6 +652,18 @@ export function gableBars(uc: number, springing: number, from: number, r = R): B
 export const ROOF_EXTERIOR = {
   seamPitch: 1.8, seam: [0.06, 0.03], ribCap: [0.3, 0.12], endRib: [0.5, 0.6], rail: { height: 1.1, post: 1.525, size: 0.06 },
   gutter: [0.5, 0.45], valleyGutter: [0.8, 0.3],
+  /**
+   * Round 9 (the roof-exterior-round-2 score: the north end rib "cannot be told apart from the brick arch ring"; A6 "needs the dark metal end rib in front
+   * of the ring"): R-kx-front-d shows each north gable framed by a dark, heavy arched metal rib at its face, no pale ring; about 0.9 m deep in the gable's
+   * plane (MEASURED in memory as above, +-30%) and standing about 0.6 m proud of the glass (ASSUMED). The gable's ring (shed-arch-rings) is that rib now:
+   * `gableRib` [radial depth, thickness north of the glass], in the ribs' dark paint, not stone.
+   */
+  gableRib: [0.9, 0.6],
+  /**
+   * The crown's seams seen through its glass from outside read as a crossed lattice (the far slope's under the near slope's): their paint is a mid
+   * grey-blue, between the ribs' and the glass's, so they read as glazing texture (`seamColour`, the colour they are drawn in).
+   */
+  seamColour: 0x7d8a94,
   /** the distance outside the shed over which the outside structure fades in from nothing (a camera rising above the crown counts four times): see roofBarsOpacity */
   fade: 8,
 } as const;
@@ -1056,7 +1068,9 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
     glassMat.opacity = glazingOpacity(o);
   };
   // the outside's structure (ROOF_EXTERIOR): rib caps, the crown's glazing bars, the gutters; dark like the ribs, thinning with the cladding
-  const outer = new Batch();
+  const outer = new Batch({ colored: true }); // white (the ribs' paint) but for the seams, paler (ROOF_EXTERIOR.seamColour)
+  const ribRgb = (material('ribPaint') as THREE.MeshLambertMaterial).color, seamRgb = new THREE.Color(ROOF_EXTERIOR.seamColour);
+  const seamPaint: [number, number, number] = [seamRgb.r / ribRgb.r, seamRgb.g / ribRgb.g, seamRgb.b / ribRgb.b]; // over 1: the vertex colour multiplies the paint
   const rs = R + ROOF_SKIN;
   centres.forEach((uc, vault) => {
     const [a0, a1] = [vault === 1 ? cut : 0, vault === 0 ? Math.PI - cut : Math.PI];
@@ -1082,7 +1096,7 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
       for (let i = 0; i < ARC_STEPS; i++) {
         const p = vaultPoint(uc, sp, seamR, g0 + ((g1 - g0) * i) / ARC_STEPS);
         const q = vaultPoint(uc, sp, seamR, g0 + ((g1 - g0) * (i + 1)) / ARC_STEPS);
-        outer.box([(p[0] + q[0]) / 2, (p[1] + q[1]) / 2, -v], [Math.hypot(q[0] - p[0], q[1] - p[1]) + 0.02, 0, ROOF_EXTERIOR.seam[0]], { rotZ: Math.atan2(q[1] - p[1], q[0] - p[0]), skip: ['+x', '-x', '-y', '+z', '-z'] });
+        outer.box([(p[0] + q[0]) / 2, (p[1] + q[1]) / 2, -v], [Math.hypot(q[0] - p[0], q[1] - p[1]) + 0.02, 0, ROOF_EXTERIOR.seam[0]], { rotZ: Math.atan2(q[1] - p[1], q[0] - p[0]), skip: ['+x', '-x', '-y', '+z', '-z'], color: seamPaint });
       }
     }
     // the crown walkway's rail: posts, a top and a mid rail
@@ -1097,6 +1111,7 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   });
   outer.box([spine, valleyTop(sp) + ROOF_EXTERIOR.valleyGutter[1] / 2 - 0.1, -L / 2], [ROOF_EXTERIOR.valleyGutter[0], ROOF_EXTERIOR.valleyGutter[1], L]);
   const barsMat = (material('ribPaint') as THREE.MeshLambertMaterial).clone();
+  barsMat.vertexColors = true; // the seams' paler paint (seamPaint)
   barsMat.transparent = true; // its opacity follows the cladding's outside and is 0 inside, see roofBarsOpacity
   const roofBars = mesh(outer.build(), barsMat, 'shed-roof-bars');
   // its own callback, not the cladding's: the two sort among the transparent draws by distance, so the cladding's may come after this one in a frame
@@ -1391,13 +1406,14 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
     gableGeos.push(g);
     addBars(gBars, gableBars(uc, sp, GABLE_GLASS_FROM), 0, -L);
     gBars.box([uc, GABLE_GLASS_FROM + 0.1, -L], [2 * R * Math.cos(aBase), 0.25, 0.3]); // the transom along the glass line
-    const ring = new THREE.ExtrudeGeometry(archRing(uc, sp, R, R + 0.7), { depth: 0.5, bevelEnabled: false, curveSegments: 40 });
-    ring.translate(0, 0, -L - 0.5);
+    const [gd, gt] = ROOF_EXTERIOR.gableRib;
+    const ring = new THREE.ExtrudeGeometry(archRing(uc, sp, R, R + gd), { depth: gt, bevelEnabled: false, curveSegments: 40 });
+    ring.translate(0, 0, -L - gt);
     rings.push(ring);
   }
   const gableGlass = mesh(mergeGeometries(gableGeos, false), material('glass'), 'shed-gable-glass');
   gableGlass.renderOrder = 3;
-  group.add(gableGlass, mesh(gBars.build(), material('ribPaint'), 'shed-gable-bars'), mesh(mergeGeometries(rings, false), material('stone'), 'shed-arch-rings'));
+  group.add(gableGlass, mesh(gBars.build(), material('ribPaint'), 'shed-gable-bars'), mesh(mergeGeometries(rings, false), material('ribPaint'), 'shed-arch-rings')); // the gables' end ribs (ROOF_EXTERIOR.gableRib)
   disposables.push(...rings, ...lunGlass, ...gableGeos);
 
   // ---- the clock tower, centred on the spine, standing just in front of the south front --------

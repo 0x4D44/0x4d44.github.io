@@ -25,7 +25,8 @@ MUTATIONS = [
     ('canopy back to the ribs\' slate blue', 'web/src/shed.ts', 'frontSteel.color.set(FRONT_COLOURS.steel);', 'frontSteel.color.set(0x343b42);', 'are charcoal'),
     ('fascia saturated blue', 'web/src/shed.ts', 'fascia: 0x1b2a4a', 'fascia: 0x1c3c78', 'are charcoal'),
     ('glass back to near-black', 'web/src/shed.ts', 'glass: 0x56687a', 'glass: 0x1e262b', 'are charcoal'),
-    ('fascia back down at the transom', 'web/src/shed.ts', 'fasciae.box([x, (s0 + s1) / 2, -0.2]', 'fasciae.box([x, (s0 + s1) / 2 - 1.0, -0.2]', 'are charcoal'),
+    # re-pointed in round 9: since round 6 the board's face is a quad of its own (its lettering's uvs), so the whole board is moved by its top
+    ('fascia back down at the transom', 'web/src/shed.ts', 'const s1 = GROUND_Y + FRONT_CANOPY.top - FRONT_CANOPY.sheet - 0.02, s0', 'const s1 = GROUND_Y + FRONT_CANOPY.top - FRONT_CANOPY.sheet - 1.02, s0', 'are charcoal'),
     ('no downlights', 'web/src/shed.ts', 'for (const row of FRONT_CANOPY.lightRows) {', 'for (const row of FRONT_CANOPY.lightRows.slice(0, 0)) {', 'at night a row of downlights'),
     ('lamps flat on the soffit, behind the fascia', 'web/src/shed.ts', 'ly = top - FRONT_CANOPY.fascia - 0.05 - lh / 2;', 'ly = top - FRONT_CANOPY.sheet - lh / 2;', 'at night a row of downlights'),
     ('glass glows white', 'web/src/shed.ts', 'glass: [0xffc98a, 0.45]', 'glass: [0xffffff, 0.45]', 'at night a row of downlights'),
@@ -33,7 +34,8 @@ MUTATIONS = [
     ('flat entrance glow, no fade', 'web/src/shed.ts', 'head: 0.3 }', 'head: 1.0 }', 'at night a row of downlights'),
     ('frames glow at night', 'web/src/shed.ts', 'frontSteel.emissive.set(FRONT_COLOURS.steelLift);', 'frontSteel.emissive.set(0x806040);', 'at night a row of downlights'),
     ('sill course back to 0.3 m proud', 'web/src/shed.ts', 'proud(spine, sp - 0.325, FW + 0.6, 0.65, 0.5)', 'proud(spine, sp - 0.3, FW + 0.4, 0.6, 0.3)', 'sill course is the front'),
-    ('sill course\'s cap omitted', 'web/src/shed.ts', "  proud(spine, sp - 0.1, FW + 0.8, 0.2, 0.8); // its weathered cap", "  // proud(spine, sp - 0.1, FW + 0.8, 0.2, 0.8); // its weathered cap", 'sill course is the front'),
+    # re-pointed in round 9: round 8 made the cap the springing course (FRONT_RELIEF.springing), a stone.box of its own
+    ('sill course\'s cap omitted', 'web/src/shed.ts', "  stone.box([spine, sp - sc.height / 2,", "  void ([spine, sp - sc.height / 2,", 'sill course is the front'),
 ]
 
 def run(work: Path) -> subprocess.CompletedProcess[str]:
