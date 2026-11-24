@@ -88,10 +88,10 @@ test('vaultBand: vertices on the circle, normals outward and agreeing with the w
   close(Math.max(...vs) - Math.min(...vs), length, EPS); // metres along the shed
 });
 
-test('ribMembers: a Warren truss of 65 members between the two booms, symmetric about the crown', () => {
+test('ribMembers: a Warren truss of 63 members between the two booms, symmetric about the crown', () => {
   const sp = 5.6388;
   const ms = ribMembers(sp);
-  assert.equal(ms.length, 65);
+  assert.equal(ms.length, 63); // re-pinned round S2 (shed-round-1 score, B1): 65 less the two foot panels' diagonals, whose panels carry the haunch rings (kx-shed-round2)
   assert.equal(ms.filter((m) => m.kind === 'boom').length, 32);
   const rt = R + 0.1;
   const rb = R - 1.3;
@@ -359,7 +359,11 @@ test('the ironwork is dark grey steel, as in R-lighting-materials-a2 and -b, and
     // itself at night (kx-shed-round1); still dark steel by every check below
     if (name === 'shed-ribs') assert.equal(buildingNightMaterialsOf(byName(group, name))?.night, material('ribPaint'), `${name} is painted like the ribs at night`);
     else assert.equal(m, material('ribPaint'), `${name} is painted like the ribs`);
-    assert.ok(luminance(m) > 0.02 && luminance(m) <= luminance(material('steel')), `${name}: dark steel, no lighter than the station's steel and not black: luminance ${luminance(m).toFixed(3)}`);
+    // re-pinned round S2 for the ribs only (shed-round-1 score, B1): by day R-kx-shed-interior-a and -b show the ribs a mid blue-grey, plainly lighter than the
+    // station's near-black steel (the platform columns and sign posts in the same frames); so the ribs' day paint (RIB_DAY_LIFT) is bounded by 2.5 times
+    // ribPaint instead of by the steel, the bars keep the steel bound, and every rib still keeps the bound below against the lining
+    const ceiling = name === 'shed-ribs' ? 2.5 * luminance(material('ribPaint')) : luminance(material('steel'));
+    assert.ok(luminance(m) > 0.02 && luminance(m) <= ceiling + 1e-9, `${name}: dark steel, no lighter than its bound and not black: luminance ${luminance(m).toFixed(3)}`);
     assert.ok(8 * luminance(m) < lining, `${name} is at least eight times darker than the lining it stands against`);
     assert.ok(m.emissive.r + m.emissive.g + m.emissive.b < 0.2, `${name}'s lift is a floor, not a glow`);
   }

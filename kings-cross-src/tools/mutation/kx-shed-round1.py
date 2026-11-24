@@ -26,17 +26,17 @@ MUTATIONS = [
     ('a shallow girder', 'web/src/shed.ts', 'GABLE_GIRDER = { depth: 1.5,', 'GABLE_GIRDER = { depth: 0.6,', 'B3: a lattice girder'),
     ('no haunch rings', 'web/src/shed.ts', 'for (const [u, y] of ringCentres) haunch.setMatrixAt(k++, mat.makeTranslation(uc + u, y, -v));', 'for (const [u, y] of ringCentres.slice(0, 0)) haunch.setMatrixAt(k++, mat.makeTranslation(uc + u, y, -v));', 'B1: a ring in each'),
     ('the rings casting', 'web/src/shed.ts', '  haunch.castShadow = false;\n', '  haunch.castShadow = true;\n', 'B1: a ring in each'),
-    ('the rings off the wall', 'web/src/shed.ts', 'const cx = -(r - RIB_FOOT) + rho,', 'const cx = -(r - RIB_FOOT) + rho + 1.0,', 'B1: a ring in each'),
-    ('the rings into the boom', 'web/src/shed.ts', 'y = y1 + (clear + (cx - x1) * dy) / dx;', 'y = y1 + (-clear + (cx - x1) * dy) / dx;', 'B1: a ring in each'),
+    ('the rings off the wall', 'web/src/shed.ts', 'const cx = (xi + xo) / 2;', 'const cx = (xi + xo) / 2 + 3.0;', 'B1: a ring in each'),  # re-anchored round S2 (the code it mutated was reshaped)
+    ('the rings into the boom', 'web/src/shed.ts', 'rise: 1.5 }', 'rise: 0.2 }', 'B1: a ring in each'),  # re-anchored round S2 (the code it mutated was reshaped)
     ('rings off the ribs plane', 'web/src/shed.ts', 'haunch.setMatrixAt(k++, mat.makeTranslation(uc + u, y, -v));', 'haunch.setMatrixAt(k++, mat.makeTranslation(uc + u, y, -v - 1.0));', 'B1: a ring in each'),
-    ('big rings', 'web/src/shed.ts', 'HAUNCH_RING = { radius: 0.54,', 'HAUNCH_RING = { radius: 1.0,', 'B1: a ring in each'),
-    ('no east imposts', 'web/src/shed.ts', '  arcadeImposts(stone, x - h, -1, opens);\n', '', 'B3: a cream stone'),
-    ('no west imposts', 'web/src/shed.ts', '  arcadeImposts(stone, depth, 1, opens);\n', '', 'B3: a cream stone'),
-    ('imposts under the springing', 'web/src/shed.ts', 'stone.box([f + side * out / 2, y - tall / 2,', 'stone.box([f + side * out / 2, y - tall / 2 - 0.5,', 'B3: a cream stone'),
-    ('imposts to the jambs again', 'web/src/shed.ts', 'export const ARCADE_IMPOST = { tall: 0.35, out: 0.08, margin: 0.15 }', 'export const ARCADE_IMPOST = { tall: 0.35, out: 0.08, margin: -0.15 }', 'B3: a cream stone'),
-    ('imposts across the next opening', 'web/src/shed.ts', 'v1 = b.vc - b.r - margin,', 'v1 = b.vc - b.r + 0.4,', 'B3: a cream stone'),
-    ('imposts 0.35 m proud again', 'web/src/shed.ts', '{ tall: 0.35, out: 0.08,', '{ tall: 0.35, out: 0.35,', 'B3: a cream stone'),
-    ('imposts barely proud', 'web/src/shed.ts', '{ tall: 0.35, out: 0.08,', '{ tall: 0.35, out: 0.02,', 'B3: a cream stone'),
+    ('big rings', 'web/src/shed.ts', 'HAUNCH_RING = { radius: 0.4,', 'HAUNCH_RING = { radius: 1.0,', 'B1: a ring in each'),  # re-anchored round S2 (the code it mutated was reshaped)
+    ('no east imposts', 'web/src/shed.ts', '  arcadeImposts(imposts, x - h, -1, opens);\n', '', 'B3: a cream stone'),  # re-anchored round S2 (the code it mutated was reshaped)
+    ('no west imposts', 'web/src/shed.ts', '  arcadeImposts(imposts, depth, 1, opens);\n', '', 'B3: a cream stone'),  # re-anchored round S2 (the code it mutated was reshaped)
+    ('imposts under the springing', 'web/src/shed.ts', 'stone.box([f + side * out / 2, y - tall / 2, -mid]', 'stone.box([f + side * out / 2, y - tall / 2 - 0.5, -mid]', 'B3: a cream stone'),  # re-anchored round S2 (the code it mutated was reshaped)
+    ('imposts to the jambs again', 'web/src/shed.ts', 'const len = Math.min(along, b.vc - b.r - (a.vc + a.r) - 2 * margin);', 'const len = b.vc - b.r - (a.vc + a.r);', 'B3: a cream stone'),  # re-anchored round S2 (the code it mutated was reshaped)
+    ('imposts across the next opening', 'web/src/shed.ts', 'const len = Math.min(along, b.vc - b.r - (a.vc + a.r) - 2 * margin);', 'const len = b.vc - b.r - (a.vc + a.r) + 0.8;', 'B3: a cream stone'),  # re-anchored round S2 (the code it mutated was reshaped)
+    ('imposts 0.35 m proud again', 'web/src/shed.ts', '{ tall: 0.35, out: 0.3,', '{ tall: 0.35, out: 0.45,', 'B3: a cream stone'),  # re-anchored round S2 (the code it mutated was reshaped)
+    ('imposts barely proud', 'web/src/shed.ts', '{ tall: 0.35, out: 0.3,', '{ tall: 0.35, out: 0.02,', 'B3: a cream stone'),  # re-anchored round S2 (the code it mutated was reshaped)
     ('ribs not lifted', 'web/src/shed.ts', '  m.color.multiplyScalar(RIB_DAY_LIFT);\n  ribDayMaterial = m;', '  ribDayMaterial = m;', 'B1: the ribs and haunch'),
     ('ribs lifted at night too', 'web/src/shed.ts', "  withBuildingNightMaterial(ribs, material('ribPaint'));", '', 'B1: the ribs and haunch'),
     ('the shared paint lifted', 'web/src/shed.ts', 'ribDayMaterial = m;\n  return m;', 'ribDayMaterial = original;\n  original.color.multiplyScalar(RIB_DAY_LIFT);\n  return original;', 'B1: the ribs and haunch'),

@@ -604,7 +604,7 @@ export type MaterialName =
   | 'brick' | 'stone' | 'slate' | 'asphalt' | 'platformTop' | 'platformEdge' | 'ballast'
   | 'roofGlass' | 'glass' | 'window' | 'windowArch'
   | 'concrete' | 'steel' | 'whiteSteel' | 'ribPaint' | 'lining' | 'valleyLining' | 'shedGlass' | 'panel' | 'concourseFloor'
-  | 'brickRed' | 'slateBothSides' | 'sash' | 'sashArch' | 'pane' | 'platformEdgeStrip' | 'platformEdgeStripShed' | 'brickFoot' | 'stoneFoot' | 'stoneDressing' | 'arcadeGlass' | 'arcadeFrame';
+  | 'brickRed' | 'slateBothSides' | 'sash' | 'sashArch' | 'pane' | 'platformEdgeStrip' | 'platformEdgeStripShed' | 'brickFoot' | 'stoneFoot' | 'stoneDressing' | 'stoneImpost' | 'arcadeGlass' | 'arcadeFrame';
 
 /**
  * A wall material with the contact shade at its foot, the define lighting.ts `FOOT_SHADE` names (not imported: lighting.ts is the page's chunk, this its own; a test holds the two to one name).
@@ -646,6 +646,8 @@ function tiled(name: TextureName, extra: THREE.MeshLambertMaterialParameters = {
  * as the rest of the shed's stone does, only lighter.
  */
 export const STONE_DRESSING = 0xc2bba6;
+/** Round S2 (shed-round-1 score, B3): the arcades' imposts, a paler cream than the dressings so they read in the shed's shade as R-b's do (ASSUMED). */
+export const STONE_IMPOST = 0xe6dcc0;
 /**
  * The glass in the shed's west arcade (shed.ts buildWestArcade). The scorer of shed-arcade-round-5 (B3): the arches rendered as near-black holes (the library's dark
  * `pane`, mean about (4, 6, 10) at platform eye), where R-kx-shed-interior-c (shed-c-arcade-2013.jpg) shows the lower arches glazed: grey glass by day with some
@@ -715,12 +717,12 @@ function copingNight<T extends THREE.MeshLambertMaterial>(m: T): T {
   m.customProgramCacheKey = () => `${key}+coping-night`;
   return m;
 }
-function stoneDressing(): THREE.MeshLambertMaterial {
+function stoneDressing(tone = STONE_DRESSING): THREE.MeshLambertMaterial {
   const m = tiled('stone');
   if (m.map) {
-    const want = new THREE.Color(STONE_DRESSING), avg = new THREE.Color(TEXTURES.stone.average);
+    const want = new THREE.Color(tone), avg = new THREE.Color(TEXTURES.stone.average);
     m.color.setRGB(want.r / avg.r, want.g / avg.g, want.b / avg.b);
-  } else m.color.set(STONE_DRESSING);
+  } else m.color.set(tone);
   return floodLit(footShaded(m, FRONT_FOOT), ...FRONT_FLOOD.stone);
 }
 
@@ -1496,6 +1498,7 @@ const makers: Readonly<Record<MaterialName, () => THREE.Material>> = {
   stoneFoot: () => floodLit(footShaded(tiled('stone'), FRONT_FOOT), ...FRONT_FLOOD.stone),
   // the shed's pale dressings: see STONE_DRESSING
   stoneDressing,
+  stoneImpost: () => stoneDressing(STONE_IMPOST),
   // the glazing of the shed's west arcade: see ARCADE_GLASS
   arcadeGlass: () => nightFloor(litPane(nearer(new THREE.MeshLambertMaterial({ color: ARCADE_GLASS.color, emissive: ARCADE_GLASS.sheen })), false, ARCADE_GLASS.share), ARCADE_GLASS.night, 'arcadeGlass', true),
   // the glazing's frames and bars: see ARCADE_FRAME

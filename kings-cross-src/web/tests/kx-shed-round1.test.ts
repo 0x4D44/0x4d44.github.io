@@ -57,19 +57,19 @@ test('B3: a lattice girder 1.2-1.8 m deep spans the foot of each north screen un
 test('B1: a ring in each rib\'s haunch, both feet of every rib, instanced in the ribs\' paint and not a shadow caster', () => {
   const H = S.HAUNCH_RING as { radius: number; tube: number };
   const across = 2 * (H.radius + H.tube);
-  assert.ok(across >= 1.0 && across <= 1.4 && H.tube * 2 >= 0.08 && H.tube * 2 <= 0.16, `ring ${across} across, section ${2 * H.tube}`);
+  // re-pinned round S2 (shed-round-1 score, B1/B3; kx-shed-round2 pins the new figures): the ring in the rib's foot panel, as large as fits between the booms there (0.9 m)
+  assert.ok(across >= 0.8 && across <= 1.4 && H.tube * 2 >= 0.08 && H.tube * 2 <= 0.16, `ring ${across} across, section ${2 * H.tube}`);
   const rings = group.getObjectByName('shed-haunch-rings') as THREE.InstancedMesh, ribs = group.getObjectByName('shed-ribs') as THREE.InstancedMesh;
   assert.ok(rings && rings.isInstancedMesh, 'an instanced mesh');
   assert.equal(rings.count, 2 * ribs.count, 'two to a rib');
   assert.equal(rings.material, ribs.material, 'the ribs\' own paint by day');
   assert.equal(buildingNightMaterialsOf(rings)?.night, material('ribPaint'), 'and at night');
   assert.ok(!rings.castShadow && !SHADOW_CASTERS.has('shed-haunch-rings'), 'not a caster');
-  // in the rib's plane, in the triangle between the vertical over the inner boom's foot and the inner boom, clear of both
-  const rho = H.radius + H.tube, xf = R - shed.RIB_FOOT, rb = R - 1.3;
+  // in the rib's plane, between the booms; re-pinned round S2 (shed-round-1 score, B1/B3; kx-shed-round2 pins the new figures): in the foot panel, so no longer tangent to the vertical over the foot, and lower (1-8 m over the springing)
+  const rho = H.radius + H.tube, rb = R - 1.3;
   for (const [u, y] of shed.haunchRingCentres(sp)) {
-    assert.ok(Math.abs(Math.abs(u) - (xf - rho)) < 1e-6, `tangent to the vertical over the foot (${u.toFixed(2)})`);
     assert.ok(Math.hypot(u, y - sp) > rb + rho - 0.05 && Math.hypot(u, y - sp) < R + 0.1, `between the booms (${Math.hypot(u, y - sp).toFixed(2)} from the vault's centre)`);
-    assert.ok(y - sp > 2 && y - sp < 8, `${(y - sp).toFixed(2)} m over the springing`);
+    assert.ok(y - sp > 1 && y - sp < 8, `${(y - sp).toFixed(2)} m over the springing`);
   }
   const m = new THREE.Matrix4(), p = new THREE.Vector3(), q = new THREE.Vector3();
   const ribZ = new Set<number>();
@@ -81,10 +81,11 @@ test('B3: a cream stone impost on each arcade pier, east and west, its top on th
   // re-pinned round S1b (platform-eye-p8-south: 0.4 m proud and butting the jambs, the imposts read as shelves crossing the windows): one to a pier, short of
   // the openings by ARCADE_IMPOST.margin, 0.05-0.1 m proud
   const I = S.ARCADE_IMPOST as { tall: number; out: number; margin: number };
-  assert.ok(I.tall >= 0.25 && I.tall <= 0.5 && I.out >= 0.05 && I.out <= 0.1 && I.margin >= 0.1, JSON.stringify(I));
-  const stone = group.getObjectByName('shed-spine-stone') as THREE.Mesh;
-  assert.ok(!SHADOW_CASTERS.has('shed-spine-stone'));
-  assert.equal(stone.material, material('stoneDressing'), 'the stone dressings\' cream');
+  // re-pinned round S2 (shed-round-1 score, B1/B3; kx-shed-round2 pins the new figures): 0.25-0.35 m proud, a bracket under it, in their own paler cream and mesh; still never over an opening
+  assert.ok(I.tall >= 0.25 && I.tall <= 0.5 && I.out >= 0.25 && I.out <= 0.35 && I.margin >= 0.1, JSON.stringify(I));
+  const stone = group.getObjectByName('shed-arcade-imposts') as THREE.Mesh;
+  assert.ok(!SHADOW_CASTERS.has('shed-arcade-imposts'));
+  assert.equal(stone.material, material('stoneImpost'), 'the imposts\' cream');
   const opens = shed.eastArcadeOpenings(L);
   const eastFace = shed.eastArcadeU(layout) - shed.SPINE_WALL.thick / 2, westFace = shed.WEST_ARCADE.depth;
   let n = 0;
@@ -95,13 +96,13 @@ test('B3: a cream stone impost on each arcade pier, east and west, its top on th
       if (b.vc - b.r - (a.vc + a.r) < 2 * I.margin + 0.2) continue;
       const h = ray((a.vc + a.r + b.vc - b.r) / 2, y);
       const proud = h ? (local(h).x - face) * dir : NaN;
-      assert.ok(proud >= 0.05 - 1e-6 && proud <= 0.1 + 1e-6, `the impost on the pier at v ${((a.vc + b.vc) / 2).toFixed(1)}, ${dir < 0 ? 'east' : 'west'}: ${proud.toFixed(3)} m proud`);
+      assert.ok(proud >= 0.25 - 1e-6 && proud <= 0.35 + 1e-6, `the impost on the pier at v ${((a.vc + b.vc) / 2).toFixed(1)}, ${dir < 0 ? 'east' : 'west'}: ${proud.toFixed(3)} m proud`);
       n++;
     }
     // over every opening's span, at the imposts' height, no stone stands proud of the face
     for (const { vc, r, jamb } of opens) for (let k = 0; k <= 20; k++) {
       const v = vc - r - I.margin / 2 + ((2 * r + I.margin) * k) / 20;
-      for (const y of [jamb - 0.05, jamb - I.tall / 2, jamb - I.tall + 0.05]) {
+      for (const y of [jamb - 0.05, jamb - I.tall / 2, jamb - I.tall + 0.05, jamb - I.tall - 0.1, jamb - I.tall - 0.3]) { // re-pinned round S2 (shed-round-1 score, B1/B3; kx-shed-round2 pins the new figures): and the bracket's height
         const h = ray(v, y);
         assert.ok(!h || (local(h).x - face) * dir < 0.01, `stone over the opening at v ${v.toFixed(2)} (${vc.toFixed(1)} +- ${r.toFixed(1)}), ${dir < 0 ? 'east' : 'west'}: ${h && ((local(h).x - face) * dir).toFixed(2)} m proud`);
       }
@@ -112,7 +113,7 @@ test('B3: a cream stone impost on each arcade pier, east and west, its top on th
 
 test('B1: the ribs and haunch rings a lighter blue-grey by day (RIB_DAY_LIFT), ribPaint itself at night; the bars, clock iron and front steel unmoved', () => {
   const lift = S.RIB_DAY_LIFT as number;
-  assert.ok(lift >= 1.3 && lift <= 1.8, `lift ${lift}`);
+  assert.ok(lift >= 1.3 && lift <= 2.5, `lift ${lift}`); // re-pinned round S2 (shed-round-1 score, B1/B3; kx-shed-round2 pins the new figures): 2.0
   const lum = (c: THREE.Color): number => 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
   const paint = material('ribPaint') as THREE.MeshLambertMaterial;
   for (const name of ['shed-ribs', 'shed-haunch-rings']) {
