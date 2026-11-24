@@ -1713,9 +1713,13 @@ export const PLATFORM_CLOCK = { v: 0.638, y: 5.2, out: 1.3, radius: 0.6, drum: 0
  * clear of the arches (WEST_ARCADE), in a bay with no platform furniture within 6 m (until round 15 a pole clock stood beside it). Sizes ASSUMED.
  */
 /** Round 16: the spandrel web's roundels, [out from the arcade's face, up from the beam's centre line, radius], metres (ASSUMED, after R-kx-shed-interior-d). */
-export const SPANDREL_ROUNDELS: readonly (readonly [number, number, number])[] = [[0.11, -0.27, 0.075], [0.25, -0.17, 0.04], [0.06, -0.45, 0.045]];
+// round 19 (platform-round-6, section 5; R-kx-shed-interior-d): the main roundel large, about a third of the spandrel's depth across (2 x 0.13 of 0.85 m), in
+// the web's corner, where the largest circle fits (centre 0.15 m out and down, 0.14 m clear of the curve); two small ones toward the beam's and the wall's ends
+export const SPANDREL_ROUNDELS: readonly (readonly [number, number, number])[] = [[0.15, -0.15, 0.13], [0.42, -0.05, 0.035], [0.05, -0.42, 0.035]];
 /** Round 16: the cresting scroll's outer edge, a quarter ellipse `a` out and `b` up from the foot of the dial's side (ASSUMED). */
 export const CRESTING = { a: 0.57, b: 0.36 } as const;
+/** Round 19: the solid cheek's thickness and its scroll piercing's radius, metres (ASSUMED). */
+export const CHEEK = { depth: 0.04, pierce: 0.07 } as const;
 export function buildPlatformClock(length: number): THREE.Group {
   const { v, y, out, radius, drum, rim, beam, beamDrop, spandrel: R, wall: x0 } = PLATFORM_CLOCK;
   const ribs = ribPositions(length), rib = ribs.reduce((best, r) => (Math.abs(r - v * length) < Math.abs(best - v * length) ? r : best));
@@ -1775,11 +1779,11 @@ export function buildPlatformClock(length: number): THREE.Group {
       const [ax, ay] = pt((Math.PI / 2) * (k / 6)), [bx, by] = pt((Math.PI / 2) * ((k + 1) / 6));
       iron.box([(ax + bx) / 2, (ay + by) / 2, z], [Math.hypot(bx - ax, by - ay) + 0.02, 0.05, 0.06], { rotZ: Math.atan2(by - ay, bx - ax) });
     }
-    for (let k = 0; k < 5; k++) {
-      const off = (a * (k + 0.5)) / 5, hgt = b * Math.sqrt(1 - (off / a) ** 2);
-      iron.box([xc + s * off, top + hgt / 2, z], [0.035, hgt, 0.04]);
-    }
-    ring(xc + s * (a - 0.02), top + 0.07, 0.06, 0.05); // the curl
+    // round 19 (platform-round-6, section 5; R-kx-shed-interior-d): a solid cheek under the edge, not round 16's fan of bars: a plate filling the quarter
+    // ellipse from the dial's foot, both faces (CHEEK.depth thick), the scroll piercing drawn as a ring proud of it either side (relief: the plate is not cut)
+    const fan: [number, number][] = [[xc, top], ...Array.from({ length: 7 }, (_, k): [number, number] => pt((Math.PI / 2) * (k / 6)))];
+    for (const f of [-1, 1]) iron.poly(fan.map(([px, py]): V3 => [px, py, z + (f * CHEEK.depth) / 2]), undefined, { facing: [0, 0, f] });
+    ring(xc + s * a * 0.42, top + b * 0.36, CHEEK.pierce, CHEEK.depth + 0.02); // the scroll piercing (round 16's curl at the foot goes: the clock stays under 1,500 triangles)
   }
   g.add(...faces, mesh(iron.build(), material('ribPaint'), 'shed-platform-clock-iron'));
   g.userData.clockDials = [1, -1].map((s): ClockDial => ({ centre: [cx, y, z + s * (drum / 2 + 0.005)], normal: [0, 0, s], up: [0, 1, 0], radius })); // clocks.ts

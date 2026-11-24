@@ -21,7 +21,7 @@ if out == src or out.is_relative_to(src) or src.is_relative_to(out):
 out.mkdir(parents=True, exist_ok=True)
 
 MUTATIONS = [
-    ('no trolley points', 'web/src/furniture.ts', "  trolley: { offsets: [15.25, -15.25, -27.45, 27.45, -33.55, 33.55, -39.65, 39.65], r: 1.5, across: 0.55 },\n", "  trolley: { offsets: [], r: 1.5, across: 0.55 },\n", 'B5: bins'),
+    ('no trolley points', 'web/src/furniture.ts', "  trolley: { offsets: [15.25, -15.25, -27.45, 27.45, -33.55, 33.55, -39.65, 39.65], r: 1.2, across: 0.55 },", "  trolley: { offsets: [], r: 1.2, across: 0.55 },", 'B5: bins'),
     # dropping the clock-bay guard (EXTRA_CLOCK_CLEAR) is an equivalent mutant on today's track data: no extra's offset lands within 6 m of the clock's rib
     ('extras not checked against their neighbours', 'web/src/furniture.ts', "          const c: ExtraPlacement = { ref: at.home.ref, x: at.x, z: at.z, rotY: by.rotY, r: spec.r, across: spec.across, kind, label: refs.join(' ') };\n          const clear = near.every(", "          const c: ExtraPlacement = { ref: at.home.ref, x: at.x, z: at.z, rotY: by.rotY, r: spec.r, across: spec.across, kind, label: refs.join(' ') };\n          const clear = true || near.every(", 'B5: bins'),
     ('two of each per island', 'web/src/furniture.ts', "            plan.extras.push(c);\n            near.push(c);\n            break extra;", "            plan.extras.push(c);\n            near.push(c);", 'B5: bins'),

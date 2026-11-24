@@ -1068,15 +1068,20 @@ export function furniturePlan(data: FurnitureData, layout: FurnitureLayout): Fur
     if (group.length !== refs.length) continue;
     const near = group.flatMap((g) => g.placed);
     // the point midway between the group's band middles at shed v, half-width `half`, or null where one has no band there
-    const pointAt = (v: number, half: number): { x: number; z: number; home: Frame } | null => {
+    // `side`: the band's middle, or (round 19, the trolley point: shed-e has it to one side, by the bins) its edge on the side that is not a track, the
+    // band's +n edge on an island; the band keeps the safety line and the wall's clearance either way
+    const pointAt = (v: number, half: number, side: 'mid' | 'wall' = 'mid'): { x: number; z: number; home: Frame } | null => {
       const pts: Pt[] = [];
       for (const { f } of group) {
         const t = tAtV(f, v);
         const b = t < f.tLo + FIGURES.endSouth || t > f.tHi - FIGURES.endNorth ? null : bandAt(f, t, half);
-        if (b) pts.push(worldPoint(f, t, b.mid));
+        if (b) pts.push(worldPoint(f, t, side === 'mid' ? b.mid : !b.loTrack && b.hiTrack ? b.s0 : b.s1));
       }
       if (pts.length !== group.length) return null;
-      const x = pts.reduce((a, q) => a + q[0], 0) / pts.length, z = pts.reduce((a, q) => a + q[1], 0) / pts.length;
+      // to the side: the one frame's edge point furthest along the first frame's +n (an island's halves would average back to its middle)
+      const n0 = (group[0] as { f: Frame }).f.n;
+      const pick = side === 'wall' ? [pts.reduce((a, q) => (q[0] * n0[0] + q[1] * n0[1] > a[0] * n0[0] + a[1] * n0[1] ? q : a))] : pts;
+      const x = pick.reduce((a, q) => a + q[0], 0) / pick.length, z = pick.reduce((a, q) => a + q[1], 0) / pick.length;
       const home = group.find(({ f }) => pointInPolygon([x, z], [...f.pts]));
       return home ? { x, z, home: home.f } : null;
     };
@@ -1132,9 +1137,17 @@ export function furniturePlan(data: FurnitureData, layout: FurnitureLayout): Fur
     for (const [kind, spec] of Object.entries(EXTRAS) as [ExtraKind, (typeof EXTRAS)[ExtraKind]][]) {
       extra: for (const by of byOrder) {
         const v0 = worldToShed(layout, [by.x, by.z]).v;
-        for (const d of spec.offsets) {
+        // round 19 (platform-round-6: the trolley point on the centreline in front of the blade post; shed-e has it to one side by the bins): the trolley
+        // point tries first to close the group's line, EXTRA_BESIDE past the blade on the far side from the bins (bins, blade, trolley point: from that end the
+        // post stands in front of the board, from the other the bins do), then EXTRA_BESIDE past the bins the other way; always at its band's side (pointAt 'wall')
+        const mineOf = (k: ExtraKind) => (kind === 'trolley' ? plan.extras.find((e) => e.kind === k && e.label === refs.join(' ')) : undefined);
+        const bins = mineOf('bins'), blade = mineOf('blade');
+        const binsD = bins ? worldToShed(layout, [bins.x, bins.z]).v - v0 : null, bladeD = blade ? worldToShed(layout, [blade.x, blade.z]).v - v0 : null;
+        const away = binsD !== null && bladeD !== null ? Math.sign(bladeD - binsD) || 1 : 1;
+        const first = [...(bladeD === null ? [] : [bladeD + away * EXTRA_BESIDE]), ...(binsD === null ? [] : [binsD - away * EXTRA_BESIDE])];
+        for (const d of [...first, ...spec.offsets]) {
           if (Math.abs(v0 + d - clockV) < EXTRA_CLOCK_CLEAR) continue;
-          const at = pointAt(v0 + d, spec.across);
+          const at = pointAt(v0 + d, spec.across, kind === 'trolley' ? 'wall' : 'mid');
           if (!at) continue;
           const c: ExtraPlacement = { ref: at.home.ref, x: at.x, z: at.z, rotY: by.rotY, r: spec.r, across: spec.across, kind, label: refs.join(' ') };
           const clear = near.every((q) => Math.hypot(q.x - c.x, q.z - c.z) >= q.r + c.r + (benches.has(q) ? FIGURES.totemBenchGap : FIGURES.gap));
@@ -1302,8 +1315,10 @@ export interface ExtraPlacement extends Placement {
 export const EXTRAS = {
   bins: { offsets: [12.2, -12.2, 18.3, -18.3, 24.4, -24.4, 30.5, -30.5], r: 0.8, across: 0.4 },
   blade: { offsets: [9.15, -9.15, 15.25, -15.25, 21.35, -21.35], r: 0.45, across: 0.4 },
-  trolley: { offsets: [15.25, -15.25, -27.45, 27.45, -33.55, 33.55, -39.65, 39.65], r: 1.5, across: 0.55 },
+  trolley: { offsets: [15.25, -15.25, -27.45, 27.45, -33.55, 33.55, -39.65, 39.65], r: 1.2, across: 0.55 }, // round 19: r 1.2 (was 1.5), so it fits beside the bins
 } as const;
+/** round 19: the trolley point's first tries, this far along past its group's blade or bins, metres (over the bins' r, its r and FIGURES.gap: 2.3) */
+export const EXTRA_BESIDE = 2.4;
 /** the platform clock's bay is left clear: no extra within this of its rib, metres (round 15's scorer: nothing within about 6 m of the clock) */
 export const EXTRA_CLOCK_CLEAR = 9;
 const SIGN_BLUE = rgb(0x1f3c88);
@@ -1311,7 +1326,7 @@ const SIGN_WHITE = rgb(0xf1f2f0);
 const BIN_GREEN = rgb(0x2f7a3c);
 const TROLLEY_GREY = rgb(0x9aa1a8);
 /** The nested trolleys at a trolley point (round 18): how many, how far apart (m), each basket's length and the wire's half-thickness (ASSUMED, shed-e: a short row). */
-export const TROLLEY = { n: 4, pitch: 0.16, len: 0.85, wire: 0.012 } as const;
+export const TROLLEY = { n: 4, pitch: 0.27, len: 0.9, wire: 0.012, half: 0.26 } as const; // round 19: each 0.9 m long, 0.27 m on from the last (70% nested)
 /** seven-segment digits: which of a, b, c, d, e, f, g each lights */
 const SEGMENTS: Record<string, string> = { '0': 'abcdef', '1': 'bc', '2': 'abged', '3': 'abgcd', '4': 'fgbc', '5': 'afgcd', '6': 'afgedc', '7': 'abc', '8': 'abcdefg', '9': 'abcdfg' };
 /** One extra at y = 0, local z along the platform; nothing floats: every part stands on the platform or on another part. */
@@ -1336,18 +1351,28 @@ export function extraGeometry(e: { kind: ExtraKind; label: string }, part: 'all'
     for (const sx of [-0.42, 0.42]) b.aabb(sx - 0.04, 0, -0.04, sx + 0.04, 2.2, 0.04, IRON);
     b.aabb(-0.5, 1.0, -0.035, 0.5, 2.25, 0.035, SIGN_BLUE, true);
     b.aabb(-0.42, 1.95, -0.045, 0.42, 2.12, 0.045, SIGN_WHITE, true); // the board's heading strip, both faces
-    // round 18 (platform-round-5, section 3: a plain grey slab, where shed-e shows a row of wire trolleys): TROLLEY.n nested wire trolleys in front of it, thin
-    // frames (rails, rims, corner posts and a handle) TROLLEY.pitch apart, so the board, the post and the bins show through them
-    const { n, pitch, len, wire: q } = TROLLEY;
-    for (let k = 0; k < n; k++) {
-      const z0 = 0.25 + k * pitch, z1 = z0 + len;
-      for (const sx of [-0.27, 0.27]) {
-        b.aabb(sx - q, 0.12, z0, sx + q, 0.12 + 2 * q, z1, TROLLEY_GREY, true); // the base rail
-        b.aabb(sx - q, 0.88, z0, sx + q, 0.88 + 2 * q, z1, TROLLEY_GREY, true); // the basket's top rim
-        for (const z of [z0, z1 - 2 * q]) b.aabb(sx - q, 0.12, z, sx + q, 0.9, z + 2 * q, TROLLEY_GREY, true); // the corner posts
+    // round 19 (platform-round-6, sections 3 and 5: round 18's frames read as open gates): TROLLEY.n luggage trolleys nested in a row, parallel, each
+    // TROLLEY.pitch on from the one before (about 70% of TROLLEY.len overlapped), as shed-e's. Each: a low base frame on four castors, a wire basket at the
+    // back (rim bars), two uprights sloping back to a handle. All thin bars in the one merged extras mesh, about 126 triangles a trolley (the base frame has no nose bar: the extras mesh stays under round 16's 4,000).
+    const { n, pitch, len, wire: q, half: hw } = TROLLEY;
+    const bar = (x: number, y0: number, z0: number, y1: number, z1: number, c: Rgb): void => {
+      // a square bar from (x, y0, z0) to (x, y1, z1), sloping in y-z: its four sides
+      const l = Math.hypot(y1 - y0, z1 - z0), ny = (-(z1 - z0) / l) * q, nz = ((y1 - y0) / l) * q;
+      const at = (sx: number, sn: number, end: 0 | 1): V3 => [x + sx * q, (end ? y1 : y0) + sn * ny, (end ? z1 : z0) + sn * nz];
+      for (const [a, c2] of [[[1, 1], [1, -1]], [[1, -1], [-1, -1]], [[-1, -1], [-1, 1]], [[-1, 1], [1, 1]]] as [[number, number], [number, number]][]) {
+        b.poly([at(a[0], a[1], 0), at(c2[0], c2[1], 0), at(c2[0], c2[1], 1), at(a[0], a[1], 1)], undefined, { color: c });
       }
-      b.aabb(-0.29, 0.88, z1 - 2 * q, 0.29, 0.88 + 2 * q, z1, TROLLEY_GREY, true); // the basket's front rim
-      b.aabb(-0.29, 1.0, z0 - 0.06, 0.29, 1.0 + 2 * q, z0 - 0.06 + 2 * q, IRON, true); // the handle
+    };
+    for (let k = 0; k < n; k++) {
+      const z0 = 0.3 + k * pitch, z1 = z0 + len; // z0 the back (the handle's end), z1 the nose
+      for (const sx of [-hw, hw]) {
+        b.aabb(sx - q, 0.07, z0, sx + q, 0.07 + 2 * q, z1, TROLLEY_GREY, true); // the base frame's side rail
+        b.aabb(sx - q, 0.82, z0, sx + q, 0.82 + 2 * q, z0 + 0.38, TROLLEY_GREY, true); // the basket's side rim
+        for (const z of [z0 + 0.03, z1 - 0.06]) b.aabb(sx - 0.025, 0, z, sx + 0.025, 0.07, z + 0.05, IRON, true); // a castor
+        bar(sx, 0.08, z0, 1.02, z0 - 0.16, TROLLEY_GREY); // an upright, sloping back to the handle
+      }
+      b.aabb(-hw, 0.82, z0 + 0.38 - 2 * q, hw, 0.82 + 2 * q, z0 + 0.38, TROLLEY_GREY, true); // the basket's front rim
+      b.aabb(-hw - 0.03, 1.0, z0 - 0.17, hw + 0.03, 1.0 + 3 * q, z0 - 0.17 + 3 * q, IRON, true); // the handle
     }
   } else if (part !== 'face') {
     // its own post, up to the panel's foot (round 18, platform-round-5 section 3: run up to the top it crossed both faces between the digits)

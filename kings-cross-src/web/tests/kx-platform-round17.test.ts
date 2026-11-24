@@ -104,7 +104,9 @@ test('B5: the platform clock\'s night dial is neutral white (no blue cast), at D
   clock.traverse((o) => { if (o.name === 'clock-dial-glow') glows.push(o as THREE.Mesh); });
   for (const g of glows) {
     const c = (g.material as THREE.MeshBasicMaterial).color;
-    assert.ok(Math.abs(c.r - c.b) < 1e-6 && Math.abs(c.g - c.b) < 1e-6, `neutral: ${c.toArray().map((n) => n.toFixed(3))}`);
+    // re-pinned (round 19, platform-round-6: equal channels left the dial at blue minus red 19, the night sky's blue under it): the glow is DIAL_GLOW_NEUTRAL,
+    // warmed to cancel that cast (kx-platform-round19.test.ts checks the dial it makes), in proportion
+    assert.ok(Math.abs(c.r / neutral[0] - c.b / neutral[2]) < 1e-6 && Math.abs(c.g / neutral[1] - c.b / neutral[2]) < 1e-6, `DIAL_GLOW_NEUTRAL's: ${c.toArray().map((n) => n.toFixed(3))}`);
     assert.ok(c.r > 0.4 && c.r <= 0.75, 'and still capped');
   }
   const tower = new THREE.Group(), face = new THREE.Mesh(new THREE.CircleGeometry(1, 8), new THREE.MeshLambertMaterial());

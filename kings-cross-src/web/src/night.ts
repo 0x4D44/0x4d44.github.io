@@ -218,7 +218,11 @@ export function createNightLights(sites: NightLightSites): NightLights {
  */
 export const DIAL_GLOW: readonly [number, number, number] = [1.06, 1.1, 1.2];
 /** Round 17 (platform-round-4 score: the platform clock's night dial read blue): a face may ask for a neutral glow (`glowNeutral`), DIAL_GLOW's luminance in white. */
-export const DIAL_GLOW_NEUTRAL: readonly [number, number, number] = [1.1, 1.1, 1.1];
+// Round 19 (platform-round-6: equal channels left the dial at (227, 234, 246), blue minus red 19): the glow is added to the face the night sky has already
+// tinted blue-grey (about (63, 78, 109), DIAL_GLOW's note), so equal channels keep that cast. Per unit of glow colour that capture adds (linear)
+// 0.653, 0.679 and 0.699 (final minus face, over 1.1); the colour that brings each channel to the green's 0.823 is (1.184, 1.1, 0.958). Inferred from
+// that one capture, not measured after: DIAL_NEUTRAL_MODEL in kx-platform-round19.test.ts.
+export const DIAL_GLOW_NEUTRAL: readonly [number, number, number] = [1.18, 1.1, 0.96];
 /** A disc this near a dial's declared centre (clocks.ts `ClockDial`) is that dial's face, metres. */
 export const DIAL_REACH = 0.05;
 /** A dial's glow stands this far off its face, metres: under the hands (clocks.ts `HANDS`, 4 cm and 8 cm off the face), over the face by more than the depth buffer tells apart from far off. */
