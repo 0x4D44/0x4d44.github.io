@@ -565,7 +565,7 @@ export type MaterialName =
   | 'brick' | 'stone' | 'slate' | 'asphalt' | 'platformEdge' | 'ballast'
   | 'roofGlass' | 'glass' | 'window' | 'windowArch'
   | 'concrete' | 'steel' | 'whiteSteel' | 'ribPaint' | 'lining' | 'valleyLining' | 'shedGlass' | 'panel' | 'concourseFloor'
-  | 'brickRed' | 'slateBothSides' | 'sash' | 'sashArch' | 'pane' | 'platformEdgeStrip' | 'brickFoot' | 'stoneFoot' | 'stoneDressing' | 'arcadeGlass';
+  | 'brickRed' | 'slateBothSides' | 'sash' | 'sashArch' | 'pane' | 'platformEdgeStrip' | 'brickFoot' | 'stoneFoot' | 'stoneDressing' | 'arcadeGlass' | 'arcadeFrame';
 
 /**
  * A wall material with the contact shade at its foot, the define lighting.ts `FOOT_SHADE` names (not imported: lighting.ts is the page's chunk, this its own; a test holds the two to one name).
@@ -620,8 +620,36 @@ export const STONE_DRESSING = 0xc2bba6;
  * about (120, 100, 70); kx-front/front-d the arcade openings about (55, 60, 62) against sunlit brick about (150, 120, 85). So `color` a dark grey glass
  * (luminance about 82, sRGB bytes) and `sheen` a faint reflection (about 17), so the sun's shadow reads across it as it does across the brick (lighting.ts:
  * it takes the shadow, being lit and not transparent). Both ASSUMED within those samples.
+ * `night`, since round 7a (the scorer: after dark an unlit arch rendered (2, 3, 6), a black hole with its bars lost): the sheen is a daylight stand-in the
+ * atmosphere dims to a fifth of itself after dark, and the dark glass has nothing else, so the unlit panes went black. After dark (`windowNight`) the glass's
+ * own light is held at least at `night`, a floor of reflected lamplight (per channel, so a lit pane, far brighter, is as it was). Chosen for about 15-25 of
+ * luminance on screen: BASE's night capture rendered an emissive of about 0.019 (linear) as about (53, 59, 62), a gain of about 1.5-2 in linear light, so
+ * this (about 0.005 linear) at about 18-26. ASSUMED.
  */
-export const ARCADE_GLASS = { color: 0x4c545a, sheen: 0x0e1216, share: 0.8 } as const;
+export const ARCADE_GLASS = { color: 0x4c545a, sheen: 0x0e1216, share: 0.8, night: 0x0e1114 } as const;
+/**
+ * The frames, transom, mullions and fanlight bars of the west arcade's glazing (shed.ts WEST_GLAZING). Round 7a's scorer: in the shed's dark rib paint they
+ * peaked at L 44 against the glass at 33 by day and vanished at night; R-kx-shed-interior-c shows the lower windows' bars pale, read clearly through the glass.
+ * Sampled in memory (shed-c-arcade-2013.jpg, 1600 px, lamplit, rough median of the bars of the lower arches at x 1215-1300 and 1380-1445, y 490-550):
+ * about (200, 198, 186), a pale painted cream-grey: `color` that. `night`: after dark (`windowNight`) their light is the lamps' and the lit rooms' on a pale
+ * paint, held at least at this (about 44 of luminance, about 2.7 times the glass's floor). ASSUMED.
+ */
+export const ARCADE_FRAME = { color: 0xc8c6ba, night: 0x2e2c28 } as const;
+/** `m`, after dark (`windowNight`), its own light at least `floor` (sRGB hex, per channel), where its UVs are a window's (`only`: v under -0.5) or everywhere. `key` names its program. */
+function nightFloor<T extends THREE.MeshLambertMaterial>(m: T, floor: number, key: string, only: boolean): T {
+  const before = m.onBeforeCompile.bind(m);
+  const c = new THREE.Color(floor);
+  const glsl = `vec3( ${glslFloat(c.r)}, ${glslFloat(c.g)}, ${glslFloat(c.b)} )`;
+  m.onBeforeCompile = (shader, renderer) => {
+    before(shader, renderer);
+    shader.uniforms.uWinNight = windowNight;
+    if (!only) shader.fragmentShader = shader.fragmentShader.replace('#include <common>', '#include <common>\nuniform float uWinNight;');
+    shader.fragmentShader = shader.fragmentShader.replace('#include <emissivemap_fragment>',
+      `#include <emissivemap_fragment>\n${only ? 'if ( vWinUv.y < -0.5 ) ' : ''}totalEmissiveRadiance = max( totalEmissiveRadiance, ${glsl} * uWinNight );`);
+  };
+  m.customProgramCacheKey = () => key;
+  return m;
+}
 function stoneDressing(): THREE.MeshLambertMaterial {
   const m = tiled('stone');
   if (m.map) {
@@ -1398,7 +1426,9 @@ const makers: Readonly<Record<MaterialName, () => THREE.Material>> = {
   // the shed's pale dressings: see STONE_DRESSING
   stoneDressing,
   // the glazing of the shed's west arcade: see ARCADE_GLASS
-  arcadeGlass: () => litPane(nearer(new THREE.MeshLambertMaterial({ color: ARCADE_GLASS.color, emissive: ARCADE_GLASS.sheen })), false, ARCADE_GLASS.share),
+  arcadeGlass: () => nightFloor(litPane(nearer(new THREE.MeshLambertMaterial({ color: ARCADE_GLASS.color, emissive: ARCADE_GLASS.sheen })), false, ARCADE_GLASS.share), ARCADE_GLASS.night, 'arcadeGlass', true),
+  // the glazing's frames and bars: see ARCADE_FRAME
+  arcadeFrame: () => nightFloor(new THREE.MeshLambertMaterial({ color: ARCADE_FRAME.color }), ARCADE_FRAME.night, 'arcadeFrame', false),
 };
 
 const materials = new Map<MaterialName, THREE.Material>();

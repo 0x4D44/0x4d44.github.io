@@ -861,7 +861,7 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   group.add(mesh(eastArcade.build(), material('brickFoot'), 'shed-east-arcade')); // not a sun-shadow caster either, for the same reason
   group.add(mesh(westArcade.build(), material('brickFoot'), 'shed-west-arcade')); // not a sun-shadow caster either
   group.add(mesh(westPanes.build(), material('arcadeGlass'), 'shed-west-arcade-panes'));
-  group.add(mesh(westBars.build(), material('ribPaint'), 'shed-west-arcade-bars'));
+  group.add(mesh(westBars.build(), material('arcadeFrame'), 'shed-west-arcade-bars'));
   group.add(mesh(spineStone.build(), material('stoneDressing'), 'shed-spine-stone')); // the three arcades' pale bands and corbels (STONE_DRESSING): not a sun-shadow caster either
   group.add(mesh(ceiling.build(), material('valleyLining'), 'shed-aisle-ceiling'));
   group.add(mesh(stone.build(), material('stoneFoot'), 'shed-stone'));

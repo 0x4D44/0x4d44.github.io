@@ -6,7 +6,7 @@ import type { KxData } from '../../core/osm.ts';
 import { CLOCK_TOWER_HEIGHT, SHED_LENGTH, SHED_SPAN_WIDTH, shedLayout, shedToWorld, stationBuilding, worldToShed } from '../../core/station.ts';
 import { shedRoofY } from '../src/furniture.ts';
 import { createSunShadow, SHADOW_CASTERS } from '../src/lighting.ts';
-import { ARCADE_GLASS, material, PANE_UV, TEXTURES } from '../src/materials.ts';
+import { ARCADE_FRAME, ARCADE_GLASS, material, PANE_UV, TEXTURES, windowNight } from '../src/materials.ts';
 import { westArcadeOpenings, WEST_GLAZING } from '../src/shed.ts';
 import { buildShed, buildTower, EAST_ARCADE, eastArcadeOpenings, eastArcadeU, NORTH_PIER, RIB_FOOT, ribLanding, spineLowerOpenings, spineUpperOpenings, valleyTop, buildWesternRange, gableBars, GABLE_GLASS_FROM, glazedHalfAngle, GLAZED_STRIP_WIDTH, GLASS_OPACITY, glazingOpacity, lunetteBars, MEMBER_SIZE, RIB_SPACING, ribMembers, ribPositions, ROOF_SKIN, roofOpacity, SPINE_WALL, spineOpenings, TOWER_SIZE, valleyCut, vaultBand, vaultPoint, WESTERN_RANGE, WESTERN_RANGE_DEPTH_BEFORE, westernArches, westernBays, westernBlock, westernWindows, XRAY_OPACITY } from '../src/shed.ts';
 
@@ -893,7 +893,8 @@ test('the west arcade\'s arches are glazed: grey glass by day, lit after dark, i
   const g = shedWorld(), panes = byName(g, 'shed-west-arcade-panes'), bars = byName(g, 'shed-west-arcade-bars');
   const glass = panes.material as THREE.MeshLambertMaterial;
   assert.equal(glass, material('arcadeGlass'));
-  assert.equal(bars.material, material('ribPaint'), 'the shed\'s dark ironwork paint');
+  // re-pinned 2026-11-24 from the shed's dark 'ribPaint': the scorer of round 7a could not see the bars against the dark glass; pale paint now (the test below)
+  assert.equal(bars.material, material('arcadeFrame'), 'the glazing\'s pale paint');
   // re-pinned 2026-11-24 from colour >= 120 and sheen >= 60 (pale glass): the scorer of shed-arcade-round-6 read that glass as self-lit, brighter than the brick;
   // its day tone is now held by the test 'the west arcade's glass is dark by day' below
   const lum = (hex: number): number => 0.2126 * (hex >> 16) + 0.7152 * ((hex >> 8) & 255) + 0.0722 * (hex & 255);
@@ -959,6 +960,38 @@ test('the west arcade\'s glass is dark by day, darker than the brick, and takes 
   createSunShadow(scene, new THREE.DirectionalLight()).tag();
   assert.equal(panes.receiveShadow, true, 'the glass takes the sun\'s shadow');
   assert.equal(byName(g, 'shed-west-arcade').receiveShadow, true, 'as the brick round it does');
+});
+
+// Scorer of 2026-11-24 (shed-arcade-round-7a, B3): the frames and bars, in the shed's dark rib paint, peaked at L 44 against the glass at 33 by day, and after dark
+// the unlit glass rendered (2, 3, 6), a black hole with the bars lost (the sheen is a daylight stand-in the atmosphere dims). shed-c shows the bars pale.
+// By day the bars' colour is at least 80 of luminance (sRGB bytes) over the glass's and twice it; after dark (windowNight) the unlit glass's own light is held at a
+// floor of 12-22 (only where its UVs are a window's, per channel, so a lit pane is as it was) and the bars' at least 20 over that floor.
+test('the west arcade\'s bars read pale against the glass by day and after dark, and the unlit glass after dark keeps a reflection, not black (R-kx-shed-interior-c)', () => {
+  const g = shedWorld(), glass = byName(g, 'shed-west-arcade-panes').material as THREE.MeshLambertMaterial, bars = byName(g, 'shed-west-arcade-bars').material as THREE.MeshLambertMaterial;
+  const lum = (hex: number): number => 0.2126 * (hex >> 16) + 0.7152 * ((hex >> 8) & 255) + 0.0722 * (hex & 255);
+  const gc = lum(glass.color.getHex()), bc = lum(bars.color.getHex());
+  assert.ok(bc >= gc + 80 && bc >= 2 * gc, `by day: bars ${bc.toFixed(0)} against glass ${gc.toFixed(0)}`);
+  assert.ok(bc <= 215, `bars ${bc.toFixed(0)}: pale, not white`);
+  const compile = (m: THREE.Material): { uniforms: Record<string, THREE.IUniform>; fragmentShader: string } => {
+    const shader = { uniforms: {} as Record<string, THREE.IUniform>, vertexShader: THREE.ShaderLib.lambert.vertexShader, fragmentShader: THREE.ShaderLib.lambert.fragmentShader };
+    m.onBeforeCompile(shader as unknown as THREE.WebGLProgramParametersWithUniforms, undefined as never);
+    return shader;
+  };
+  const floorOf = (m: THREE.Material, hex: number, only: boolean): void => {
+    const { uniforms, fragmentShader } = compile(m), c = new THREE.Color(hex);
+    assert.equal(uniforms.uWinNight, windowNight, `${m.name}: by the night's window uniform`);
+    const want = `${only ? 'if ( vWinUv.y < -0.5 ) ' : ''}totalEmissiveRadiance = max( totalEmissiveRadiance, vec3( ${c.r}, ${c.g}, ${c.b} ) * uWinNight );`;
+    assert.ok(fragmentShader.includes(want), `${m.name}: no night floor`);
+    assert.ok(fragmentShader.indexOf(want) > fragmentShader.indexOf('#include <emissivemap_fragment>'), `${m.name}: the floor after the emissive is made`);
+  };
+  const gf = lum(ARCADE_GLASS.night), bf = lum(ARCADE_FRAME.night);
+  assert.ok(gf >= 12 && gf <= 22, `the unlit glass's night floor ${gf.toFixed(0)}, wanted 12-22`);
+  assert.ok(bf >= gf + 20, `after dark: bars ${bf.toFixed(0)} against glass ${gf.toFixed(0)}`);
+  floorOf(glass, ARCADE_GLASS.night, true);
+  floorOf(bars, ARCADE_FRAME.night, false);
+  assert.equal(compile(glass).fragmentShader.includes(`winPaneLit( vWinUv, wSpan, uWinNight, ${ARCADE_GLASS.share} )`), true, 'still lit as a window after dark');
+  assert.equal(glass.customProgramCacheKey(), 'arcadeGlass', 'a program of its own: the other lit panes keep theirs');
+  assert.equal(material('pane').customProgramCacheKey?.() === 'arcadeGlass', false);
 });
 
 // Scorer of 2026-11-24 (shed-arcade-round-6, B3): the glass ran from the platform to the head, a tall glazed door in each arch; shed-c shows the lower arches as

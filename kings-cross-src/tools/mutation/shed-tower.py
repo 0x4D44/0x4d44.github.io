@@ -58,6 +58,12 @@ M = [
  ('the west arcade\'s glass pale and self-lit again', 'color: 0x4c545a, sheen: 0x0e1216', 'color: 0x8a96a0, sheen: 0x4e5862', 'web/src/materials.ts'),
  ('the west arcade\'s glass glowing by day: a bright sheen the shadow cannot take', 'sheen: 0x0e1216', 'sheen: 0x3a4248', 'web/src/materials.ts'),
  ('the west arcade\'s glass see-through: it takes no sun shadow', 'emissive: ARCADE_GLASS.sheen })', 'emissive: ARCADE_GLASS.sheen, transparent: true, opacity: 0.95 })', 'web/src/materials.ts'),
+ ('the west arcade\'s bars back in the dark rib paint', "material('arcadeFrame'), 'shed-west-arcade-bars'", "material('ribPaint'), 'shed-west-arcade-bars'"),
+ ('the west arcade\'s unlit glass black after dark: no floor', "ARCADE_GLASS.night, 'arcadeGlass', true)", "0, 'arcadeGlass', true)", 'web/src/materials.ts'),
+ ('the west arcade\'s glass floor too bright after dark', 'share: 0.8, night: 0x0e1114 }', 'share: 0.8, night: 0x3a3d40 }', 'web/src/materials.ts'),
+ ('the west arcade\'s bars dark after dark: no floor', "ARCADE_FRAME.night, 'arcadeFrame', false)", "0, 'arcadeFrame', false)", 'web/src/materials.ts'),
+ ('the west arcade\'s glass floor over the lit panes too', "'arcadeGlass', true)", "'arcadeGlass', false)", 'web/src/materials.ts'),
+ ('the west arcade\'s bars dim by day', 'ARCADE_FRAME = { color: 0xc8c6ba,', 'ARCADE_FRAME = { color: 0x707070,', 'web/src/materials.ts'),
 ]
 def run(name):
  try: r = kxmut.run_process(['node','--test','--test-reporter=tap','--test-timeout=10000','web/tests/shed-tower.test.ts','web/tests/shed.test.ts'],cwd=work,timeout=30)
