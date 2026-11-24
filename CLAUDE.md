@@ -232,7 +232,7 @@ pseudo-element with a negative inset.
 
 ## Hosted here, built elsewhere
 
-`la-ladera/`, `glasgow-subway/` and `glasgow-subway-trains/` are edited in the private `0x4D44/mdworld` repo (`models/<name>/`) since 24 Nov 2026. Do not edit them here; to publish, copy `models/<name>/` from mdworld's `origin/main` over the folder here.
+`la-ladera/`, `glasgow-subway/` and `glasgow-subway-trains/` are edited in the private `0x4D44/mdworld` repo (`models/<name>/`) since 24 Nov 2026. Do not edit them here; to publish, run mdworld's `utilities/publish-pages.sh <this task worktree> <name>...`, which copies `models/<name>/` from mdworld's `origin/main` over the folder here and stages it; commit with the mdworld sha it prints.
 
 ## Deployment
 
