@@ -115,9 +115,9 @@ export const FRONT_CORNICE = { out: 0.9, height: 0.9 } as const;
  * a `face` m-proud strip under the great arch's orders' feet, and outside it a brick mass `out` m proud whose returns read obliquely (ASSUMED, read in memory
  * from R-kx-front-a/b against the tower's 6.4 m: a pier about 0.8 of the tower's width, so about 5 m, and in R-b about 3-3.5 m over the parapet).
  */
-export const FRONT_PIERS = { rise: 2.8, cap: 0.9, step: 0.6, stepRun: 3.0, width: 5.2, out: 0.75, face: 0.15 } as const;
+export const FRONT_PIERS = { rise: 2.8, cap: 0.4, step: 0.6, stepRun: 3.0, width: 5.2, out: 1.15, face: 0.15 } as const; // round 23b: `cap` a plain coping 0.4 m deep overhanging 0.25 m, `out` 1.15 so the screen's cornice and corona (0.9, 1.1) end inside the mass (ASSUMED, R-kx-front-a/b)
 /** Round 21 (A2): each great arch's spandrel a recessed panel, framed by brick `out` m proud: a `band` m band under the cornice, `strip` m strips at its sides (ASSUMED). */
-export const FRONT_TYMPANUM = { out: 0.3, band: 0.45, strip: 0.5, shade: 0.3 } as const; // round 22 (A2: 0.15 m read about 1 px square-on): 0.3
+export const FRONT_TYMPANUM = { out: 0.5, band: 0.45, strip: 0.5 } as const; // round 22 (A2: 0.15 m read about 1 px square-on): 0.3; round 23b (the painted line was black at night): 0.5, the band's own soffit casting the shadow line
 export const PORCH_DEPTH = { glass: 0.8, frame: 0.3, interior: 0x7a6a55, barriers: 6, barrier: [0.22, 1.0] as const, figures: 2, figure: [0.45, 1.7] as const, gradient: [0.75, 1.0] as const, soffit: 0xe6d6b4 } as const; // round 21: figures (ASSUMED); round 22: `gradient`, the interior's brightness at its foot and at its top (ASSUMED); round 23 (A3): the glass 0.8 m back (was 0.45: the returns read about 1 px), the gradient's foot 0.75 (0.5 dimmed the figures), and `soffit`, the lit ceiling over each opening's head
 /**
  * The low canopy along the front (R-kx-front-a, 2026, and R-kx-front-b, 2016): a flat dark steel roof on slender columns at the bay lines,
@@ -1362,12 +1362,11 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
     const end = sd < 0 ? fx0 : fx1, inner = end - sd * 1.0, mid = end + sd * feet, outer = end + sd * (width - 1.0);
     proud((inner + mid) / 2, (GROUND_Y + 0.5 + top) / 2, 1.0 + feet, top - GROUND_Y - 0.5, face);
     brick.box([(mid + outer) / 2, (GROUND_Y + top) / 2, (po - FRONT_THICK - 0.02) / 2], [width - 1.0 - feet, top - GROUND_Y, FRONT_THICK + 0.02 + po]);
-    // its cap: round 23 (A1: a 0.45 m slab) a stepped stone cornice `cap` m deep: a bed course overhanging 0.15 m, a corona 0.5 m, and a blocking course 0.1 m
-    for (const [y0, y1, o] of [[0, 0.25, 0.15], [0.25, 0.6, 0.5], [0.6, cap, 0.1]] as const) {
-      stone.box([(inner + outer) / 2, top + (y0 + y1) / 2, (po - FRONT_THICK) / 2], [width + 2 * o, y1 - y0, FRONT_THICK + 2 * o + po], { skip: y0 > 0.5 ? ['-z', '-y'] : ['-z'] });
-    }
-    // round 23 (A2: front-b shows a string course across the piers at the springing): a stone band on the mass under the springing course, 0.95 m proud
-    stone.box([(mid + outer) / 2 + sd * 0.1, sp - 0.3 - 0.325, (0.95 - FRONT_THICK) / 2], [width - 1.0 - feet + 0.2, 0.65, FRONT_THICK + 0.95], { skip: ['-z'] });
+    // its cap: round 23b (A1: the three-tier cornice read too grand against R-kx-front-a/b) a plain stone coping `cap` m deep overhanging the mass 0.25 m (ASSUMED)
+    stone.box([(inner + outer) / 2, top + cap / 2, (po - FRONT_THICK) / 2], [width + 0.5, cap, FRONT_THICK + 0.5 + po], { skip: ['-z'] });
+    // round 23 (A2: front-b shows a string course across the piers at the springing): a stone band on the mass at the springing, round 23b 0.25 m proud of
+    // the mass's face so its shadow shows obliquely
+    stone.box([(mid + outer) / 2 + sd * 0.1, sp - 0.325, (po + 0.25 - FRONT_THICK) / 2], [width - 1.0 - feet + 0.2, 0.65, FRONT_THICK + po + 0.25], { skip: ['-z'] });
   }
   for (const sd of [-1, 1]) {
     const x0 = spine + sd * (TOWER_SIZE / 2), x1 = x0 + sd * stepRun, xc = (x0 + x1) / 2;
@@ -1375,9 +1374,6 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
     // its coping: round 22 (A1: plain dark tops) the parapet's own, 0.3 m deep and 0.4 m proud, overhanging the step's end 0.15 m
     stone.box([xc + sd * 0.075, coped + step + 0.15, (0.4 - FRONT_THICK) / 2], [stepRun + 0.15, 0.3, FRONT_THICK + 0.4], { skip: ['-z'] });
   }
-  // round 23 (A2: the 0.3 m frame did not read square-on): its shadow line painted in the frames' charcoal (non-casting: the infill, below), a
-  // FRONT_TYMPANUM.shade m strip on the panel under the band and inside each side strip, and the band's soffit
-  const tympanumShade: [V3[], V3][] = [];
   // the great arches' spandrels: round 21 (A2: one flat plane of brick) a recessed panel, read by a brick frame FRONT_TYMPANUM.out proud round it: a band
   // under the cornice's shadow line, and strips down the end pier's and the tower's sides to the outer order; the arch's orders close it below
   {
@@ -1386,13 +1382,6 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
     centres.forEach((uc, vault) => {
       const xa = vault === 0 ? fx0 + 1.0 : spine + TOWER_SIZE / 2, xb = vault === 0 ? spine - TOWER_SIZE / 2 : fx1 - 1.0;
       brick.box([(xa + xb) / 2, yTop - band / 2, out / 2], [xb - xa, band, out], { skip: ['-z'] });
-      const sh = FRONT_TYMPANUM.shade, e = 0.004, [ia, ib] = [xa + strip, xb - strip];
-      tympanumShade.push([[[ia, yBand - sh, e], [ib, yBand - sh, e], [ib, yBand, e], [ia, yBand, e]], [0, 0, 1]]);
-      tympanumShade.push([[[xa, yBand - e, 0], [xb, yBand - e, 0], [xb, yBand - e, out], [xa, yBand - e, out]], [0, -1, 0]]);
-      for (const [x0, x1] of [[ia, ia + sh], [ib - sh, ib]]) {
-        const yArc = sp + Math.sqrt(Math.max(0, rO * rO - (((x0 + x1) / 2) - uc) ** 2));
-        if (yArc < yBand - sh - 0.3) tympanumShade.push([[[x0, yArc, e], [x1, yArc, e], [x1, yBand - sh, e], [x0, yBand - sh, e]], [0, 0, 1]]);
-      }
       for (const x of [xa + strip / 2, xb - strip / 2]) {
         const yArc = sp + Math.sqrt(Math.max(0, rO * rO - (x - uc) ** 2));
         if (yArc < yBand - 0.3) brick.box([x, (yArc + yBand) / 2, out / 2], [strip, yBand - yArc, out], { skip: ['-z', '-y'] });
@@ -1455,7 +1444,6 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   // canopy's downlights, one mesh of four materials (FRONT_COLOURS, FRONT_NIGHT): the glass, the fascia and the lamps glow at night
   const infillGlass: THREE.BufferGeometry[] = [];
   const frames = new Batch();
-  for (const [pts, facing] of tympanumShade) frames.poly(pts, undefined, { facing });
   const soffits = new Batch();
   const fasciae = new Batch();
   const interior = new Batch();

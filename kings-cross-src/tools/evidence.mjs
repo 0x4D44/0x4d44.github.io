@@ -61,7 +61,7 @@ export const AXES = [
  */
 export const ELEMENT_VIEWS = {
   'lighting-materials': ['overview', 'south-front', 'front-oblique-solid-slate', 'platform-eye', 'concourse', 'great-northern-hotel', 'midland-grand-front', 'gasworks-portals', 'facade-brick-close'],
-  'kx-front': ['south-front', 'front-oblique', 'front-oblique-solid-slate', 'roof-above-solid-slate', 'north-gable', 'tower-close', 'front-southwest-pedestrian', 'shed-east-flank', 'gable-oblique'],
+  'kx-front': ['south-front', 'front-oblique', 'front-oblique-solid-slate', 'roof-above-solid-slate', 'north-gable', 'tower-close', 'front-southwest-pedestrian', 'shed-east-flank', 'gable-oblique', 'porch-close'],
   'shed-interior': ['platform-eye', 'platform-eye-south', 'shed-interior', 'platform-eye-p1-north', 'platform-eye-p8-south', 'roof-underside', 'furniture-close', 'suburban-p9', 'platform-clock', 'platform-furniture'],
   'western-concourse': ['concourse', 'concourse-roof-detail', 'western-range', 'western-range-gateline', 'concourse-hotel-junction', 'concourse-exterior-square', 'concourse-funnel-up', 'western-range-full', 'concourse-exterior-west'],
   'historic-neighbours': ['great-northern-hotel', 'midland-grand-front', 'st-pancras-shed', 'st-pancras-shed-oblique', 'gnh-from-square', 'midland-euston-road', 'midland-clock-tower', 'barlow-interior'],
@@ -472,6 +472,15 @@ const FROZEN_STATION_CAMERAS = {
     target: [73.9574, 13.8648, -255.3447],
     source: 'R-kx-front-d (front-d-north-gables-2020.jpg): 40 m out from the east vault\'s north gable rib near its east springing, 30 degrees east of the gable\'s normal, y = 16 m, looking back at the rib',
     fov: 40, near: 0.1,
+  },
+  // Round 23b (front-piers-round-3 score, section 5: the canopy hides the porch heads from every front view): the middle porch opening under the west
+  // great arch (shed.ts southFrontArcadeCentres: u = spine - span + 1.5 bays), from under the canopy 5 m south of the front and 2.5 m west, eye 1.7 m over
+  // the shed frame's ground, looking at the opening 2.6 m over its foot
+  'porch-close': {
+    pos: [16.6327, 1.5, -7.4143],
+    target: [19.2831, 2.6, -12.7421],
+    source: 'R-kx-front-a (front-a-south-facade-2026-08.jpg): under the canopy, 5 m south of the middle porch opening under the west great arch and 2.5 m west, eye 1.7 m, looking at the opening 2.6 m up so its head soffit, reveals, doors and sign band are in frame',
+    fov: 60, near: 0.1,
   },
 
   // shed-interior. The platform eyes use platform 4's recipe (polygon midpoint, 1.6 m above the platform, looking along it).

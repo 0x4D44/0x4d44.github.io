@@ -349,6 +349,21 @@
     "fov": 40,
     "near": 0.1
   },
+  "porch-close": {
+    "pos": [
+      16.6327,
+      1.5,
+      -7.4143
+    ],
+    "target": [
+      19.2831,
+      2.6,
+      -12.7421
+    ],
+    "source": "R-kx-front-a (front-a-south-facade-2026-08.jpg): under the canopy, 5 m south of the middle porch opening under the west great arch and 2.5 m west, eye 1.7 m, looking at the opening 2.6 m up so its head soffit, reveals, doors and sign band are in frame",
+    "fov": 60,
+    "near": 0.1
+  },
   "platform-eye-p1-north": {
     "pos": [
       67.66190476190475,

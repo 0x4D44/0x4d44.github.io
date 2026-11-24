@@ -26,13 +26,16 @@ MUTATIONS = [
     ('a dark soffit', 'web/src/shed.ts', "soffit: 0xe6d6b4 }", "soffit: 0x2a2c2e }", 'A3: a pale soffit'),
     ('a soffit without its glow', 'web/src/shed.ts', "FRONT_NIGHT.downlight, 'kx-front-infill-soffit'),", "FRONT_NIGHT.downlight, 'kx-front-infill-sof'),", 'A3: a pale soffit'),
     ('the gradient foot back at 0.5', 'web/src/shed.ts', "gradient: [0.75, 1.0] as const", "gradient: [0.5, 1.0] as const", "A3: the interior's foot"),
-    ('a one-step cap', 'web/src/shed.ts', "[[0, 0.25, 0.15], [0.25, 0.6, 0.5], [0.6, cap, 0.1]]", "[[0, cap, 0.15]]", "A1: each pier's cap"),
-    ('a shallow corona', 'web/src/shed.ts', "[0.25, 0.6, 0.5]", "[0.25, 0.6, 0.15]", "A1: each pier's cap"),
-    ('the cornice across the masses', 'web/src/shed.ts', "proud(spine, frontTop - 0.45, FW + toMass, 0.9,", "proud(spine, frontTop - 0.45, FW + toMass + across, 0.9,", "A1: the screen's cornice"),
-    ('no string on the masses', 'web/src/shed.ts', "    stone.box([(mid + outer) / 2 + sd * 0.1, sp - 0.3 - 0.325,", "    if (sd > 9) stone.box([(mid + outer) / 2 + sd * 0.1, sp - 0.3 - 0.325,", "A1: the screen's cornice"),
-    ('no shadow line under the band', 'web/src/shed.ts', "      tympanumShade.push([[[ia, yBand - sh, e]", "      if (sh > 9) tympanumShade.push([[[ia, yBand - sh, e]", "A2: the spandrel frame's shadow"),
-    ('no shade inside the strips', 'web/src/shed.ts', "if (yArc < yBand - sh - 0.3) tympanumShade.push(", "if (yArc < -1e9) tympanumShade.push(", "A2: the spandrel frame's shadow"),
-    ('shade never added', 'web/src/shed.ts', "  for (const [pts, facing] of tympanumShade) frames.poly(pts, undefined, { facing });", "", "A2: the spandrel frame's shadow"),
+    ('a cap overhanging 0.5 m', 'web/src/shed.ts', "[width + 0.5, cap, FRONT_THICK + 0.5 + po]", "[width + 1.0, cap, FRONT_THICK + 1.0 + po]", "A1: each pier's cap"),
+    ('a cap flush with the mass', 'web/src/shed.ts', "[width + 0.5, cap, FRONT_THICK + 0.5 + po]", "[width, cap, FRONT_THICK + po]", "A1: each pier's cap"),
+    ('the mass back at 0.75', 'web/src/shed.ts', "width: 5.2, out: 1.15,", "width: 5.2, out: 0.75,", "A1: the screen's cornice"),
+    ('the string flush with the mass', 'web/src/shed.ts', "(po + 0.25 - FRONT_THICK) / 2], [width - 1.0 - feet + 0.2, 0.65, FRONT_THICK + po + 0.25]", "(po - FRONT_THICK) / 2], [width - 1.0 - feet + 0.2, 0.65, FRONT_THICK + po]", "A1: the screen's cornice"),
+    ('no string on the masses', 'web/src/shed.ts', "    stone.box([(mid + outer) / 2 + sd * 0.1, sp - 0.325,", "    if (sd > 9) stone.box([(mid + outer) / 2 + sd * 0.1, sp - 0.325,", "A1: the screen's cornice"),
+    ('the frame back at 0.3', 'web/src/shed.ts', "FRONT_TYMPANUM = { out: 0.5,", "FRONT_TYMPANUM = { out: 0.3,", "A2: the spandrel frame's shadow"),
+    ('no band', 'web/src/shed.ts', "      brick.box([(xa + xb) / 2, yTop - band / 2, out / 2], [xb - xa, band, out], { skip: ['-z'] });", "", "A2: the spandrel frame's shadow"),
+    ('a painted line under the band', 'web/src/shed.ts', "  const soffits = new Batch();", "  const soffits = new Batch(); frames.poly([[fx0, frontTop - 2.25, 0.004], [fx1, frontTop - 2.25, 0.004], [fx1, frontTop - 1.95, 0.004], [fx0, frontTop - 1.95, 0.004]], undefined, { facing: [0, 0, 1] });", "A2: the spandrel frame's shadow"),
+    ('porch-close aimed away', 'tools/tests/frozen-station-cameras.json', "      19.2831,", "      40.2831,", 'A3: a porch-close'),
+    ('porch-close out past the canopy', 'tools/tests/frozen-station-cameras.json', "      -7.4143\n", "      2.5857\n", 'A3: a porch-close'),
 ]
 
 def run(work: Path) -> subprocess.CompletedProcess[str]:

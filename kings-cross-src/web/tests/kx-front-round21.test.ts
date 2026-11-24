@@ -30,9 +30,9 @@ const ray = (o: [number, number, number], d: [number, number, number], targets: 
 const masonry = ['shed-front', 'shed-brick', 'shed-stone'].map(n => group.getObjectByName(n)!);
 const zAt = (x: number, y: number) => ray([x, y, 10], [0, 0, -1], masonry);
 
-test('A2: each great arch\'s spandrel is a recessed panel in a brick frame 0.1-0.4 m proud: a band under the cornice and strips at its sides', () => {
+test('A2: each great arch\'s spandrel is a recessed panel in a brick frame 0.1-0.6 m proud: a band under the cornice and strips at its sides', () => {
   const T = S.FRONT_TYMPANUM as { out: number; band: number; strip: number } | undefined;
-  assert.ok(T && T.out >= 0.1 && T.out <= 0.4, 'FRONT_TYMPANUM, 0.1 to 0.4 m'); // re-pinned round 22: 0.15 m read about 1 px square-on, so A2 asked for about 2 px (0.3 m)
+  assert.ok(T && T.out >= 0.1 && T.out <= 0.6, 'FRONT_TYMPANUM, 0.1 to 0.6 m'); // re-pinned round 22: 0.15 m read about 1 px square-on, so A2 asked for about 2 px (0.3 m); round 23b: 0.5 m, its own soffit the shadow line (the painted one was black at night)
   const yBandMid = frontTop - 0.9 - 0.25 - 0.25 - 0.1 - T.band / 2;
   for (const [xa, xb] of [[X0 + 1.0, layout.spine - shed.TOWER_SIZE / 2], [layout.spine + shed.TOWER_SIZE / 2, X1 - 1.0]] as const) {
     const xm = xa + 2.5; // over the outer order's foot: the plain spandrel
