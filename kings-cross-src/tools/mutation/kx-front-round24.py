@@ -33,6 +33,9 @@ MUTATIONS = [
     ('no head returns', 'web/src/shed.ts', "        frames.poly([[xa0, ya0, 0], [xa1, ya1, 0]", "        if (k < 0) frames.poly([[xa0, ya0, 0], [xa1, ya1, 0]", "A3: the reveal's dark return"),
     ('head returns short of the glass', 'web/src/shed.ts', "[xa1, ya1, -PORCH_DEPTH.glass], [xa0, ya0, -PORCH_DEPTH.glass]], undefined, { facing: [(ya1", "[xa1, ya1, -0.3], [xa0, ya0, -0.3]], undefined, { facing: [(ya1", "A3: the reveal's dark return"),
     ('voussoirs in plain stone', 'web/src/shed.ts', "[material('stoneFoot'), canopySteel]", "[material('stone'), canopySteel]", "A3: the voussoirs"),
+    ('a bright canopy (round 24)', 'web/src/shed.ts', "canopy: [0xffe2b8, 0.012]", "canopy: [0xffe2b8, 0.12]", "A3: the voussoirs"),
+    ('a canopy lit on every face', 'web/src/shed.ts', "{ defines: { ...frontSteel.defines, KX_GLOW_DOWN: '' } }", "{ defines: { ...frontSteel.defines } }", "A3: the voussoirs"),
+    ('the down-only glow dropped from the shader', 'web/src/shed.ts', "#ifdef KX_GLOW_DOWN\\nfrontGlowAdd *= max( -vFrontNy, 0.0 );\\n#endif\\n", "", "A3: the voussoirs"),
     ('canopy without its lift', 'web/src/shed.ts', "[material('stoneFoot'), canopySteel]", "[material('stoneFoot'), frontSteel]", "A3: the voussoirs"),
 ]
 

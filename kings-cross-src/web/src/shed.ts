@@ -161,7 +161,7 @@ export const TOWER_BRICK_TINT = 0xe0e2e1;
 export const FRONT_GLOW_FADE = { from: 1.6, to: 4.0, head: 0.3 } as const;
 /** Round 24: the share of the front's night wash that a soffit (a face turned down) takes, the floodlights standing below it (ASSUMED). */
 export const FRONT_WASH_SOFFIT = 0.8;
-export const FRONT_NIGHT = { glass: [0xffc98a, 0.45], fascia: [0x2a5cc0, 0.35], downlight: [0xffe2b8, 1.1], canopy: [0xffe2b8, 0.12], shade: [0x8a6a48, 0.12] } as const; // round 24: `canopy`, the canopy steel's night lift from its downlights (ASSUMED)
+export const FRONT_NIGHT = { glass: [0xffc98a, 0.45], fascia: [0x2a5cc0, 0.35], downlight: [0xffe2b8, 1.1], canopy: [0xffe2b8, 0.012], shade: [0x8a6a48, 0.12] } as const; // round 24: `canopy` (round 24b: 0.12 lit it a flat tan, as bright as the stone; now 0.012, a quarter of the stone's floodlight at most, on its underside only), the canopy steel's night lift from its downlights (ASSUMED)
 
 /** `m` with a steady glow `colour * gain` scaled by the night level (materials.ts windowNight); `key` names its program. */
 function frontNightGlow(m: THREE.MeshLambertMaterial, [colour, gain]: readonly [number, number], key: string, fade?: [number, number, number]): THREE.MeshLambertMaterial {
@@ -174,13 +174,15 @@ function frontNightGlow(m: THREE.MeshLambertMaterial, [colour, gain]: readonly [
     shader.uniforms.uFrontGlow = glow;
     shader.uniforms.uFrontFade = grad;
     shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nvarying float vFrontY;')
-      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvFrontY = position.y;');
+      .replace('#include <common>', '#include <common>\nvarying float vFrontY;\nvarying float vFrontNy;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvFrontY = position.y;\nvFrontNy = normal.y;');
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nuniform float uWinNight;\nuniform vec3 uFrontGlow;\nuniform vec3 uFrontFade;\nvarying float vFrontY;')
+      .replace('#include <common>', '#include <common>\nuniform float uWinNight;\nuniform vec3 uFrontGlow;\nuniform vec3 uFrontFade;\nvarying float vFrontY;\nvarying float vFrontNy;')
       .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\nvec3 frontGlowAdd = uFrontGlow * uWinNight * mix( 1.0, uFrontFade.z, smoothstep( uFrontFade.x, uFrontFade.y, vFrontY ) );\n'
         // the entrance glass's glow is shaped by its map (GLASS_STRUCTURE); the fascia's lettering map is not a glow mask
-        + `#if defined( USE_MAP ) && defined( KX_GLOW_BY_MAP )\nfrontGlowAdd *= texture2D( map, vMapUv ).rgb * ${GLASS_STRUCTURE.gain.toFixed(3)};\n#endif\ntotalEmissiveRadiance += frontGlowAdd;`);
+        + `#if defined( USE_MAP ) && defined( KX_GLOW_BY_MAP )\nfrontGlowAdd *= texture2D( map, vMapUv ).rgb * ${GLASS_STRUCTURE.gain.toFixed(3)};\n#endif\n`
+        // round 24b: a material defining KX_GLOW_DOWN glows only on its faces turned down (the canopy's underside, lit by spill; its top stays dark)
+        + `#ifdef KX_GLOW_DOWN\nfrontGlowAdd *= max( -vFrontNy, 0.0 );\n#endif\ntotalEmissiveRadiance += frontGlowAdd;`);
   };
   m.customProgramCacheKey = () => key;
   return m;
@@ -1454,7 +1456,8 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   // round 24 (A3: at night the voussoirs and the canopy's underside were pure black in porch-close): the voussoirs in the floodlit dressing stone
   // (stoneFoot, as the front's other dressings), and the canopy's steel lifted after dark by its own downlights (a clone of the frames' steel: the
   // frames keep their charcoal)
-  const canopySteel = frontNightGlow(frontSteel.clone(), FRONT_NIGHT.canopy, 'kx-front-canopy-steel');
+  // round 24b (the canopy glowed a flat tan, as bright as the floodlit stone): a tenth of that lift (a quarter of the stone's floodlight at most), and on its underside only (KX_GLOW_DOWN)
+  const canopySteel = frontNightGlow(Object.assign(frontSteel.clone(), { defines: { ...frontSteel.defines, KX_GLOW_DOWN: '' } }), FRONT_NIGHT.canopy, 'kx-front-canopy-steel');
   const porch = new THREE.Mesh(mergeGeometries([entryRingGeo, canopyGeo], true), [material('stoneFoot'), canopySteel]);
   porch.name = 'shed-front-porch-arches';
   group.add(porch);

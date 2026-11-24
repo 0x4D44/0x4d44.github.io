@@ -93,12 +93,23 @@ test('A3: the reveal\'s dark return runs round each opening\'s arched head, back
   }
 });
 
-test('A3: the voussoirs are in the floodlit dressing stone and the canopy\'s steel lifts at night', () => {
+test('A3: the voussoirs are in the floodlit dressing stone and the canopy\'s steel lifts a little at night, on its underside', () => {
   const porch = group.getObjectByName('shed-front-porch-arches') as THREE.Mesh;
   const pm = porch.material as THREE.MeshLambertMaterial[];
   assert.equal(pm[0], material('stoneFoot'), 'the voussoirs floodlit as the front\'s dressings');
   assert.ok(pm[0]!.defines?.FLOOD !== undefined, 'FLOOD');
   assert.ok(pm[1]!.customProgramCacheKey().includes('canopy'), 'the canopy\'s own night lift');
+  // re-pinned round 24b (the 0.12 lift lit the canopy a flat tan, as bright as the floodlit stone): dark steel picking up a little spill, a quarter or less
+  // of the stone's floodlight (FLOOD.x times its colour), on its underside only, its top dark from above
+  const N = S.FRONT_NIGHT as Record<string, readonly [number, number]>;
+  const lum = (c: THREE.Color): number => 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
+  const stone = pm[0]!, flood = Number(/vec4\(\s*([0-9.]+)/.exec(String(stone.defines?.FLOOD))?.[1]);
+  const lift = new THREE.Color(N.canopy![0]).multiplyScalar(N.canopy![1]);
+  assert.ok(flood > 0 && lum(lift) <= 0.25 * flood * lum(stone.color), `the canopy's night lift ${lum(lift).toFixed(3)} against the stone's ${(flood * lum(stone.color)).toFixed(3)}`);
+  assert.ok(pm[1]!.defines?.KX_GLOW_DOWN !== undefined, 'lit on its underside only');
+  const shader = { uniforms: {}, vertexShader: THREE.ShaderLib.lambert.vertexShader, fragmentShader: THREE.ShaderLib.lambert.fragmentShader } as unknown as THREE.WebGLProgramParametersWithUniforms;
+  pm[1]!.onBeforeCompile(shader, {} as THREE.WebGLRenderer);
+  assert.match(shader.fragmentShader, /#ifdef KX_GLOW_DOWN\nfrontGlowAdd \*= max\( -vFrontNy, 0\.0 \);/);
   const hsl = { h: 0, s: 0, l: 0 }; pm[1]!.color.getHSL(hsl);
   assert.ok(hsl.l < 0.2, 'still charcoal by day');
 });
