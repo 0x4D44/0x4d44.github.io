@@ -487,12 +487,13 @@ const FROZEN_STATION_CAMERAS = {
     target: [14.286999265243583, 2.5, -176.28238713198283],
     source: 'OSM platform 8 polygon midpoint, eye 1.6 m above platform, looking south at the inner south screen; R-kx-shed-interior-b standpoint (shed-b-south-screen-2019.jpg)',
   },
-  // Round 14 (platform-round-1 score, section 5): the platform clock (shed.ts buildPlatformClock) from platform 8, 13 m south of it along its south face's
-  // normal and 3 m east of its centre, eye 1.6 m above the platform, looking at the dial's centre; R-kx-shed-interior-d (shed-d-platform-furniture-2022.jpg)
+  // Round 14 (platform-round-1 score, section 5): the platform clock (shed.ts buildPlatformClock) from platform 8. Round 15 (platform-round-2 score, section 5):
+  // re-aimed off the face, 12 m south of the clock along its south face's normal and 4 m east, eye 1.6 m above the platform, looking at the middle of the
+  // beam (half way from the arcade's face to the dial's centre, 0.2 m over the beam), so the beam, the spandrel and the wall fixing are in frame
   'platform-clock': {
-    pos: [13.5005, 2.5, -133.6341],
-    target: [10.2309, 5.2, -146.6305],
-    source: 'R-kx-shed-interior-d (shed-d-platform-furniture-2022.jpg): platform 8, 13 m south of the platform clock along its south face\'s normal and 3 m east, eye 1.6 m, looking at the dial',
+    pos: [14.6943, 2.5, -155.9474],
+    target: [10.382, 4.62, -168.0727],
+    source: 'R-kx-shed-interior-d (shed-d-platform-furniture-2022.jpg): platform 8, 12 m south of the platform clock along its south face\'s normal and 4 m east, eye 1.6 m, looking at the middle of its beam so the beam and its wall fixing are in frame',
     fov: 50, near: 0.1,
   },
   // R-kx-shed-interior-a (shed-a-north-from-footbridge-2019.jpg): the roof underside, ribs and glazing. Platform 4 midpoint,

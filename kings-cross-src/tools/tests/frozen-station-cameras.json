@@ -377,16 +377,16 @@
   },
   "platform-clock": {
     "pos": [
-      13.5005,
+      14.6943,
       2.5,
-      -133.6341
+      -155.9474
     ],
     "target": [
-      10.2309,
-      5.2,
-      -146.6305
+      10.382,
+      4.62,
+      -168.0727
     ],
-    "source": "R-kx-shed-interior-d (shed-d-platform-furniture-2022.jpg): platform 8, 13 m south of the platform clock along its south face's normal and 3 m east, eye 1.6 m, looking at the dial",
+    "source": "R-kx-shed-interior-d (shed-d-platform-furniture-2022.jpg): platform 8, 12 m south of the platform clock along its south face's normal and 4 m east, eye 1.6 m, looking at the middle of its beam so the beam and its wall fixing are in frame",
     "fov": 50,
     "near": 0.1
   },

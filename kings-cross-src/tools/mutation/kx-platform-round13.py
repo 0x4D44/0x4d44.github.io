@@ -20,18 +20,18 @@ if out == src or out.is_relative_to(src) or src.is_relative_to(out):
     raise SystemExit('output must be separate from the source directory')
 out.mkdir(parents=True, exist_ok=True)
 
-MUTATIONS = [  # re-anchored round 14: the edge layout and the clock's faces and arm changed (kx-platform-round14.py holds round 14's own)
+MUTATIONS = [  # re-anchored rounds 14 and 15: the edge layout and the clock's faces and arm changed (kx-platform-round14.py holds round 14's own)
     ('the dark tarmac band back', 'web/src/materials.ts', "band(0.2, 1.6, '#767571');", "band(0.2, 1.6, '#4a4d52');", 'B4'),
-    ('the white line back', 'web/src/materials.ts', "band(0.5, 0.9, '#8a8270'); // the tactile strip, muted ochre", "band(0.5, 0.9, '#8a8270'); band(1.05, 1.15, '#e6e6de'); // the tactile strip, muted ochre", 'B4'),
-    ('the tactile strip yellow again', 'web/src/materials.ts', "band(0.5, 0.9, '#8a8270');", "band(0.5, 0.9, '#d9b21a');", 'B4'),
-    ('a yellow line back', 'web/src/materials.ts', "band(0.5, 0.9, '#8a8270'); // the tactile strip, muted ochre", "band(0.5, 0.9, '#8a8270'); band(0.6, 0.7, '#d9b21a'); // the tactile strip, muted ochre", 'B4'),
-    ('the tactile straight behind the coping, as round 13 had it', 'web/src/materials.ts', "band(0.5, 0.9, '#8a8270');", "band(0.2, 0.6, '#8a8270');", 'B4'),
+    ('the white line back', 'web/src/materials.ts', "band(0.5, 0.9, '#92886a'); // the tactile strip, a muted yellow-khaki", "band(0.5, 0.9, '#92886a'); band(1.05, 1.15, '#e6e6de'); // the tactile strip, a muted yellow-khaki", 'B4'),
+    ('the tactile strip yellow again', 'web/src/materials.ts', "band(0.5, 0.9, '#92886a');", "band(0.5, 0.9, '#d9b21a');", 'B4'),
+    ('a yellow line back', 'web/src/materials.ts', "band(0.5, 0.9, '#92886a'); // the tactile strip, a muted yellow-khaki", "band(0.5, 0.9, '#92886a'); band(0.6, 0.7, '#d9b21a'); // the tactile strip, a muted yellow-khaki", 'B4'),
+    ('the tactile straight behind the coping, as round 13 had it', 'web/src/materials.ts', "band(0.5, 0.9, '#92886a');", "band(0.2, 0.6, '#92886a');", 'B4'),
     ('no clock', 'web/src/shed.ts', '  group.add(buildPlatformClock(L));\n', '', 'B5'),
-    ('the clock floats off the wall', 'web/src/shed.ts', "iron.box([armEnd / 2, armY, z], [armEnd, arm * 1.5, arm]);", "iron.box([armEnd / 2 + 0.5, armY, z], [armEnd - 1, arm * 1.5, arm]);", 'B5'),
+    ('the clock floats off the wall', 'web/src/shed.ts', "iron.box([x0 + beam / 2, beamY, z], [beam, bd, 0.12]);", "iron.box([x0 + beam / 2 + 0.5, beamY, z], [beam - 1, bd, 0.12]);", 'B5'),
     ('one face', 'web/src/shed.ts', "  const faces = [1, -1].map((s) => {", "  const faces = [1].map((s) => {", 'B5'),
     ('no hands', 'web/src/shed.ts', "  g.userData.clockDials = [1, -1].map(", "  g.userData.clockDials = [].map(", 'B5'),
     ('the clock casts', 'web/src/lighting.ts', "'shed-arch-rings',", "'shed-arch-rings', 'shed-platform-clock-iron',", 'B5'),
-    ('the clock at the roof', 'web/src/shed.ts', 'export const PLATFORM_CLOCK = { v: 0.55, y: 5.2,', 'export const PLATFORM_CLOCK = { v: 0.55, y: 9.2,', 'B5'),
+    ('the clock at the roof', 'web/src/shed.ts', 'export const PLATFORM_CLOCK = { v: 0.638, y: 5.2,', 'export const PLATFORM_CLOCK = { v: 0.638, y: 9.2,', 'B5'),
 ]
 
 def run(work: Path) -> subprocess.CompletedProcess[str]:

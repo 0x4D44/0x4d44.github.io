@@ -38,6 +38,8 @@ export interface TextureSpec {
   average: number;
   /** tiles over a surface (true) or is drawn once over a quad (false) */
   repeat: boolean;
+  /** one tile across only (u clamped, v still repeating): its far edge must not sample its near one (the platform edge strip, round 15) */
+  clampU?: boolean;
   /** where the real-world dimensions come from; anything guessed says ASSUMED */
   source: string;
 }
@@ -68,7 +70,7 @@ export const TEXTURES: Readonly<Record<TextureName, TextureSpec>> = {
   // Platform edge, drawn across the strip (u, 0..1.6 m from the edge inboard) and tiled along it
   // (v, 0.5 m). ASSUMED widths: coping 0.2 m, yellow tactile warning strip 0.2-0.6 m (the UK strip
   // is about 0.4 m wide: DfT, Guidance on the use of tactile paving surfaces), white line 1.05-1.15 m.
-  platformEdge: { tile: [1.6, 0.5], px: [320, 100], density: [150, 250], average: 0x83807a, repeat: true,
+  platformEdge: { tile: [1.6, 0.5], px: [320, 100], density: [150, 250], average: 0x878479, repeat: true, clampU: true,
     source: 'tactile strip about 0.4 m wide (DfT tactile paving guidance); offsets ASSUMED' },
   ballast: { tile: [2, 2], px: [256, 256], density: [100, 160], average: 0x5f5b54, repeat: true,
     source: 'ASSUMED: crushed stone drawn at 128 texels per metre' },
@@ -325,9 +327,11 @@ function paintPlatformEdge(g: Ctx, w: number, h: number): void {
   // edge in a muted ochre only a little warmer and lighter than the surface, then the surface again; no yellow line (shed-e shows none inward of the tactile). The
   // surface bands are the asphalt texture's own base tone with its speckle at the same density and size on the ground, so the strip runs into the tops without a seam.
   // (Round 13 had the tactile straight behind the coping and a yellow line behind it.) All widths and tones by eye: ASSUMED.
-  band(0, 0.2, '#b4b4ae'); // coping stones, pale enough to read under the night lights
+  // round 15 (platform-round-2 score, section 5): the coping paler again, for the night (it read too dim in p8-south after dark), and the tactile warmed a
+  // little toward shed-e's yellow-khaki, so it separates from the surface at platform-eye range (both ASSUMED)
+  band(0, 0.2, '#c4c4bd'); // coping stones, pale enough to read under the night lights
   band(0.2, 1.6, '#767571'); // the platform surface (paintAsphalt's base tone)
-  band(0.5, 0.9, '#8a8270'); // the tactile strip, muted ochre
+  band(0.5, 0.9, '#92886a'); // the tactile strip, a muted yellow-khaki
   // the surface's speckle: paintAsphalt's 5,200 specks on a 2 m tile is 1,300 a square metre, each 1/128 m; here 200 px a metre
   const speck = pxm / 128, area = (1.6 - 0.2) * TEXTURES.platformEdge.tile[1];
   for (let i = 0, n = Math.round(1300 * area); i < n; i++) {
@@ -350,7 +354,7 @@ function paintPlatformEdge(g: Ctx, w: number, h: number): void {
       if (cx > 0.88 * pxm) continue;
       g.fillStyle = 'rgba(60,52,36,0.4)';
       g.beginPath(); g.arc(cx + 0.7, cy + 0.9, 2.6, 0, Math.PI * 2); g.fill();
-      g.fillStyle = '#968e7b';
+      g.fillStyle = '#9e9476';
       g.beginPath(); g.arc(cx, cy, 2.3, 0, Math.PI * 2); g.fill();
     }
   }
@@ -559,6 +563,7 @@ export function texture(name: TextureName): THREE.CanvasTexture | null {
       t.anisotropy = 8; // three clamps this to what the GPU offers
       if (spec.repeat) {
         t.wrapS = t.wrapT = THREE.RepeatWrapping;
+        if (spec.clampU) t.wrapS = THREE.ClampToEdgeWrapping; // round 15: the strip's inner edge no longer filters in a hairline of the coping
         t.repeat.set(1 / spec.tile[0], 1 / spec.tile[1]);
       } else {
         t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping;

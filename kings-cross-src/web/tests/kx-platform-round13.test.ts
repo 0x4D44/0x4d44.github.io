@@ -48,7 +48,7 @@ test('B4: the edge strip runs coping, a buff tactile strip, a narrow yellow line
 });
 
 test('B5: a two-faced platform clock on a bracket from the west arcade wall, over the platform, its hands from the clocks module; no shadow, two draws', () => {
-  const build = S.buildPlatformClock as ((length: number) => THREE.Group) | undefined, spec = S.PLATFORM_CLOCK as { radius: number; y: number; out: number; drum: number; rim: number; arm: number } | undefined;
+  const build = S.buildPlatformClock as ((length: number) => THREE.Group) | undefined, spec = S.PLATFORM_CLOCK as { radius: number; y: number; out: number; drum: number; rim: number; arm: number; wall: number; beamDrop: number } | undefined;
   assert.ok(build && spec, 'buildPlatformClock and PLATFORM_CLOCK are exported');
   const shed = shedModule.buildShed(layout, { range: false });
   const clock = shed.getObjectByName('shed-platform-clock') as THREE.Group;
@@ -66,13 +66,15 @@ test('B5: a two-faced platform clock on a bracket from the west arcade wall, ove
   // nothing floats: the iron reaches the wall's face (x = 0) and the drum, and the faces sit inside the drum
   const box = (n: string): THREE.Box3 => meshes.filter((m) => m.name === n).reduce((b, m) => { m.geometry.computeBoundingBox(); m.updateMatrix(); return b.union(m.geometry.boundingBox!.clone().applyMatrix4(m.matrix)); }, new THREE.Box3()); // in the shed's frame (re-pinned round 14: the faces are two meshes placed by their matrices)
   const iron = box('shed-platform-clock-iron'), face = box('shed-platform-clock-faces');
-  assert.ok(iron.min.x <= 0.01 && iron.min.x >= -0.1, `the bracket on (and at most 0.1 m into) the wall's face: ${iron.min.x.toFixed(3)}`);
-  assert.ok(iron.min.y < face.min.y && iron.max.y > face.max.y + 0.3 && iron.max.x >= face.max.x, 'the drum round the faces, the arm above them');
+  // re-pinned round 15: the wall's face is the arcade's (spec.wall, WEST_ARCADE.depth); rounds 13-14 had the iron at the wall's line, inside the pier
+  assert.ok(iron.min.x <= spec.wall + 0.01 && iron.min.x >= spec.wall - 0.1, `the bracket on (and at most 0.1 m into) the arcade's face: ${iron.min.x.toFixed(3)}`);
+  // re-pinned round 15: R-kx-shed-interior-d (viewed) has the dial ON a beam, the bracket under it, not an arm over it
+  assert.ok(iron.min.y < face.min.y - 0.3 && iron.max.y > face.max.y && iron.max.x >= face.max.x, 'the drum round the faces, the beam and its bracket under them');
   assert.ok(face.min.z > iron.min.z && face.max.z < iron.max.z, 'the faces within the drum\'s depth');
   assert.ok(face.max.z - face.min.z > 0.9 * spec.drum, 'a face on each side of the drum');
-  // the arm runs from the wall's face out to the hanger over the drum, at its height (the drum's top plus 0.35 m, as built; its section 1.5 arm deep since round 14)
-  const armY = spec.y + spec.radius + spec.rim + 0.35, pos = meshes.find((m) => m.name === 'shed-platform-clock-iron')!.geometry.getAttribute('position');
+  // the arm runs from the wall's face out past the dial's centre, at its height (re-pinned round 15: the beam under the dial, spec.beamDrop under its centre, 1.5 arm deep)
+  const armY = spec.y - spec.beamDrop, pos = meshes.find((m) => m.name === 'shed-platform-clock-iron')!.geometry.getAttribute('position');
   const armX: number[] = [];
   for (let i = 0; i < pos.count; i++) if (Math.abs(pos.getY(i) - armY) <= (spec.arm * 1.5) / 2 + 1e-6) armX.push(pos.getX(i));
-  assert.ok(armX.length && armX.reduce((a, b) => Math.min(a, b)) <= 0.01 && armX.reduce((a, b) => Math.max(a, b)) >= spec.out, `the arm from the wall to the hanger: ${armX.length} vertices at its height`);
+  assert.ok(armX.length && armX.reduce((a, b) => Math.min(a, b)) <= spec.wall + 0.01 && armX.reduce((a, b) => Math.max(a, b)) >= spec.wall + spec.out, `the beam from the wall past the dial: ${armX.length} vertices at its height`);
 });

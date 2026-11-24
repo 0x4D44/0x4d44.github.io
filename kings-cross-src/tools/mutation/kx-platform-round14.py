@@ -21,18 +21,18 @@ if out == src or out.is_relative_to(src) or src.is_relative_to(out):
 out.mkdir(parents=True, exist_ok=True)
 
 MUTATIONS = [
-    ('the tactile straight behind the coping, as round 13 had it', 'web/src/materials.ts', "band(0.5, 0.9, '#8a8270');", "band(0.2, 0.6, '#8a8270');", 'B4'),
-    ('the tactile buff again', 'web/src/materials.ts', "band(0.5, 0.9, '#8a8270');", "band(0.5, 0.9, '#bba77a');", 'B4'),
-    ('the tactile the surface grey', 'web/src/materials.ts', "band(0.5, 0.9, '#8a8270');", "band(0.5, 0.9, '#787670');", 'B4'),
-    ('a yellow line back', 'web/src/materials.ts', "band(0.5, 0.9, '#8a8270'); // the tactile strip, muted ochre", "band(0.5, 0.9, '#8a8270'); band(0.9, 1.0, '#d9b21a'); // the tactile strip, muted ochre", 'B4'),
-    ('the coping dark', 'web/src/materials.ts', "band(0, 0.2, '#b4b4ae');", "band(0, 0.2, '#8e8e8a');", 'B4'),
+    ('the tactile straight behind the coping, as round 13 had it', 'web/src/materials.ts', "band(0.5, 0.9, '#92886a');", "band(0.2, 0.6, '#92886a');", 'B4'),
+    ('the tactile buff again', 'web/src/materials.ts', "band(0.5, 0.9, '#92886a');", "band(0.5, 0.9, '#bba77a');", 'B4'),
+    ('the tactile the surface grey', 'web/src/materials.ts', "band(0.5, 0.9, '#92886a');", "band(0.5, 0.9, '#787670');", 'B4'),
+    ('a yellow line back', 'web/src/materials.ts', "band(0.5, 0.9, '#92886a'); // the tactile strip, a muted yellow-khaki", "band(0.5, 0.9, '#92886a'); band(0.9, 1.0, '#d9b21a'); // the tactile strip, a muted yellow-khaki", 'B4'),
+    ('the coping dark', 'web/src/materials.ts', "band(0, 0.2, '#c4c4bd');", "band(0, 0.2, '#8e8e8a');", 'B4'),
     ('no speckle (the seam back)', 'web/src/materials.ts', "for (let i = 0, n = Math.round(1300 * area); i < n; i++) {", "for (let i = 0, n = Math.round(0 * area); i < n; i++) {", 'B4'),
     ('specks a texel, not the tops\' size', 'web/src/materials.ts', "const speck = pxm / 128,", "const speck = 1,", 'B4'),
     ('the faces merged again (no glow)', 'web/src/shed.ts', "  const clockMat = clockMaterial(), faceGeo = new THREE.CircleGeometry(radius, 40);", "  const clockMat = clockMaterial(), faceGeo = new THREE.CircleGeometry(radius, 40).toNonIndexed();", 'B5'),
-    ('the arm thin again', 'web/src/shed.ts', "[armEnd, arm * 1.5, arm]);", "[armEnd, arm, arm]);", 'B5'),
-    ('no spandrel', 'web/src/shed.ts', "  for (let k = 1; k <= 5; k++) {", "  for (let k = 1; k <= 0; k++) {", 'B5'),
-    ('the camera at the far face', 'tools/tests/frozen-station-cameras.json', '"pos": [\n      13.5005,\n      2.5,\n      -133.6341\n    ]', '"pos": [\n      7.5,\n      2.5,\n      -159.6\n    ]', 'B5'),
-    ('the camera 30 m off', 'tools/tests/frozen-station-cameras.json', '"pos": [\n      13.5005,\n      2.5,\n      -133.6341\n    ]', '"pos": [\n      13.5005,\n      2.5,\n      -116.6341\n    ]', 'B5'),
+    ('the arm thin again', 'web/src/shed.ts', "bd = 0.18, top", "bd = 0.12, top", 'B5'),
+    ('no spandrel', 'web/src/shed.ts', '  for (let k = 0; k < 8; k++) {\n    const [ax, ay] = at(Math.PI - (Math.PI / 2) * (k / 8)), [bx, by] = at(Math.PI - (Math.PI / 2) * ((k + 1) / 8));\n    iron.box([(ax + bx) / 2, (ay + by) / 2, z], [Math.hypot(bx - ax, by - ay) + 0.02, 0.07, 0.08], { rotZ: Math.atan2(by - ay, bx - ax) });\n  }\n  for (let k = 0; k < 6; k++) {', '  for (let k = 0; k < 0; k++) {\n    const [ax, ay] = at(Math.PI - (Math.PI / 2) * (k / 8)), [bx, by] = at(Math.PI - (Math.PI / 2) * ((k + 1) / 8));\n    iron.box([(ax + bx) / 2, (ay + by) / 2, z], [Math.hypot(bx - ax, by - ay) + 0.02, 0.07, 0.08], { rotZ: Math.atan2(by - ay, bx - ax) });\n  }\n  for (let k = 0; k < 0; k++) {', 'B5'),
+    ('the camera at the far face', 'tools/tests/frozen-station-cameras.json', '"pos": [\n      14.6943,\n      2.5,\n      -155.9474\n    ]', '"pos": [\n      15.37,\n      2.5,\n      -180.05\n    ]', 'B5'),
+    ('the camera 30 m off', 'tools/tests/frozen-station-cameras.json', '"pos": [\n      14.6943,\n      2.5,\n      -155.9474\n    ]', '"pos": [\n      14.6943,\n      2.5,\n      -138.9474\n    ]', 'B5'),
 ]
 
 def run(work: Path) -> subprocess.CompletedProcess[str]:

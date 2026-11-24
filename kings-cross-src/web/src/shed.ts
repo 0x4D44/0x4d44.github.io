@@ -1695,44 +1695,59 @@ export function buildNorthPier(brick: Batch, stone: Batch, x: number, length: nu
 /**
  * The platform clock on its bracket (round 13, rubric shed-interior B5; R-kx-shed-interior-d, the B5 key): a round two-faced clock, white dial, black Roman
  * numerals in gilt rings (the tower's dial, clockMaterial), in a dark iron drum on a cantilever bracket from the west arcade wall over platform 8. Its size
- * and stand are ASSUMED (the photograph gives no scale that can be trusted): `radius` 0.6 m, `drum` 0.25 m deep, its centre `out` 1.6 m off the wall's
- * face at `y` 5.2 m over the rail head, `v` 0.55 of the shed's length from the front. Two draws (the dial faces, the iron) and neither casts a shadow
+ * and stand are ASSUMED (the photograph gives no scale that can be trusted): `radius` 0.6 m, `drum` 0.25 m deep, its centre `out` 1.3 m off the arcade's
+ * face (1.6 m off the wall's line until round 15) at `y` 5.2 m over the rail head, at the rib nearest `v` 0.638 of the shed's length (0.55 until round 15). Draws (the dial faces, the iron) and neither casts a shadow
  * (the shadow pass is at its budget); the hands are the clocks module's, from userData.clockDials.
  */
-export const PLATFORM_CLOCK = { v: 0.55, y: 5.2, out: 1.6, radius: 0.6, drum: 0.25, rim: 0.07, arm: 0.12 } as const;
-
+export const PLATFORM_CLOCK = { v: 0.638, y: 5.2, out: 1.3, radius: 0.6, drum: 0.25, rim: 0.07, arm: 0.12, beam: 2.6, beamDrop: 0.82, spandrel: 0.85, wall: WEST_ARCADE.depth, glow: 0.6 } as const;
+/*
+ * Round 15 (platform-round-2 score, section 5; R-kx-shed-interior-d, viewed): the bracket rebuilt as the photograph has it. The dial sits ON a horizontal cast
+ * beam projecting from the arcade (`beam` long, its centre `beamDrop` under the dial's centre), a curved spandrel bracket (`spandrel` its radius) under the
+ * beam back to the wall, its web pierced (slats), and scrolled cresting either side of the dial's base. `wall` is the arcade's face (WEST_ARCADE.depth: the
+ * pier's face; until round 15 the iron started at the wall's line, buried in the pier). `v` snaps to the nearest rib, so the beam is fixed to a pier's face
+ * clear of the arches (WEST_ARCADE), in a bay with no platform furniture within 6 m (until round 15 a pole clock stood beside it). Sizes ASSUMED.
+ */
 export function buildPlatformClock(length: number): THREE.Group {
-  const { v, y, out, radius, drum, rim, arm } = PLATFORM_CLOCK;
-  const z = -v * length, g = new THREE.Group();
+  const { v, y, out, radius, drum, rim, beam, beamDrop, spandrel: R, wall: x0 } = PLATFORM_CLOCK;
+  const ribs = ribPositions(length), rib = ribs.reduce((best, r) => (Math.abs(r - v * length) < Math.abs(best - v * length) ? r : best));
+  const z = -rib, cx = x0 + out, g = new THREE.Group();
   g.name = 'shed-platform-clock';
-  // round 14: each face its own CircleGeometry disc (as the tower's), so the night dial lights (night.ts createDialLights) give it a glow after dark
+  // each face its own CircleGeometry disc (as the tower's), so the night dial lights (night.ts createDialLights) give it a glow after dark
   const clockMat = clockMaterial(), faceGeo = new THREE.CircleGeometry(radius, 40);
+  clockMat.userData.glowScale = PLATFORM_CLOCK.glow; // its glow capped (night.ts), its field under clipping after dark so the numerals' ring survives
   const faces = [1, -1].map((s) => {
     const f = mesh(faceGeo, clockMat, 'shed-platform-clock-faces');
-    f.position.set(out, y, z + (s * drum) / 2);
+    f.position.set(cx, y, z + (s * drum) / 2);
     if (s < 0) f.rotation.y = Math.PI;
     return f;
   });
-  // the iron: the drum's rim in 24 chords, the bracket's arm from the wall over the drum and a strut under it to the wall, a hanger to the drum's top
   const iron = new Batch(), n = 24, rr = radius + rim / 2;
-  for (let i = 0; i < n; i++) {
-    const a0 = (2 * Math.PI * i) / n, a1 = (2 * Math.PI * (i + 1)) / n, am = (a0 + a1) / 2;
-    iron.box([out + rr * Math.cos(am), y + rr * Math.sin(am), z], [2 * rr * Math.sin(Math.PI / n) + 0.02, rim, drum + 0.02], { rotZ: am + Math.PI / 2 });
+  for (let i = 0; i < n; i++) { // the drum's rim in 24 chords
+    const am = (2 * Math.PI * (i + 0.5)) / n;
+    iron.box([cx + rr * Math.cos(am), y + rr * Math.sin(am), z], [2 * rr * Math.sin(Math.PI / n) + 0.02, rim, drum + 0.02], { rotZ: am + Math.PI / 2 });
   }
-  const armY = y + radius + rim + 0.35, armEnd = out + radius * 0.6;
-  iron.box([armEnd / 2, armY, z], [armEnd, arm * 1.5, arm]); // the arm, from the wall's face (x = 0): round 14, a deeper cast-iron section (ASSUMED)
-  const sx = armEnd * 0.75, sy = 1.1; // the strut, from the wall under the arm up to it
-  iron.box([sx / 2, armY - sy / 2, z], [Math.hypot(sx, sy), arm * 0.8, arm * 0.8], { rotZ: Math.atan2(sy, sx) });
-  iron.box([out, (armY + y + rr) / 2, z], [arm * 0.6, armY - y - rr + 0.02, arm * 0.6]); // the hanger
-  iron.box([0.05, armY - 0.4, z], [0.1, 1.2, 0.4]); // the wall plate
-  // round 14: the spandrel between the strut and the arm, five cast-iron bars (ASSUMED pattern), so the bracket reads as a solid cast-iron bracket at platform-eye range
-  for (let k = 1; k <= 5; k++) {
-    const bx = (sx * k) / 6, low = armY - sy + (sy * bx) / sx;
-    iron.box([bx, (low + armY) / 2, z], [0.04, armY - low, arm * 0.5]);
+  const beamY = y - beamDrop, bd = 0.18, top = beamY + bd / 2;
+  iron.box([x0 + beam / 2, beamY, z], [beam, bd, 0.12]); // the beam, from the pier's face
+  iron.box([x0 + beam, beamY, z], [0.1, 0.1, 0.1]); // its end boss
+  iron.box([x0 + 0.03, beamY - R / 2 + 0.05, z], [0.06, R + 0.25, 0.3]); // the wall fixing
+  iron.box([cx, top + 0.03, z], [2 * radius * 0.7, 0.06, drum + 0.04]); // the dial's plinth on the beam
+  // the spandrel: a quarter circle from the wall R under the beam to the beam R out, its hollow facing down and out; the web between it and the corner
+  const at = (a: number): [number, number] => [x0 + R + R * Math.cos(a), beamY - R + R * Math.sin(a)];
+  for (let k = 0; k < 8; k++) {
+    const [ax, ay] = at(Math.PI - (Math.PI / 2) * (k / 8)), [bx, by] = at(Math.PI - (Math.PI / 2) * ((k + 1) / 8));
+    iron.box([(ax + bx) / 2, (ay + by) / 2, z], [Math.hypot(bx - ax, by - ay) + 0.02, 0.07, 0.08], { rotZ: Math.atan2(by - ay, bx - ax) });
   }
-  iron.box([out, y + rr + 0.06, z], [0.18, 0.08, drum + 0.04]); // a cap on the drum's crown where the hanger meets it
+  for (let k = 0; k < 6; k++) {
+    const sx = x0 + (R * (k + 0.5)) / 6, low = beamY - R + Math.sqrt(R * R - (sx - x0 - R) ** 2);
+    iron.box([sx, (low + beamY) / 2, z], [(R / 6) * 0.6, beamY - low, 0.03]);
+  }
+  // the cresting: a stepped scroll either side of the dial's base, from the beam's top up its sides
+  for (const s of [-1, 1]) for (let k = 0; k < 3; k++) {
+    const w = 0.55 - 0.15 * k, xin = cx + s * radius * 0.55;
+    iron.box([xin + (s * w) / 2, top + 0.06 + 0.12 * k, z], [w, 0.12, 0.06]);
+  }
   g.add(...faces, mesh(iron.build(), material('ribPaint'), 'shed-platform-clock-iron'));
-  g.userData.clockDials = [1, -1].map((s): ClockDial => ({ centre: [out, y, z + s * (drum / 2 + 0.005)], normal: [0, 0, s], up: [0, 1, 0], radius })); // clocks.ts
+  g.userData.clockDials = [1, -1].map((s): ClockDial => ({ centre: [cx, y, z + s * (drum / 2 + 0.005)], normal: [0, 0, s], up: [0, 1, 0], radius })); // clocks.ts
   return g;
 }
 

@@ -239,18 +239,22 @@ export interface DialLights extends NightLayer {
  */
 export function createDialLights(): DialLights {
   const glows = new Map<THREE.Mesh, THREE.Mesh>(); // a face to its glow
-  const materials = new Map<THREE.Texture | null, THREE.MeshBasicMaterial>(); // a glow material for each face texture
+  const materials = new Map<THREE.Texture | null, THREE.MeshBasicMaterial>(); // a glow material for each face texture (and glow scale: a face may cap its glow, see below)
+  const scaled = new Map<string, THREE.MeshBasicMaterial>();
   let level = 0;
   const show = (): void => {
-    for (const material of materials.values()) material.color.setRGB(...DIAL_GLOW).multiplyScalar(level);
+    for (const material of [...materials.values(), ...scaled.values()]) material.color.setRGB(...DIAL_GLOW).multiplyScalar(level * ((material.userData.glowScale as number | undefined) ?? 1));
     for (const glow of glows.values()) glow.visible = level > 0.01;
   };
-  const glowMaterial = (map: THREE.Texture | null): THREE.MeshBasicMaterial => {
-    let material = materials.get(map);
+  const glowMaterial = (map: THREE.Texture | null, scale = 1): THREE.MeshBasicMaterial => {
+    const key = `${map?.uuid ?? 'none'}:${scale}`;
+    let material = scale === 1 ? materials.get(map) : scaled.get(key);
     if (!material) {
       material = new THREE.MeshBasicMaterial({ map, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, fog: false, toneMapped: false,
         polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
-      materials.set(map, material);
+      material.userData.glowScale = scale;
+      if (scale === 1) materials.set(map, material);
+      else scaled.set(key, material);
     }
     return material;
   };
@@ -277,7 +281,8 @@ export function createDialLights(): DialLights {
       for (const face of faces) {
         // a face may give its glow a mask (shed.ts clockMaterial: the field lit, the bezel dark), else its own texture
         const material = face.material as THREE.MeshLambertMaterial;
-        const glow = new THREE.Mesh(face.geometry, glowMaterial((material.userData.glowMap as THREE.Texture | undefined) ?? material.map));
+        // round 15: a face may cap its glow (`glowScale`, shed.ts buildPlatformClock), so its lit field stays under clipping and the ring of numerals survives
+        const glow = new THREE.Mesh(face.geometry, glowMaterial((material.userData.glowMap as THREE.Texture | undefined) ?? material.map, (material.userData.glowScale as number | undefined) ?? 1));
         glow.name = 'clock-dial-glow';
         glow.position.copy(face.position);
         glow.quaternion.copy(face.quaternion);
@@ -293,9 +298,10 @@ export function createDialLights(): DialLights {
     count: () => glows.size,
     dispose() {
       for (const glow of glows.values()) glow.removeFromParent();
-      for (const material of materials.values()) material.dispose();
+      for (const material of [...materials.values(), ...scaled.values()]) material.dispose();
       glows.clear();
       materials.clear();
+      scaled.clear();
     },
   };
 }

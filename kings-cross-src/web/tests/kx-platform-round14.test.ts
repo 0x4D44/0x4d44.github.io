@@ -62,23 +62,26 @@ test('B5: the platform clock glows after dark as the tower does, its arm is a de
   const lights = createDialLights();
   shed.updateMatrixWorld(true);
   assert.equal(lights.scan(clock), 2, 'both faces take a night glow');
-  const { y, radius, rim, arm, out } = PLATFORM_CLOCK, armY = y + radius + rim + 0.35, armEnd = out + radius * 0.6;
+  // re-pinned round 15: the arm is the beam under the dial (R-kx-shed-interior-d, viewed), from the arcade's face; its far end, its spandrel under it at the wall
+  const { y, arm, wall, beam, beamDrop, spandrel } = PLATFORM_CLOCK, armY = y - beamDrop, armEnd = wall + beam;
   const pos = (clock.getObjectByName('shed-platform-clock-iron') as THREE.Mesh).geometry.getAttribute('position');
   let deep = 0, web = 0;
   for (let i = 0; i < pos.count; i++) {
     const px = pos.getX(i), py = pos.getY(i);
     if (Math.abs(px - armEnd) < 0.01 && py >= armY + 0.085) deep++;
-    if (px > 0.3 && px < 0.95 && py > armY - 0.8 && py < armY - 0.2) web++;
+    if (px > wall + 0.1 && px < wall + spandrel - 0.1 && py > armY - spandrel + 0.1 && py < armY - 0.1) web++;
   }
   assert.ok(deep > 0, `the arm at least 0.17 m deep (${arm} m before)`);
-  assert.ok(web > 0, 'a spandrel of bars between the strut and the arm');
+  assert.ok(web > 0, 'a spandrel web between the curved bracket and the beam');
   const cams = JSON.parse(readFileSync(new URL('../../tools/tests/frozen-station-cameras.json', import.meta.url), 'utf8')) as Record<string, { pos: number[]; target: number[] }>;
   const cam = cams['platform-clock'];
   assert.ok(cam, 'a platform-clock camera');
   shed.updateMatrixWorld(true);
   const dial = (clock.userData.clockDials as { centre: number[]; normal: number[] }[]).find((d) => d.normal[2] === 1)!;
   const centre = clock.localToWorld(new THREE.Vector3(...dial.centre)), eye = new THREE.Vector3(...cam.pos);
-  assert.ok(new THREE.Vector3(...cam.target).distanceTo(centre) < 0.5, 'it looks at the south dial');
+  // re-pinned round 15 (the brief: re-aimed slightly off the face so the beam and its wall fixing are in frame): at the beam between the dial and the wall
+  const aim = clock.worldToLocal(new THREE.Vector3(...cam.target));
+  assert.ok(new THREE.Vector3(...cam.target).distanceTo(centre) < 1.5 && aim.x > wall && aim.x < dial.centre[0]! && aim.y < y, 'it looks at the beam beside the south dial');
   const d = eye.distanceTo(centre);
   assert.ok(d > 12 && d < 15 && Math.abs(eye.y - 2.5) < 0.01, `from ${d.toFixed(1)} m at platform eye height`);
   const n = new THREE.Vector3(...dial.normal).transformDirection(clock.matrixWorld);
