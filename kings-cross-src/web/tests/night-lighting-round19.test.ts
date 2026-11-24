@@ -372,8 +372,11 @@ test('daylight uses the original KX facade materials and programs, including aft
       (o as THREE.Mesh).geometry?.type === 'CircleGeometry') as THREE.Mesh;
     assert.ok(original[1]!.id < (dial.material as THREE.Material).id,
       'the tower brick must sort ahead of the dial in the opaque render list, as on main');
-    assert.ok(original[0] === brick && original[1] === brick && original[2] === stone,
-      'the front and tower still share the original brick/stone materials');
+    // re-pinned 2026-11-24 (round 6, A4 brick: R-kx-front-c's darker tower stock): the tower's brick is a tinted clone of the front's, on
+    // the same program (its cache key is the original's, and the program signatures below are unchanged); the stone is still shared
+    assert.ok(original[0] === brick && original[2] === stone && original[1] !== brick && original[1]!.customProgramCacheKey() === brick.customProgramCacheKey()
+      && (original[1] as THREE.MeshLambertMaterial).map === (brick as THREE.MeshLambertMaterial).map,
+      'the front shares the original brick and the tower its program and texture; the stone is the original');
     assert.deepEqual(original.map(signature), dayPrograms,
       'daylight vertex and fragment source matches the ordinary materials including roof shade');
     at(dusk, 1000, fog);

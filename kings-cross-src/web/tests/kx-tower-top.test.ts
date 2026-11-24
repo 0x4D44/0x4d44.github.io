@@ -139,24 +139,27 @@ test('the dials are about 0.67 of the stage\'s face (R-kx-front-a, -c), on the b
   for (const d of tower.userData.clockDials as { radius: number }[]) assert.ok(Math.abs(d.radius - r) < 1e-6, 'clocks.ts draws to the dial\'s radius');
 });
 
-test('the dial is painted with a broad cream bezel, a dark chapter band of radial Roman numerals between heavy rings, and a hatched minute track (R-kx-front-a, -c)', async () => {
-  const { paintDial, DIAL_BEZEL, DIAL_LAYOUT } = await import('../src/shed.ts');
+test('the dial is painted with a broad cream bezel, a dark chapter band of heavy radial Roman numerals between heavy rings, and a solid black minute track with white ticks (R-kx-front-a, -c)', async () => {
+  const { paintDial, DIAL_BEZEL, DIAL_LAYOUT, dialFarBand } = await import('../src/shed.ts');
   // round 5 (the tower-round-2b score: the band was only 7% darker than the centre at south-front, the numerals upright and clipped by the rings)
   const size = 512, c = size / 2, R = (c - 2) * DIAL_LAYOUT.bezel;
-  const texts: { t: string; y: number; turn: number; w: number }[] = [], fills: unknown[] = [], rings: { r: number; w: number }[] = [];
+  const texts: { t: string; y: number; turn: number; w: number }[] = [], fills: unknown[] = [], rings: { r: number; w: number; s: unknown }[] = [], tickInk: unknown[] = [];
   let ticks = 0, turn = 0, arcAt = 0;
   const g = {
     fillStyle: '' as unknown, strokeStyle: '' as unknown, lineWidth: 1, lineCap: '' as unknown, lineJoin: '' as unknown, font: '', textAlign: '' as unknown, textBaseline: '' as unknown,
     beginPath() { arcAt = 0; }, arc(_x: number, _y: number, r: number) { arcAt = r; }, moveTo() {}, lineTo() {}, save() {}, restore() { turn = 0; }, translate() {},
     rotate(a: number) { turn += a; },
-    fill() { fills.push(this.fillStyle); }, stroke() { if (arcAt) rings.push({ r: arcAt, w: this.lineWidth }); else ticks++; },
+    fill() { fills.push(this.fillStyle); }, stroke() { if (arcAt) rings.push({ r: arcAt, w: this.lineWidth, s: this.strokeStyle }); else { ticks++; tickInk.push(this.strokeStyle); } },
     fillText(t: string, _x: number, y: number, w: number) { texts.push({ t, y, turn, w }); }, strokeText() {},
   };
   paintDial(g as never, size);
   assert.ok(fills[0] === DIAL_BEZEL && DIAL_LAYOUT.bezel <= 0.9, `a broad cream bezel, ${((1 - DIAL_LAYOUT.bezel) * 100).toFixed(0)}% of the radius`);
-  const heavy = rings.filter(r => r.w >= 0.03 * R - 1e-9);
-  assert.ok(heavy.length >= 2 && heavy.some(r => r.r < 0.76 * R) && heavy.some(r => r.r > 0.95 * R), `two black rings 0.03R thick, inside and outside the band: ${rings.map(r => `${(r.r / R).toFixed(2)}x${(r.w / R).toFixed(3)}`).join(' ')}`);
-  assert.ok(ticks >= 60, `a hatched minute track: ${ticks} ticks`);
+  // re-pinned 2026-11-24 (round 6, the dial-reveal score: the band still read near-white at distance): the rings 0.04R (they were 0.03R),
+  // the minute track solid black with white ticks (it was black ticks on the ivory)
+  const heavy = rings.filter(r => r.w >= 0.04 * R - 1e-9 && r.s === '#141210');
+  assert.ok(heavy.length >= 2 && heavy.some(r => r.r < 0.76 * R) && heavy.some(r => r.r > 0.97 * R), `two black rings 0.04R thick, inside and outside the band: ${rings.map(r => `${(r.r / R).toFixed(2)}x${(r.w / R).toFixed(3)}`).join(' ')}`);
+  assert.ok(heavy.some(r => r.r > 0.92 * R && r.r < 0.96 * R), 'a solid black minute track inside the outer ring');
+  assert.ok(ticks >= 60 && tickInk.every(s => s !== '#141210'), `white ticks in the track: ${ticks}`);
   assert.ok(texts.length === 12 && ['XII', 'III', 'VI', 'IX'].every(n => texts.some(x => x.t === n)), 'twelve Roman numerals');
   assert.ok(texts.every((x, i) => Math.abs(x.turn - (i * Math.PI) / 6) < 1e-9), 'each turned to its hour, radial');
   const px = Number(/(\d+)px/.exec(g.font)?.[1] ?? 0);
@@ -167,6 +170,14 @@ test('the dial is painted with a broad cream bezel, a dark chapter band of radia
     assert.ok(x.w <= ((2 * Math.PI * foot) / 12) * 0.9, `${x.t} fits its twelfth of the band`);
   }
   assert.ok(px >= 0.2 * R && DIAL_LAYOUT.stroke * R >= 0.012 * R, `numerals ${px} px on a ${R.toFixed(0)} px chapter, heavy-stroked`);
+  // their stems (the 900 weight's own, about 0.14 of the font, and the outline) about 0.05 of the radius, as front-c's
+  assert.ok(0.14 * px + DIAL_LAYOUT.stroke * R >= 0.05 * R, `numeral stems ${((0.14 * px + DIAL_LAYOUT.stroke * R) / R).toFixed(3)} of the radius`);
+  // the distant mip levels: their band's ground pre-darkened, the close ones not
+  assert.ok(dialFarBand(512) === 0 && dialFarBand(256) === 0 && dialFarBand(32) >= 0.5 && dialFarBand(16) >= dialFarBand(64) && dialFarBand(64) >= dialFarBand(128), 'the band pre-darkened on the small levels only');
+  rings.length = 0;
+  paintDial(g as never, 32);
+  const ground = rings[0]!;
+  assert.ok(ground.s !== '#141210' && new THREE.Color(ground.s as string).getHSL({ h: 0, s: 0, l: 0 }).l < 0.6 && ground.w >= 0.25 * 15 * DIAL_LAYOUT.bezel, `a 32 px level's band ground: ${String(ground.s)}`);
   const mask: unknown[] = [];
   paintDial({ ...g, fill(this: { fillStyle: unknown }) { mask.push(this.fillStyle); } } as never, size, '#000000');
   assert.ok(mask[0] === '#000000', 'the night mask paints the bezel black');

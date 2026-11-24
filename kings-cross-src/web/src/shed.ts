@@ -121,6 +121,19 @@ export const FRONT_CANOPY = { top: 3.85, fascia: 0.35, sheet: 0.15, depth: 8.6, 
  */
 export const FRONT_COLOURS = { steel: 0x2a2c2e, steelLift: 0x0c0d0e, glass: 0x56687a, glassSky: 0x111820, fascia: 0x1b2a4a, downlight: 0xb0aca4 } as const;
 /** The entrances' night glow, full up to `from` metres above the threshold, falling to `head` of it at `to` (the arch head). ASSUMED. */
+/**
+ * Round 6 (A3): the lettering on each entrance's navy fascia (R-kx-front-a shows pale capitals on the boards; generic words, not the boards'
+ * own), and the entrance glass's vertical structure, in metres over the openings' foot, as a grey multiplier (`GLASS_STRUCTURE`): the
+ * interior shade low behind the doors, a lit ceiling band above the doors' head, a paler arch head where the sky reflects. By day it
+ * multiplies the glass's colour; at night it shapes the warm glow (`gain` over it), so the glow is not one flat cream.
+ */
+export const FRONT_FASCIA_TEXT = { words: 'ENTRANCE  \u00b7  EXIT', ink: '#e8e4d8', height: 0.5 } as const;
+export const GLASS_STRUCTURE = { height: 4.4, stops: [[0, 0.62], [2.2, 0.7], [2.75, 1.0], [3.15, 1.0], [3.35, 0.8], [4.4, 0.95]], gain: 1.35 } as const;
+/**
+ * Round 6 (A4 brick): R-kx-front-c shows the tower in a darker yellow stock, greyed by weathering, against the front's mid-tan. The tower's
+ * brick is its own mesh, so a tint on a clone of the front's brick material costs no draw: `TOWER_BRICK_TINT` multiplies the texture.
+ */
+export const TOWER_BRICK_TINT = 0xb4a68a;
 export const FRONT_GLOW_FADE = { from: 1.6, to: 4.0, head: 0.3 } as const;
 export const FRONT_NIGHT = { glass: [0xffc98a, 0.45], fascia: [0x2a5cc0, 0.35], downlight: [0xffe2b8, 1.1] } as const;
 
@@ -139,7 +152,9 @@ function frontNightGlow(m: THREE.MeshLambertMaterial, [colour, gain]: readonly [
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvFrontY = position.y;');
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', '#include <common>\nuniform float uWinNight;\nuniform vec3 uFrontGlow;\nuniform vec3 uFrontFade;\nvarying float vFrontY;')
-      .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance += uFrontGlow * uWinNight * mix( 1.0, uFrontFade.z, smoothstep( uFrontFade.x, uFrontFade.y, vFrontY ) );');
+      .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\nvec3 frontGlowAdd = uFrontGlow * uWinNight * mix( 1.0, uFrontFade.z, smoothstep( uFrontFade.x, uFrontFade.y, vFrontY ) );\n'
+        // the entrance glass's glow is shaped by its map (GLASS_STRUCTURE); the fascia's lettering map is not a glow mask
+        + `#if defined( USE_MAP ) && defined( KX_GLOW_BY_MAP )\nfrontGlowAdd *= texture2D( map, vMapUv ).rgb * ${GLASS_STRUCTURE.gain.toFixed(3)};\n#endif\ntotalEmissiveRadiance += frontGlowAdd;`);
   };
   m.customProgramCacheKey = () => key;
   return m;
@@ -149,6 +164,52 @@ function plainGeometry(g: THREE.BufferGeometry): THREE.BufferGeometry {
   if (g.getAttribute('color')) g.deleteAttribute('color');
   if (!g.getAttribute('uv')) g.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(g.getAttribute('position').count * 2), 2));
   return g;
+}
+/** The 2D canvas calls paintFascia makes, so a test can record them. */
+export type FasciaPainter = Pick<CanvasRenderingContext2D, 'fillRect' | 'fillText'> & { fillStyle: unknown; font: string; textAlign: unknown; textBaseline: unknown };
+/** A fascia board `w` by `h` pixels: navy, the FRONT_FASCIA_TEXT words in pale capitals across its middle, kept inside its ends. */
+export function paintFascia(g: FasciaPainter, w: number, h: number): void {
+  g.fillStyle = '#' + new THREE.Color(FRONT_COLOURS.fascia).getHexString();
+  g.fillRect(0, 0, w, h);
+  g.fillStyle = FRONT_FASCIA_TEXT.ink;
+  g.font = `bold ${Math.round(h * FRONT_FASCIA_TEXT.height)}px sans-serif`;
+  g.textAlign = 'center';
+  g.textBaseline = 'middle';
+  g.fillText(FRONT_FASCIA_TEXT.words, w / 2, h / 2, w * 0.8);
+}
+/** GLASS_STRUCTURE as a column of `n` grey values from the openings' foot up (linear between the stops). */
+export function glassStructure(n: number): number[] {
+  const stops = GLASS_STRUCTURE.stops;
+  return Array.from({ length: n }, (_, i) => {
+    const y = ((i + 0.5) / n) * GLASS_STRUCTURE.height;
+    const k = Math.max(0, stops.findIndex((s, j) => j + 1 < stops.length && y <= stops[j + 1]![0]));
+    const [y0, v0] = stops[k]!, [y1, v1] = stops[Math.min(k + 1, stops.length - 1)]!;
+    return y1 > y0 ? v0 + ((v1 - v0) * Math.min(1, Math.max(0, y - y0))) / (y1 - y0) : v0;
+  });
+}
+/** The entrance glass's map: GLASS_STRUCTURE up the openings, from `foot` (the glass's uv is its shape's x and y, metres). */
+function glassStructureTexture(foot: number): THREE.DataTexture {
+  const col = glassStructure(64), data = new Uint8Array(64 * 4);
+  col.forEach((v, i) => { data.set([Math.round(v * 255), Math.round(v * 255), Math.round(v * 255), 255], i * 4); });
+  const t = new THREE.DataTexture(data, 1, 64);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.magFilter = THREE.LinearFilter;
+  t.repeat.set(0, 1 / GLASS_STRUCTURE.height);
+  t.offset.set(0.5, -foot / GLASS_STRUCTURE.height);
+  t.needsUpdate = true;
+  return t;
+}
+/** The fascia's material: navy with its pale lettering in a browser (a canvas), plain navy where there is none (the tests). */
+function fasciaMaterial(): THREE.MeshLambertMaterial {
+  if (!isBrowser) return new THREE.MeshLambertMaterial({ color: FRONT_COLOURS.fascia });
+  const c = document.createElement('canvas');
+  c.width = 1024;
+  c.height = 72;
+  paintFascia(c.getContext('2d') as CanvasRenderingContext2D, 1024, 72);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 4;
+  return new THREE.MeshLambertMaterial({ color: 0xffffff, map: t });
 }
 /** The porch arcade centres across a front `width` wide (from its own west end, x = 0), three each side of a central tower. */
 export function southFrontArcadeCentres(width: number, towerWidth: number): number[] {
@@ -644,45 +705,62 @@ export type DialPainter = Pick<CanvasRenderingContext2D, 'beginPath' | 'arc' | '
 export const DIAL_BEZEL = '#e6d7a8';
 export const DIAL_NUMERALS = ['XII', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI'] as const;
 /**
- * The chapter's layout, as fractions of the chapter's radius (the disc inside the bezel, `bezel` of the dial's radius). Round 5 (the
- * tower-round-2b score: the band was only 7% darker than the centre at south-front's 35 px): an inner and an outer black ring 0.03 thick,
- * radial numerals (their feet to the centre) from 0.75 to 0.92, heavy-stroked, then a hatched black minute track from 0.93 to 0.97.
+ * The chapter's layout, as fractions of the chapter's radius (the disc inside the bezel, `bezel` of the dial's radius). Round 6 (the
+ * dial-reveal score: the band was still only 12-16% darker than the centre at south-front, its chapter about 18 px): an inner and an outer
+ * black ring 0.04 thick, a solid black minute track between the numerals and the outer ring with white ticks in it, and numerals that fill
+ * most of their band, their stems about 0.055 of the radius (the 900 weight's own stem, about 0.14 of the font, plus a `stroke` outline).
  */
 export const DIAL_LAYOUT = {
-  bezel: 0.88, inner: [0.71, 0.74], numerals: [0.75, 0.92], track: [0.93, 0.97], outer: [0.97, 1.0], stroke: 0.014,
+  bezel: 0.88, inner: [0.7, 0.74], numerals: [0.75, 0.915], track: [0.92, 0.96], outer: [0.96, 1.0], stroke: 0.024,
 } as const;
 /**
+ * How dark the chapter band's ground is painted on a mip level `size` pixels across (0 the ivory, 1 the ink): none on the levels a close
+ * view samples; on the small ones, which a distant view samples, the band is pre-darkened toward what front-a and -b show at that size (a
+ * dark ring), since a mip level averaged from thin black strokes on ivory reads near-white.
+ */
+export function dialFarBand(size: number): number {
+  return size >= 256 ? 0 : size >= 128 ? 0.3 : size >= 64 ? 0.5 : 0.65;
+}
+const mixHex = (a: number, b: number, t: number): string => '#' + new THREE.Color(a).lerp(new THREE.Color(b), t).getHexString();
+/**
  * The tower's dial face on a canvas `size` pixels square (R-kx-front-c): a broad cream bezel, an ivory face, a black chapter band of
- * radial Roman numerals between two heavy rings, a hatched minute track outside them; the hands are clocks.ts's. `bezel` paints the
- * bezel another colour: black for the night glow's mask, so only the ivory field lights (night.ts, createDialLights).
+ * radial Roman numerals between two heavy rings, a solid black minute track with white ticks outside them; the hands are clocks.ts's.
+ * `bezel` paints the bezel another colour: black for the night glow's mask, so only the ivory field lights (night.ts, createDialLights).
+ * A small `size` (a mip level) gets its band's ground pre-darkened (dialFarBand).
  */
 export function paintDial(g: DialPainter, size: number, bezel: string = DIAL_BEZEL): void {
-  const c = size / 2, R0 = c - 2, R = R0 * DIAL_LAYOUT.bezel, ink = '#141210';
+  const c = size / 2, R0 = c * (1 - 4 / 512), R = R0 * DIAL_LAYOUT.bezel, ink = '#141210', ivory = 0xefe8d4;
   const ring = ([a, b]: readonly [number, number]): void => { g.lineWidth = (b - a) * R; g.beginPath(); g.arc(c, c, ((a + b) / 2) * R, 0, Math.PI * 2); g.stroke(); };
   g.fillStyle = bezel; g.beginPath(); g.arc(c, c, R0, 0, Math.PI * 2); g.fill(); // the bezel
   g.fillStyle = '#efe8d4'; g.beginPath(); g.arc(c, c, R, 0, Math.PI * 2); g.fill(); // the face
+  const far = dialFarBand(size);
+  if (far > 0) { // the band's ground, pre-darkened on a distant mip level
+    g.strokeStyle = mixHex(ivory, 0x141210, far);
+    ring([DIAL_LAYOUT.inner[0], DIAL_LAYOUT.outer[1]]);
+  }
   g.strokeStyle = ink;
   ring(DIAL_LAYOUT.inner);
   ring(DIAL_LAYOUT.outer);
+  ring(DIAL_LAYOUT.track); // the minute track, solid black
   const [t0, t1] = DIAL_LAYOUT.track;
-  g.lineWidth = R * 0.006; // the minute track's inner line
-  g.beginPath(); g.arc(c, c, t0 * R, 0, Math.PI * 2); g.stroke();
+  g.strokeStyle = '#efe8d4'; // its ticks, white in it
   g.lineCap = 'butt';
   for (let i = 0; i < 60; i++) {
     const a = (i * Math.PI) / 30;
-    g.lineWidth = R * (i % 5 === 0 ? 0.03 : 0.012);
+    g.lineWidth = R * (i % 5 === 0 ? 0.022 : 0.009);
     g.beginPath();
-    g.moveTo(c + Math.sin(a) * R * t0, c - Math.cos(a) * R * t0);
-    g.lineTo(c + Math.sin(a) * R * t1, c - Math.cos(a) * R * t1);
+    g.moveTo(c + Math.sin(a) * R * (t0 + 0.008), c - Math.cos(a) * R * (t0 + 0.008));
+    g.lineTo(c + Math.sin(a) * R * (t1 - 0.008), c - Math.cos(a) * R * (t1 - 0.008));
     g.stroke();
   }
   // the numerals, radial: each turned to its hour, its foot on the band's inner edge; a Roman's capitals stand about 0.7 of the font's size,
   // so the font is the band's height over 0.7 (less the stroke), and fillText's maxWidth keeps VIII inside its twelfth of the band
   const [n0, n1] = DIAL_LAYOUT.numerals, px = ((n1 - n0 - DIAL_LAYOUT.stroke) / 0.7) * R;
   g.fillStyle = ink;
+  g.strokeStyle = ink;
   g.lineWidth = DIAL_LAYOUT.stroke * R;
   g.lineJoin = 'round';
-  g.font = `900 ${Math.round(px)}px serif`;
+  g.font = `900 ${Math.max(1, Math.round(px))}px serif`;
   g.textAlign = 'center';
   g.textBaseline = 'alphabetic';
   const wide = ((2 * Math.PI * n0) / 12) * R * 0.85;
@@ -698,11 +776,19 @@ export function paintDial(g: DialPainter, size: number, bezel: string = DIAL_BEZ
 
 function clockMaterial(): THREE.Material {
   if (!isBrowser) return new THREE.MeshLambertMaterial({ color: 0xefe8d4 });
+  // every mip level painted at its own size (paintDial pre-darkens the band on the small ones), not averaged down from the 512 one
   const texture = (bezel?: string): THREE.CanvasTexture => {
-    const c = document.createElement('canvas');
-    c.width = c.height = 512;
-    paintDial(c.getContext('2d') as CanvasRenderingContext2D, 512, bezel);
-    const t = new THREE.CanvasTexture(c);
+    const levels: HTMLCanvasElement[] = [];
+    for (let size = 512; size >= 1; size /= 2) {
+      const c = document.createElement('canvas');
+      c.width = c.height = size;
+      paintDial(c.getContext('2d') as CanvasRenderingContext2D, size, bezel);
+      levels.push(c);
+    }
+    const t = new THREE.CanvasTexture(levels[0]!);
+    t.mipmaps = levels;
+    t.generateMipmaps = false;
+    t.minFilter = THREE.LinearMipmapLinearFilter;
     t.colorSpace = THREE.SRGBColorSpace;
     t.anisotropy = 4;
     return t;
@@ -800,6 +886,17 @@ const frontWashMaterials = new Map<string, THREE.MeshLambertMaterial>();
 /** Rake the south piers with amber light and pick out the clock stage and
  * its projecting cornice. The existing broad flood remains the fill. For the front, `width` is the front's own width
  * and the mesh's x runs from its west end, so the spine (and the tower) is at width / 2. */
+/** The tower's brick by day: a clone of the front's brick material, tinted TOWER_BRICK_TINT (the same program, no draw added). */
+let towerBrickMaterial: THREE.MeshLambertMaterial | undefined;
+function towerBrick(): THREE.MeshLambertMaterial {
+  if (towerBrickMaterial) return towerBrickMaterial;
+  const original = material('brickFoot') as THREE.MeshLambertMaterial;
+  const m = original.clone();
+  m.defines = { ...original.defines };
+  m.color.multiply(new THREE.Color(TOWER_BRICK_TINT)); // its shader hooks are the scene's (the roof-shade pass wraps it as it does the original)
+  towerBrickMaterial = m;
+  return m;
+}
 function frontWash(source: 'brickFoot' | 'stoneFoot', kind: 'front' | 'tower', width: number): THREE.MeshLambertMaterial {
   const key = `kx-front-wash-${source}-${kind}-${width}`;
   const cached = frontWashMaterials.get(key);
@@ -807,6 +904,7 @@ function frontWash(source: 'brickFoot' | 'stoneFoot', kind: 'front' | 'tower', w
   const original = material(source) as THREE.MeshLambertMaterial;
   const m = original.clone();
   m.defines = { ...original.defines };
+  if (kind === 'tower' && source === 'brickFoot') m.color.multiply(new THREE.Color(TOWER_BRICK_TINT)); // the tower's darker stock, at night too
   const light = kind === 'front' ? /* glsl */`
   float x = vKxWashPos.x;
   float endPier = min(abs(x-0.5),abs(x-${(width-0.5).toFixed(4)}));
@@ -1188,7 +1286,9 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
     frames.box([x, entryFoot + (t0 + t1) / 2, zIn], [2 * halfAt(entryFoot + t1) - 0.04, (t1 - t0) / 3, fd]); // the doors' head transom
     // the signage fascia: navy, across the top of the opening right under the canopy's sheet, near the face (R-kx-front-a)
     const s1 = GROUND_Y + FRONT_CANOPY.top - FRONT_CANOPY.sheet - 0.02, s0 = s1 - PORCH_INFILL.sign;
-    fasciae.box([x, (s0 + s1) / 2, -0.2], [2 * halfAt(s1) - 0.04, s1 - s0, 0.1]);
+    const fw = 2 * halfAt(s1) - 0.04;
+    fasciae.box([x, (s0 + s1) / 2, -0.2], [fw, s1 - s0, 0.1], { skip: ['+z'] });
+    fasciae.poly([[x - fw / 2, s0, -0.15], [x + fw / 2, s0, -0.15], [x + fw / 2, s1, -0.15], [x - fw / 2, s1, -0.15]], [[0, 0], [1, 0], [1, 1], [0, 1]], { facing: [0, 0, 1] }); // its face, the lettering's whole width
     frames.box([x, entryFoot + PORCH_INFILL.rail, zIn + fd / 2], [(4 * entryR) / PORCH_INFILL.bays, 0.06, 0.06]); // the doors' push rail, across the middle two bays
     // the doors (the tower pass, the round-2 scorer): a pair of leaves in the middle bay, told from the fixed glazing by their stiles, a meeting
     // stile and a solid kick panel; the fixed screens either side have only their mullions
@@ -1199,9 +1299,9 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   }
   const infillParts = [mergeGeometries(infillGlass, false), plainGeometry(frames.build()), plainGeometry(fasciae.build()), plainGeometry(downlights.build())];
   const infillMats = [
-    frontNightGlow(new THREE.MeshLambertMaterial({ color: FRONT_COLOURS.glass, emissive: FRONT_COLOURS.glassSky }), FRONT_NIGHT.glass, 'kx-front-infill-glass', [entryFoot + FRONT_GLOW_FADE.from, entryFoot + FRONT_GLOW_FADE.to, FRONT_GLOW_FADE.head]),
+    frontNightGlow(Object.assign(new THREE.MeshLambertMaterial({ color: FRONT_COLOURS.glass, emissive: FRONT_COLOURS.glassSky, map: glassStructureTexture(entryFoot) }), { defines: { KX_GLOW_BY_MAP: '' } }), FRONT_NIGHT.glass, 'kx-front-infill-glass', [entryFoot + FRONT_GLOW_FADE.from, entryFoot + FRONT_GLOW_FADE.to, FRONT_GLOW_FADE.head]),
     frontSteel,
-    frontNightGlow(new THREE.MeshLambertMaterial({ color: FRONT_COLOURS.fascia }), FRONT_NIGHT.fascia, 'kx-front-infill-fascia'),
+    frontNightGlow(fasciaMaterial(), FRONT_NIGHT.fascia, 'kx-front-infill-fascia'),
     frontNightGlow(new THREE.MeshLambertMaterial({ color: FRONT_COLOURS.downlight, emissive: 0x141414 }), FRONT_NIGHT.downlight, 'kx-front-downlight'),
   ];
   const infill = new THREE.Mesh(mergeGeometries(infillParts, true), infillMats);
@@ -1460,6 +1560,7 @@ export function buildNorthPier(brick: Batch, stone: Batch, x: number, length: nu
 export function buildTower(x: number): THREE.Group {
   const tower = new THREE.Group();
   tower.name = 'clock-tower';
+  const towerBrickDay = towerBrick(); // made before the dial's material, so it sorts ahead of it in the opaque list (night-lighting-round19)
   const tb = new Batch();
   const ts = new Batch();
   const tslate = new Batch({ colored: true }); // the slits darken the slate by vertex colour (the cap is white: the slate as it was)
@@ -1553,7 +1654,7 @@ export function buildTower(x: number): THREE.Group {
   // a banner on the mast, swallow-tailed (R-kx-front-a, R-kx-front-c show a gilded vane; its outline is ASSUMED)
   const banner: V3[] = [[0.05, vaneY + 0.08, 0], [1.2, vaneY + 0.08, 0], [0.95, vaneY + 0.34, 0], [1.2, vaneY + 0.6, 0], [0.05, vaneY + 0.6, 0]];
   vane.poly(banner, undefined, { facing: [0, 0, 1] }); vane.poly(banner, undefined, { facing: [0, 0, -1] });
-  const brick = withBuildingNightMaterial(mesh(tb.build(), material('brickFoot'), 'tower-brick'), frontWash('brickFoot', 'tower', tw));
+  const brick = withBuildingNightMaterial(mesh(tb.build(), towerBrickDay, 'tower-brick'), frontWash('brickFoot', 'tower', tw));
   const stone = withBuildingNightMaterial(mesh(ts.build(), material('stoneFoot'), 'tower-stone'), frontWash('stoneFoot', 'tower', tw));
   const slateTinted = (material('slate') as THREE.MeshLambertMaterial).clone();
   slateTinted.vertexColors = true; // the slits' near-black (the vane's own clone, the same way: no new draw)
