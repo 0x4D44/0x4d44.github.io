@@ -135,6 +135,16 @@ export const FIGURES = {
   totemNorth: 6,
   /** Within this of an arcaded wall's line (the west wall, the spine, the east arcade) a totem stands in front of a pier, not an opening, metres. ASSUMED. */
   totemWallReach: 6,
+  /** A totem keeps this much clear of a bench's footprint circle, metres: ASSUMED (the lead asked for at least 1.0 m; the scorer saw one stand
+   *  right behind a bench seen down the platform, so a bench seat does not overlap its foot from the next bench along either). */
+  totemBenchGap: 3.5,
+  // --- pole clocks: shed-a shows small digital clocks ("14:24", amber on black) on slim posts among the platforms, a pair of displays side by
+  // side on a short crossbar. MEASURED in memory (rough, +-30%): each display about 50 x 18 px where the totems are about 90 px (1.0 m) wide
+  // nearer the camera, so about 0.65 x 0.25 m; their foot hidden, their tops level with the train roofs, about 2.9 m over the platform.
+  // The post, the bar and the boxes' depth are ASSUMED. One a platform (or shared island), beside its middle totem.
+  clockHeight: 2.9,
+  clockWidth: 0.65,
+  clockTall: 0.25,
 
   // --- canopies (platforms 9 and 10)
   /** Roof height above the platform top, metres. ASSUMED (the brief). */
@@ -153,6 +163,9 @@ export const FIGURES = {
   columnSize: 0.18,
 } as const;
 
+/** How far along the platform from its totem a pole clock stands, tried in turn: one or two rib bays (RIB_SPACING 6.1 m), so it too stands before a pier
+ *  where a wall is near, as the totem (on a rib's v) does. ASSUMED. */
+const CLOCK_OFFSETS = [6.1, -6.1, 12.2, -12.2] as const;
 const STAGGER = { lamp: 5.9, bench: 13.1, help: 29.3 } as const;
 const CANOPY_REFS: ReadonlySet<string> = new Set(['9', '10']);
 const SHED_REFS: ReadonlySet<string> = new Set(SHED_PLATFORM_REFS);
@@ -719,6 +732,28 @@ export interface Placement {
 }
 
 
+/** A departure totem: the platforms it serves (one, or an island's two) and the number its header shows. */
+export interface TotemPlacement extends Placement {
+  refs: string[];
+  label: string;
+}
+
+/**
+ * The islands whose two halves are both platforms with nothing between them, so one totem serves both, as shed-a shows on 6/7 ("Platform 6 /
+ * Platform 7"). 4/5 and 0/1 are islands in the OSM data too, but the spine wall and the east arcade stand between their halves, so each keeps its own.
+ */
+export const TOTEM_ISLANDS: readonly (readonly [string, string])[] = [['2', '3'], ['6', '7']];
+/** The shed's platforms grouped as the totems serve them: an island of TOTEM_ISLANDS together, every other platform alone. */
+export function totemGroups(refs: readonly string[]): string[][] {
+  const out: string[][] = [];
+  for (const ref of refs) {
+    const island = TOTEM_ISLANDS.find((i) => i.includes(ref));
+    if (!island) out.push([ref]);
+    else if (island[0] === ref) out.push([...island]);
+  }
+  return out;
+}
+
 export interface CanopyPlan {
   ref: string;
   roofY: number;
@@ -736,7 +771,9 @@ export interface FurniturePlan {
   benches: Placement[];
   helpPoints: Placement[];
   /** departure totems on the shed's platforms */
-  totems: Placement[];
+  totems: TotemPlacement[];
+  /** pole clocks, one beside a totem of each platform or shared island */
+  clocks: Placement[];
   canopies: CanopyPlan[];
 }
 
@@ -827,12 +864,13 @@ export function furniturePlan(data: FurnitureData, layout: FurnitureLayout): Fur
   // Reconstructing the platform end does not locate a longer canopy or new furniture.
   const outlines = surfacePlatforms({ platforms: data.platforms }).map((p) => p.pts);
   const tracks = trackSegments(data);
-  const plan: FurniturePlan = { lamps: [], benches: [], helpPoints: [], totems: [], canopies: [] };
+  const plan: FurniturePlan = { lamps: [], benches: [], helpPoints: [], totems: [], clocks: [], canopies: [] };
   const kx = stationPlatforms(data);
   const underShed = (p: Pt): boolean => {
     const { u, v } = worldToShed(layout, p);
     return u > -1 && u < layout.width + 1 && v > -1 && v < layout.length + 4;
   };
+  const shedFrames = new Map<string, { f: Frame; placed: { x: number; z: number; r: number }[] }>();
   for (const [index, ref] of PLATFORM_REFS.entries()) {
     const platform = kx.get(ref);
     if (!platform) continue;
@@ -906,36 +944,84 @@ export function furniturePlan(data: FurnitureData, layout: FurnitureLayout): Fur
       }
     });
 
-    // 5. departure totems, standing in the middle of the platform's band inside the shed: one at each FIGURES.totemSpacing mark, moved to the
-    // nearest rib's v that works, so a totem near an arcaded wall stands before a pier (every wall's piers are under the ribs), out of the
-    // Western Concourse's gateline passages, and clear of everything already placed
-    if (SHED_REFS.has(ref)) {
-      const ribs = ribPositions(layout.length);
-      const across = FIGURES.totemWidth / 2;
-      const r = Math.hypot(across, FIGURES.totemDepth / 2) + 0.05;
-      // the t whose band middle stands at shed v (the platforms run within a degree of the shed's axis, so a few steps converge)
-      const tAtV = (v: number): number => {
-        let t = (f.tLo + f.tHi) / 2;
-        for (let k = 0; k < 6; k++) t += v - worldToShed(layout, worldPoint(f, t, bandAt(f, t, FIGURES.totemWidth / 2)?.mid ?? 0)).v;
-        return t;
-      };
-      for (let target = FIGURES.totemSouth; target <= layout.length - FIGURES.totemNorth; target += FIGURES.totemSpacing) {
-        const order = ribs.filter((v) => v >= FIGURES.totemSouth - 3.1 && v <= layout.length - FIGURES.totemNorth).sort((a, b) => Math.abs(a - target) - Math.abs(b - target));
-        for (const rib of order.slice(0, 8)) {
-          const t = tAtV(rib);
-          if (t < f.tLo + FIGURES.endSouth || t > f.tHi - FIGURES.endNorth) continue;
-          const b = bandAt(f, t, across);
-          if (!b) continue;
-          const [x, z] = worldPoint(f, t, b.mid);
-          const { u, v } = worldToShed(layout, [x, z]);
-          if (Math.abs(v - rib) > 0.05) continue;
-          if (u < FIGURES.totemWallReach && westernPassages().some(([lo, hi]) => rib + FIGURES.totemDepth / 2 > lo && rib - FIGURES.totemDepth / 2 < hi)) continue;
-          const p: Placement = { ref, x, z, rotY: axisFacing, r, across };
-          if (free(placed, p) && behindSafetyLine(f, p)) {
-            plan.totems.push(p);
-            placed.push(p);
-            break;
-          }
+    // 5. the departure totems go in after every platform's own furniture (below): an island's totem stands across both its halves
+    if (SHED_REFS.has(ref)) shedFrames.set(ref, { f, placed });
+  }
+
+  // 5. departure totems, one at each FIGURES.totemSpacing mark, moved to the nearest rib's v that works, so a totem near an arcaded wall stands
+  // before a pier (every wall's piers are under the ribs), out of the Western Concourse's gateline passages, FIGURES.totemBenchGap clear of every
+  // bench and FIGURES.gap clear of everything else. A platform alone takes its totem in the middle of its band; an island whose two halves are
+  // both platforms (TOTEM_ISLANDS) takes one, midway between the middles of its halves' bands, behind the safety line of both.
+  const ribs = ribPositions(layout.length);
+  const across = FIGURES.totemWidth / 2;
+  const r = Math.hypot(across, FIGURES.totemDepth / 2) + 0.05;
+  // the t whose band middle stands at shed v (the platforms run within a degree of the shed's axis, so a few steps converge)
+  const tAtV = (f: Frame, v: number): number => {
+    let t = (f.tLo + f.tHi) / 2;
+    for (let k = 0; k < 6; k++) t += v - worldToShed(layout, worldPoint(f, t, bandAt(f, t, across)?.mid ?? 0)).v;
+    return t;
+  };
+  const benches = new Set<object>(plan.benches);
+  for (const refs of totemGroups(SHED_PLATFORM_REFS)) {
+    const group = refs.map((ref) => shedFrames.get(ref)).filter((g): g is { f: Frame; placed: { x: number; z: number; r: number }[] } => !!g);
+    if (group.length !== refs.length) continue;
+    const near = group.flatMap((g) => g.placed);
+    // the point midway between the group's band middles at shed v, half-width `half`, or null where one has no band there
+    const pointAt = (v: number, half: number): { x: number; z: number; home: Frame } | null => {
+      const pts: Pt[] = [];
+      for (const { f } of group) {
+        const t = tAtV(f, v);
+        const b = t < f.tLo + FIGURES.endSouth || t > f.tHi - FIGURES.endNorth ? null : bandAt(f, t, half);
+        if (b) pts.push(worldPoint(f, t, b.mid));
+      }
+      if (pts.length !== group.length) return null;
+      const x = pts.reduce((a, q) => a + q[0], 0) / pts.length, z = pts.reduce((a, q) => a + q[1], 0) / pts.length;
+      const home = group.find(({ f }) => pointInPolygon([x, z], [...f.pts]));
+      return home ? { x, z, home: home.f } : null;
+    };
+    const mine: TotemPlacement[] = [];
+    for (let target = FIGURES.totemSouth; target <= layout.length - FIGURES.totemNorth; target += FIGURES.totemSpacing) {
+      const order = ribs.filter((v) => v >= FIGURES.totemSouth - 3.1 && v <= layout.length - FIGURES.totemNorth).sort((a, b) => Math.abs(a - target) - Math.abs(b - target));
+      for (const rib of order.slice(0, 12)) {
+        const pts: Pt[] = [];
+        for (const { f } of group) {
+          const t = tAtV(f, rib);
+          const b = t < f.tLo + FIGURES.endSouth || t > f.tHi - FIGURES.endNorth ? null : bandAt(f, t, across);
+          if (b) pts.push(worldPoint(f, t, b.mid));
+        }
+        if (pts.length !== group.length) continue;
+        const x = pts.reduce((a, q) => a + q[0], 0) / pts.length, z = pts.reduce((a, q) => a + q[1], 0) / pts.length;
+        const { u, v } = worldToShed(layout, [x, z]);
+        if (Math.abs(v - rib) > 0.05) continue;
+        if (u < FIGURES.totemWallReach && westernPassages().some(([lo, hi]) => rib + FIGURES.totemDepth / 2 > lo && rib - FIGURES.totemDepth / 2 < hi)) continue;
+        const f0 = (group[0] as { f: Frame }).f;
+        // its ref is the half whose outline it stands in (an island's totem stands on or beside the seam)
+        const home = group.find(({ f }) => pointInPolygon([x, z], [...f.pts]));
+        if (!home) continue;
+        const p: TotemPlacement = { ref: home.f.ref, refs: [...refs], label: refs.join(' '), x, z, rotY: facing(f0.axis), r, across };
+        const clear = near.every((q) => Math.hypot(q.x - p.x, q.z - p.z) >= q.r + p.r + (benches.has(q) ? FIGURES.totemBenchGap : FIGURES.gap));
+        if (clear && group.every(({ f }) => behindSafetyLine(f, p))) {
+          plan.totems.push(p);
+          mine.push(p);
+          near.push(p);
+          break;
+        }
+      }
+    }
+    // a pole clock beside a totem (the middle one first), clear of everything (benches by the totems' gap) and behind the safety lines
+    const mid = Math.floor(mine.length / 2);
+    const byOrder = [...mine].sort((a, b) => Math.abs(mine.indexOf(a) - mid) - Math.abs(mine.indexOf(b) - mid));
+    clock: for (const by of byOrder) {
+      const cr = FIGURES.clockWidth + 0.07, v0 = worldToShed(layout, [by.x, by.z]).v;
+      for (const d of CLOCK_OFFSETS) {
+        const at = pointAt(v0 + d, FIGURES.clockWidth + 0.02);
+        if (!at) continue;
+        const c: Placement = { ref: at.home.ref, x: at.x, z: at.z, rotY: by.rotY, r: cr, across: FIGURES.clockWidth + 0.02 };
+        const clear = near.every((q) => Math.hypot(q.x - c.x, q.z - c.z) >= q.r + c.r + (benches.has(q) ? FIGURES.totemBenchGap : FIGURES.gap));
+        if (clear && group.every(({ f }) => behindSafetyLine(f, c))) {
+          plan.clocks.push(c);
+          near.push(c);
+          break clock;
         }
       }
     }
@@ -994,23 +1080,43 @@ function helpPointGeometry(): THREE.BufferGeometry {
 const TOTEM_BODY = rgb(0x1a1d22);
 /** Sampled in memory from shed-a's totem headers (the navy of the National Rail platform signs): about (31, 42, 92). */
 const TOTEM_NAVY = rgb(0x1f2a5c);
-const TOTEM_WHITE = rgb(0xe8ecf2);
+
+/** The face texture's layout (screenTexture): the screen's picture over a row of ten digit cells, 0-9, white on navy. */
+const ATLAS = { w: 256, h: 400, screen: 330, digitTop: 340, digitBottom: 396 } as const;
+/** A header digit's height on the totem, metres. ASSUMED: shed-a's "Platform 8" lettering fills about two thirds of the header. */
+const DIGIT_HEIGHT = 0.4;
 
 /**
- * A totem standing on the platform at y = 0: a dark slab, a navy header band with a white strip for its lettering on both faces, as group 0;
- * the screen on each face (local +z and -z, the platform's two directions) as group 1.
+ * A totem standing on the platform at y = 0, local +z and -z the platform's two directions: a dark slab with a navy header (group 0); and,
+ * on both faces, the screen and the header's platform numbers, white digits from the face texture's digit row (group 1).
  */
-function totemGeometry(): THREE.BufferGeometry {
+function totemGeometry(label: string): THREE.BufferGeometry {
   const hw = FIGURES.totemWidth / 2, hd = FIGURES.totemDepth / 2, top = FIGURES.totemHeight, head = top - FIGURES.totemHeader;
   const body = newBatch();
   body.aabb(-hw, 0, -hd, hw, head, hd, TOTEM_BODY);
   body.aabb(-hw, head, -hd, hw, top, hd, TOTEM_NAVY);
-  for (const [z0, z1] of [[-hd - 0.004, -hd], [hd, hd + 0.004]] as const) body.aabb(-hw * 0.7, head + FIGURES.totemHeader * 0.4, z0, hw * 0.7, head + FIGURES.totemHeader * 0.6, z1, TOTEM_WHITE, true);
   const faces = newBatch();
   const sw = FIGURES.screenWidth / 2, y1 = head - 0.05, y0 = y1 - FIGURES.screenHeight, e = hd + 0.003;
+  const sv = 1 - ATLAS.screen / ATLAS.h;
   // seen from +z the image reads left to right along +x; seen from -z, along -x: the same picture on both sides
-  faces.poly([[-sw, y0, e], [sw, y0, e], [sw, y1, e], [-sw, y1, e]], [[0, 0], [1, 0], [1, 1], [0, 1]], { normal: [0, 0, 1] });
-  faces.poly([[sw, y0, -e], [-sw, y0, -e], [-sw, y1, -e], [sw, y1, -e]], [[0, 0], [1, 0], [1, 1], [0, 1]], { normal: [0, 0, -1] });
+  faces.poly([[-sw, y0, e], [sw, y0, e], [sw, y1, e], [-sw, y1, e]], [[0, sv], [1, sv], [1, 1], [0, 1]], { normal: [0, 0, 1] });
+  faces.poly([[sw, y0, -e], [-sw, y0, -e], [-sw, y1, -e], [sw, y1, -e]], [[0, sv], [1, sv], [1, 1], [0, 1]], { normal: [0, 0, -1] });
+  // the number: one cell a digit, a space a 0.6 cell gap, centred in the header
+  const dw = (DIGIT_HEIGHT * ATLAS.w) / 10 / (ATLAS.digitBottom - ATLAS.digitTop);
+  const advance = [...label].map((ch) => (ch === ' ' ? 0.6 * dw : dw));
+  const width = advance.reduce((a, b) => a + b, 0);
+  const dy0 = head + (FIGURES.totemHeader - DIGIT_HEIGHT) / 2, dy1 = dy0 + DIGIT_HEIGHT, de = hd + 0.004;
+  const v0 = 1 - ATLAS.digitBottom / ATLAS.h, v1 = 1 - ATLAS.digitTop / ATLAS.h;
+  let x = -width / 2;
+  [...label].forEach((ch, k) => {
+    const d = Number(ch);
+    if (ch !== ' ' && Number.isInteger(d)) {
+      const u0 = d / 10, u1 = (d + 1) / 10, xa = x, xb = x + dw;
+      faces.poly([[xa, dy0, de], [xb, dy0, de], [xb, dy1, de], [xa, dy1, de]], [[u0, v0], [u1, v0], [u1, v1], [u0, v1]], { normal: [0, 0, 1] });
+      faces.poly([[-xa, dy0, -de], [-xb, dy0, -de], [-xb, dy1, -de], [-xa, dy1, -de]], [[u0, v0], [u1, v0], [u1, v1], [u0, v1]], { normal: [0, 0, -1] });
+    }
+    x += advance[k] as number;
+  });
   const a = body.build();
   const b = faces.build();
   const merged = mergeGeometries([a, b], true) as THREE.BufferGeometry;
@@ -1019,17 +1125,71 @@ function totemGeometry(): THREE.BufferGeometry {
   return merged;
 }
 
+/** The face texture's first time on the screen (four amber blocks, screenTexture's first row), which a pole clock shows: (u0, v0, u1, v1). */
+const CLOCK_UV = [8 / ATLAS.w, 1 - 48 / ATLAS.h, 50 / ATLAS.w, 1 - 32 / ATLAS.h] as const;
+
+/**
+ * A pole clock at y = 0, local z along the platform: a slim post, a crossbar on its top and two dark displays side by side on it (group 0), each
+ * showing a time on both faces (group 1).
+ */
+function clockGeometry(): THREE.BufferGeometry {
+  const w = FIGURES.clockWidth, h = FIGURES.clockTall, top = FIGURES.clockHeight, d = 0.06, y0 = top - h;
+  const body = newBatch();
+  body.aabb(-0.04, 0, -0.04, 0.04, y0, 0.04, IRON);
+  body.aabb(-w - 0.02, y0 - 0.06, -0.03, w + 0.02, y0, 0.03, IRON, true);
+  for (const side of [-1, 1]) body.aabb(side > 0 ? 0.01 : -w - 0.01, y0, -d, side > 0 ? w + 0.01 : -0.01, top, d, TOTEM_BODY, true);
+  const faces = newBatch();
+  const [u0, v0, u1, v1] = CLOCK_UV, e = d + 0.003, m = 0.03;
+  for (const side of [-1, 1]) {
+    const xa = (side > 0 ? 0.01 : -w - 0.01) + m, xb = (side > 0 ? w + 0.01 : -0.01) - m, ya = y0 + m, yb = top - m;
+    faces.poly([[xa, ya, e], [xb, ya, e], [xb, yb, e], [xa, yb, e]], [[u0, v0], [u1, v0], [u1, v1], [u0, v1]], { normal: [0, 0, 1] });
+    faces.poly([[xb, ya, -e], [xa, ya, -e], [xa, yb, -e], [xb, yb, -e]], [[u0, v0], [u1, v0], [u1, v1], [u0, v1]], { normal: [0, 0, -1] });
+  }
+  const a = body.build();
+  const b = faces.build();
+  const merged = mergeGeometries([a, b], true) as THREE.BufferGeometry;
+  a.dispose();
+  b.dispose();
+  return merged;
+}
+
+/** Every totem and pole clock in one mesh, in place: the bodies (group 0), then the faces (group 1), so all of them are two draw calls whatever their numbers. */
+function totemsGeometry(totems: readonly TotemPlacement[], clocks: readonly Placement[]): THREE.BufferGeometry {
+  const bodies: THREE.BufferGeometry[] = [], faces: THREE.BufferGeometry[] = [];
+  const m = new THREE.Matrix4();
+  for (const t of [...totems, ...clocks]) {
+    const g = 'label' in t ? totemGeometry((t as TotemPlacement).label) : clockGeometry();
+    m.compose(new THREE.Vector3(t.x, PLATFORM_HEIGHT, t.z), new THREE.Quaternion().setFromAxisAngle(_up, t.rotY), new THREE.Vector3(1, 1, 1));
+    g.applyMatrix4(m);
+    const [g0, g1] = g.groups as [{ start: number; count: number }, { start: number; count: number }];
+    const part = (gr: { start: number; count: number }): THREE.BufferGeometry => {
+      const out = new THREE.BufferGeometry();
+      const idx = (g.index as THREE.BufferAttribute).array.slice(gr.start, gr.start + gr.count);
+      for (const name of Object.keys(g.attributes)) out.setAttribute(name, g.getAttribute(name) as THREE.BufferAttribute);
+      out.setIndex(Array.from(idx));
+      return out;
+    };
+    bodies.push(part(g0));
+    faces.push(part(g1));
+  }
+  const body = mergeGeometries(bodies) as THREE.BufferGeometry;
+  const face = mergeGeometries(faces) as THREE.BufferGeometry;
+  const merged = mergeGeometries([body, face], true) as THREE.BufferGeometry;
+  for (const x of [...bodies, ...faces, body, face]) x.dispose();
+  return merged;
+}
+
 /** A drawing of rows of amber blocks on black: abstract on purpose, no readable times or destinations. Null where there is no document. */
 function screenTexture(): THREE.CanvasTexture | null {
   if (typeof document === 'undefined') return null;
   const c = document.createElement('canvas');
-  c.width = 256;
-  c.height = 330;
+  c.width = ATLAS.w;
+  c.height = ATLAS.h;
   const g = c.getContext('2d');
   if (!g) return null;
   const r = rng(71);
   g.fillStyle = '#06080a';
-  g.fillRect(0, 0, 256, 330);
+  g.fillRect(0, 0, 256, ATLAS.screen);
   g.fillStyle = '#ffb02e';
   g.fillRect(10, 9, 118, 9); // the header bar
   g.fillRect(206, 9, 40, 9);
@@ -1050,6 +1210,15 @@ function screenTexture(): THREE.CanvasTexture | null {
     g.fillStyle = 'rgba(255,176,46,0.6)';
     g.fillRect(224, y + 3, 22, 7); // the status
   }
+  // the digit row: ten cells, a white digit on the header's navy in each
+  const cell = ATLAS.w / 10;
+  g.fillStyle = '#1f2a5c';
+  g.fillRect(0, ATLAS.digitTop, ATLAS.w, ATLAS.digitBottom - ATLAS.digitTop);
+  g.fillStyle = '#ffffff';
+  g.font = `bold ${ATLAS.digitBottom - ATLAS.digitTop - 6}px sans-serif`;
+  g.textAlign = 'center';
+  g.textBaseline = 'middle';
+  for (let d = 0; d < 10; d++) g.fillText(String(d), cell * (d + 0.5), (ATLAS.digitTop + ATLAS.digitBottom) / 2 + 2);
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
   t.anisotropy = 4;
@@ -1128,6 +1297,7 @@ export function describePlan(plan: FurniturePlan): Record<string, number> {
     benches: plan.benches.length,
     helpPoints: plan.helpPoints.length,
     totems: plan.totems.length,
+    clocks: plan.clocks.length,
     canopies: plan.canopies.length,
     columns: plan.canopies.reduce((n, c) => n + c.columns.length, 0),
   };
@@ -1157,7 +1327,9 @@ export function buildFurniture(data: FurnitureData, layout: FurnitureLayout): TH
     const tex = screenTexture();
     const face = new THREE.MeshBasicMaterial(tex ? { map: tex } : { color: 0x5a3b08 });
     face.name = 'screenFace';
-    add(instanced('totems', totemGeometry(), [lit, face], plan.totems, PLATFORM_HEIGHT));
+    const totems = new THREE.Mesh(totemsGeometry(plan.totems, plan.clocks), [lit, face]);
+    totems.name = 'totems';
+    add(totems);
   }
 
   if (plan.canopies.length > 0) {

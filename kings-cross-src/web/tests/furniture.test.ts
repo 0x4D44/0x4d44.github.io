@@ -97,7 +97,7 @@ const edgesOf = (pts: Pt[]) =>
     tracks,
   );
 const refs = [...kx.keys()];
-const placements = (): Placement[] => [...plan.lamps, ...plan.benches, ...plan.helpPoints, ...plan.totems, ...plan.canopies.flatMap((c) => c.columns)];
+const placements = (): Placement[] => [...plan.lamps, ...plan.benches, ...plan.helpPoints, ...plan.totems, ...plan.clocks, ...plan.canopies.flatMap((c) => c.columns)];
 const outline = (ref: string): Pt[] => (kx.get(ref) as { pts: Pt[] }).pts;
 
 // ---------------------------------------------------------------------------------------------
@@ -466,14 +466,19 @@ test('furniture: help points are one slot every 80 m along each platform, betwee
 });
 
 // Round 7 scorer (B5, shed-a-north-from-footbridge-2019): no screen hangs under the roof; platform information stands on post-mounted totems.
-// Replaces the hanging screens' '30 m apart, roof height above each' test: the totems' measured count and spacing instead.
-test('furniture: departure totems stand only on platforms 0-8 under the shed, two or three a platform, 55-115 m apart', () => {
+// Re-pinned (shed-totems round 1, scorer: two totems side by side on an island where shed-a shows one shared): counted per group of platforms a
+// totem serves (an island of 2/3 or 6/7 together, every other platform alone) rather than per platform; the count and spacing bands are unchanged.
+const ISLANDS = [['2', '3'], ['6', '7']];
+const groupOf = (ref: string): string[] => ISLANDS.find((i) => i.includes(ref)) ?? [ref];
+test('furniture: departure totems stand only on platforms 0-8 under the shed, two or three a platform or shared island, 55-115 m apart', () => {
   const shed = new Set<string>(SHED_PLATFORM_REFS);
   for (const s of plan.totems) assert.ok(shed.has(s.ref), `a totem on platform ${s.ref}`);
   for (const ref of SHED_PLATFORM_REFS) {
-    const list = plan.totems.filter((s) => s.ref === ref);
-    assert.ok(list.length >= 2 && list.length <= 3, `platform ${ref} has ${list.length} totems`);
-    for (const g of gaps(alongOf(ref, list))) assert.ok(g >= 55 && g <= 115, `totems ${g.toFixed(1)} m apart on platform ${ref}`);
+    const g = groupOf(ref);
+    if (g[0] !== ref) continue;
+    const list = plan.totems.filter((s) => g.includes(s.ref));
+    assert.ok(list.length >= 2 && list.length <= 3, `platforms ${g.join('/')} have ${list.length} totems`);
+    for (const d of gaps(alongOf(ref, list))) assert.ok(d >= 55 && d <= 115, `totems ${d.toFixed(1)} m apart on ${g.join('/')}`);
   }
   for (const s of plan.totems) {
     const { u, v } = worldToShed(layout, [s.x, s.z]);
@@ -481,17 +486,45 @@ test('furniture: departure totems stand only on platforms 0-8 under the shed, tw
   }
 });
 
-test('furniture: every totem stands behind the safety line, clear of every bench, and its whole footprint is on its platform', () => {
+// shed-a shows one totem headed "Platform 6 / Platform 7" on the 6/7 island. An island whose halves are both platforms with no wall between (2/3, 6/7)
+// takes one totem across both, behind both halves' safety lines; 0/1 and 4/5 have the east arcade and the spine wall between their halves.
+test('furniture: an island whose halves are both platforms shares one totem, numbered for both, behind both halves\' safety lines', () => {
+  const hw = FIGURES.totemWidth / 2;
+  for (const pair of ISLANDS) {
+    const list = plan.totems.filter((s) => pair.includes(s.ref));
+    assert.ok(list.length >= 2, `${list.length} totems on ${pair.join('/')}`);
+    for (const s of list) {
+      assert.ok(s.label === pair.join(' ') && s.refs?.join() === pair.join(), `a totem on ${pair.join('/')} serves both halves`);
+      for (const ref of pair) {
+        const pts = outline(ref);
+        const d = distanceToEdges([s.x, s.z], classifyEdges(pts, outlines.filter((o) => o !== pts), layout, tracks));
+        assert.ok(d >= FIGURES.safetyLine + hw, `the ${pair.join('/')} totem is ${d.toFixed(2)} m from platform ${ref}'s track edge`);
+      }
+    }
+    // never two side by side: no two totems on the island within 20 m along it
+    for (const g of gaps(alongOf(pair[0]!, list))) assert.ok(g > 20, `two totems ${g.toFixed(1)} m apart on ${pair.join('/')}`);
+  }
+  for (const s of plan.totems.filter((t) => !ISLANDS.flat().includes(t.ref))) assert.ok(s.label === s.ref && s.refs?.join() === s.ref, `platform ${s.ref}'s totem is its own`);
+});
+
+test('furniture: every totem stands behind the safety line, its whole footprint on its platforms, and FIGURES.totemBenchGap (at least 1.0 m) in plan from every bench', () => {
+  assert.ok(FIGURES.totemBenchGap >= 1.0, 'the lead\'s floor: at least 1.0 m');
   const hw = FIGURES.totemWidth / 2, hd = FIGURES.totemDepth / 2;
+  // the footprint circles: each covers its piece's rectangle, so a gap between circles is at least that gap between the rectangles
+  const totemR = Math.hypot(hw, hd), benchR = Math.hypot(FIGURES.benchLength / 2, FIGURES.benchDepth / 2);
   for (const s of plan.totems) {
+    const g = groupOf(s.ref);
     const pts = outline(s.ref);
     const d = distanceToEdges([s.x, s.z], classifyEdges(pts, outlines.filter((o) => o !== pts), layout, tracks));
     assert.ok(d >= FIGURES.safetyLine + hw, `a totem on platform ${s.ref} is ${d.toFixed(2)} m from a track edge`);
     const c = Math.cos(s.rotY), n = Math.sin(s.rotY);
-    for (const i of [-1, 1]) for (const k of [-1, 1]) assert.ok(pointInPolygon([s.x + c * i * hw + n * k * hd, s.z - n * i * hw + c * k * hd], pts), `a corner of a totem on platform ${s.ref} is off it`);
-    for (const b of plan.benches) {
-      const gap = Math.hypot(b.x - s.x, b.z - s.z) - b.r - s.r;
-      assert.ok(gap >= FIGURES.gap - 1e-9, `a totem on platform ${s.ref} is ${gap.toFixed(2)} m from a bench`);
+    for (const i of [-1, 1]) for (const k of [-1, 1]) {
+      const q: Pt = [s.x + c * i * hw + n * k * hd, s.z - n * i * hw + c * k * hd];
+      assert.ok(g.some((ref) => pointInPolygon(q, outline(ref))), `a corner of a totem on platform ${s.ref} is off it`);
+    }
+    for (const b of plan.benches.filter((x) => g.includes(x.ref))) {
+      const gap = Math.hypot(b.x - s.x, b.z - s.z) - benchR - totemR;
+      assert.ok(gap >= Math.max(1.0, FIGURES.totemBenchGap) - 0.06, `a totem on platform ${s.ref} is ${gap.toFixed(2)} m from a bench`);
     }
   }
 });
@@ -507,7 +540,7 @@ test('furniture: a totem near an arcaded wall stands before a pier, not an openi
     return out;
   };
   let nearWall = 0;
-  for (const s of plan.totems) {
+  for (const s of [...plan.totems, ...plan.clocks]) {
     const { u, v } = worldToShed(layout, [s.x, s.z]);
     const spans = blocked(u);
     if (spans.length) nearWall++;
@@ -516,47 +549,92 @@ test('furniture: a totem near an arcaded wall stands before a pier, not an openi
   assert.ok(nearWall >= 6, `${nearWall} totems near an arcaded wall`);
 });
 
+// Re-pinned (shed-totems round 2): the totems are one merged mesh (bodies, then faces), not instanced, so each header can carry its own number.
+const totemMesh = (): THREE.Mesh => part(furniture, 'totems') as unknown as THREE.Mesh;
+/** The vertices of a group of the totems' mesh within 0.8 m of a totem's foot, in its own frame: x across, y up from the platform top, z along. */
+function totemLocal(s: { x: number; z: number; rotY: number }, group: 0 | 1): { x: number; y: number; z: number; u: number; v: number; nz: number }[] {
+  const g = totemMesh().geometry, gr = g.groups[group]!, idx = g.index!, pos = g.getAttribute('position'), uv = g.getAttribute('uv'), nor = g.getAttribute('normal');
+  const c = Math.cos(s.rotY), n = Math.sin(s.rotY), out = [];
+  const seen = new Set<number>();
+  for (let k = gr.start; k < gr.start + gr.count; k++) {
+    const i = idx.getX(k);
+    if (seen.has(i)) continue;
+    seen.add(i);
+    const dx = pos.getX(i) - s.x, dz = pos.getZ(i) - s.z;
+    if (Math.hypot(dx, dz) > 0.8) continue;
+    out.push({ x: c * dx - n * dz, y: pos.getY(i) - PLATFORM_HEIGHT, z: n * dx + c * dz, u: uv ? uv.getX(i) : 0, v: uv ? uv.getY(i) : 0, nz: n * nor.getX(i) + c * nor.getZ(i) });
+  }
+  return out;
+}
+
 test('buildFurniture: no screen in the shed hangs: every one is carried by a totem standing on a platform top, and nothing reaches above it', () => {
   assert.ok(!furniture.getObjectByName('screen-rods'), 'no rods hang from the roof');
   assert.ok(!furniture.getObjectByName('screens'), 'no hung screens');
-  const totems = part(furniture, 'totems') as unknown as THREE.InstancedMesh;
-  assert.equal(totems.count, plan.totems.length);
-  totems.geometry.computeBoundingBox();
-  const box = totems.geometry.boundingBox as THREE.Box3;
-  near(box.min.y, 0, 1e-9, 'the totem starts at its foot');
-  near(box.max.y, FIGURES.totemHeight, 1e-9, 'and is the totem\'s height');
-  const m = new THREE.Matrix4();
   plan.totems.forEach((s, i) => {
-    totems.getMatrixAt(i, m);
-    near(m.elements[13]!, PLATFORM_HEIGHT, 1e-5, `the foot of totem ${i} is on the platform top`);
-    assert.ok(pointInPolygon([m.elements[12]!, m.elements[14]!], outline(s.ref)), `totem ${i} stands on platform ${s.ref}`);
+    const body = totemLocal(s, 0), face = totemLocal(s, 1);
+    assert.ok(body.length >= 24 && face.length >= 12, `totem ${i} is built`);
+    near(Math.min(...body.map((p) => p.y)), 0, 1e-4, `the foot of totem ${i} is on the platform top`);
+    near(Math.max(...body.map((p) => p.y)), FIGURES.totemHeight, 1e-4, `totem ${i} is the totem's height`);
+    assert.ok(face.every((p) => p.y > 0.3 && p.y <= FIGURES.totemHeight + 1e-4 && Math.abs(p.x) <= FIGURES.totemWidth / 2 + 1e-4), `totem ${i}'s faces are on its slab`);
+    assert.ok(groupOf(s.ref).some((ref) => pointInPolygon([s.x, s.z], outline(ref))), `totem ${i} stands on platform ${s.ref}`);
   });
-  // the screens (group 1) lie within the slab's face, under its header
-  const group = totems.geometry.groups[1]!;
-  const pos = totems.geometry.getAttribute('position');
-  const idx = totems.geometry.index!;
-  for (let k = group.start; k < group.start + group.count; k++) {
-    const i = idx.getX(k);
-    assert.ok(pos.getY(i) > 0.3 && pos.getY(i) <= FIGURES.totemHeight - FIGURES.totemHeader + 1e-9, 'a screen corner within the slab, under the header');
-    assert.ok(Math.abs(pos.getX(i)) <= FIGURES.totemWidth / 2, 'within the slab\'s width');
-  }
   const inShed = new THREE.Box3().setFromObject(furniture);
   assert.ok(inShed.max.y <= PLATFORM_HEIGHT + Math.max(FIGURES.totemHeight, FIGURES.lampHeight, FIGURES.canopyHeight) + 1e-6, 'nothing hangs above the furniture standing on the platforms');
 });
 
-test('night: the totems\' screens glow: an unlit face on both sides of every totem', () => {
-  const totems = part(furniture, 'totems') as unknown as THREE.InstancedMesh;
-  const mats = totems.material as THREE.Material[];
+// Scorer (shed-totems round 1): shed-a's headers carry the platform number, HEAD's a blank strip. Each header now shows its number in white digits
+// taken from the face texture's digit row (ten cells, 0-9, along u at its foot), on both faces, reading left to right from each side.
+test('buildFurniture: each totem\'s header shows its platform number, or its island\'s two, on both faces', () => {
+  const head = FIGURES.totemHeight - FIGURES.totemHeader;
+  for (const s of plan.totems) {
+    const digits = totemLocal(s, 1).filter((p) => p.y > head + 1e-4);
+    for (const side of [1, -1]) {
+      const mine = digits.filter((p) => Math.sign(p.nz) === side);
+      // each digit is a quad of four vertices: its cell's middle u names the digit; read across in the direction the face is read
+      const quads: { x: number; d: number }[] = [];
+      for (let k = 0; k + 3 < mine.length; k += 4) {
+        const q = mine.slice(k, k + 4);
+        quads.push({ x: side * q.reduce((a, p) => a + p.x, 0) / 4, d: Math.floor(q.reduce((a, p) => a + p.u, 0) / 4 * 10) });
+      }
+      const read = quads.sort((a, b) => a.x - b.x).map((q) => q.d).join(' ');
+      assert.ok(read === s.label, `the ${side > 0 ? 'front' : 'back'} of the totem on ${s.ref} reads "${read}", not "${s.label}"`);
+    }
+  }
+});
+
+// shed-a's small pole clocks ("14:24"): a pair of displays on a post, one a platform or shared island, beside a totem; in the totems' mesh, so no
+// extra draw call. Their sizes are MEASURED rough in shed-a (FIGURES), the rest ASSUMED.
+test('furniture: one pole clock a platform or shared island, beside one of its totems, clear of the benches, its displays at the top of its post', () => {
+  const groups = new Set(plan.totems.map((t) => groupOf(t.ref).join('/')));
+  assert.equal(plan.clocks.length, groups.size, 'one clock for each platform or island with totems');
+  const benchR = Math.hypot(FIGURES.benchLength / 2, FIGURES.benchDepth / 2);
+  for (const c of plan.clocks) {
+    const g = groupOf(c.ref);
+    const d = Math.min(...plan.totems.filter((t) => g.includes(t.ref)).map((t) => Math.hypot(t.x - c.x, t.z - c.z)));
+    assert.ok(d >= 5 && d <= 13, `the clock on ${g.join('/')} is ${d.toFixed(1)} m from its totem`);
+    for (const b of plan.benches.filter((x) => g.includes(x.ref))) {
+      // the clock's displays reach FIGURES.clockWidth + 0.02 either side of its post: a circle of that radius covers them
+      const gap = Math.hypot(b.x - c.x, b.z - c.z) - benchR - (FIGURES.clockWidth + 0.02);
+      assert.ok(gap >= Math.max(1.0, FIGURES.totemBenchGap) - 0.06, `the clock on ${g.join('/')} is ${gap.toFixed(2)} m from a bench`);
+    }
+    const body = totemLocal(c, 0), face = totemLocal(c, 1);
+    near(Math.min(...body.map((p) => p.y)), 0, 1e-4, 'the post stands on the platform');
+    near(Math.max(...body.map((p) => p.y)), FIGURES.clockHeight, 1e-4, 'the displays top the post');
+    assert.ok(face.length === 16 && face.every((p) => p.y >= FIGURES.clockHeight - FIGURES.clockTall - 1e-4), 'two displays, a time on each face of each, at the top');
+    assert.ok(face.some((p) => p.nz > 0.99) && face.some((p) => p.nz < -0.99), 'read from both ways along the platform');
+  }
+});
+
+test('night: the totems\' screens and numbers glow: an unlit face on both sides of every totem', () => {
+  const mats = totemMesh().material as THREE.Material[];
   assert.ok(Array.isArray(mats) && mats.length === 2);
   const face = mats[1] as THREE.MeshBasicMaterial;
   assert.ok(face instanceof THREE.MeshBasicMaterial, 'the face takes no light: it is as bright at night as by day');
   assert.ok(face.color.getHex() > 0 && face.visible, 'and it is not black');
-  const g = totems.geometry.groups[1]!;
-  assert.equal(g.count, 12, 'two quads, one a face');
-  const nor = totems.geometry.getAttribute('normal'), idx = totems.geometry.index!;
-  const zs = new Set<number>();
-  for (let k = g.start; k < g.start + g.count; k++) zs.add(Math.sign(nor.getZ(idx.getX(k))));
-  assert.ok(zs.size === 2 && zs.has(-1) && zs.has(1), 'facing both ways along the platform');
+  for (const s of plan.totems) {
+    const f = totemLocal(s, 1).filter((p) => p.y < FIGURES.totemHeight - FIGURES.totemHeader);
+    assert.ok(f.some((p) => p.nz > 0.99) && f.some((p) => p.nz < -0.99), `the totem on ${s.ref} has a screen facing both ways along the platform`);
+  }
 });
 
 test('shedRoofY: the crown over each arch centre, the springing over the aisles and where the two arches meet', () => {
@@ -622,10 +700,9 @@ test('buildFurniture: one instanced mesh per kind, counts as planned', () => {
   assert.equal(named('lamps').count, plan.lamps.length);
   assert.equal(named('benches').count, plan.benches.length);
   assert.equal(named('help-points').count, plan.helpPoints.length);
-  assert.equal(named('totems').count, plan.totems.length);
-  assert.deepEqual(furniture.userData.counts, { lamps: plan.lamps.length, benches: plan.benches.length, helpPoints: plan.helpPoints.length, totems: plan.totems.length, canopies: 2, columns: plan.canopies.reduce((n, c) => n + c.columns.length, 0) });
+  assert.deepEqual(furniture.userData.counts, { lamps: plan.lamps.length, benches: plan.benches.length, helpPoints: plan.helpPoints.length, totems: plan.totems.length, clocks: plan.clocks.length, canopies: 2, columns: plan.canopies.reduce((n, c) => n + c.columns.length, 0) });
   // a totem faces along the platform: its two screens are the last group and the same picture shows from both sides
-  const totems = named('totems');
+  const totems = totemMesh();
   assert.equal(totems.geometry.groups.length, 2);
   assert.ok(Array.isArray(totems.material) && (totems.material as THREE.Material[]).length === 2);
 });
@@ -692,7 +769,7 @@ test('FIGURES: the working figures the titles above quote, written out so a slip
     lampHeight: 4.5, lampSpacing: 24,
     benchLength: 1.8, benchPairGap: 2.4, benchSpacing: 45,
     helpHeight: 1.8, helpSpacing: 80,
-    totemWidth: 1.0, totemHeight: 2.5, totemHeader: 0.65, screenWidth: 0.85, screenHeight: 1.1, totemSpacing: 100, totemSouth: 20,
+    totemWidth: 1.0, totemHeight: 2.5, totemHeader: 0.65, screenWidth: 0.85, screenHeight: 1.1, totemSpacing: 100, totemSouth: 20, totemBenchGap: 3.5,
     canopyHeight: 5.2, canopyColumnSpacing: 12,
   };
   for (const [name, value] of Object.entries(want)) assert.equal((FIGURES as Record<string, number>)[name], value, `FIGURES.${name}`);
@@ -704,7 +781,7 @@ test('no floor furniture stands within half the spine wall\'s thickness and 0.3 
   assert.equal(keep, 0.8, 'the design\'s inset: half of 1.0 m and 0.3 m');
   let near45 = 0, worst = Infinity;
   // re-pinned (B5 totems): every totem stands on the floor, so all of them keep the inset (the hung screens clear of the wall did before)
-  for (const p of [...plan.lamps, ...plan.benches, ...plan.helpPoints, ...plan.totems]) {
+  for (const p of [...plan.lamps, ...plan.benches, ...plan.helpPoints, ...plan.totems, ...plan.clocks]) {
     const { u, v } = worldToShed(layout, [p.x, p.z]);
     if (v < 0 || v > layout.length) continue;
     const gap = Math.abs(u - layout.spine) - p.across;
