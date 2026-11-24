@@ -68,7 +68,38 @@ export const PORCH_INFILL = { bays: 5, mullion: 0.12, frameDepth: 0.12, rail: 1.
  * passing in front of the tower's foot. Its top at 3.85 m (MEASURED from R-a by the same scale as FRONT_RELIEF); its fascia, depth and
  * columns ASSUMED (the depth just clears the model tower's south face).
  */
-export const FRONT_CANOPY = { top: 3.85, fascia: 0.35, sheet: 0.15, depth: 7.2, column: 0.3 } as const;
+export const FRONT_CANOPY = { top: 3.85, fascia: 0.35, sheet: 0.15, depth: 8.6, column: 0.3, westBeyond: 9.6, lightPitch: 2.4, lightRows: [0.3, 0.7] as const } as const;
+/**
+ * Round 5's second pass at the front (the scorer of round 1): the model tower stands 6.55 m proud of the front (its position is pinned by
+ * shed.test), where front-a and front-b suggest one to two metres, so the canopy is 8.6 m deep: its sheet runs unbroken 2 m in front of the
+ * tower's foot (ASSUMED depth). It carries one bay (9.6 m, ASSUMED from R-kx-front-b, where it runs on past the west end pier) west of the front.
+ * Colours, sampled in memory: the canopy and the screens' frames are charcoal (R-a, the fascia and soffit in shade); the screens' glass is dark
+ * tinted (R-a); the signage fascia over each entrance is a mid blue (R-a, the 'Entrance / Exit only' boards). At night (R-night-a, 2025) a row of
+ * downlights shows under the canopy's soffit and the entrances are lit: warm, steady (no flicker term), from the shared night level.
+ */
+export const FRONT_COLOURS = { steel: 0x2a2c2e, steelLift: 0x0c0d0e, glass: 0x1e262b, fascia: 0x1c3c78, downlight: 0xcfcac0 } as const;
+export const FRONT_NIGHT = { glass: [0xffc98a, 0.45], fascia: [0x2a5cc0, 0.35], downlight: [0xffe2b8, 1.1] } as const;
+
+/** `m` with a steady glow `colour * gain` scaled by the night level (materials.ts windowNight); `key` names its program. */
+function frontNightGlow(m: THREE.MeshLambertMaterial, [colour, gain]: readonly [number, number], key: string): THREE.MeshLambertMaterial {
+  const glow = { value: new THREE.Color(colour).multiplyScalar(gain) };
+  m.userData.nightGlow = glow.value;
+  m.onBeforeCompile = (shader) => {
+    shader.uniforms.uWinNight = windowNight;
+    shader.uniforms.uFrontGlow = glow;
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\nuniform float uWinNight;\nuniform vec3 uFrontGlow;')
+      .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance += uFrontGlow * uWinNight;');
+  };
+  m.customProgramCacheKey = () => key;
+  return m;
+}
+/** A Batch's geometry with the attributes of a shape's (position, normal, uv), so the two merge. */
+function plainGeometry(g: THREE.BufferGeometry): THREE.BufferGeometry {
+  if (g.getAttribute('color')) g.deleteAttribute('color');
+  if (!g.getAttribute('uv')) g.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(g.getAttribute('position').count * 2), 2));
+  return g;
+}
 /** The porch arcade centres across a front `width` wide (from its own west end, x = 0), three each side of a central tower. */
 export function southFrontArcadeCentres(width: number, towerWidth: number): number[] {
   const left = Array.from({ length: SOUTH_FRONT_ARCADES.perSide }, (_, i) => (i + 0.5) * (width - towerWidth) / (2 * SOUTH_FRONT_ARCADES.perSide));
@@ -966,7 +997,7 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
     plinthStart = right;
   }
   if (plinthStart < fx1 + 0.4) proud((plinthStart + fx1 + 0.4) / 2, GROUND_Y + 0.7, fx1 + 0.4 - plinthStart, 1.4, 0.35); // plinth interrupted at each entrance
-  proud(spine, sp - 0.3, FW + 0.4, 0.6, 0.3); // sill course at the springing
+  proud(spine, sp - 0.325, FW + 0.6, 0.65, 0.5); // sill course at the springing: bolder since round 5's second pass (R-kx-front-a, the main band of the front)
   proud(spine, GROUND_Y + FRONT_RELIEF.impostAboveGround, FW + 0.4, FRONT_RELIEF.impostHeight, FRONT_RELIEF.impostOut); // string course over the arcade's crowns
   proud(spine, frontTop - 0.45, FW + 1.0, 0.9, 0.7); // cornice
   proud(spine, frontTop + 0.15, FW + 0.6, 0.3, 0.4); // its coping
@@ -981,22 +1012,27 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   // the low canopy along the front (FRONT_CANOPY): dark steel, a second material of the porch arches' mesh, so that it casts (lighting.ts
   // SHADOW_CASTERS) without another caster: the shadow pass's mesh count and triangle budget are full
   const canopy = new Batch();
+  const downlights = new Batch();
+  const frontSteel = (material('ribPaint') as THREE.MeshLambertMaterial).clone();
+  frontSteel.color.set(FRONT_COLOURS.steel);
+  frontSteel.emissive.set(FRONT_COLOURS.steelLift);
   {
-    const top = GROUND_Y + FRONT_CANOPY.top, d = FRONT_CANOPY.depth, cx0 = fx0 + 0.3, cx1 = fx1 - 0.3;
-    canopy.box([spine, top - FRONT_CANOPY.sheet / 2, d / 2], [cx1 - cx0, FRONT_CANOPY.sheet, d]); // the roof sheet
-    canopy.box([spine, top - FRONT_CANOPY.fascia / 2, d - 0.1], [cx1 - cx0, FRONT_CANOPY.fascia, 0.2]); // the front fascia
+    const top = GROUND_Y + FRONT_CANOPY.top, d = FRONT_CANOPY.depth, cx0 = fx0 - FRONT_CANOPY.westBeyond, cx1 = fx1 - 0.3;
+    canopy.box([(cx0 + cx1) / 2, top - FRONT_CANOPY.sheet / 2, d / 2], [cx1 - cx0, FRONT_CANOPY.sheet, d]); // the roof sheet
+    canopy.box([(cx0 + cx1) / 2, top - FRONT_CANOPY.fascia / 2, d - 0.1], [cx1 - cx0, FRONT_CANOPY.fascia, 0.2]); // the front fascia
+    canopy.box([cx0 + 0.1, top - FRONT_CANOPY.fascia / 2, d / 2], [0.2, FRONT_CANOPY.fascia, d]); // the west end's fascia
     const bayW = (FW - TOWER_SIZE) / (2 * SOUTH_FRONT_ARCADES.perSide), c = FRONT_CANOPY.column;
-    for (let k = 0; k <= SOUTH_FRONT_ARCADES.perSide; k++) {
-      for (const x of [fx0 + Math.max(k * bayW, 0.3 + c / 2), fx1 - Math.max(k * bayW, 0.3 + c / 2)]) {
-        canopy.box([x, (GROUND_Y + top - FRONT_CANOPY.fascia) / 2, d - 0.3], [c, top - FRONT_CANOPY.fascia - GROUND_Y, c], { skip: ['-y'] });
-      }
+    const columnXs = [cx0 + 0.3 + c / 2, fx0 - bayW / 2];
+    for (let k = 0; k <= SOUTH_FRONT_ARCADES.perSide; k++) columnXs.push(fx0 + Math.max(k * bayW, 0.3 + c / 2), fx1 - Math.max(k * bayW, 0.3 + c / 2));
+    for (const x of columnXs) canopy.box([x, (GROUND_Y + top - FRONT_CANOPY.fascia) / 2, d - 0.3], [c, top - FRONT_CANOPY.fascia - GROUND_Y, c], { skip: ['-y'] });
+    // the soffit's downlights: square lamps a hair under the sheet, in rows along the canopy (R-night-a)
+    for (const row of FRONT_CANOPY.lightRows) {
+      for (let x = cx0 + FRONT_CANOPY.lightPitch / 2; x < cx1; x += FRONT_CANOPY.lightPitch) downlights.box([x, top - FRONT_CANOPY.sheet - 0.02, d * row], [0.45, 0.04, 0.45], { skip: ['+y'] });
     }
   }
-  const canopyGeo = canopy.build().toNonIndexed();
-  canopyGeo.deleteAttribute('color');
-  if (!canopyGeo.getAttribute('uv')) canopyGeo.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(canopyGeo.getAttribute('position').count * 2), 2));
+  const canopyGeo = plainGeometry(canopy.build().toNonIndexed());
   const entryRingGeo = mergeGeometries(entryRings, false);
-  const porch = new THREE.Mesh(mergeGeometries([entryRingGeo, canopyGeo], true), [material('stone'), material('ribPaint')]);
+  const porch = new THREE.Mesh(mergeGeometries([entryRingGeo, canopyGeo], true), [material('stone'), frontSteel]);
   porch.name = 'shed-front-porch-arches';
   group.add(porch);
   disposables.push(...entryRings, entryRingGeo, canopyGeo);
@@ -1011,26 +1047,40 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
     lunGlass.push(g);
     addBars(bars, lunetteBars(uc, sp), -FRONT_THICK / 2);
   }
-  // the porch openings' infill (PORCH_INFILL): glass at the lunettes' depth, in the same mesh and material, so it reads and darkens as they do at
-  // night; the frames are the lunettes' bars
+  // the porch openings' infill (PORCH_INFILL): dark tinted glass at the lunettes' depth, charcoal frames, the blue signage fascia, and the
+  // canopy's downlights, one mesh of four materials (FRONT_COLOURS, FRONT_NIGHT): the glass, the fascia and the lamps glow at night
+  const infillGlass: THREE.BufferGeometry[] = [];
+  const frames = new Batch();
+  const fasciae = new Batch();
   const zIn = -FRONT_THICK / 2;
   const headY = (dx: number): number => entryFoot + SOUTH_FRONT_ARCADES.jambHeight + SOUTH_FRONT_ARCADES.archRise * Math.sqrt(Math.max(0, 1 - (dx / entryR) ** 2));
   const fd = PORCH_INFILL.frameDepth, m = PORCH_INFILL.mullion;
   for (const x of entryCentres) {
     const g = new THREE.ShapeGeometry(segmentalArchOpening(x, entryFoot, entryR - 0.02, SOUTH_FRONT_ARCADES.jambHeight, SOUTH_FRONT_ARCADES.archRise), 24);
     g.translate(0, 0, zIn - 0.1);
-    lunGlass.push(g);
-    for (const side of [-1, 1]) bars.box([x + side * (entryR - m / 2), entryFoot + SOUTH_FRONT_ARCADES.jambHeight / 2, zIn], [m, SOUTH_FRONT_ARCADES.jambHeight, fd]); // the jambs
+    infillGlass.push(g);
+    for (const side of [-1, 1]) frames.box([x + side * (entryR - m / 2), entryFoot + SOUTH_FRONT_ARCADES.jambHeight / 2, zIn], [m, SOUTH_FRONT_ARCADES.jambHeight, fd]); // the jambs
     for (let k = 1; k < PORCH_INFILL.bays; k++) {
       const dx = -entryR + (2 * entryR * k) / PORCH_INFILL.bays, top = headY(Math.abs(dx) + m / 2);
-      bars.box([x + dx, (entryFoot + top) / 2, zIn], [m, top - entryFoot, fd]); // the mullions, up into the arch head
+      frames.box([x + dx, (entryFoot + top) / 2, zIn], [m, top - entryFoot, fd]); // the mullions, up into the arch head
     }
     const [t0, t1] = PORCH_INFILL.transom;
     const tw = 2 * entryR * Math.sqrt(1 - ((entryFoot + t1 - entryFoot - SOUTH_FRONT_ARCADES.jambHeight) / SOUTH_FRONT_ARCADES.archRise) ** 2);
-    bars.box([x, entryFoot + (t0 + t1) / 2, zIn], [tw - 0.04, t1 - t0, fd + 0.04]); // the transom: the signage fascia
-    bars.box([x, entryFoot + PORCH_INFILL.rail, zIn + fd / 2], [(4 * entryR) / PORCH_INFILL.bays, 0.06, 0.06]); // the doors' push rail, across the middle two bays
-    bars.box([x, entryFoot + 0.15, zIn], [2 * entryR, 0.3, fd]); // the doors' kick rail and the screens' cill
+    fasciae.box([x, entryFoot + (t0 + t1) / 2, zIn], [tw - 0.04, t1 - t0, fd + 0.04]); // the transom: the signage fascia
+    frames.box([x, entryFoot + PORCH_INFILL.rail, zIn + fd / 2], [(4 * entryR) / PORCH_INFILL.bays, 0.06, 0.06]); // the doors' push rail, across the middle two bays
+    frames.box([x, entryFoot + 0.15, zIn], [2 * entryR, 0.3, fd]); // the doors' kick rail and the screens' cill
   }
+  const infillParts = [mergeGeometries(infillGlass, false), plainGeometry(frames.build()), plainGeometry(fasciae.build()), plainGeometry(downlights.build())];
+  const infillMats = [
+    frontNightGlow(new THREE.MeshLambertMaterial({ color: FRONT_COLOURS.glass, emissive: 0x05070a }), FRONT_NIGHT.glass, 'kx-front-infill-glass'),
+    frontSteel,
+    frontNightGlow(new THREE.MeshLambertMaterial({ color: FRONT_COLOURS.fascia }), FRONT_NIGHT.fascia, 'kx-front-infill-fascia'),
+    frontNightGlow(new THREE.MeshLambertMaterial({ color: FRONT_COLOURS.downlight, emissive: 0x202020 }), FRONT_NIGHT.downlight, 'kx-front-downlight'),
+  ];
+  const infill = new THREE.Mesh(mergeGeometries(infillParts, true), infillMats);
+  infill.name = 'shed-front-infill';
+  group.add(infill);
+  disposables.push(...infillGlass, ...infillParts);
   const lunMesh = mesh(mergeGeometries(lunGlass, false), material('glass'), 'shed-front-glass');
   lunMesh.renderOrder = 3;
   group.add(lunMesh, mesh(bars.build(), material('ribPaint'), 'shed-front-bars'));

@@ -26,15 +26,15 @@ MUTATIONS = [
     ('arch orders flattened to one depth', 'web/src/shed.ts',
      'depth: FRONT_THICK + (i + 1) * FRONT_RELIEF.orderStep', 'depth: FRONT_THICK + FRONT_RELIEF.orderStep',
      'reveal steps back in three orders'),
-    ('porch glass omitted', 'web/src/shed.ts',
-     'g.translate(0, 0, zIn - 0.1);\n    lunGlass.push(g);', 'g.translate(0, 0, zIn - 0.1);',
+    ('porch glass omitted (pushed 5 m back, out of the opening)', 'web/src/shed.ts',
+     'g.translate(0, 0, zIn - 0.1);\n    infillGlass.push(g);', 'g.translate(0, 0, zIn - 5.1);\n    infillGlass.push(g);',
      'each of the six lower openings carries glazing'),
     ('porch mullions omitted', 'web/src/shed.ts',
      'for (let k = 1; k < PORCH_INFILL.bays; k++)', 'for (let k = 1; k < 1; k++)',
      'each of the six lower openings carries glazing'),
     ('canopy raised to the sill', 'web/src/shed.ts', 'top: 3.85,', 'top: 5.0,', 'the low canopy of the current front'),
     ('canopy dropped from the porch mesh', 'web/src/shed.ts',
-     "mergeGeometries([entryRingGeo, canopyGeo], true), [material('stone'), material('ribPaint')]",
+     "mergeGeometries([entryRingGeo, canopyGeo], true), [material('stone'), frontSteel]",
      "mergeGeometries([entryRingGeo], true), [material('stone')]", 'the low canopy of the current front'),
 ]
 

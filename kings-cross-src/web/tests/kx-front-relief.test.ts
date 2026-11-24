@@ -24,10 +24,10 @@ group.updateMatrixWorld(true);
 const named = (...names: string[]): THREE.Object3D[] => names.map(n => { const o = group.getObjectByName(n); assert.ok(o, `${n} is built`); return o!; });
 
 /** the z (shed frame, south +) of the first surface a ray going north meets at (x, y), or null */
-const hitZ = (x: number, y: number, targets: THREE.Object3D[], from = 10): number | null => {
+const hitZ = (x: number, y: number, targets: THREE.Object3D[], from = 10, mats?: number[]): number | null => {
   const origin = group.localToWorld(new THREE.Vector3(x, y, from));
   const dir = new THREE.Vector3(0, 0, -1).transformDirection(group.matrixWorld);
-  const hit = new THREE.Raycaster(origin, dir, 0, from + 3).intersectObjects(targets, true)[0];
+  const hit = new THREE.Raycaster(origin, dir, 0, from + 3).intersectObjects(targets, true).find(h => !mats || mats.includes(h.face?.materialIndex ?? -1));
   return hit ? group.worldToLocal(hit.point.clone()).z : null;
 };
 /** runs of samples whose value passes `keep`, as [first, last] sample positions */
@@ -73,19 +73,22 @@ test('A2: each great arch\'s reveal steps back in three orders toward the glass,
 });
 
 test('A3: each of the six lower openings carries glazing set back in its reveal, with mullions, a transom and door rails in dark frames', () => {
-  const [glass, bars, front] = named('shed-front-glass', 'shed-front-bars', 'shed-front');
+  // Re-pinned 2026-11-24 (round 5, second pass): the infill is its own mesh, 'shed-front-infill', of four materials (glass 0, frames 1,
+  // signage fascia 2, downlights 3), so the glass is no longer the lunettes' and the frames are no longer the lunettes' bars; same checks
+  const [infill, front] = named('shed-front-infill', 'shed-front');
+  const glass = infill, bars = infill;
   for (const x of centres) {
-    const g = hitZ(x + 0.3, foot + 1.6, [glass!]);
+    const g = hitZ(x + 0.3, foot + 1.6, [glass!], 10, [0]);
     assert.ok(g !== null && g < -0.3 && g > -1.2, `glass in the opening at x=${x.toFixed(1)}, set back 0.3 to 1.2 m`);
     const face = hitZ(x - 3.6, foot + 1.6, [front!]);
     assert.ok(face !== null && face > g, 'behind the front\'s face');
     const xs: number[] = [];
     for (let dx = -3.3; dx <= 3.3; dx += 0.02) xs.push(x + dx);
-    const mullions = runs(xs, i => hitZ(xs[i] as number, foot + 1.6, [bars!]) !== null);
+    const mullions = runs(xs, i => hitZ(xs[i] as number, foot + 1.6, [bars!], 10, [1]) !== null);
     assert.ok(mullions.length >= 4, `at least four mullions across the opening, found ${mullions.length}`);
     const ys: number[] = [];
     for (let y = foot; y <= foot + 3.9; y += 0.02) ys.push(y);
-    const rails = runs(ys, i => hitZ(x + 0.3, ys[i] as number, [bars!]) !== null);
+    const rails = runs(ys, i => hitZ(x + 0.3, ys[i] as number, [bars!], 10, [1, 2]) !== null);
     assert.ok(rails.length >= 2, `a door rail and a transom in the opening, found ${rails.length}`);
   }
 });
@@ -93,9 +96,10 @@ test('A3: each of the six lower openings carries glazing set back in its reveal,
 test('A3: the low canopy of the current front runs across the six openings at the measured height, clear of the tower\'s face, and casts', () => {
   const porch = group.getObjectByName('shed-front-porch-arches') as THREE.Mesh | undefined;
   assert.ok(porch && Array.isArray(porch.material), 'the canopy is the porch mesh\'s second material');
-  const steel = (porch.material as THREE.Material[]).indexOf(material('ribPaint'));
+  // Re-pinned 2026-11-24 (round 5, second pass): the canopy is charcoal now (its own steel, FRONT_COLOURS), not the ribs' paint
+  const steel = (porch.material as THREE.Material[]).findIndex(m => m !== material('stone'));
   const span = porch.geometry.groups.find(g => g.materialIndex === steel);
-  assert.ok(steel > 0 && span, 'dark steel, painted like the ribs');
+  assert.ok(steel > 0 && span, 'dark steel, the second material');
   const pos = porch.geometry.getAttribute('position');
   const b = new THREE.Box3();
   for (let i = span.start; i < span.start + span.count; i++) b.expandByPoint(new THREE.Vector3().fromBufferAttribute(pos, i));
