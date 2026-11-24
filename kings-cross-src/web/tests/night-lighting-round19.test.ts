@@ -226,7 +226,7 @@ function buildTexturedFront() {
 
 const front = buildTexturedFront();
 const nightWash = (name: string) =>
-  frontWash(buildingNightMaterialsOf(front.getObjectByName(name) as THREE.Mesh)!.night);
+  frontWash([buildingNightMaterialsOf(front.getObjectByName(name) as THREE.Mesh)!.night].flat()[0]!); // round 25: shed-front's night is [faces, returns]; its faces' wash
 
 test('front washes and office variants share every texture with their day material', () => {
   const assertTextures = (label: string, day: THREE.Material, night: THREE.Material) => {
@@ -237,8 +237,12 @@ test('front washes and office variants share every texture with their day materi
   };
   for (const name of ['shed-front', 'tower-brick', 'tower-stone']) {
     const { day, night } = buildingNightMaterialsOf(front.getObjectByName(name) as THREE.Mesh)!;
-    assert.ok((day as THREE.MeshLambertMaterial).map instanceof THREE.Texture, `${name} has a real map to compare`);
-    assertTextures(name, day, night);
+    const days = [day].flat(), nights = [night].flat(); // round 25: shed-front carries one per group (faces, returns)
+    assert.equal(days.length, nights.length, `${name}: a night material for each day one`);
+    days.forEach((d, i) => {
+      assert.ok((d as THREE.MeshLambertMaterial).map instanceof THREE.Texture, `${name} has a real map to compare`);
+      assertTextures(name, d, nights[i]!);
+    });
   }
   const map = new THREE.Texture(), aoMap = new THREE.Texture();
   const curtain = new THREE.MeshPhongMaterial({ map, aoMap });
@@ -341,7 +345,8 @@ test('daylight uses the original KX facade materials and programs, including aft
   const centralNames = ['kxcentral-curtain', 'kxcentral-timber'];
   const brick = material('brickFoot'), stone = material('stoneFoot');
   const facades = [...mast.map(name => shed.getObjectByName(name)), ...centralNames.map(name => central.group.getObjectByName(name))] as THREE.Mesh[];
-  const activeMaterials = () => facades.map(mesh => mesh.material as THREE.Material);
+  // re-pinned round 25: shed-front carries [faces, returns] (its returns a darker clone of the same brick, on the same program); its faces' material is the one pinned here
+  const activeMaterials = () => facades.map(mesh => [mesh.material].flat()[0] as THREE.Material);
   // Compiled hook source and defines from e4881457 with its atmosphere active.
   const dayPrograms = [
     '66e3ab6d88b418b55ff5a417426e99e905e0ce41b12adf3243692d36d7610366',

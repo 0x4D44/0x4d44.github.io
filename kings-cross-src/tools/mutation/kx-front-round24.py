@@ -20,7 +20,7 @@ if out == src or out.is_relative_to(src) or src.is_relative_to(out):
 out.mkdir(parents=True, exist_ok=True)
 
 MUTATIONS = [
-    ('no recess', 'web/src/shed.ts', "strip: 0.5, recess: 0.2 }", "strip: 0.5, recess: 0.0 }", "A2: each spandrel's panel"),
+    ('no recess', 'web/src/shed.ts', "strip: 0.5, recess: 0.4 }", "strip: 0.5, recess: 0.0 }", "A2: each spandrel's panel"),
     ('no panel holes', 'web/src/shed.ts', "    outline.holes.push(...panels);", "", "A2: each spandrel's panel"),
     ('holes left open', 'web/src/shed.ts', "  for (const h of panels) frontParts.push(", "  if (panels.length < 0) frontParts.push(", "A2: each spandrel's panel"),
     ('the shadow line back in the frames', 'web/src/shed.ts', "    shades.poly([[fx0, yb - FRONT_RELIEF.shadowLine, e]", "    frames.poly([[fx0, yb - FRONT_RELIEF.shadowLine, e]", "A2: the cornice's painted"),
@@ -30,8 +30,8 @@ MUTATIONS = [
     ('a tan soffit', 'web/src/shed.ts', "soffit: 0xa99a7c }", "soffit: 0xe6d6b4 }", "A3: each porch soffit"),
     ('the soffit past the band', 'web/src/shed.ts', "    const sw = fw;", "    const sw = 2 * halfAt(s0) - 0.04;", "A3: each porch soffit"),
     ('a glowing soffit by day', 'web/src/shed.ts', "new THREE.MeshLambertMaterial({ color: PORCH_DEPTH.soffit })", "new THREE.MeshLambertMaterial({ color: PORCH_DEPTH.soffit, emissive: 0x3a3020 })", "A3: each porch soffit"),
-    ('no head returns', 'web/src/shed.ts', "        frames.poly([[xa0, ya0, 0], [xa1, ya1, 0]", "        if (k < 0) frames.poly([[xa0, ya0, 0], [xa1, ya1, 0]", "A3: the reveal's dark return"),
-    ('head returns short of the glass', 'web/src/shed.ts', "[xa1, ya1, -PORCH_DEPTH.glass], [xa0, ya0, -PORCH_DEPTH.glass]], undefined, { facing: [(ya1", "[xa1, ya1, -0.3], [xa0, ya0, -0.3]], undefined, { facing: [(ya1", "A3: the reveal's dark return"),
+    ('the head reveal covered in charcoal again', 'web/src/shed.ts', "    // the signage fascia: navy, across the top of the opening", "    frames.poly([[x - entryR, headY(0) - 0.01, 0], [x + entryR, headY(0) - 0.01, 0], [x + entryR, headY(0) - 0.01, -PORCH_DEPTH.glass], [x - entryR, headY(0) - 0.01, -PORCH_DEPTH.glass]], undefined, { facing: [0, -1, 0] });\n    // the signage fascia: navy, across the top of the opening", "A3: each opening's arched head"),
+    ('the reveals and faces swapped', 'web/src/shed.ts', "(grp.materialIndex === 1 ? returns : faces).push(part);", "(grp.materialIndex === 0 ? returns : faces).push(part);", "A3: each opening's arched head"),
     ('voussoirs in plain stone', 'web/src/shed.ts', "[material('stoneFoot'), canopySteel]", "[material('stone'), canopySteel]", "A3: the voussoirs"),
     ('a bright canopy (round 24)', 'web/src/shed.ts', "canopy: [0xffe2b8, 0.012]", "canopy: [0xffe2b8, 0.12]", "A3: the voussoirs"),
     ('a canopy lit on every face', 'web/src/shed.ts', "{ defines: { ...frontSteel.defines, KX_GLOW_DOWN: '' } }", "{ defines: { ...frontSteel.defines } }", "A3: the voussoirs"),

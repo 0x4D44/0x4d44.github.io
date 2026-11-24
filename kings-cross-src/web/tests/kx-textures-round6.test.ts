@@ -53,7 +53,9 @@ test('A3: the entrance glass is structured, darker low behind the doors, a lit c
   const lib = THREE.ShaderLib.lambert;
   const shaderOf = (m: THREE.Material) => { const s = { uniforms: {} as Record<string, THREE.IUniform>, vertexShader: lib.vertexShader, fragmentShader: lib.fragmentShader }; m.onBeforeCompile(s as never, undefined as never); return s.fragmentShader; };
   assert.ok(/KX_GLOW_BY_MAP[\s\S]*frontGlowAdd \*= texture2D\( map, vMapUv \)/.test(shaderOf(glass)), 'the glow is multiplied by the map');
-  assert.ok(mats[2]!.defines?.KX_GLOW_BY_MAP === undefined, 'the fascia\'s glow is not masked by its lettering');
+  // re-pinned round 25 (front-round-4 score, A3: the sign text was blue on blue at night): the fascia's glow is now masked by its map, so the pale lettering
+  // glows and the navy hardly; FRONT_NIGHT.fascia is a pale light for it
+  assert.ok(mats[2]!.defines?.KX_GLOW_BY_MAP !== undefined, 'the fascia\'s glow follows its lettering');
   // the map runs up the openings: the glass's uv is metres, so the texture's v transform takes the openings' foot to 0
   glass.map!.updateMatrix();
   const v = (y: number): number => new THREE.Vector3(0, y, 1).applyMatrix3(glass.map!.matrix).y;
@@ -64,7 +66,7 @@ test('A3: the entrance glass is structured, darker low behind the doors, a lit c
 test('A4: the tower is a slightly darker, no warmer stock than the front, by day and at night, on the same texture and program', () => {
   const brick = material('brickFoot') as THREE.MeshLambertMaterial;
   const tower = group.getObjectByName('tower-brick') as THREE.Mesh, day = tower.material as THREE.MeshLambertMaterial;
-  const night = buildingNightMaterialsOf(tower)!.night as THREE.MeshLambertMaterial, frontNight = buildingNightMaterialsOf(group.getObjectByName('shed-front') as THREE.Mesh)!.night as THREE.MeshLambertMaterial;
+  const night = buildingNightMaterialsOf(tower)!.night as THREE.MeshLambertMaterial, frontNight = [buildingNightMaterialsOf(group.getObjectByName('shed-front') as THREE.Mesh)!.night].flat()[0] as THREE.MeshLambertMaterial; // round 25: shed-front's night is [faces, returns]; the faces'
   assert.ok(day !== brick && day.map === brick.map && day.customProgramCacheKey() === brick.customProgramCacheKey(), 'a clone on the same texture and program');
   for (const [t, f, when] of [[day, brick, 'by day'], [night, frontNight, 'at night']] as const) {
     // re-pinned 2026-11-24 (the held round 1a: the 0.55-0.8 band let a warm tint render 0.59 of the screen's luminance and orange, breaking

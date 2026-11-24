@@ -157,7 +157,7 @@ test('KX office floors have variable lit runs, darker suites and mixed pane brig
   const city = addCity(scene,data,cityData,{nightEffects:true,lamps:false,trees:false});
   try {
     const glass = mesh(scene,'city-glass');
-    const night = buildingNightMaterialsOf(glass)?.night ?? glass.material;
+    const night = (buildingNightMaterialsOf(glass)?.night ?? glass.material) as THREE.Material;
     const run = (material: THREE.Material) => {
       const program = functions(material,'phong');
       return Array.from({length:16},(_,b) => Array.from({length:14},(_,y) =>
@@ -184,7 +184,7 @@ test('Midland Gothic panes stay as sparse but every occupied upper room is amber
   const scene = new THREE.Scene(), landmarks = addLandmarks(scene,data);
   try {
     const pane = mesh(scene,'landmarks-pane');
-    const legacy = pane.material, night = buildingNightMaterialsOf(pane)?.night ?? legacy;
+    const legacy = pane.material, night = (buildingNightMaterialsOf(pane)?.night ?? legacy) as THREE.Material;
     const uv = pane.geometry.getAttribute('uv'), ids = new Set<number>();
     for (let i=0;i<uv.count;i++) {
       const id = Math.floor(uv.getX(i));

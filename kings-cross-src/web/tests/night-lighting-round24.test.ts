@@ -45,7 +45,7 @@ function withMidland(run: (brick: THREE.Mesh, stone: THREE.Mesh) => void) {
 function facadeProbe(mesh: THREE.Mesh, {
   height, albedo = [.35, .12, .06] as V3, body = 1, rake = 0, trim = 0, stage = 0, box = [0, 0, 0, 0],
 }: { height: number; albedo?: V3; body?: number; rake?: number; trim?: number; stage?: number; box?: number[] }) {
-  const { night } = buildingNightMaterialsOf(mesh)!;
+  const night = buildingNightMaterialsOf(mesh)!.night as THREE.MeshLambertMaterial; // a single material for these meshes (only shed-front carries an array, round 25)
   const source = compile(night).fragmentShader;
   const start = source.indexOf('// midland-night-begin');
   const end = source.indexOf('// midland-lamp-wash-end');

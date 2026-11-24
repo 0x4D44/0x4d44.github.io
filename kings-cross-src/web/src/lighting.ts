@@ -286,7 +286,7 @@ export function createSunShadow(scene: THREE.Scene, sun: THREE.DirectionalLight)
         mesh.castShadow = true;
         // a roof or a wall is one sheet: both of its faces are drawn into the map, or the sheet that faces the sun would not shade what is behind it
         const variants = buildingNightMaterialsOf(mesh);
-        for (const m of variants ? [variants.day, variants.night] : mats) m.shadowSide = THREE.DoubleSide;
+        for (const m of variants ? [variants.day, variants.night].flat() : mats) m.shadowSide = THREE.DoubleSide;
         casters.push(mesh);
         const room = rooms[ROOM_OF.get(mesh.name) ?? -1];
         if (room) { mesh.updateWorldMatrix(true, false); room.box.expandByObject(mesh); room.meshes.push(mesh); } else if (mesh.name === 'city-trees') trees.push(mesh);

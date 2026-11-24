@@ -61,7 +61,7 @@ test('Midland upper brick darkens against the arcade on both range and tower', (
   const built = addLandmarks(new THREE.Scene(), data as KxData);
   try {
     const brick = mesh(built.group, 'brickRed');
-    const day = brick.material, night = buildingNightMaterialsOf(brick)?.night ?? day;
+    const day = brick.material, night = (buildingNightMaterialsOf(brick)?.night ?? day) as THREE.Material; // a single material here (only shed-front carries an array, round 25)
     addRoofShade(day);
     const sample = (m: THREE.Material) => ({
       arcade: facadeSample(m, 3),
@@ -82,7 +82,7 @@ test('gold is concentrated on Midland gable rakes and modelled clock-tower trim'
   const built = addLandmarks(new THREE.Scene(), data as KxData);
   try {
     const stone = mesh(built.group, 'stone');
-    const day = stone.material, night = buildingNightMaterialsOf(stone)?.night ?? day;
+    const day = stone.material, night = (buildingNightMaterialsOf(stone)?.night ?? day) as THREE.Material;
     addRoofShade(day);
     const sample = (m: THREE.Material) => ({
       rake: facadeSample(m, 25, 1, 1, 1), adjacent: facadeSample(m, 25),

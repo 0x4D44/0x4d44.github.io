@@ -36,8 +36,8 @@ const halfAt = (y: number): number => entryR * Math.sqrt(Math.max(0, 1 - ((y - e
 const s1 = GROUND_Y + shed.FRONT_CANOPY.top - shed.FRONT_CANOPY.sheet - 0.02, s0 = s1 - shed.PORCH_INFILL.sign;
 const mats = infill.material as THREE.MeshLambertMaterial[];
 
-test('A2: each spandrel\'s panel is recessed 0.15-0.25 m behind the wall\'s face, inside its frame, and closed behind', () => {
-  assert.ok(T.recess >= 0.15 && T.recess <= 0.25, `FRONT_TYMPANUM.recess ${T.recess}`);
+test('A2: each spandrel\'s panel is recessed 0.15-0.5 m behind the wall\'s face, inside its frame, and closed behind', () => {
+  assert.ok(T.recess >= 0.15 && T.recess <= 0.5, `FRONT_TYMPANUM.recess ${T.recess}`); // re-pinned round 25: 0.4 (front-round-4 score, A2: 0.2 did not read by day)
   const yBand = frontTop - 0.9 - 0.25 - 0.25 - 0.1 - T.band;
   for (const xa of [X0 + 1.0, layout.spine + shed.TOWER_SIZE / 2]) for (const [x, y] of [[xa + 2.5, yBand - 1.0], [xa + T.strip + 0.3, yBand - 2.0]] as const) {
     const h = ray([x, y, 10], [0, 0, -1], masonry);
@@ -67,7 +67,7 @@ test('A2: the cornice\'s painted shadow line and soffits are charcoal by day but
 
 test('A2: the front\'s night wash lights a soffit (a face turned down) as well as a face turned out', () => {
   assert.ok((S.FRONT_WASH_SOFFIT as number) >= 0.5, 'FRONT_WASH_SOFFIT');
-  const night = buildingNightMaterialsOf(front)?.night as THREE.Material; // the front's wall (FRONT_THICK 1.2 m), its wash shared by the brick and stone dressings
+  const night = [buildingNightMaterialsOf(front)!.night].flat()[0] as THREE.Material; // re-pinned round 25: shed-front's night is [faces, returns] // the front's wall (FRONT_THICK 1.2 m), its wash shared by the brick and stone dressings
   const shader = { uniforms: THREE.UniformsUtils.clone(THREE.ShaderLib.lambert.uniforms), vertexShader: THREE.ShaderLib.lambert.vertexShader, fragmentShader: THREE.ShaderLib.lambert.fragmentShader } as unknown as THREE.WebGLProgramParametersWithUniforms;
   night.onBeforeCompile(shader, {} as THREE.WebGLRenderer);
   assert.match(shader.fragmentShader, /max\(-vKxWashNormal\.y,0\.0\)/);
@@ -85,11 +85,13 @@ test('A3: each porch soffit is in the stone dressings\' tone by day and ends wit
   }
 });
 
-test('A3: the reveal\'s dark return runs round each opening\'s arched head, back to the glass', () => {
+test('A3: each opening\'s arched head shows its own brick reveal in the front\'s return tone, back to the glass', () => {
+  // re-pinned round 25 (front-round-4 score, A3: round 24's charcoal head return read as a black outline): the reveal is the wall's own, shed-front's
+  // second group (FRONT_RETURN), and nothing of the infill covers it
   const crown = entryFoot + A.jambHeight + A.archRise;
   for (const x of doors) for (const dx of [0, entryR * 0.4]) {
-    const up = ray([x + dx, s1 + 0.1, -0.4], [0, 1, 0], [infill]);
-    assert.ok(up && up.mat === 1 && up.y > s1 && up.y <= crown + 0.01, `the head's return over x ${(x + dx).toFixed(1)}: ${up?.mat} at ${up?.y.toFixed(2)}`);
+    const up = ray([x + dx, s1 + 0.1, -0.4], [0, 1, 0], [infill, front]);
+    assert.ok(up && up.name === 'shed-front' && up.mat === 1 && up.y > s1 && up.y <= crown + 0.01, `the head's reveal over x ${(x + dx).toFixed(1)}: ${up?.name} ${up?.mat} at ${up?.y.toFixed(2)}`);
   }
 });
 

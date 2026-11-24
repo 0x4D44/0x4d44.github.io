@@ -29,7 +29,7 @@ MUTATIONS = [
     ('orders spring above the course', 'web/src/shed.ts', "archRing(uc - fx0, sp, r0, r0 + FRONT_RELIEF.orderWidth)", "archRing(uc - fx0, sp + 1.0, r0, r0 + FRONT_RELIEF.orderWidth)", 'A2: at the front'),
     ('no impost under the feet', 'web/src/shed.ts', "[[fx0 - feet - 0.05, fx0 + span], [fx1 - span, fx1 + feet + 0.05]]", "[[fx0 - 0.05, fx0 + span], [fx1 - span, fx1 + 0.05]]", 'A2: at the front'),
     ('the springing course stops at the front', 'web/src/shed.ts', "[FW + 0.8 + across, sc.height,", "[FW + 0.8, sc.height,", 'A2: at the front'),
-    ('the frame flush', 'web/src/shed.ts', "FRONT_TYMPANUM = { out: 0.5,", "FRONT_TYMPANUM = { out: 0.0,", "A2: the spandrel's frame"),  # round 24: the panel's 0.2 m recess counts toward the 0.25 m, so 0.15 no longer fails here (kx-front-round23 pins 0.45)
+    ('the frame flush', 'web/src/shed.ts', "FRONT_TYMPANUM = { out: 0.5, band: 0.45, strip: 0.5, recess: 0.4 }", "FRONT_TYMPANUM = { out: 0.0, band: 0.45, strip: 0.5, recess: 0.0 }", "A2: the spandrel's frame"),  # round 25: the panel's 0.4 m recess alone clears the 0.25 m, so a flush frame now means both at zero (kx-front-round23 pins 0.45)
     ('no interior gradient', 'web/src/shed.ts', "emissive: 0x140e08, map: interiorGradientTexture() })", "emissive: 0x140e08 })", 'A3: the concourse behind'),
     ('a flat interior', 'web/src/shed.ts', "gradient: [0.75, 1.0] as const", "gradient: [1.0, 1.0] as const", 'A3: the concourse behind'),
     ('the gradient upside down', 'web/src/shed.ts', "entryFoot + t0, gz]], [[0, 0], [1, 0], [1, 1], [0, 1]]", "entryFoot + t0, gz]], [[0, 1], [1, 1], [1, 0], [0, 0]]", 'A3: the concourse behind'),

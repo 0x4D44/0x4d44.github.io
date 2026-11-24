@@ -767,8 +767,12 @@ export const officeNightFog = { value: 0 };
 // is needed, and retain both materials across lighting and weather rescans.
 const buildingNightMaterials = new WeakMap<THREE.Mesh, { day: THREE.Material; night: THREE.Material }>();
 
-export function withBuildingNightMaterial<M extends THREE.Material>(mesh: THREE.Mesh<THREE.BufferGeometry, M>, night: M): typeof mesh {
-  buildingNightMaterials.set(mesh, { day: mesh.material, night });
+/**
+ * A mesh's day and night materials. Round 25: either may be an array, one per geometry group (shed-front's faces and returns); it is stored and read back
+ * as the mesh's own `material` is, so a reader that may meet such a mesh takes `[variants.night].flat()` (lighting.ts, atmosphere.ts and kx-night-fog.ts do).
+ */
+export function withBuildingNightMaterial<M extends THREE.Material | THREE.Material[]>(mesh: THREE.Mesh<THREE.BufferGeometry, M>, night: M): typeof mesh {
+  buildingNightMaterials.set(mesh, { day: mesh.material as unknown as THREE.Material, night: night as unknown as THREE.Material });
   return mesh;
 }
 
