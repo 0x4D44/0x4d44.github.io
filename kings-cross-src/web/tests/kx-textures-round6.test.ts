@@ -24,6 +24,9 @@ test('A3: each entrance\'s navy fascia carries pale capitals across its face, in
     fillStyle: '' as unknown, font: '', textAlign: '' as unknown, textBaseline: '' as unknown,
     fillRect(x: number, y: number, w: number, h: number) { fills.push({ style: this.fillStyle, rect: [x, y, w, h] }); },
     fillText(t: string, _x: number, _y: number, w: number) { texts.push({ t, w, style: this.fillStyle }); },
+    // round 7's painter also outlines its letters on small levels and measures them
+    strokeStyle: '' as unknown, lineWidth: 1, lineJoin: '' as unknown, strokeText() {},
+    measureText(t: string) { return { width: t.length * 0.6 * Number(/(\d+)px/.exec(this.font)?.[1] ?? 0) }; },
   };
   paintFascia(g as never, 1024, 72);
   assert.ok(fills[0]?.style === '#' + new THREE.Color(FRONT_COLOURS.fascia).getHexString() && fills[0]!.rect![2] === 1024, 'a navy board');

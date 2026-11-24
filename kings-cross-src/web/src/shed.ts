@@ -95,7 +95,7 @@ export const SOUTH_FRONT_ARCADES = { perSide: 3, openingWidth: 6.8, jambHeight: 
  * opening, flush with the wall's face, the glass's lunette 0.4 m narrower behind it (the opening's outline and springing unchanged); and a
  * stone bed mould under the parapet cornice, `bedMould` proud, so the cornice's 0.7 m overhang reads as a stepped soffit, not a block.
  */
-export const FRONT_RELIEF = { orders: 3, orderWidth: 0.4, orderStep: 0.28, innerOrder: true, bedMould: { height: 0.25, out: 0.35 }, impostAboveGround: 4.95, impostHeight: 0.25, impostOut: 0.2 } as const;
+export const FRONT_RELIEF = { orders: 3, orderWidth: 0.4, orderStep: 0.28, innerOrder: true, bedMould: { height: 0.25, out: 0.35 }, impost: { height: 0.35, out: 1.0, past: 0.15 }, shadowLine: 0.25, impostAboveGround: 4.95, impostHeight: 0.25, impostOut: 0.2 } as const;
 /**
  * The porch openings' infill (A3), from R-kx-front-a: dark-framed glazed screens set back in each opening, glazed doors with a push rail,
  * a deep transom (the signage fascia) at about 2.5 m, and glazing over it in the arch head. Five bays to an opening and the frame sizes are
@@ -127,7 +127,10 @@ export const FRONT_COLOURS = { steel: 0x2a2c2e, steelLift: 0x0c0d0e, glass: 0x56
  * interior shade low behind the doors, a lit ceiling band above the doors' head, a paler arch head where the sky reflects. By day it
  * multiplies the glass's colour; at night it shapes the warm glow (`gain` over it), so the glow is not one flat cream.
  */
-export const FRONT_FASCIA_TEXT = { words: 'ENTRANCE  \u00b7  EXIT', ink: '#e8e4d8', height: 0.5 } as const;
+// Round 7 (the dial-text-1b score: the lettering did not read at front-southwest-pedestrian): white sans capitals 0.55 of the board's
+// height with an arrow, every mip level painted at its own size: the middle ones with the letters outlined heavier (pre-sharpened), the
+// smallest, where no letter survives, with a pale band where the words are (what the letters average to), not the navy alone
+export const FRONT_FASCIA_TEXT = { words: 'ENTRANCE  \u2192', ink: '#ffffff', height: 0.55, band: 0.45 } as const;
 export const GLASS_STRUCTURE = { height: 4.4, stops: [[0, 0.62], [2.2, 0.7], [2.75, 1.0], [3.15, 1.0], [3.35, 0.8], [4.4, 0.95]], gain: 1.35 } as const;
 /**
  * Round 6 (A4 brick): R-kx-front-c shows the tower a little darker and greyer than the front's stock (olive-grey, not chocolate), and
@@ -168,16 +171,40 @@ function plainGeometry(g: THREE.BufferGeometry): THREE.BufferGeometry {
   return g;
 }
 /** The 2D canvas calls paintFascia makes, so a test can record them. */
-export type FasciaPainter = Pick<CanvasRenderingContext2D, 'fillRect' | 'fillText'> & { fillStyle: unknown; font: string; textAlign: unknown; textBaseline: unknown };
-/** A fascia board `w` by `h` pixels: navy, the FRONT_FASCIA_TEXT words in pale capitals across its middle, kept inside its ends. */
+export type FasciaPainter = Pick<CanvasRenderingContext2D, 'fillRect' | 'fillText' | 'strokeText' | 'measureText'> & {
+  fillStyle: unknown; strokeStyle: unknown; lineWidth: number; lineJoin: unknown; font: string; textAlign: unknown; textBaseline: unknown;
+};
+/**
+ * A fascia board `w` by `h` pixels (a mip level when small): navy, the FRONT_FASCIA_TEXT words in white sans capitals across its middle,
+ * kept inside its ends; outlined heavier on a middle level (h 8 to 32 px), and on the smallest (under 8 px) a pale band the words' width.
+ */
 export function paintFascia(g: FasciaPainter, w: number, h: number): void {
-  g.fillStyle = '#' + new THREE.Color(FRONT_COLOURS.fascia).getHexString();
+  const navy = new THREE.Color(FRONT_COLOURS.fascia);
+  g.fillStyle = '#' + navy.getHexString();
   g.fillRect(0, 0, w, h);
+  const px = Math.max(1, Math.round(h * FRONT_FASCIA_TEXT.height));
+  g.font = `bold ${px}px sans-serif`;
+  const wide = Math.min(w * 0.8, g.measureText(FRONT_FASCIA_TEXT.words).width);
+  if (h < 8) { // no letter survives at this size: what they average to
+    g.fillStyle = '#' + navy.clone().lerp(new THREE.Color(FRONT_FASCIA_TEXT.ink), FRONT_FASCIA_TEXT.band).getHexString();
+    g.fillRect((w - wide) / 2, (h - px) / 2, wide, Math.max(1, px));
+    return;
+  }
   g.fillStyle = FRONT_FASCIA_TEXT.ink;
-  g.font = `bold ${Math.round(h * FRONT_FASCIA_TEXT.height)}px sans-serif`;
   g.textAlign = 'center';
   g.textBaseline = 'middle';
   g.fillText(FRONT_FASCIA_TEXT.words, w / 2, h / 2, w * 0.8);
+  if (h <= 32) { // pre-sharpened: the strokes outlined, so the level keeps their weight
+    g.strokeStyle = FRONT_FASCIA_TEXT.ink;
+    g.lineWidth = Math.max(1, h * 0.06);
+    g.lineJoin = 'round';
+    g.strokeText(FRONT_FASCIA_TEXT.words, w / 2, h / 2, w * 0.8);
+  }
+}
+/** The fascia texture's mip chain, [width, height] from 1024 by 64 down to 1 by 1. */
+export function fasciaLevels(): [number, number][] {
+  const out: [number, number][] = [];
+  for (let w = 1024, h = 64; ; w = Math.max(1, w >> 1), h = Math.max(1, h >> 1)) { out.push([w, h]); if (w === 1 && h === 1) return out; }
 }
 /** GLASS_STRUCTURE as a column of `n` grey values from the openings' foot up (linear between the stops). */
 export function glassStructure(n: number): number[] {
@@ -204,11 +231,17 @@ function glassStructureTexture(foot: number): THREE.DataTexture {
 /** The fascia's material: navy with its pale lettering in a browser (a canvas), plain navy where there is none (the tests). */
 function fasciaMaterial(): THREE.MeshLambertMaterial {
   if (!isBrowser) return new THREE.MeshLambertMaterial({ color: FRONT_COLOURS.fascia });
-  const c = document.createElement('canvas');
-  c.width = 1024;
-  c.height = 72;
-  paintFascia(c.getContext('2d') as CanvasRenderingContext2D, 1024, 72);
-  const t = new THREE.CanvasTexture(c);
+  const levels = fasciaLevels().map(([w, h]) => {
+    const c = document.createElement('canvas');
+    c.width = w;
+    c.height = h;
+    paintFascia(c.getContext('2d') as CanvasRenderingContext2D, w, h);
+    return c;
+  });
+  const t = new THREE.CanvasTexture(levels[0]!);
+  t.mipmaps = levels;
+  t.generateMipmaps = false;
+  t.minFilter = THREE.LinearMipmapLinearFilter;
   t.colorSpace = THREE.SRGBColorSpace;
   t.anisotropy = 4;
   return new THREE.MeshLambertMaterial({ color: 0xffffff, map: t });
@@ -704,7 +737,7 @@ export type DialPainter = Pick<CanvasRenderingContext2D, 'beginPath' | 'arc' | '
   fillStyle: unknown; strokeStyle: unknown; lineWidth: number; lineCap: unknown; lineJoin: unknown; font: string; textAlign: unknown; textBaseline: unknown;
 };
 /** The bezel's cream (R-kx-front-a and -b show a distinct cream ring, not a gold line). */
-export const DIAL_BEZEL = '#e6d7a8';
+export const DIAL_BEZEL = '#e0c88c'; // round 7: a touch more gilt (it was #e6d7a8)
 export const DIAL_NUMERALS = ['XII', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI'] as const;
 /**
  * The chapter's layout, as fractions of the chapter's radius (the disc inside the bezel, `bezel` of the dial's radius). Round 6 (the
@@ -1215,6 +1248,13 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   proud(spine, frontTop - 0.45, FW + 1.0, 0.9, 0.7); // cornice
   const { height: bh, out: bo } = FRONT_RELIEF.bedMould;
   proud(spine, frontTop - 0.9 - bh / 2, FW + 0.8, bh, bo); // its bed mould: a step under the overhang, so its soffit reads
+  // the great arches' impost (round 7, R-kx-front-b): a stone block at the springing over each end pier (the front's ends, where the
+  // orders, cut by the front's end, come down onto the pier), prouder than the outer order (FRONT_RELIEF.impost), so the arch has a
+  // defined springing there (the spine's ends are behind the tower)
+  {
+    const { height: ih, out: io, past } = FRONT_RELIEF.impost, span = 1.0 + past; // the end pier's 1 m, and a little past it
+    for (const [x0, x1] of [[fx0 - 0.05, fx0 + span], [fx1 - span, fx1 + 0.05]]) stone.box([(x0 + x1) / 2, sp + ih / 2, (io - FRONT_THICK) / 2], [x1 - x0, ih, FRONT_THICK + io], { skip: ['-z'] });
+  }
   proud(spine, frontTop + 0.15, FW + 0.6, 0.3, 0.4); // its coping
   for (const x of [fx0 + 0.5, fx1 - 0.5]) proud(x, (frontTop + GROUND_Y) / 2, 1.0, frontTop - GROUND_Y - 1.0, 0.25); // end piers
   // the east aisle's south end: a plain brick wall up to the aisle roof at the springing (ASSUMED height and finish; no source shows it),
@@ -1228,6 +1268,7 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   // SHADOW_CASTERS) without another caster: the shadow pass's mesh count and triangle budget are full
   const canopy = new Batch();
   const downlights = new Batch();
+  const stems: [V3, V3][] = [];
   const frontSteel = (material('ribPaint') as THREE.MeshLambertMaterial).clone();
   frontSteel.color.set(FRONT_COLOURS.steel);
   frontSteel.emissive.set(FRONT_COLOURS.steelLift);
@@ -1245,7 +1286,9 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
     for (const row of FRONT_CANOPY.lightRows) {
       for (let x = cx0 + 0.6; x < cx1; x += FRONT_CANOPY.lightPitch) {
         downlights.box([x, ly, d * row], [lw, lh, lw], { skip: ['+y'] });
-        canopy.box([x, (ly + lh / 2 + top - FRONT_CANOPY.sheet) / 2, d * row], [0.05, top - FRONT_CANOPY.sheet - ly - lh / 2, 0.05], { skip: ['+y', '-y'] }); // the stem
+        // the stem: in the entrances' frames (the same charcoal steel), which do not cast; a 5 cm stem's shadow is nothing, and the shadow
+        // pass's budget is spent (round 7: 432 triangles back)
+        stems.push([[x, (ly + lh / 2 + top - FRONT_CANOPY.sheet) / 2, d * row], [0.05, top - FRONT_CANOPY.sheet - ly - lh / 2, 0.05]]);
       }
     }
   }
@@ -1298,6 +1341,15 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
     for (const dx of [-dw / 2 + 0.06, 0, dw / 2 - 0.06]) frames.box([x + dx, entryFoot + 1.15, zIn + 0.02], [0.08, 2.0, fd]);
     frames.box([x, entryFoot + 0.45, zIn + 0.02], [dw - 0.04, 0.3, fd]);
     frames.box([x, entryFoot + 0.15, zIn], [2 * entryR, 0.3, fd]); // the doors' kick rail and the screens' cill
+  }
+  for (const [c, s] of stems) frames.box(c, s, { skip: ['+y', '-y'] });
+  // the cornice's shadow line (round 7: the bed mould read as a faint line at south-front): the cornice's and the bed mould's soffits and a
+  // band of the wall's face under the bed mould, in the frames' charcoal (they do not cast: no shadow-pass cost)
+  {
+    const yc = frontTop - 0.9, yb = yc - FRONT_RELIEF.bedMould.height, out = FRONT_RELIEF.bedMould.out, x0 = fx0 - 0.4, x1 = fx1 + 0.4, e = 0.004;
+    frames.poly([[x0, yc - e, out], [x1, yc - e, out], [x1, yc - e, 0.7], [x0, yc - e, 0.7]], undefined, { facing: [0, -1, 0] }); // the cornice's soffit
+    frames.poly([[x0 + 0.1, yb - e, 0], [x1 - 0.1, yb - e, 0], [x1 - 0.1, yb - e, out], [x0 + 0.1, yb - e, out]], undefined, { facing: [0, -1, 0] }); // the bed mould's
+    frames.poly([[fx0, yb - FRONT_RELIEF.shadowLine, e], [fx1, yb - FRONT_RELIEF.shadowLine, e], [fx1, yb, e], [fx0, yb, e]], undefined, { facing: [0, 0, 1] }); // the shadow line
   }
   const infillParts = [mergeGeometries(infillGlass, false), plainGeometry(frames.build()), plainGeometry(fasciae.build()), plainGeometry(downlights.build())];
   const infillMats = [

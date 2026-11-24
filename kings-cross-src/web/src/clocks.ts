@@ -54,8 +54,10 @@ export function balmoralTime(sceneMs: number): number {
 /** A hand, in fractions of the dial's radius: its length from the centre, its tail behind the centre, its width; and its height off the face, metres. */
 interface HandShape { length: number; tail: number; width: number; lift: number; depth: number }
 export const HANDS: { hour: HandShape; minute: HandShape } = {
-  hour: { length: 0.58, tail: 0.12, width: 0.075, lift: 0.04, depth: 0.03 },
-  minute: { length: 0.86, tail: 0.15, width: 0.045, lift: 0.08, depth: 0.03 },
+  // round 7 (R-kx-front-c, the dial-text-1b score: "still a thin black line"): broad at the boss, 0.08 and 0.065 of the radius, with a
+  // spade near the tip (handGeometry's outline)
+  hour: { length: 0.58, tail: 0.12, width: 0.08, lift: 0.04, depth: 0.03 },
+  minute: { length: 0.86, tail: 0.15, width: 0.065, lift: 0.08, depth: 0.03 },
 };
 
 const unit = (v: V3): THREE.Vector3 => new THREE.Vector3(...v).normalize();
@@ -74,9 +76,16 @@ export function handMatrix(dial: ClockDial, shape: HandShape, angle: number, out
   return out.makeBasis(across.multiplyScalar(shape.width * r), along.multiplyScalar(len), n.multiplyScalar(shape.depth)).setPosition(origin);
 }
 
-/** The unit box the hands are instances of: x in [-0.5, 0.5], y and z in [0, 1]. */
+/**
+ * A hand's outline in its unit box (x across, y along from the tail's end): the full width over the boss (the tail and the centre), a
+ * shaft half as wide, a spade the full width near the tip, and the point (R-kx-front-c's spade hands).
+ */
+export const HAND_OUTLINE: readonly [number, number][] = [
+  [-0.5, 0], [0.5, 0], [0.5, 0.22], [0.22, 0.3], [0.2, 0.72], [0.5, 0.84], [0, 1], [-0.5, 0.84], [-0.2, 0.72], [-0.22, 0.3], [-0.5, 0.22],
+];
+/** The shape the hands are instances of, a flat prism of HAND_OUTLINE in the unit box: x in [-0.5, 0.5], y and z in [0, 1]. */
 export function handGeometry(): THREE.BufferGeometry {
-  return new THREE.BoxGeometry(1, 1, 1).translate(0, 0.5, 0.5);
+  return new THREE.ExtrudeGeometry(new THREE.Shape(HAND_OUTLINE.map(([x, y]) => new THREE.Vector2(x, y))), { depth: 1, bevelEnabled: false });
 }
 
 interface Placed { dial: ClockDial; world: THREE.Matrix4 }
