@@ -423,7 +423,7 @@ export function createAtmosphere({ scene, world, sites, location, haze, lampSunG
   scene.add(precip.group);
   const nightLights = sites ? createNightLights(sites) : null;
   if (nightLights) scene.add(nightLights.group);
-  const platformLamps = sites && platformLampFloor ? createPlatformLamps([...sites.platform,...sites.shed],platformLampFloor,PLATFORM_HEIGHT,'kx',litFogCloud&&!!cityFogTint) : null;
+  const platformLamps = sites && platformLampFloor ? createPlatformLamps([...sites.platform,...sites.shed],platformLampFloor,PLATFORM_HEIGHT,'kx',litFogCloud&&!!cityFogTint,[],[...Array<undefined>(sites.platform.length/3).fill(undefined),...sites.shedReach??[]]) : null;
   if (platformLamps) {
     scene.add(platformLamps.group); nightLights?.attach(platformLamps);
     // Shared heads replace the old oversized halos on this opt-in path only.

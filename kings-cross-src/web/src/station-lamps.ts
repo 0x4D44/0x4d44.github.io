@@ -133,11 +133,14 @@ if (uOpenPlatformNight > 0.003 && uOpenPlatformWet > 0.45 && uOpenPlatformSnow <
 }
 
 
-/** Heads are the same positions used by the visible fittings/pendants, metres. */
-export function createPlatformLamps(heads: readonly number[], rings: readonly (readonly Pt[])[], floorY: number, station:'kx'|'wv'='kx', fogAir=false, open: readonly OpenPlatformLamp[] = []): StreetLights & { radii: readonly number[]; sources: readonly LightSource[] } {
+/** Heads are the same positions used by the visible fittings/pendants, metres. `poolReach[i]`, where given, is head i's pool radius in place of
+ * 0.6 x the spacing to its nearest neighbour: the KX shed's rows give their own (night.ts `shedReach`), as two rows over one island
+ * (platforms 0 and 1) stand nearer each other than the lights along either. */
+export function createPlatformLamps(heads: readonly number[], rings: readonly (readonly Pt[])[], floorY: number, station:'kx'|'wv'='kx', fogAir=false, open: readonly OpenPlatformLamp[] = [], poolReach: readonly (number | undefined)[] = []): StreetLights & { radii: readonly number[]; sources: readonly LightSource[] } {
   const spots: LampSpot[] = [];
   for (let i=0;i<heads.length;i+=3) spots.push({x:heads[i]!,y:floorY,z:heads[i+2]!,height:heads[i+1]!-floorY,yaw:0,kind:LAMP_KIND.cool,slope:[0,0]});
   const radii = spots.map((s,i) => {
+    if (poolReach[i] !== undefined) return poolReach[i]!;
     let spacing = Infinity;
     spots.forEach((q,j) => { const d=Math.hypot(s.x-q.x,s.z-q.z); if(i!==j && d>3) spacing=Math.min(spacing,d); });
     return station==='kx'?Math.min(10,.6*spacing):Math.min(8,.58*spacing);

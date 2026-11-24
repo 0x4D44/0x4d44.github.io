@@ -30,8 +30,9 @@ test('committed KX, Waverley and Perth draws each have one record per physical e
         counts[set] = (counts[set] ?? 0) + 1;
       }
       // Re-pinned 2026-11-24 (shed rows over the islands): shed 76 -> 95, five rows of 19 (one per island under the vaults) for four.
+      // Re-pinned 2026-11-24 (platform 1 edge pools): shed 95 -> 114, the 0/1 island gets two rows of 19 (over platform 1, and under the east aisle roof for platform 0).
       assert.deepEqual(counts, {
-        kx: { platform: 36, shed: 95, concourse: 35, street: 1069, 'euston-north': 5, mast: 4,
+        kx: { platform: 36, shed: 114, concourse: 35, street: 1069, 'euston-north': 5, mast: 4,
           'kx-front-glazing-reflections': 10, 'kx-front-amber-reflections': 7, 'kx-midland-window-reflections': 261 },
         wv: { pendant: 125, 'open-platform': 8, street: 1093, approach: 13 },
         pt: { town: 2737, station: 100, forecourt: 12 },

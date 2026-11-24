@@ -51,8 +51,16 @@ test('the shed\'s lights hang inside it: under its two vaults, within its length
     // Re-pinned 2026-11-24 (rows over the islands): 'within 9 m of a vault's middle' held rows at the crown -/+ 8 m; a row over platform 8
     // stands 11 m off the west vault's middle and the 0/1 row 14.5 m off the east's, so this now holds what it meant: under the two vaults,
     // between the west wall (u = 0) and the east arcade (spine + one span), not in the east aisle.
-    assert.ok(u > layout.spine - 2 * radius && u < layout.spine + 2 * radius, `across the vaults: ${u}`);
     assert.ok(v > 0 && v < layout.length, `along the shed: ${v}`);
+    // Re-pinned 2026-11-24 (platform 1's edge dark): platform 0 stands in the east aisle beyond the east arcade and now has a row of its own
+    // there, under the aisle's flat roof (its underside 0.3 m below the springing, shed.ts), so a light east of the arcade is held to the
+    // aisle and below its roof, well above the platform; every other light is held where it was, under the two vaults.
+    if (u >= layout.spine + 2 * radius) {
+      assert.ok(u < layout.width, `inside the east aisle: ${u}`);
+      assert.ok(y < layout.springing - 0.3 && y > PLATFORM_HEIGHT + 3, `under the aisle roof, well above the platform: ${y}`);
+      continue;
+    }
+    assert.ok(u > layout.spine - 2 * radius && u < layout.spine + 2 * radius, `across the vaults: ${u}`);
     assert.ok(y > layout.springing && y < layout.springing + radius, `between the springing and the crown: ${y}`);
   }
   // Re-pinned 2026-11-24 (rows over the islands): the rows no longer stand at the vault crowns -/+ 8 m but over the five islands, so
@@ -64,7 +72,11 @@ test('the shed\'s lights hang inside it: under its two vaults, within its length
     rows.set(near, (rows.get(near) ?? 0) + 1);
   }
   assert.equal(rows.size, ISLANDS.length, `a row over each island: ${[...rows.keys()]}`);
-  assert.equal(new Set(rows.values()).size, 1, `the same number in each row: ${[...rows.values()]}`);
+  // Re-pinned 2026-11-24 (platform 1's edge dark): the 0/1 island (the last) has two rows, one over each platform, as one row over its middle
+  // left both its track-side edges out of the pools; the others' rows have as many lights as before, the 0/1 island twice that.
+  const counts = ISLANDS.map((_, i) => rows.get(i)!);
+  assert.equal(new Set(counts.slice(0, -1)).size, 1, `the same number in each row: ${counts}`);
+  assert.equal(counts[counts.length - 1], 2 * counts[0]!, `two rows over the 0/1 island: ${counts}`);
   const spacing = triples(sites.shed).slice(0, 2).map(([x, , z]) => worldToShed(layout, [x, z]).v);
   assert.ok(Math.abs((spacing[1] as number) - (spacing[0] as number) - 12.2) < 1e-6, `a light every 12.2 m: ${spacing}`);
 });
@@ -81,8 +93,14 @@ test('every island under the shed has its own row of shed lights over it, along 
       const mid = islandAt(i, v);
       if (mid === null) continue;
       checked++;
-      const best = Math.min(...lights.filter((l) => Math.abs(l.v - v) <= 6.1).map((l) => Math.abs(l.u - mid)));
-      assert.ok(best <= NEAR, `island ${refs.join('/')} at v ${v.toFixed(1)}: its middle is at u ${mid.toFixed(1)}, the nearest light ${best.toFixed(1)} m off`);
+      const near = lights.filter((l) => Math.abs(l.v - v) <= 6.1);
+      // Re-pinned 2026-11-24 (platform 1's edge dark): the 0/1 island is lit by a row over each of its platforms (it is 11.5 m across and
+      // the east arcade stands on platform 0), so there it is each platform's middle that has a light within NEAR, not the island's.
+      const middles = refs.length === 2 && refs[1] === '0' ? refs.map((ref) => { const r = uRangeAtV(layout, kx.get(ref)!.pts, v)!; return (r[0] + r[1]) / 2; }) : [mid];
+      for (const m of middles) {
+        const best = Math.min(...near.map((l) => Math.abs(l.u - m)));
+        assert.ok(best <= NEAR, `island ${refs.join('/')} at v ${v.toFixed(1)}: a middle is at u ${m.toFixed(1)}, the nearest light ${best.toFixed(1)} m off`);
+      }
     }
     assert.ok(checked >= 14, `island ${refs.join('/')} was checked along the shed (${checked} places)`);
   });

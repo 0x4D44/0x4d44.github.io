@@ -62,6 +62,8 @@ LANES = {
     'night': Lane(['web/tests/night.test.ts'], ['attach: a layer is handed the level']),
     # the shed's lights over its islands (web/src/night.ts nightLightSites, shedIslands): the guard added 2026-11-24
     'islands': Lane(['web/tests/night.test.ts'], ['every island under the shed has its own row of shed lights']),
+    # every shed platform's track-side edge in a pool (web/src/night.ts rows and shedReach, web/src/station-lamps.ts poolReach): the guard added 2026-11-24
+    'edges': Lane(['web/tests/platform-pool-floor.test.ts'], ['track-side edge is in a pool all along it']),
     # the clock dials' glow (web/src/night.ts `createDialLights`, its wiring in web/src/atmosphere.ts): the whole file
     'dials': Lane(['web/tests/dial-lights.test.ts']),
     'atmosphere': Lane(['web/tests/atmosphere.test.ts'], ["a scene's own haze", 'fogFar: the range', 'the windows of the city light with the lamps']),
@@ -497,6 +499,16 @@ SI = Where(NIGHT, 'islands')
 MUTATIONS += [
     ('a shed row hangs at its vault\'s crown line, not over its island', SI, 'const u = line[k % line.length]!;', 'const u = line[k % line.length]! < layout.spine ? layout.spine - radius : layout.spine + radius;'),
     ('the shed\'s rows stop half way along the shed', SI, 'for (let v = 6.1; v < layout.length - 6; v += 12.2, k++) {', 'for (let v = 6.1; v < layout.length / 2; v += 12.2, k++) {'),
+]
+
+# ------------------------------------------------------------------------------------------------ web/src/night.ts, web/src/station-lamps.ts: every platform's track-side edge in a pool
+SE = Where(NIGHT, 'edges')
+PE = Where('web/src/station-lamps.ts', 'edges')
+MUTATIONS += [
+    ('platform 0 has no row of its own in the east aisle', SE, '    if (beyond.length) rows.push({ line: beyond.map((u) => Math.max(u, wall + WALL_CLEAR)), aisle: true });\n', ''),
+    ('the 0/1 row stands off the east arcade over the island\'s middle, not over platform 1', SE, 'line: vault.length ? vault : [wall', 'line: false ? vault : [wall'),
+    ('a shed row\'s pools are half the spacing along it', SE, 'shedReach.push(Math.min(10, POOL_SHARE * next));', 'shedReach.push(Math.min(10, POOL_SHARE * next / 2));'),
+    ('a head\'s own pool radius is ignored', PE, '    if (poolReach[i] !== undefined) return poolReach[i]!;\n', ''),
 ]
 
 # ------------------------------------------------------------------------------------------------ web/src/night.ts: the clock dials' glow (createDialLights)

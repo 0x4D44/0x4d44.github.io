@@ -7,7 +7,7 @@ import test from 'node:test';
 import * as THREE from 'three';
 import type { Pt } from '../../core/geo.ts';
 import type { KxData } from '../../core/osm.ts';
-import { pointInPolygon, shedLayout } from '../../core/station.ts';
+import { pointInPolygon, SHED_PLATFORM_REFS, shedLayout, shedToWorld, stationPlatforms, uRangeAtV } from '../../core/station.ts';
 import { furniturePlan, surfacePlatforms } from '../src/furniture.ts';
 import { nightLightSites } from '../src/night.ts';
 import { createPlatformLamps } from '../src/station-lamps.ts';
@@ -155,5 +155,57 @@ test('King\'s Cross: where two drawn outlines share an edge (P4/P5 under the she
     });
     assert.ok(probes > 1000, `the shared seams under the lamps are probed (${probes})`);
     assert.ok(worst >= INSIDE, `the pool darkens to ${worst.toFixed(3)} on a seam between two platform outlines at ${at?.map(v => v.toFixed(2))}`);
+  } finally { lamps.dispose(); }
+});
+
+test('King\'s Cross: every shed platform\'s track-side edge is in a pool all along it under the vaults, evenly, with no step across the floor', () => {
+  // Added 2026-11-24 (the night scorer, platform 1 north): one row of shed lights over the middle of each island left platform 1's
+  // edge 5.5 m off the 0/1 row (that island is 11.5 m across), outside its pool (0.6 x 12.2 m) between lights; the strip where people
+  // stand by the train went from 92-111 to 17-24. The track-side face of each platform (P8's west face is against the west wall; P0's
+  // track runs along the east aisle) is sampled every 0.5 m along the shed, 0.3 m and 2 m in from the coping.
+  const data: KxData = JSON.parse(readFileSync(new URL('../src/data/kx-track.json', import.meta.url), 'utf8'));
+  const layout = shedLayout(data);
+  const sites = nightLightSites({ lamps: furniturePlan(data, layout).lamps, layout, data, canopy: { centre: [0, 0], radius: 0 } as never, footprint: [] });
+  const outlines = surfacePlatforms(data).map(p => p.pts);
+  const heads = [...sites.platform, ...sites.shed];
+  // the reach atmosphere.ts hands the lamps
+  const reach = [...Array<undefined>(sites.platform.length / 3).fill(undefined), ...sites.shedReach ?? []];
+  const lamps = createPlatformLamps(heads, outlines, PLATFORM_Y, 'kx', false, [], reach);
+  const TRACK_SIDE: Record<string, 'west' | 'east'> = { '8': 'east', '7': 'west', '6': 'east', '5': 'west', '4': 'east', '3': 'west', '2': 'east', '1': 'west', '0': 'east' };
+  const MEAN = .4, STEP = .15; // every other platform's edge is at 0.47-0.64 of the full pool; 0.13 is the steepest step a pool's own fall-off makes
+  // The pool's profile at r = distance / radius: streetlights.ts pool-profile-begin, with KX's poolFocus 1.4 (station-lamps.ts).
+  const smooth = (a: number, b: number, x: number): number => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+  const profile = (r: number): number => r >= 1 ? 0 : (1 + 1.4 * r * r) ** -1.5 * (1 - smooth(.55, 1, r));
+  try {
+    const clip = poolClip(lamps);
+    const platforms = stationPlatforms(data);
+    for (const ref of SHED_PLATFORM_REFS) {
+      const pts = platforms.get(ref)!.pts, east = TRACK_SIDE[ref] === 'east';
+      let sum = 0, n = 0, worstStep = 0, previous: number | undefined;
+      for (let v = 12; v < layout.length - 12; v += .5) {
+        const range = uRangeAtV(layout, pts, v);
+        if (!range) { previous = undefined; continue; }
+        for (const depth of [.3, 2]) {
+          const [x, z] = shedToWorld(layout, east ? range[1] - depth : range[0] + depth, v);
+          let dark = 1, inPool = false;
+          for (let k = 0; k < heads.length; k += 3) {
+            const r = Math.hypot(x - heads[k]!, z - heads[k + 2]!) / lamps.radii[k / 3]!;
+            if (r < 1) { inPool = true; dark *= 1 - profile(r); }
+          }
+          const c = clip(x, z);
+          assert.ok(inPool, `P${ref}'s track-side edge at v ${v.toFixed(1)}, ${depth} m in, is in no lamp's pool`);
+          assert.ok(c >= INSIDE, `P${ref}'s track-side edge at v ${v.toFixed(1)}, ${depth} m in, is clipped to ${c.toFixed(3)}`);
+          const lit = c * (1 - dark);
+          sum += lit; n++;
+          if (depth === .3) {
+            if (previous !== undefined) worstStep = Math.max(worstStep, Math.abs(lit - previous));
+            previous = lit;
+          }
+        }
+      }
+      assert.ok(n > 600, `P${ref}'s edge is sampled along the shed (${n})`);
+      assert.ok(sum / n >= MEAN, `P${ref}'s track-side edge is lit to ${(sum / n).toFixed(2)} of a full pool on average (at least ${MEAN})`);
+      assert.ok(worstStep <= STEP, `P${ref}'s edge steps by ${worstStep.toFixed(3)} between samples 0.5 m apart (at most ${STEP})`);
+    }
   } finally { lamps.dispose(); }
 });

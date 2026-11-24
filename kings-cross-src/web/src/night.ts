@@ -17,6 +17,8 @@ export interface NightLightSites {
   platform: number[];
   /** lights hung under the shed roof, flat x, y, z */
   shed: number[];
+  /** the floor pool's radius of each shed light, metres: 0.6 x the spacing along its own row (station-lamps.ts `createPlatformLamps` `poolReach`); left out, the pools keep that rule over all the lights */
+  shedReach?: number[];
   /** lights under the concourse dome, flat x, y, z */
   concourse: number[];
 }
@@ -35,6 +37,10 @@ export interface NightLightInput {
 const HANG = 1.8;
 /** A row whose line comes within this of a wall under the vaults (the spine, the east arcade: 1.0 m thick, furniture keeps 0.3 m off it) splits across it, metres. */
 const WALL_CLEAR = 1.5;
+/** How far below the east aisle's flat roof (its underside 0.3 m below the springing, shed.ts) a light over platform 0 hangs, metres. */
+const AISLE_HANG = 0.5;
+/** A shed light's floor pool reaches this share of the spacing to the next light in its row (the platform lamps' rule, station-lamps.ts). */
+const POOL_SHARE = 0.6;
 
 /**
  * The shed's islands, west to east: the platforms under the two vaults (SHED_PLATFORM_REFS) whose faces touch, as the u of the island's middle
@@ -67,25 +73,37 @@ export function nightLightSites({ lamps, layout, data, canopy, footprint }: Nigh
   for (const lamp of lamps) platform.push(lamp.x, PLATFORM_HEIGHT + FIGURES.lampHeight - 0.14, lamp.z);
 
   // One row over each island under the vaults, a light every second rib (12.2 m), hung below the vault above it. A row that would meet a
-  // wall under the vaults zig-zags across it, a light over each platform in turn (4/5, either side of the spine), or, where a platform
-  // is beyond the vaults (0, east of the east arcade), stands off the wall on the vault's side.
+  // wall zig-zags across it, a light over each platform under the vaults in turn (4/5, either side of the spine); a platform beyond the
+  // vaults (0, in the east aisle beyond the east arcade) gets a row of its own under the aisle roof, off the wall, and its neighbour (1)
+  // keeps its row over its own middle, so both track-side edges are in a pool (the 0/1 island is 11.5 m across, too wide for one row).
   const shed: number[] = [];
+  const shedReach: number[] = [];
   const radius = SHED_SPAN_WIDTH / 2;
   const underVault = (u: number): boolean => u > 0 && u < layout.spine + radius * 2;
   const walls = [layout.spine, layout.spine + 2 * radius];
+  const rows: { line: number[]; aisle: boolean }[] = [];
   for (const island of shedIslands(data, layout)) {
     const wall = walls.find((w) => Math.abs(island.centre - w) < WALL_CLEAR);
-    const line = wall === undefined ? [island.centre]
-      : island.platforms.length > 1 && island.platforms.every(underVault) ? island.platforms
-      : [wall + Math.sign(island.centre - wall || -1) * WALL_CLEAR];
+    if (wall === undefined) { rows.push({ line: [island.centre], aisle: false }); continue; }
+    const vault = island.platforms.filter(underVault), beyond = island.platforms.filter((u) => !underVault(u));
+    rows.push({ line: vault.length ? vault : [wall + Math.sign(island.centre - wall || -1) * WALL_CLEAR], aisle: false });
+    if (beyond.length) rows.push({ line: beyond.map((u) => Math.max(u, wall + WALL_CLEAR)), aisle: true });
+  }
+  for (const { line, aisle } of rows) {
+    const row: [number, number, number][] = [];
     let k = 0;
     for (let v = 6.1; v < layout.length - 6; v += 12.2, k++) {
       const u = line[k % line.length]!;
-      if (!underVault(u)) continue;
+      if (aisle ? !(u < layout.width) : !underVault(u)) continue;
       const off = u - (u < layout.spine ? layout.spine - radius : layout.spine + radius);
       const [x, z] = shedToWorld(layout, u, v);
-      shed.push(x, layout.springing + Math.sqrt(radius * radius - off * off) - HANG, z);
+      row.push([x, aisle ? layout.springing - 0.3 - AISLE_HANG : layout.springing + Math.sqrt(radius * radius - off * off) - HANG, z]);
     }
+    row.forEach(([x, y, z], i) => {
+      const next = Math.min(...row.filter((_, j) => j !== i).map(([qx, , qz]) => Math.hypot(qx - x, qz - z)));
+      shed.push(x, y, z);
+      shedReach.push(Math.min(10, POOL_SHARE * next));
+    });
   }
 
   // Rings of lights under the dome, kept to the footprint west of the shed.
@@ -100,7 +118,7 @@ export function nightLightSites({ lamps, layout, data, canopy, footprint }: Nigh
       concourse.push(p[0], concourseHeight(canopy, r) - 1.2, p[1]);
     }
   }
-  return { platform, shed, concourse };
+  return { platform, shed, shedReach, concourse };
 }
 
 let halo: THREE.Texture | null | undefined;
