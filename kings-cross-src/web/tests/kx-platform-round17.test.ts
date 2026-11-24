@@ -38,7 +38,8 @@ test('B4: after dark only, the coping band holds about lit concrete\'s light; by
   const spec = M.COPING_NIGHT as { floor: number; band: number } | undefined;
   assert.ok(spec, 'COPING_NIGHT');
   const c = new THREE.Color(spec.floor), lum = 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b; // linear
-  assert.ok(lum > 0.012 && lum < 0.05, `a pale line, not a glow strip: ${lum.toFixed(3)} linear`);
+  // re-pinned (round 17, second pass, the lead's capture: 0x2c2c29, about 0.025 linear, did not show): a clearly paler line, still not a glow strip
+  assert.ok(lum > 0.06 && lum < 0.14, `a pale line, not a glow strip: ${lum.toFixed(3)} linear`);
   const m = materials.material('platformEdgeStrip') as THREE.MeshLambertMaterial;
   assert.ok(m.customProgramCacheKey().includes('coping-night'), 'its own program');
   const shader = fakeShader();
@@ -112,4 +113,31 @@ test('B5: the platform clock\'s night dial is neutral white (no blue cast), at D
   own.scan(tower);
   own.setLevel(1);
   assert.deepEqual(((tower.getObjectByName('clock-dial-glow') as THREE.Mesh).material as THREE.MeshBasicMaterial).color.toArray(), new THREE.Color().setRGB(...night.DIAL_GLOW).toArray());
+});
+
+test('B5: each blade face reads true from its own side: digits left to right, glyphs unmirrored ("6" lights its lower-left stroke, "7" does not)', () => {
+  const B = F.BLADE as { top: number; size: number; digit: number; pitch: number; stroke: number };
+  const geo = F.extraGeometry as (e: { kind: string; label: string }, part?: string) => THREE.BufferGeometry;
+  const sw = B.digit * 0.58, t = B.stroke, y0 = B.top - B.size / 2 - B.digit / 2;
+  // a stroke's inner foot corner: (x0 + t, y0) is the lower-left stroke's alone (e), (x1 - t, y0) the lower-right's (c), in the face's own right axis
+  const has = (g: THREE.BufferGeometry, side: number, r: number): boolean => {
+    const p = g.getAttribute('position');
+    for (let i = 0; i < p.count; i++) if (side * p.getZ(i) > 0.031 && Math.abs(side * p.getX(i) - r) < 1e-6 && Math.abs(p.getY(i) - y0) < 1e-6) return true;
+    return false;
+  };
+  const seven = geo({ kind: 'blade', label: '7' }, 'face'), pair = geo({ kind: 'blade', label: '6 7' }, 'face');
+  for (const side of [1, -1]) { // +z face: seen from +z its right is +x; -z face: its right is -x
+    assert.ok(!has(seven, side, -sw / 2 + t) && has(seven, side, sw / 2 - t), `"7" unmirrored on the ${side > 0 ? '+z' : '-z'} face: its foot on the right`);
+    assert.ok(has(pair, side, -B.pitch / 2 - sw / 2 + t), `"6 7": the left digit is the 6 (lower-left lit) on the ${side > 0 ? '+z' : '-z'} face`);
+    assert.ok(!has(pair, side, B.pitch / 2 - sw / 2 + t), `and the right digit the 7 on the ${side > 0 ? '+z' : '-z'} face`);
+  }
+});
+
+test('B5: the bins are about 1.0 m tall and 0.5 m wide each, as paired platform bins (ASSUMED)', () => {
+  const g = (F.extraGeometry as (e: { kind: string; label: string }) => THREE.BufferGeometry)({ kind: 'bins', label: '1' });
+  g.computeBoundingBox();
+  const bb = g.boundingBox!;
+  assert.ok(bb.max.y >= 0.95 && bb.max.y <= 1.05, `${bb.max.y.toFixed(2)} m tall`);
+  assert.ok(bb.max.x - bb.min.x >= 0.9 && bb.max.x - bb.min.x <= 1.12, `the pair ${(bb.max.x - bb.min.x).toFixed(2)} m wide: two of about 0.5 m`);
+  assert.ok(bb.max.z - bb.min.z <= 0.65, `${(bb.max.z - bb.min.z).toFixed(2)} m deep`);
 });

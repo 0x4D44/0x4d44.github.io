@@ -1282,9 +1282,10 @@ export function extraGeometry(e: { kind: ExtraKind; label: string }, part: 'all'
   const b = newBatch();
   if (part === 'face' && e.kind !== 'blade') return b.build();
   if (e.kind === 'bins') {
-    for (const sx of [-0.33, 0.33]) {
-      b.aabb(sx - 0.29, 0, -0.35, sx + 0.29, 1.0, 0.35, BIN_GREEN);
-      b.aabb(sx - 0.31, 1.0, -0.37, sx + 0.31, 1.06, 0.37, IRON, true);
+    // round 17 (the lead: they read about 1.2 m tall and wide): each bin 0.5 m wide and 1.0 m tall with its lid, 0.55 m deep (ASSUMED, paired platform bins)
+    for (const sx of [-0.27, 0.27]) {
+      b.aabb(sx - 0.24, 0, -0.27, sx + 0.24, 0.95, 0.27, BIN_GREEN);
+      b.aabb(sx - 0.25, 0.95, -0.28, sx + 0.25, 1.0, 0.28, IRON, true);
     }
   } else if (e.kind === 'trolley') {
     for (const sx of [-0.42, 0.42]) b.aabb(sx - 0.04, 0, -0.04, sx + 0.04, 2.2, 0.04, IRON);
@@ -1307,9 +1308,11 @@ export function extraGeometry(e: { kind: ExtraKind; label: string }, part: 'all'
         a: [x0, y1 - t, x1, y1], g: [x0, ym - t / 2, x1, ym + t / 2], d: [x0, y0, x1, y0 + t],
         f: [x0, ym, x0 + t, y1], b: [x1 - t, ym, x1, y1], e: [x0, y0, x0 + t, ym], c: [x1 - t, y0, x1, ym],
       };
+      // each face drawn as seen from its own side: the -z face's right is -x, so its strokes (and the digits' order) are mirrored in x to read true
+      // (until round 17 both faces shared the +z face's x, and the -z face read mirrored, "7 6" for "6 7")
       for (const s of SEGMENTS[ch] ?? '') for (const side of [-1, 1]) {
         const [a0, b0, a1, b1] = seg[s]!;
-        b.aabb(a0, b0, side > 0 ? 0.03 : -0.036, a1, b1, side > 0 ? 0.036 : -0.03, SIGN_WHITE, true);
+        b.aabb(Math.min(side * a0, side * a1), b0, side > 0 ? 0.03 : -0.036, Math.max(side * a0, side * a1), b1, side > 0 ? 0.036 : -0.03, SIGN_WHITE, true);
       }
     });
   }

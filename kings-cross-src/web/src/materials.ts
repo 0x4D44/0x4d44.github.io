@@ -694,7 +694,9 @@ function nightFloor<T extends THREE.MeshLambertMaterial>(m: T, floor: number, ke
  * dark (`windowNight`) the edge strip's coping band (u under `band` m of the strip's `width`) holds its own light at least `floor`, about lit concrete's
  * (sRGB per channel, ASSUMED: ARCADE_FRAME.night's order), so it reads as a pale line, not a glow strip. By day uWinNight is 0: nothing changes.
  */
-export const COPING_NIGHT = { floor: 0x2c2c29, band: 0.2 } as const;
+// the floor raised in round 17's second pass (the lead: at 0x2c2c29 the edge did not show in night p8-south): about 4 times it, aiming at 1.5-2 times the night-lit
+// surface's luminance beside it (not measured here: no render)
+export const COPING_NIGHT = { floor: 0x5a5a55, band: 0.2 } as const;
 function copingNight<T extends THREE.MeshLambertMaterial>(m: T): T {
   const before = m.onBeforeCompile.bind(m), key = m.customProgramCacheKey();
   const c = new THREE.Color(COPING_NIGHT.floor), u = COPING_NIGHT.band / TEXTURES.platformEdge.tile[0];
