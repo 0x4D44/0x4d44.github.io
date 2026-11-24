@@ -5,8 +5,8 @@ import * as THREE from 'three';
 import type { KxData } from '../../core/osm.ts';
 import { CLOCK_TOWER_HEIGHT, SHED_LENGTH, SHED_SPAN_WIDTH, shedLayout, shedToWorld, stationBuilding, worldToShed } from '../../core/station.ts';
 import { shedRoofY } from '../src/furniture.ts';
-import { SHADOW_CASTERS } from '../src/lighting.ts';
-import { ARCADE_GLASS, material, PANE_UV } from '../src/materials.ts';
+import { createSunShadow, SHADOW_CASTERS } from '../src/lighting.ts';
+import { ARCADE_GLASS, material, PANE_UV, TEXTURES } from '../src/materials.ts';
 import { westArcadeOpenings, WEST_GLAZING } from '../src/shed.ts';
 import { buildShed, buildTower, EAST_ARCADE, eastArcadeOpenings, eastArcadeU, NORTH_PIER, RIB_FOOT, ribLanding, spineLowerOpenings, spineUpperOpenings, valleyTop, buildWesternRange, gableBars, GABLE_GLASS_FROM, glazedHalfAngle, GLAZED_STRIP_WIDTH, GLASS_OPACITY, glazingOpacity, lunetteBars, MEMBER_SIZE, RIB_SPACING, ribMembers, ribPositions, ROOF_SKIN, roofOpacity, SPINE_WALL, spineOpenings, TOWER_SIZE, valleyCut, vaultBand, vaultPoint, WESTERN_RANGE, WESTERN_RANGE_DEPTH_BEFORE, westernArches, westernBays, westernBlock, westernWindows, XRAY_OPACITY } from '../src/shed.ts';
 
@@ -836,7 +836,9 @@ test('the west wall\'s inner face is an arcade: a round-headed arch in every rib
       assert.ok(!solidAt(vc + d, head - 0.08), `open under the head at v ${(vc + d).toFixed(2)}`);
       assert.ok(solidAt(vc + d, head + 0.08), `brick over the head at v ${(vc + d).toFixed(2)}, y ${(head + 0.08).toFixed(2)}`);
     }
-    assert.ok(!solidAt(vc, 1.5) && !solidAt(vc - r + 0.05, 1.5) && !solidAt(vc + r - 0.05, 1.5), `open at the platform at v ${vc.toFixed(1)}`);
+    // re-pinned 2026-11-24 from y 1.5 (open at the platform): since shed-arcade-round-6 the arches are windows over a brick base (the test below), so open over its sill
+    const y = WEST_GLAZING.sill + 0.3;
+    assert.ok(!solidAt(vc, y) && !solidAt(vc - r + 0.05, y) && !solidAt(vc + r - 0.05, y), `open over the sill at v ${vc.toFixed(1)}`);
     bays++;
   }
   for (const v of ribPositions(layout.length)) {
@@ -892,9 +894,11 @@ test('the west arcade\'s arches are glazed: grey glass by day, lit after dark, i
   const glass = panes.material as THREE.MeshLambertMaterial;
   assert.equal(glass, material('arcadeGlass'));
   assert.equal(bars.material, material('ribPaint'), 'the shed\'s dark ironwork paint');
+  // re-pinned 2026-11-24 from colour >= 120 and sheen >= 60 (pale glass): the scorer of shed-arcade-round-6 read that glass as self-lit, brighter than the brick;
+  // its day tone is now held by the test 'the west arcade's glass is dark by day' below
   const lum = (hex: number): number => 0.2126 * (hex >> 16) + 0.7152 * ((hex >> 8) & 255) + 0.0722 * (hex & 255);
-  assert.ok(lum(glass.color.getHex()) >= 120, `the glass's colour ${lum(glass.color.getHex()).toFixed(0)}`);
-  assert.ok(lum(glass.emissive.getHex()) >= 60, `its daylight sheen ${lum(glass.emissive.getHex()).toFixed(0)}`);
+  assert.ok(lum(glass.color.getHex()) >= 42, `the glass's colour ${lum(glass.color.getHex()).toFixed(0)}: grey, not the dark pane's 42`);
+  assert.ok(lum(glass.emissive.getHex()) > 0, `its daylight sheen ${lum(glass.emissive.getHex()).toFixed(0)}: some reflection, not none`);
   // after dark: the lit-pane path, most of the arches lit
   const shader = { uniforms: {} as Record<string, THREE.IUniform>, vertexShader: THREE.ShaderLib.lambert.vertexShader, fragmentShader: THREE.ShaderLib.lambert.fragmentShader };
   glass.onBeforeCompile(shader as unknown as THREE.WebGLProgramParametersWithUniforms, undefined as never);
@@ -934,6 +938,52 @@ test('the west arcade\'s arches are glazed: grey glass by day, lit after dark, i
     glazed++;
   }
   assert.ok(glazed >= 30, `${glazed} arches glazed`);
+});
+
+// Scorer of 2026-11-24 (shed-arcade-round-6, B3 and A6): by day the west arcade's glass rendered a flat pale (138, 150, 160), brighter than the shaded brick
+// (80, 65, 40), and the sun's shadows stopped at it; shed-a and front-d show the openings darker than the brick (materials.ts ARCADE_GLASS: sampled there).
+// The glass's colour is 60-90 of luminance (sRGB bytes) and at most 0.65 of the brick's average; its sheen (unshadowed light) 5-20, and in linear light at most
+// 0.15 of its colour, so a shadow that takes the sun off it shows; and it takes the sun's shadow (lighting.ts: lit and not transparent).
+test('the west arcade\'s glass is dark by day, darker than the brick, and takes the sun\'s shadow', () => {
+  const g = shedWorld(), panes = byName(g, 'shed-west-arcade-panes'), glass = panes.material as THREE.MeshLambertMaterial;
+  const lum = (hex: number): number => 0.2126 * (hex >> 16) + 0.7152 * ((hex >> 8) & 255) + 0.0722 * (hex & 255);
+  const c = lum(glass.color.getHex()), e = lum(glass.emissive.getHex()), brick = lum(TEXTURES.brick.average);
+  assert.ok(c >= 60 && c <= 90, `the glass's colour ${c.toFixed(0)}, wanted 60-90`);
+  assert.ok(c <= 0.65 * brick, `the glass's colour ${c.toFixed(0)} against the brick's ${brick.toFixed(0)}`);
+  assert.ok(e >= 5 && e <= 20, `its sheen ${e.toFixed(0)}, wanted 5-20`);
+  const linear = (k: THREE.Color): number => 0.2126 * k.r + 0.7152 * k.g + 0.0722 * k.b;
+  const share = linear(glass.emissive) / linear(glass.color);
+  assert.ok(share <= 0.15, `its sheen ${share.toFixed(2)} of its colour in linear light`);
+  const scene = new THREE.Scene();
+  scene.add(g);
+  createSunShadow(scene, new THREE.DirectionalLight()).tag();
+  assert.equal(panes.receiveShadow, true, 'the glass takes the sun\'s shadow');
+  assert.equal(byName(g, 'shed-west-arcade').receiveShadow, true, 'as the brick round it does');
+});
+
+// Scorer of 2026-11-24 (shed-arcade-round-6, B3): the glass ran from the platform to the head, a tall glazed door in each arch; shed-c shows the lower arches as
+// windows over a brick base (shed.ts WEST_GLAZING.sill, MEASURED there about 1.75 m, 0.85 m over the platform: held at 0.55-1.15 m over it). In every arch
+// that is not a gateline passage, a ray from the shed meets brick under the sill and glass or its bars over it; no glass is under the sill.
+test('the west arcade\'s arches are windows over a brick base, not glazed doors; the gateline passages stay open (R-kx-shed-interior-c)', () => {
+  const g = shedWorld(), wall = byName(g, 'shed-west-arcade'), panes = byName(g, 'shed-west-arcade-panes'), bars = byName(g, 'shed-west-arcade-bars');
+  const { sill } = WEST_GLAZING;
+  assert.ok(sill - 0.9 >= 0.55 && sill - 0.9 <= 1.15, `the sill ${(sill - 0.9).toFixed(2)} m over the platform`);
+  const first = (v: number, y: number): string => {
+    const [x0, z0] = shedToWorld(layout, 1.0, v), [x1, z1] = shedToWorld(layout, -0.1, v);
+    const hit = new THREE.Raycaster(new THREE.Vector3(x0, y, z0), new THREE.Vector3(x1 - x0, 0, z1 - z0).normalize(), 0, 1.1).intersectObjects([wall, panes, bars], false)[0];
+    return hit ? hit.object.name : 'none';
+  };
+  let windows = 0;
+  for (const { vc, r } of westArcadeOpenings(layout.length)) {
+    if ([12.1, 20.1, 28.1, 36.1, 44.1].some(c => vc + r > c - 3.3 && vc - r < c + 3.3)) continue; // the gateline passages: the arcade test above holds them open
+    for (const v of [vc - 0.7 * r, vc - 0.1, vc + 0.7 * r]) {
+      for (const y of [1.0, sill - 0.1]) assert.equal(first(v, y), 'shed-west-arcade', `brick under the sill at v ${v.toFixed(2)}, y ${y.toFixed(2)}`);
+      assert.notEqual(first(v, sill + 0.15), 'shed-west-arcade', `glazed over the sill at v ${v.toFixed(2)}`);
+    }
+    windows++;
+  }
+  assert.ok(windows >= 30, `${windows} windows`);
+  assert.ok(bbox(panes).min.y >= sill - 1e-6, `glass down to y ${bbox(panes).min.y.toFixed(2)}, under the sill`);
 });
 
 // Scorer of 2026-11-24 (shed-arcade-round-5, platform-eye-p1-north): a pointed wedge, pale by day, in the top of the nearest east-arcade opening. The heads are

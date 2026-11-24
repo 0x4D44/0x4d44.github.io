@@ -20,8 +20,7 @@ for name in ['web', 'core']:
     shutil.copytree(src/name, work/name)
 shutil.copy2(src/'package.json', work/'package.json')
 (work/'node_modules').symlink_to((src/'node_modules').resolve(), target_is_directory=True)
-f = work/'web/src/shed.ts'
-original = f.read_text()
+originals = {p: (work/p).read_text() for p in ['web/src/shed.ts', 'web/src/materials.ts']}
 M = [
  ('clock remains below upper turret', 'const clockY = (shaftTop + eavesY) / 2;', 'const clockY = 22.4;'),
  ('clock hidden behind eaves', 'const clockY = (shaftTop + eavesY) / 2;', 'const clockY = eavesY;'),
@@ -51,7 +50,14 @@ M = [
  ('the west arcade\'s glass not numbered as windows: dark after dark', 'panes.poly(pts, pts.map((p): V2 => uvOf(-p[2], p[1])), { facing: [1, 0, 0] });', 'panes.poly(pts, pts.map((p): V2 => [-p[2], p[1]]), { facing: [1, 0, 0] });'),
  ('the west arcade\'s glazing without its transom', '    strip(vc - r, jamb, vc + r, jamb, bar);\n', ''),
  ('the west arcade\'s glazing without its mullions', 'for (let i = 1; i < lights; i++) { const v', 'for (let i = lights; i < lights; i++) { const v'),
- ('the west arcade\'s glazing without its frame', '    strip(vc - fr, GROUND_Y, vc - fr, jamb, frame);\n    strip(vc + fr, GROUND_Y, vc + fr, jamb, frame);\n', ''),
+ ('the west arcade\'s glazing without its frame', '    strip(vc - fr, sill, vc - fr, jamb, frame);\n    strip(vc + fr, sill, vc + fr, jamb, frame);\n', ''),
+ ('the west arcade\'s glass down to the platform again: glazed doors', 'const pts: V3[] = [[glass, sill, -(vc - r)]];', 'const pts: V3[] = [[glass, GROUND_Y, -(vc - r)]];'),
+ ('the west arcade\'s windows without their brick base', "    brick.box([base / 2, (GROUND_Y + sill) / 2, -vc], [base, sill - GROUND_Y, 2 * r], { skip: ['-x', '-y', '+z', '-z'] });\n", ''),
+ ('the west arcade\'s sill at the platform', 'sill: 1.75, base: 0.25 }', 'sill: 0.9, base: 0.25 }'),
+ # the glass's tone and shadow live in materials.ts: a fourth item names the file mutated
+ ('the west arcade\'s glass pale and self-lit again', 'color: 0x4c545a, sheen: 0x0e1216', 'color: 0x8a96a0, sheen: 0x4e5862', 'web/src/materials.ts'),
+ ('the west arcade\'s glass glowing by day: a bright sheen the shadow cannot take', 'sheen: 0x0e1216', 'sheen: 0x3a4248', 'web/src/materials.ts'),
+ ('the west arcade\'s glass see-through: it takes no sun shadow', 'emissive: ARCADE_GLASS.sheen })', 'emissive: ARCADE_GLASS.sheen, transparent: true, opacity: 0.95 })', 'web/src/materials.ts'),
 ]
 def run(name):
  try: r = kxmut.run_process(['node','--test','--test-reporter=tap','--test-timeout=10000','web/tests/shed-tower.test.ts','web/tests/shed.test.ts'],cwd=work,timeout=30)
@@ -64,15 +70,19 @@ baseline = run('baseline')
 if baseline.returncode: raise SystemExit('Baseline failed, inspect baseline.log')
 survivors, invalid = [], []
 try:
- for i,(name,old,new) in enumerate(M):
+ for i,(name,old,new,*where) in enumerate(M):
+  path = where[0] if where else 'web/src/shed.ts'
+  original = originals[path]
   if original.count(old)!=1: raise SystemExit('Expected one mutation anchor: '+name)
-  f.write_text(original.replace(old,new,1))
+  (work/path).write_text(original.replace(old,new,1))
   try: r=run('m'+str(i))
   except subprocess.TimeoutExpired as error:
    invalid.append(name); print(f'[INVALID] {name}: {kxmut.why(error)} (that is not a kill)',flush=True); continue
+  finally: (work/path).write_text(original)
   if r.returncode==0: survivors.append(name); print('[SURVIVED] '+name,flush=True)
   elif 'ERR_ASSERTION' in r.stdout and not re.search('SyntaxError|TypeError|ERR_MODULE_NOT_FOUND|ERR_UNKNOWN_FILE_EXTENSION',r.stdout+r.stderr): print('[KILLED] '+name+' (assertion)',flush=True)
   else: invalid.append(name); print('[INVALID] '+name,flush=True)
-finally: f.write_text(original)
+finally:
+ for path, text in originals.items(): (work/path).write_text(text)
 print(f'{len(M)-len(survivors)-len(invalid)}/{len(M)} killed; {len(survivors)} survivors; {len(invalid)} invalid')
 raise SystemExit(bool(survivors or invalid))

@@ -158,6 +158,7 @@ export const EAST_ARCADE = { opening: 3.6, crown: 4.5, ring: 0.225 } as const;
  * spine's do. The wall behind it stays (it backs the Western Range): the arches are blind, a dark pane in each (ASSUMED: no source shows what is
  * behind them), and open through at the Western Concourse's gateline passages.
  * Since shed-arcade-round-5 (the scorer, B3: the dark panes read as holes) the arches are glazed (WEST_GLAZING), the glass materials.ts ARCADE_GLASS.
+ * Since round 6, windows over a brick base (WEST_GLAZING.sill).
  */
 export const WEST_ARCADE = { depth: 0.5 } as const;
 /**
@@ -165,8 +166,13 @@ export const WEST_ARCADE = { depth: 0.5 } as const;
  * 1380-1445 at y 485-555) are glazed: MEASURED in memory, rough: a transom on the springing line, under it the glass in four lights about a quarter of the span
  * wide (three mullions), over it a fanlight; the whole in a frame round the opening. The fanlight's bars (`radial`, the centre one and two at 45 degrees) and the
  * sizes (`frame` the frame's width, `bar` a bar's, `out` how far the bars stand in front of the glass, `glass` the glass in front of the wall's line) are ASSUMED.
+ *
+ * `sill`: the glass starts there, over a solid brick base (`base` deep from the wall's line, its top the sill's ledge). The scorer of shed-arcade-round-6 (B3):
+ * glass from the platform to the head read as tall glazed doors, where shed-c shows windows over a brick base. MEASURED in memory, rough: in shed-c at x
+ * 1380-1445 (an arch about 65-85 px across, 3.6 m) the glass runs from the crown at y about 485 down to a ledge at y about 550, 65 px, about 2.75 m: the sill
+ * about 1.75 m up, 0.85 m over the platform's top (0.9; the platform's own edge there is hidden by the train, so +-0.3 m). `base` 0.25 m: ASSUMED.
  */
-export const WEST_GLAZING = { lights: 4, radial: [Math.PI / 4, Math.PI / 2, (3 * Math.PI) / 4], frame: 0.12, bar: 0.07, glass: 0.02, out: 0.05 } as const;
+export const WEST_GLAZING = { lights: 4, radial: [Math.PI / 4, Math.PI / 2, (3 * Math.PI) / 4], frame: 0.12, bar: 0.07, glass: 0.02, out: 0.05, sill: 1.75, base: 0.25 } as const;
 /** v of the centre of each opening of the spine wall: the middle of every rib bay. */
 export function spineOpenings(length: number): number[] {
   const ribs = ribPositions(length);
@@ -1011,7 +1017,7 @@ export function buildWestArcade(brick: Batch, stone: Batch, panes: Batch, length
   brick.poly([[0, springing, 0], [depth, springing, 0], [depth, springing, -length], [0, springing, -length]], [[0, 0], [depth, 0], [depth, length], [0, length]], { facing: [0, 1, 0] }); // its top
   dressFace(stone, depth, 1, length, springing);
   const n = 8;
-  const { lights, radial, frame, bar, glass, out } = WEST_GLAZING;
+  const { lights, radial, frame, bar, glass, out, sill, base } = WEST_GLAZING;
   const ub = glass + out;
   // a flat bar from (v0, y0) to (v1, y1) on the face u = ub, `w` wide, facing the shed
   const strip = (v0: number, y0: number, v1: number, y1: number, w: number): void => {
@@ -1022,21 +1028,23 @@ export function buildWestArcade(brick: Batch, stone: Batch, panes: Batch, length
     if (overCut(vc - r, vc + r)) return;
     const crown = jamb + r;
     const uvOf = (v: number, y: number): V2 => paneUv(id, (v - (vc - r)) / (2 * r), (y - GROUND_Y) / (crown - GROUND_Y));
-    const pts: V3[] = [[glass, GROUND_Y, -(vc - r)]];
+    // the brick base under the window, its face and its top (the sill's ledge) only: its ends are in the piers, its back on the wall
+    brick.box([base / 2, (GROUND_Y + sill) / 2, -vc], [base, sill - GROUND_Y, 2 * r], { skip: ['-x', '-y', '+z', '-z'] });
+    const pts: V3[] = [[glass, sill, -(vc - r)]];
     for (let k = 0; k <= 2 * n; k++) { const a = (Math.PI * k) / (2 * n); pts.push([glass, jamb + r * Math.sin(a), -(vc - r * Math.cos(a))]); }
-    pts.push([glass, GROUND_Y, -(vc + r)]);
+    pts.push([glass, sill, -(vc + r)]);
     panes.poly(pts, pts.map((p): V2 => uvOf(-p[2], p[1])), { facing: [1, 0, 0] });
     // the frame: up the jambs and round the head, its outer edge on the opening's
     const fr = r - frame / 2;
-    strip(vc - fr, GROUND_Y, vc - fr, jamb, frame);
-    strip(vc + fr, GROUND_Y, vc + fr, jamb, frame);
+    strip(vc - fr, sill, vc - fr, jamb, frame);
+    strip(vc + fr, sill, vc + fr, jamb, frame);
     for (let k = 0; k < 2 * n; k++) {
       const a0 = (Math.PI * k) / (2 * n), a1 = (Math.PI * (k + 1)) / (2 * n);
       strip(vc - fr * Math.cos(a0), jamb + fr * Math.sin(a0), vc - fr * Math.cos(a1), jamb + fr * Math.sin(a1), frame);
     }
     // the transom on the springing line, the mullions under it, the fanlight's bars over it
     strip(vc - r, jamb, vc + r, jamb, bar);
-    for (let i = 1; i < lights; i++) { const v = vc - r + (2 * r * i) / lights; strip(v, GROUND_Y, v, jamb, bar); }
+    for (let i = 1; i < lights; i++) { const v = vc - r + (2 * r * i) / lights; strip(v, sill, v, jamb, bar); }
     for (const a of radial) strip(vc, jamb, vc - fr * Math.cos(a), jamb + fr * Math.sin(a), bar);
   });
 }

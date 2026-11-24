@@ -614,8 +614,14 @@ export const STONE_DRESSING = 0xc2bba6;
  * linings' emissive stands in for the light through the glazing; the atmosphere scales it down after dark): both ASSUMED, chosen to read grey, not black, under the
  * shed's light. After dark each arch is a window of its own (`litPane`, its number in its UVs), lit warm or cool at an hour of its own; `share` 0.8 of them lit
  * (shed-c at dusk shows every lower arch in view lit: ASSUMED a few dark).
+ * Re-tuned for shed-arcade-round-6 (the scorer, B3 and A6): the pale glass rendered a flat (138, 150, 160) by day, brighter than the shaded brick (80, 65, 40), and
+ * the sun's shadows stopped at it: the sheen, unshadowed light, was a third of its day light. The references show the openings darker than the brick by day:
+ * sampled in memory (sRGB, rough medians): shed-a-north-from-footbridge-2019.jpg the glazed openings of the far arcade about (70, 76, 80) against its brick
+ * about (120, 100, 70); kx-front/front-d the arcade openings about (55, 60, 62) against sunlit brick about (150, 120, 85). So `color` a dark grey glass
+ * (luminance about 82, sRGB bytes) and `sheen` a faint reflection (about 17), so the sun's shadow reads across it as it does across the brick (lighting.ts:
+ * it takes the shadow, being lit and not transparent). Both ASSUMED within those samples.
  */
-export const ARCADE_GLASS = { color: 0x8a96a0, sheen: 0x4e5862, share: 0.8 } as const;
+export const ARCADE_GLASS = { color: 0x4c545a, sheen: 0x0e1216, share: 0.8 } as const;
 function stoneDressing(): THREE.MeshLambertMaterial {
   const m = tiled('stone');
   if (m.map) {
