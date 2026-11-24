@@ -51,7 +51,7 @@ test('A2: proud stone string courses at the lower arcade\'s impost and at the gr
   assert.ok(sill && sill.h >= 0.4, 'the sill course at the great windows\' springing');
 });
 
-test('A2: each great arch\'s reveal steps back in three orders toward the glass, each step 0.1 to 0.25 m', () => {
+test('A2: each great arch\'s reveal steps back in three orders toward the glass, each step 0.2 to 0.35 m, and a fourth inside the opening', () => {
   const masonry = named('shed-front', 'shed-arch-rings');
   for (const uc of [layout.spine - R, layout.spine + R]) {
     for (const a of [Math.PI * 0.3, Math.PI * 0.5, Math.PI * 0.7]) {
@@ -65,11 +65,25 @@ test('A2: each great arch\'s reveal steps back in three orders toward the glass,
       const orders = levels.slice(0, 3);
       for (let i = 1; i < 3; i++) {
         const step = (orders[i] as number) - (orders[i - 1] as number);
-        assert.ok(step >= 0.1 && step <= 0.25, `order ${i} stands 0.1 to 0.25 m in front of the one inside it (${step.toFixed(2)})`);
+        // re-pinned 2026-11-24 (round 5's relief pass, the tower-round-2b score: the orders should step 0.25 to 0.3 m; it was 0.1 to 0.25),
+        // the same 0.15 band, about the new target
+        assert.ok(step >= 0.2 && step <= 0.35, `order ${i} stands 0.2 to 0.35 m in front of the one inside it (${step.toFixed(2)})`);
       }
       assert.ok((orders[0] as number) > -0.1, 'the innermost order is still a reveal, in front of the glass');
+      // the fourth order: inside the opening, a step back from the third, still in front of the glass
+      const inner = hitZ(uc + (R - 0.2) * Math.cos(a), layout.springing + (R - 0.2) * Math.sin(a), masonry);
+      assert.ok(inner !== null && inner > -0.1 && (orders[0] as number) - inner >= 0.2, `a fourth order inside the opening, ${inner?.toFixed(2)} against the third's ${orders[0]}`);
     }
   }
+});
+
+test('A2: the parapet cornice overhangs at least 0.6 m over a stone bed mould, so its soffit steps', () => {
+  const masonry = named('shed-front', 'shed-stone');
+  const x = X0 + bay, top = Math.max(...(group.getObjectByName('shed-front') as THREE.Mesh).geometry.getAttribute('position').array.filter((_, i) => i % 3 === 1));
+  const ys: number[] = [];
+  for (let y = top - 2; y <= top; y += 0.02) ys.push(y);
+  const levels = [...new Set(ys.map(y => Math.round((hitZ(x, y, masonry) ?? -9) * 100) / 100))].filter(z => z > 0.05).sort((p, q) => p - q);
+  assert.ok(levels.length >= 2 && levels[levels.length - 1]! >= 0.6 && levels.some(z => z >= 0.2 && z <= 0.5), `the cornice's faces stand ${levels.join(', ')} m proud: a bed mould under the overhang`);
 });
 
 test('A3: each of the six lower openings carries glazing set back in its reveal, with mullions, a transom and door rails in dark frames', () => {

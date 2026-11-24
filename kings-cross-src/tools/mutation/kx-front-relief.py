@@ -33,6 +33,11 @@ MUTATIONS = [
      'for (let k = 1; k < PORCH_INFILL.bays; k++)', 'for (let k = 1; k < 1; k++)',
      'each of the six lower openings carries glazing'),
     ('canopy raised to the sill', 'web/src/shed.ts', 'top: 3.85,', 'top: 5.0,', 'the low canopy of the current front'),
+    ('orders back to the 0.15 m step', 'web/src/shed.ts', 'orderStep: 0.28,', 'orderStep: 0.15,', 'reveal steps back in three orders'),
+    ('no fourth order', 'web/src/shed.ts', 'innerOrder: true,', 'innerOrder: false,', 'reveal steps back in three orders'),
+    ('no bed mould under the cornice', 'web/src/shed.ts',
+     "  proud(spine, frontTop - 0.9 - bh / 2, FW + 0.8, bh, bo); // its bed mould: a step under the overhang, so its soffit reads\n", '',
+     'parapet cornice overhangs'),
     ('canopy dropped from the porch mesh', 'web/src/shed.ts',
      "mergeGeometries([entryRingGeo, canopyGeo], true), [material('stone'), frontSteel]",
      "mergeGeometries([entryRingGeo], true), [material('stone')]", 'the low canopy of the current front'),
@@ -78,4 +83,4 @@ with tempfile.TemporaryDirectory(prefix='kx-front-relief-', dir=out) as tmp:
             failures.append(label)
             print(f'[SURVIVED] {label}', flush=True)
     print(f'{caught}/{len(MUTATIONS)} mutations caught; baseline {len(passing)} tests passed; survivors: {failures}')
-    raise SystemExit(1 if failures or len(passing) != 4 else 0)
+    raise SystemExit(1 if failures or len(passing) != 5 else 0)

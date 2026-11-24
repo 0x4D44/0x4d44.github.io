@@ -94,6 +94,18 @@ test('scan: a glow over the Lambert disc at each declared dial, in its place, tu
   });
 });
 
+test('a face that gives a glow mask (shed.ts: its field lit, its bezel dark) glows through the mask, not its own texture', () => {
+  const { owner, cream } = tower();
+  const mask = new THREE.Texture();
+  cream.userData.glowMap = mask;
+  const scene = new THREE.Scene();
+  scene.add(owner);
+  const lights = createDialLights();
+  assert.equal(lights.scan(scene), 2);
+  assert.ok(glowsOf(scene).every((g) => glowMaterial(g).map === mask), 'the glow wears the mask');
+  lights.dispose();
+});
+
 test('scan reads a dial where it stands in the world: a tower moved and turned after it was built is found, and discs that no building declares as dials are only discs', () => {
   const { owner } = tower();
   const scene = new THREE.Scene();

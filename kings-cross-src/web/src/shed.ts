@@ -91,8 +91,11 @@ export const SOUTH_FRONT_ARCADES = { perSide: 3, openingWidth: 6.8, jambHeight: 
  * model's lunettes span the vaults and a wider reveal would run past the front's ends), and a stone string course over the lower arcade's
  * crowns, about half a metre under the sill course (MEASURED from R-a: impost 4.9 m and sill 5.5 m above the paving, against the arcade's
  * crown at 4.4 m; scale from the tower's 6.4 m width).
+ * Round 5's relief pass (the tower-round-2b score, A2 6.5): each order steps 0.28 m (it was 0.15), a fourth order (`innerOrder`) inside the
+ * opening, flush with the wall's face, the glass's lunette 0.4 m narrower behind it (the opening's outline and springing unchanged); and a
+ * stone bed mould under the parapet cornice, `bedMould` proud, so the cornice's 0.7 m overhang reads as a stepped soffit, not a block.
  */
-export const FRONT_RELIEF = { orders: 3, orderWidth: 0.4, orderStep: 0.15, impostAboveGround: 4.95, impostHeight: 0.25, impostOut: 0.2 } as const;
+export const FRONT_RELIEF = { orders: 3, orderWidth: 0.4, orderStep: 0.28, innerOrder: true, bedMould: { height: 0.25, out: 0.35 }, impostAboveGround: 4.95, impostHeight: 0.25, impostOut: 0.2 } as const;
 /**
  * The porch openings' infill (A3), from R-kx-front-a: dark-framed glazed screens set back in each opening, glazed doors with a push rail,
  * a deep transom (the signage fascia) at about 2.5 m, and glazing over it in the arch head. Five bays to an opening and the frame sizes are
@@ -634,51 +637,80 @@ function windowQuad(batch: Batch, at: V3, facing: '+x' | '-x' | '+z' | '-z', w =
 const isBrowser = typeof document !== 'undefined';
 
 /** The 2D canvas calls paintDial makes, so a test can record them. */
-export type DialPainter = Pick<CanvasRenderingContext2D, 'beginPath' | 'arc' | 'fill' | 'stroke' | 'moveTo' | 'lineTo' | 'fillText'> & {
-  fillStyle: unknown; strokeStyle: unknown; lineWidth: number; lineCap: unknown; font: string; textAlign: unknown; textBaseline: unknown;
+export type DialPainter = Pick<CanvasRenderingContext2D, 'beginPath' | 'arc' | 'fill' | 'stroke' | 'moveTo' | 'lineTo' | 'fillText' | 'strokeText' | 'save' | 'restore' | 'translate' | 'rotate'> & {
+  fillStyle: unknown; strokeStyle: unknown; lineWidth: number; lineCap: unknown; lineJoin: unknown; font: string; textAlign: unknown; textBaseline: unknown;
 };
-/** The bezel's cream gilt. */
-export const DIAL_BEZEL = '#dcc07a';
+/** The bezel's cream (R-kx-front-a and -b show a distinct cream ring, not a gold line). */
+export const DIAL_BEZEL = '#e6d7a8';
 export const DIAL_NUMERALS = ['XII', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI'] as const;
 /**
- * The tower's dial face on a canvas `size` pixels square (R-kx-front-c): a cream-gilt bezel, an ivory face, a black chapter band of
- * Roman numerals between two rings, minute ticks outside them; the hands are clocks.ts's.
+ * The chapter's layout, as fractions of the chapter's radius (the disc inside the bezel, `bezel` of the dial's radius). Round 5 (the
+ * tower-round-2b score: the band was only 7% darker than the centre at south-front's 35 px): an inner and an outer black ring 0.03 thick,
+ * radial numerals (their feet to the centre) from 0.75 to 0.92, heavy-stroked, then a hatched black minute track from 0.93 to 0.97.
  */
-export function paintDial(g: DialPainter, size: number): void {
-  const c = size / 2, R0 = c - 2, ink = '#141210';
-  // the held round 2a (the dial read weak at distance): a broad cream-gilt bezel 8% of the radius, then a chapter band 0.72R to 0.95R
-  // between two heavy black rings, bold black Romans 0.2R tall in it, so the band reads as a dark ring at south-front distance
-  g.fillStyle = DIAL_BEZEL; g.beginPath(); g.arc(c, c, R0, 0, Math.PI * 2); g.fill(); // the bezel
-  g.fillStyle = '#efe8d4'; g.beginPath(); g.arc(c, c, R0 * 0.92, 0, Math.PI * 2); g.fill(); // the face
+export const DIAL_LAYOUT = {
+  bezel: 0.88, inner: [0.71, 0.74], numerals: [0.75, 0.92], track: [0.93, 0.97], outer: [0.97, 1.0], stroke: 0.014,
+} as const;
+/**
+ * The tower's dial face on a canvas `size` pixels square (R-kx-front-c): a broad cream bezel, an ivory face, a black chapter band of
+ * radial Roman numerals between two heavy rings, a hatched minute track outside them; the hands are clocks.ts's. `bezel` paints the
+ * bezel another colour: black for the night glow's mask, so only the ivory field lights (night.ts, createDialLights).
+ */
+export function paintDial(g: DialPainter, size: number, bezel: string = DIAL_BEZEL): void {
+  const c = size / 2, R0 = c - 2, R = R0 * DIAL_LAYOUT.bezel, ink = '#141210';
+  const ring = ([a, b]: readonly [number, number]): void => { g.lineWidth = (b - a) * R; g.beginPath(); g.arc(c, c, ((a + b) / 2) * R, 0, Math.PI * 2); g.stroke(); };
+  g.fillStyle = bezel; g.beginPath(); g.arc(c, c, R0, 0, Math.PI * 2); g.fill(); // the bezel
+  g.fillStyle = '#efe8d4'; g.beginPath(); g.arc(c, c, R, 0, Math.PI * 2); g.fill(); // the face
   g.strokeStyle = ink;
-  g.lineWidth = size * 0.022;
-  for (const f of [0.95 - 0.011, 0.72 + 0.011]) { g.beginPath(); g.arc(c, c, R0 * f, 0, Math.PI * 2); g.stroke(); } // the chapter band's two rings
+  ring(DIAL_LAYOUT.inner);
+  ring(DIAL_LAYOUT.outer);
+  const [t0, t1] = DIAL_LAYOUT.track;
+  g.lineWidth = R * 0.006; // the minute track's inner line
+  g.beginPath(); g.arc(c, c, t0 * R, 0, Math.PI * 2); g.stroke();
   g.lineCap = 'butt';
   for (let i = 0; i < 60; i++) {
     const a = (i * Math.PI) / 30;
-    g.lineWidth = size * (i % 5 === 0 ? 0.02 : 0.007);
+    g.lineWidth = R * (i % 5 === 0 ? 0.03 : 0.012);
     g.beginPath();
-    g.moveTo(c + Math.sin(a) * R0 * 0.9, c - Math.cos(a) * R0 * 0.9);
-    g.lineTo(c + Math.sin(a) * R0 * 0.95, c - Math.cos(a) * R0 * 0.95);
+    g.moveTo(c + Math.sin(a) * R * t0, c - Math.cos(a) * R * t0);
+    g.lineTo(c + Math.sin(a) * R * t1, c - Math.cos(a) * R * t1);
     g.stroke();
   }
+  // the numerals, radial: each turned to its hour, its foot on the band's inner edge; a Roman's capitals stand about 0.7 of the font's size,
+  // so the font is the band's height over 0.7 (less the stroke), and fillText's maxWidth keeps VIII inside its twelfth of the band
+  const [n0, n1] = DIAL_LAYOUT.numerals, px = ((n1 - n0 - DIAL_LAYOUT.stroke) / 0.7) * R;
   g.fillStyle = ink;
-  g.font = `900 ${Math.round(R0 * 0.2)}px serif`;
+  g.lineWidth = DIAL_LAYOUT.stroke * R;
+  g.lineJoin = 'round';
+  g.font = `900 ${Math.round(px)}px serif`;
   g.textAlign = 'center';
-  g.textBaseline = 'middle';
-  DIAL_NUMERALS.forEach((n, i) => { const a = (i * Math.PI) / 6; g.fillText(n, c + Math.sin(a) * R0 * 0.8, c - Math.cos(a) * R0 * 0.8); });
+  g.textBaseline = 'alphabetic';
+  const wide = ((2 * Math.PI * n0) / 12) * R * 0.85;
+  DIAL_NUMERALS.forEach((n, i) => {
+    g.save();
+    g.translate(c, c);
+    g.rotate((i * Math.PI) / 6);
+    g.fillText(n, 0, -(n0 + DIAL_LAYOUT.stroke / 2) * R, wide);
+    g.strokeText(n, 0, -(n0 + DIAL_LAYOUT.stroke / 2) * R, wide);
+    g.restore();
+  });
 }
 
 function clockMaterial(): THREE.Material {
   if (!isBrowser) return new THREE.MeshLambertMaterial({ color: 0xefe8d4 });
-  const c = document.createElement('canvas');
-  c.width = c.height = 512;
-  paintDial(c.getContext('2d') as CanvasRenderingContext2D, 512);
-  // the hands are clocks.ts's, turned to the scene clock
-  const t = new THREE.CanvasTexture(c);
-  t.colorSpace = THREE.SRGBColorSpace;
-  t.anisotropy = 4;
-  return new THREE.MeshLambertMaterial({ map: t });
+  const texture = (bezel?: string): THREE.CanvasTexture => {
+    const c = document.createElement('canvas');
+    c.width = c.height = 512;
+    paintDial(c.getContext('2d') as CanvasRenderingContext2D, 512, bezel);
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace;
+    t.anisotropy = 4;
+    return t;
+  };
+  // the hands are clocks.ts's, turned to the scene clock; after dark only the ivory field lights, not the bezel (night.ts reads `glowMap`)
+  const m = new THREE.MeshLambertMaterial({ map: texture() });
+  m.userData.glowMap = texture('#000000');
+  return m;
 }
 
 /**
@@ -1040,13 +1072,26 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   const entryFoot = GROUND_Y + SOUTH_FRONT_ARCADES.footAboveGround;
   const entryCentres = southFrontArcadeCentres(FW, TOWER_SIZE).map(x => x + fx0);
   for (const x of entryCentres) outline.holes.push(segmentalArchOpening(x - fx0, entryFoot, entryR, SOUTH_FRONT_ARCADES.jambHeight, SOUTH_FRONT_ARCADES.archRise));
-  const frontParts = [new THREE.ExtrudeGeometry(outline, { depth: FRONT_THICK, bevelEnabled: false, curveSegments: 40 })];
+  const frontParts: THREE.BufferGeometry[] = [new THREE.ExtrudeGeometry(outline, { depth: FRONT_THICK, bevelEnabled: false, curveSegments: 40 })];
   // each great arch's reveal: three brick orders, the outermost standing furthest forward, each inner one a step back toward the glass
   // (FRONT_RELIEF); cut off at the front's end, which the model's lunettes reach at their springing
   centres.forEach((uc, vault) => {
     for (let i = 0; i < FRONT_RELIEF.orders; i++) {
       const r0 = R + i * FRONT_RELIEF.orderWidth;
       frontParts.push(new THREE.ExtrudeGeometry(endCutRing(uc - fx0, sp, r0, r0 + FRONT_RELIEF.orderWidth, vault === 0 ? -1 : 1), { depth: FRONT_THICK + (i + 1) * FRONT_RELIEF.orderStep, bevelEnabled: false, curveSegments: 12 }));
+    }
+    if (FRONT_RELIEF.innerOrder) {
+      // the fourth order, inside the opening and a step back from the third: flush with the wall's face, to the springing. Only its face
+      // and its inner side are built (its outer side is the opening's own, its back is unseen): the shadow pass has 335 triangles to spare
+      const u = uc - fx0, w = FRONT_RELIEF.orderWidth, n = 16, inner = new Batch();
+      for (let k = 0; k < n; k++) {
+        const [a0, a1] = [(k * Math.PI) / n, ((k + 1) * Math.PI) / n];
+        const p = (r: number, a: number, z: number): V3 => [u + r * Math.cos(a), sp + r * Math.sin(a), z];
+        inner.poly([p(R - w, a0, FRONT_THICK), p(R, a0, FRONT_THICK), p(R, a1, FRONT_THICK), p(R - w, a1, FRONT_THICK)], undefined, { facing: [0, 0, 1] });
+        const am = (a0 + a1) / 2;
+        inner.poly([p(R - w, a0, 0), p(R - w, a0, FRONT_THICK), p(R - w, a1, FRONT_THICK), p(R - w, a1, 0)], undefined, { facing: [-Math.cos(am), -Math.sin(am), 0] });
+      }
+      frontParts.push(plainGeometry(inner.build().toNonIndexed()));
     }
   });
   const frontGeo = mergeGeometries(frontParts, false);
@@ -1068,6 +1113,8 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   proud(spine, sp - 0.1, FW + 0.8, 0.2, 0.8); // its weathered cap, overhanging: the shadow line under it is what makes the band read (the round-2a hold)
   proud(spine, GROUND_Y + FRONT_RELIEF.impostAboveGround, FW + 0.4, FRONT_RELIEF.impostHeight, FRONT_RELIEF.impostOut); // string course over the arcade's crowns
   proud(spine, frontTop - 0.45, FW + 1.0, 0.9, 0.7); // cornice
+  const { height: bh, out: bo } = FRONT_RELIEF.bedMould;
+  proud(spine, frontTop - 0.9 - bh / 2, FW + 0.8, bh, bo); // its bed mould: a step under the overhang, so its soffit reads
   proud(spine, frontTop + 0.15, FW + 0.6, 0.3, 0.4); // its coping
   for (const x of [fx0 + 0.5, fx1 - 0.5]) proud(x, (frontTop + GROUND_Y) / 2, 1.0, frontTop - GROUND_Y - 1.0, 0.25); // end piers
   // the east aisle's south end: a plain brick wall up to the aisle roof at the springing (ASSUMED height and finish; no source shows it),

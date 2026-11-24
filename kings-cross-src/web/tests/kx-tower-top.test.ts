@@ -139,21 +139,37 @@ test('the dials are about 0.67 of the stage\'s face (R-kx-front-a, -c), on the b
   for (const d of tower.userData.clockDials as { radius: number }[]) assert.ok(Math.abs(d.radius - r) < 1e-6, 'clocks.ts draws to the dial\'s radius');
 });
 
-test('the dial is painted with a broad gilt bezel, a black chapter band and bold Roman numerals (R-kx-front-c)', async () => {
-  const { paintDial, DIAL_BEZEL } = await import('../src/shed.ts');
-  const texts: string[] = [], fills: unknown[] = [];
-  let strokes = 0;
+test('the dial is painted with a broad cream bezel, a dark chapter band of radial Roman numerals between heavy rings, and a hatched minute track (R-kx-front-a, -c)', async () => {
+  const { paintDial, DIAL_BEZEL, DIAL_LAYOUT } = await import('../src/shed.ts');
+  // round 5 (the tower-round-2b score: the band was only 7% darker than the centre at south-front, the numerals upright and clipped by the rings)
+  const size = 512, c = size / 2, R = (c - 2) * DIAL_LAYOUT.bezel;
+  const texts: { t: string; y: number; turn: number; w: number }[] = [], fills: unknown[] = [], rings: { r: number; w: number }[] = [];
+  let ticks = 0, turn = 0, arcAt = 0;
   const g = {
-    fillStyle: '' as unknown, strokeStyle: '' as unknown, lineWidth: 1, lineCap: '' as unknown, font: '', textAlign: '' as unknown, textBaseline: '' as unknown,
-    beginPath() {}, arc() {}, moveTo() {}, lineTo() {},
-    fill() { fills.push(this.fillStyle); }, stroke() { strokes++; }, fillText(t: string) { texts.push(t); },
+    fillStyle: '' as unknown, strokeStyle: '' as unknown, lineWidth: 1, lineCap: '' as unknown, lineJoin: '' as unknown, font: '', textAlign: '' as unknown, textBaseline: '' as unknown,
+    beginPath() { arcAt = 0; }, arc(_x: number, _y: number, r: number) { arcAt = r; }, moveTo() {}, lineTo() {}, save() {}, restore() { turn = 0; }, translate() {},
+    rotate(a: number) { turn += a; },
+    fill() { fills.push(this.fillStyle); }, stroke() { if (arcAt) rings.push({ r: arcAt, w: this.lineWidth }); else ticks++; },
+    fillText(t: string, _x: number, y: number, w: number) { texts.push({ t, y, turn, w }); }, strokeText() {},
   };
-  paintDial(g as never, 512);
+  paintDial(g as never, size);
+  assert.ok(fills[0] === DIAL_BEZEL && DIAL_LAYOUT.bezel <= 0.9, `a broad cream bezel, ${((1 - DIAL_LAYOUT.bezel) * 100).toFixed(0)}% of the radius`);
+  const heavy = rings.filter(r => r.w >= 0.03 * R - 1e-9);
+  assert.ok(heavy.length >= 2 && heavy.some(r => r.r < 0.76 * R) && heavy.some(r => r.r > 0.95 * R), `two black rings 0.03R thick, inside and outside the band: ${rings.map(r => `${(r.r / R).toFixed(2)}x${(r.w / R).toFixed(3)}`).join(' ')}`);
+  assert.ok(ticks >= 60, `a hatched minute track: ${ticks} ticks`);
+  assert.ok(texts.length === 12 && ['XII', 'III', 'VI', 'IX'].every(n => texts.some(x => x.t === n)), 'twelve Roman numerals');
+  assert.ok(texts.every((x, i) => Math.abs(x.turn - (i * Math.PI) / 6) < 1e-9), 'each turned to its hour, radial');
   const px = Number(/(\d+)px/.exec(g.font)?.[1] ?? 0);
-  assert.ok(px >= 0.18 * 254, `numerals ${px} px tall on a 254 px radius: about 0.2R, to read as a dark band`);
-  assert.ok(['XII', 'III', 'VI', 'IX', 'IIII', 'IV'].filter(n => texts.includes(n)).length >= 4 && texts.length === 12, `numerals painted: ${texts.join(' ')}`);
-  assert.ok(fills[0] === DIAL_BEZEL && /^#d|^#c/.test(DIAL_BEZEL), 'a gilt bezel');
-  assert.ok(strokes >= 60, `a chapter ring of minute ticks: ${strokes} strokes`);
+  const [inner, outer] = [heavy.find(r => r.r < 0.76 * R)!, heavy.find(r => r.r > 0.95 * R)!];
+  for (const x of texts) {
+    const foot = -x.y, top = foot + 0.7 * px + DIAL_LAYOUT.stroke * R / 2;
+    assert.ok(foot - DIAL_LAYOUT.stroke * R / 2 >= inner.r + inner.w / 2 - 0.5 && top <= DIAL_LAYOUT.track[0] * R, `${x.t} stands clear of the rings, ${(foot / R).toFixed(2)} to ${(top / R).toFixed(2)}`);
+    assert.ok(x.w <= ((2 * Math.PI * foot) / 12) * 0.9, `${x.t} fits its twelfth of the band`);
+  }
+  assert.ok(px >= 0.2 * R && DIAL_LAYOUT.stroke * R >= 0.012 * R, `numerals ${px} px on a ${R.toFixed(0)} px chapter, heavy-stroked`);
+  const mask: unknown[] = [];
+  paintDial({ ...g, fill(this: { fillStyle: unknown }) { mask.push(this.fillStyle); } } as never, size, '#000000');
+  assert.ok(mask[0] === '#000000', 'the night mask paints the bezel black');
 });
 
 test('the shaft has its tall round-headed slits on the south face and both side faces (R-kx-front-a, -b)', () => {

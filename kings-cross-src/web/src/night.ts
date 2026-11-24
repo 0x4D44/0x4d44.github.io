@@ -275,7 +275,9 @@ export function createDialLights(): DialLights {
         }
       });
       for (const face of faces) {
-        const glow = new THREE.Mesh(face.geometry, glowMaterial((face.material as THREE.MeshLambertMaterial).map));
+        // a face may give its glow a mask (shed.ts clockMaterial: the field lit, the bezel dark), else its own texture
+        const material = face.material as THREE.MeshLambertMaterial;
+        const glow = new THREE.Mesh(face.geometry, glowMaterial((material.userData.glowMap as THREE.Texture | undefined) ?? material.map));
         glow.name = 'clock-dial-glow';
         glow.position.copy(face.position);
         glow.quaternion.copy(face.quaternion);
