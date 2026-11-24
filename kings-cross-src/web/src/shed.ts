@@ -109,7 +109,11 @@ export const PORCH_INFILL = { bays: 5, mullion: 0.12, frameDepth: 0.12, rail: 1.
  */
 /** Round 20: the parapet cornice's face, metres proud of the front (0.7 until round 20; FRONT_RELIEF.corona.out over it). */
 export const FRONT_CORNICE = { out: 0.9, height: 0.9 } as const;
-export const PORCH_DEPTH = { glass: 0.45, frame: 0.3, interior: 0x7a6a55, barriers: 6, barrier: [0.22, 1.0] as const } as const;
+/** Round 21 (A1, R-kx-front-a): the end piers run up `rise` m past the parapet's coping under a `cap` m stone cap; the parapet steps up `step` m for `stepRun` m either side of the tower (ASSUMED). */
+export const FRONT_PIERS = { rise: 1.2, cap: 0.3, step: 0.6, stepRun: 3.0 } as const;
+/** Round 21 (A2): each great arch's spandrel a recessed panel, framed by brick `out` m proud: a `band` m band under the cornice, `strip` m strips at its sides (ASSUMED). */
+export const FRONT_TYMPANUM = { out: 0.15, band: 0.45, strip: 0.5 } as const;
+export const PORCH_DEPTH = { glass: 0.45, frame: 0.3, interior: 0x7a6a55, barriers: 6, barrier: [0.22, 1.0] as const, figures: 2, figure: [0.45, 1.7] as const } as const; // round 21: figures (ASSUMED)
 /**
  * The low canopy along the front (R-kx-front-a, 2026, and R-kx-front-b, 2016): a flat dark steel roof on slender columns at the bay lines,
  * passing in front of the tower's foot. Its top at 3.85 m (MEASURED from R-a by the same scale as FRONT_RELIEF); its fascia, depth and
@@ -1351,7 +1355,33 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
     for (const [x0, x1] of [[fx0 - 0.05, fx0 + span], [fx1 - span, fx1 + 0.05]]) stone.box([(x0 + x1) / 2, sp + ih / 2, (io - FRONT_THICK) / 2], [x1 - x0, ih, FRONT_THICK + io], { skip: ['-z'] });
   }
   proud(spine, frontTop + 0.15, FW + 0.6, 0.3, 0.4); // its coping
-  for (const x of [fx0 + 0.5, fx1 - 0.5]) proud(x, (frontTop + GROUND_Y) / 2, 1.0, frontTop - GROUND_Y - 1.0, 0.25); // end piers
+  // end piers: round 21 (front-infill-round-1 score, A1; R-kx-front-a: the end piers rise as taller blocks over the cornice) the same box run up past the
+  // coping by FRONT_PIERS.rise, its own stone cap on it; and the parapet steps up FRONT_PIERS.step either side of the tower for FRONT_PIERS.stepRun (both ASSUMED,
+  // read from R-a against the tower's 6.4 m width: the piers about 1.2 m over the parapet, the step about 0.6 m)
+  const { rise, cap, step, stepRun } = FRONT_PIERS, coped = frontTop + 0.3;
+  for (const x of [fx0 + 0.5, fx1 - 0.5]) {
+    proud(x, (GROUND_Y + 0.5 + coped + rise) / 2, 1.0, coped + rise - GROUND_Y - 0.5, 0.25);
+    stone.box([x, coped + rise + cap / 2, 0.125 - FRONT_THICK / 2], [1.3, cap, FRONT_THICK + 0.55], { skip: ['-y', '-z'] }); // its cap
+  }
+  for (const sd of [-1, 1]) {
+    const x0 = spine + sd * (TOWER_SIZE / 2), x1 = x0 + sd * stepRun, xc = (x0 + x1) / 2;
+    brick.box([xc, coped + step / 2, -FRONT_THICK / 2], [stepRun, step, FRONT_THICK], { skip: ['-y', '-z'] }); // the parapet's step at the tower
+    stone.box([xc, coped + step + 0.1, 0.1 - FRONT_THICK / 2], [stepRun, 0.2, FRONT_THICK + 0.2], { skip: ['-y', '-z'] }); // its coping
+  }
+  // the great arches' spandrels: round 21 (A2: one flat plane of brick) a recessed panel, read by a brick frame FRONT_TYMPANUM.out proud round it: a band
+  // under the cornice's shadow line, and strips down the end pier's and the tower's sides to the outer order; the arch's orders close it below
+  {
+    const { out, band, strip } = FRONT_TYMPANUM, rO = R + FRONT_RELIEF.orders * FRONT_RELIEF.orderWidth;
+    const yTop = frontTop - 0.9 - FRONT_RELIEF.bedMould.height - FRONT_RELIEF.shadowLine - 0.1, yBand = yTop - band;
+    centres.forEach((uc, vault) => {
+      const xa = vault === 0 ? fx0 + 1.0 : spine + TOWER_SIZE / 2, xb = vault === 0 ? spine - TOWER_SIZE / 2 : fx1 - 1.0;
+      brick.box([(xa + xb) / 2, yTop - band / 2, out / 2], [xb - xa, band, out], { skip: ['-z'] });
+      for (const x of [xa + strip / 2, xb - strip / 2]) {
+        const yArc = sp + Math.sqrt(Math.max(0, rO * rO - (x - uc) ** 2));
+        if (yArc < yBand - 0.3) brick.box([x, (yArc + yBand) / 2, out / 2], [strip, yBand - yArc, out], { skip: ['-z', '-y'] });
+      }
+    });
+  }
   // the east aisle's south end: a plain brick wall up to the aisle roof at the springing (ASSUMED height and finish; no source shows it),
   // set flush with the front's back face and coped in stone
   if (W - fx1 > 1e-6) {
@@ -1435,6 +1465,17 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
       const bx = x - entryR + ((k + 0.5) * 2 * entryR) / PORCH_DEPTH.barriers;
       frames.poly([[bx - bw / 2, entryFoot + 0.3, bz], [bx + bw / 2, entryFoot + 0.3, bz], [bx + bw / 2, entryFoot + 0.3 + bh, bz], [bx - bw / 2, entryFoot + 0.3 + bh, bz]], undefined, { facing: [0, 0, 1] }); // a barrier's cabinet
       frames.poly([[bx + bw / 2, entryFoot + 0.3 + bh * 0.7, bz], [bx + bw / 2 + 0.3, entryFoot + 0.3 + bh * 0.7, bz], [bx + bw / 2 + 0.3, entryFoot + 0.3 + bh * 0.82, bz], [bx + bw / 2, entryFoot + 0.3 + bh * 0.82, bz]], undefined, { facing: [0, 0, 1] }); // its paddle
+    }
+    // round 21 (A3 polish): deeper in, PORCH_DEPTH.figures people (dark, on the plane behind the barriers' line); and the reveal's returns from the face back to the glass darkened (the frames' charcoal), so
+    // the set-back reads as a dark edge either side
+    const fz = gz + 0.0015, [fw0, fh] = PORCH_DEPTH.figure;
+    for (let k = 0; k < PORCH_DEPTH.figures; k++) {
+      const px = x + (k === 0 ? -0.35 : 0.55) * entryR;
+      frames.poly([[px - fw0 / 2, entryFoot + 0.3, fz], [px + fw0 / 2, entryFoot + 0.3, fz], [px + fw0 * 0.3, entryFoot + 0.3 + fh, fz], [px - fw0 * 0.3, entryFoot + 0.3 + fh, fz]], undefined, { facing: [0, 0, 1] }); // a figure
+    }
+    for (const sd of [-1, 1]) {
+      const rx = x + sd * (entryR - 0.003), yj = entryFoot + SOUTH_FRONT_ARCADES.jambHeight;
+      frames.poly([[rx, entryFoot, 0], [rx, entryFoot, -PORCH_DEPTH.glass], [rx, yj, -PORCH_DEPTH.glass], [rx, yj, 0]], undefined, { facing: [-sd, 0, 0] }); // the reveal's return
     }
     // the signage fascia: navy, across the top of the opening right under the canopy's sheet, near the face (R-kx-front-a)
     const s1 = GROUND_Y + FRONT_CANOPY.top - FRONT_CANOPY.sheet - 0.02, s0 = s1 - PORCH_INFILL.sign;
