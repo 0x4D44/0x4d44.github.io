@@ -28,7 +28,7 @@ import {
   trackSegments,
 } from '../src/furniture.ts';
 import type { Placement, TrackSegment } from '../src/furniture.ts';
-import { eastArcadeU, SPINE_WALL } from '../src/shed.ts';
+import { eastArcadeU, NORTH_PIER, ribLanding, ribPositions, SPINE_WALL } from '../src/shed.ts';
 // Re-pinned 2026-11-24 (shed realignment, signed off): the vault centres are the spine -/+ R (aisle + R and aisle + 3R before, the same points while the aisles were even), the valley is the spine, and there is no west aisle, so a probe of 'the aisle' stands in the east aisle.
 
 const near = (a: number, b: number, tol: number, msg: string): void => assert.ok(Math.abs(a - b) <= tol, `${msg}: ${a} vs ${b} (tolerance ${tol})`);
@@ -684,5 +684,24 @@ test('every screen bracketed off the spine wall or the east arcade touches its f
     assert.ok(gap <= FIGURES.screenBracketGap + 1e-3, `a screen on platform ${s.ref} is ${gap.toFixed(3)} m off the wall face`);
     // it hangs below the wall's top, so the wall is there to carry it
     assert.ok(PLATFORM_HEIGHT + FIGURES.screenBottom + FIGURES.screenHeight < layout.springing, 'the screen is below the top of the wall');
+  }
+});
+
+// 2026-11-24, the spine wall rebuilt from R-kx-shed-interior-c: a stone corbel under every rib on the walls' faces hangs lower than a screen's top,
+// so a screen bracketed off a wall stands clear of them along the wall; and nothing stands in the north pier's footprint (NORTH_PIER) or its inset.
+test('a screen bracketed off the spine wall or the east arcade stands clear of the corbels along the wall, and nothing stands at the north pier', () => {
+  const ribs = ribPositions(layout.length);
+  assert.ok(PLATFORM_HEIGHT + FIGURES.screenBottom + FIGURES.screenHeight > ribLanding(layout.springing) - SPINE_WALL.corbel.height, 'the corbels reach down past the screens\' tops');
+  const walled = plan.screens.filter((s) => s.wall);
+  assert.ok(walled.length >= 3);
+  for (const s of walled) {
+    const { v } = worldToShed(layout, [s.x, s.z]);
+    const d = Math.min(...ribs.map((r) => Math.abs(r - v)));
+    assert.ok(d >= FIGURES.screenWidth / 2 + SPINE_WALL.corbel.wide / 2, `a screen on platform ${s.ref} at v ${v.toFixed(1)} is ${d.toFixed(2)} m from a rib's corbel`);
+  }
+  for (const p of [...plan.lamps, ...plan.benches, ...plan.helpPoints, ...plan.screens]) {
+    const { u, v } = worldToShed(layout, [p.x, p.z]);
+    if (v < layout.length - NORTH_PIER.south - SPINE_WALL.clear - p.across || v > layout.length + NORTH_PIER.north + SPINE_WALL.clear + p.across) continue;
+    assert.ok(Math.abs(u - layout.spine) - p.across >= NORTH_PIER.half + SPINE_WALL.clear, `a piece on platform ${p.ref} at (${u.toFixed(2)}, ${v.toFixed(1)}) stands at the north pier`);
   }
 });

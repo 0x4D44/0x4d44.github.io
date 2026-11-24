@@ -69,30 +69,60 @@ export const ROOF_SKIN = 0.3;
  * (above the trains' roofs, below the aisle roof) are ASSUMED; no drawing of the real opening was found.
  */
 export const EAST_AISLE_OPENING = { fromEast: 3.07, width: 3.5, head: 4.8 } as const;
-/** Half the thickness of the board-lined valley fascia between the vaults, metres: ASSUMED (the first build's slab was 0.5 m thick). */
-export const VALLEY_HALF = 0.25;
 /**
  * The central arcaded brick spine wall under the valley, on the line `layout.spine`, from the back of the south front (v = 0) to the north
- * gables (v = length), from the ground up to the springing, where the valley fascia sits on it. Sources for the wall itself: Historic England
- * list entry 1078328, Interior, a "round-arched brick central colonnade"
+ * gables (v = length), from the ground up to the valley, where the two vaults' roof skins meet (the springing plus (R + ROOF_SKIN) sin(valleyCut),
+ * 8.75 m): brick, two storeys, the ribs landing on stone corbels on its faces. Sources for the wall itself: Historic England list entry 1078328,
+ * Interior, a "round-arched brick central colonnade"
  * (https://historicengland.org.uk/listing/the-list/list-entry/1078328?section=official-list-entry), and Camden's delegated report 2009/5099/L
- * under 2007/2611/L, p3, the "central spine wall" with late-C20 timber boarding above it
- * (https://camdocs.camden.gov.uk/HPRMWebDrawer/Record/3357544/file/document). Neither gives a dimension, so every figure here is ASSUMED
- * (signed off 2026-11-24, wrk_docs/2026.11.23 - KXLIVE - Shed realignment and centre arcade design.md, which overrides the 2026-11-09 ruling
- * that the arcade wait for a dimensioned source):
- *   thick    1.0 m, ASSUMED (the valley fascia above it is 0.5 m);
- *   opening  3.0 m clear, ASSUMED, one round-headed opening in every rib bay (RIB_SPACING, itself ASSUMED), the piers under the ribs;
- *   sill     the opening's foot, the platform top (core/scene.ts PLATFORM_HEIGHT, 0.9 m), ASSUMED to be where the arcade's floor is;
- *   jamb     the springing of each opening's semicircular head, 3.4 m, ASSUMED;
- *   crown    of each head, 4.9 m (jamb + opening / 2), ASSUMED, leaving 0.74 m of brick under the vault springing.
+ * under 2007/2611/L, p3, the "central spine wall" (https://camdocs.camden.gov.uk/HPRMWebDrawer/Record/3357544/file/document). Neither gives a
+ * dimension. The first build (signed off 2026-11-24, wrk_docs/2026.11.23 - KXLIVE - Shed realignment and centre arcade design.md) was all
+ * ASSUMED and read as a squat viaduct under a grey fascia; the proportions below are MEASURED in memory (2026-11-24) from R-kx-shed-interior-c
+ * (shed-c-arcade-2013.jpg, nearly square on to the wall) with the rib bay (RIB_SPACING, 6.1 m) as the scale, checked against R-kx-shed-interior-a
+ * and -d (the stepped stone corbels). Labels: MEASURED (from the photograph, about +-15%), ASSUMED (not visible or not measurable), MODEL (set
+ * by the model's own roof).
+ *   thick    1.0 m, ASSUMED (unchanged; the photographs show the faces, not the thickness);
+ *   lower storey: two round-headed openings in every rib bay, MEASURED: each `opening` 1.5 m clear (0.25 of the bay), their centres `pitch`
+ *            2.66 m apart about the bay's middle, crowns `crown` 4.5 m (1.1 m under the rib landing); `sill` at the platform top
+ *            (core/scene.ts PLATFORM_HEIGHT, 0.9 m) and `jamb` (crown less the half opening) ASSUMED (a train hides their feet);
+ *   band     a stone string course `band` 0.3 m deep, proud by `bandOut` 0.08 m, its top at the ribs' landing: MEASURED position, ASSUMED size;
+ *   corbels  a stepped stone corbel under every rib on each face the vault ribs land on: `corbel.height` 0.95 m and `corbel.wide` 0.6 m MEASURED
+ *            (55 and 35-40 px of a 340 px bay), `corbel.out` 0.93 m from the face, so it reaches under the rib's inner boom (ribMembers: 1.3 m
+ *            inside the springing), MODEL; its top `corbel.drop` 0.13 m under the springing, where the rib's foot boom ends, MODEL;
+ *   upper storey: one great round-headed opening in every rib bay, `upperSpan` 4.5 m clear (MEASURED 0.72-0.76 of the bay), a pier of 1.6 m
+ *            under each rib, its sill on the band. The photograph puts its crown about 3.9 m over the rib landing (about 8.6 m over the
+ *            platform) with some 3 m of brick above it to the gutter; this model's vaults meet at 8.75 m, so the crown is held `upperBelowValley`
+ *            0.45 m under the valley (8.30 m, 7.4 m over the platform), MODEL: the head is lower and squatter than the photograph's (2.8 m tall
+ *            against 3.8 m) until the roof's valley is raised.
  * Where furniture stands beside it, it keeps `clear` (ASSUMED, 0.3 m) beyond the wall's face (web/src/furniture.ts bandAt).
  */
-export const SPINE_WALL = { thick: 1.0, opening: 3.0, sill: 0.9, jamb: 3.4, crown: 4.9, clear: 0.3 } as const;
+export const SPINE_WALL = {
+  thick: 1.0, opening: 1.5, pitch: 2.66, sill: 0.9, jamb: 3.75, crown: 4.5, clear: 0.3,
+  band: 0.3, bandOut: 0.08, corbel: { height: 0.95, wide: 0.6, out: 0.93, drop: 0.13 },
+  upperSpan: 4.5, upperBelowValley: 0.45,
+} as const;
+/**
+ * The massive brick pier at the north end of the spine, under the valley between the two north gables, as R-kx-front-d
+ * (front-d-north-gables-2020.jpg) shows it: a buttressed brick pier standing between the gable arch rings and rising above them. MEASURED there
+ * (in memory, the 32 m gable span as the scale, about 19 px/m): its face 2.3-4.7 m across, its top about 5.9 m over the gables' springing.
+ * Here `half` 1.4 m either side of the spine (2.8 m across: the 4/5 island leaves platform 4's train envelope 2.61 m east of the spine line at
+ * the north end, so this keeps 1.21 m, over the 1.0 m the shed's walls keep), from `south` 2.0 m inside the gable to `north` 1.0 m outside it
+ * (proud of the arch rings), its lower stage to the valley, then an `upperHalf` 1.0 m stage to `top` 11.5 m (springing + 5.9 m), coped in stone.
+ * The depth, the step and the coping are ASSUMED.
+ */
+export const NORTH_PIER = { half: 1.4, upperHalf: 1.0, south: 2.0, north: 1.0, top: 11.5 } as const;
+/** The height at which the two vaults' roof skins meet over the spine: the top of the spine wall, metres. */
+export function valleyTop(springing: number): number {
+  return springing + (R + ROOF_SKIN) * Math.sin(valleyCut(R + ROOF_SKIN));
+}
 /**
  * The east arcade: the wall under the east vault's east springing, between the vault and the east aisle, on the line spine + one span. Since
  * the 2026-11-24 realignment widened the east aisle to 10.25 m, the vault's edge would otherwise stand on nothing. The real east side carries
  * the vault on an arcaded wall (the lead's brief of 2026-11-24; no source for it was read here, and no dimension), so it takes every figure
- * of SPINE_WALL, ASSUMED. It stands on platform 0's west half; furniture keeps the same inset from it.
+ * of SPINE_WALL, ASSUMED. It stands on platform 0's west half; furniture keeps the same inset from it. Since the 2026-11-24 rebuild of the spine
+ * wall it takes that wall's lower storey, and the band and the corbels on the face the vault's ribs land on (R-kx-shed-interior-a and the B3
+ * rubric: the side walls are arcades with the ribs on corbels), but it stops at the springing: there is no vault beyond it to open into, the
+ * east vault's skin crosses its line just above the springing, and the east aisle's roof sits on it there.
  */
 export const eastArcadeU = (layout: Pick<ShedLayout, 'spine'>): number => layout.spine + SHED_SPAN_WIDTH;
 /** v of the centre of each opening of the spine wall: the middle of every rib bay. */
@@ -564,8 +594,8 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   // The roof sheeting rides on top of the ribs, so the whole truss shows beneath it from inside: the
   // cladding, its pale lining and the glass all sit on the outer face of the top boom (rt + half its depth).
   // Where the two vaults meet the skins would overlap (each is R + ROOF_SKIN, the centres are 2R apart), so
-  // each skin stops on the valley line instead, `cut` radians up from its springing, and a deep valley
-  // girder (below) closes the gap from the springing to there. Below the springing the valley stays open.
+  // each skin stops on the valley line instead, `cut` radians up from its springing, and the brick spine wall
+  // (below) stands from the ground up to there.
   const flanks: THREE.BufferGeometry[] = [];
   const glass: THREE.BufferGeometry[] = [];
   const lining: THREE.BufferGeometry[] = [];
@@ -617,43 +647,16 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   ribs.name = 'shed-ribs';
   ribs.instanceMatrix.needsUpdate = true;
   group.add(ribs);
-  // the valley: where the two roofs meet, a board-lined fascia closes the gap from the springing up to the
-  // cut skins, so each vault's soffit reads as running down to the springing (the first build's grey concrete
-  // slab was the large dark plane that filled the left of the view from the platforms). Historic England
-  // list entry 1078328, Interior (official URL above), supports a round-arched brick central colonnade.
-  // Camden's delegated report 2009/5099/L under 2007/2611/L, p3, describes late-C20 timber boarding
-  // above the central spine wall when assessing glass-storage box fixings:
-  // https://camdocs.camden.gov.uk/HPRMWebDrawer/Record/3357544/file/document
-  // It does not establish this fascia's continuous extent, width, framing or closure at the springing:
-  // those are ASSUMED model geometry. Neither checked source establishes the formerly claimed two-storey,
-  // stepped-flat-arch profile or exact masonry bearing level. The former LB09 section 2.2 attribution is
-  // unverified; these Camden records are delegated reports, not that submission. Since the 2026-11-24
-  // realignment the valley stands on the 4/5 island, clear of the tracks, and the arcaded spine wall
-  // (SPINE_WALL, every figure ASSUMED) is drawn under it, below.
+  // the valley: where the two roofs meet, the brick spine wall (SPINE_WALL, buildSpineWall) closes the gap from the springing up to the cut
+  // skins. Until 2026-11-24 a board-lined grey fascia stood there on a wall stopped at the springing; R-kx-shed-interior-c shows brick up to
+  // the gutter, the ribs landing on stone corbels on the wall's faces. Camden's delegated report 2009/5099/L under 2007/2611/L, p3, mentions
+  // late-C20 timber boarding above the central spine wall (https://camdocs.camden.gov.uk/HPRMWebDrawer/Record/3357544/file/document); the
+  // photographs of 2013-2019 do not show it as a continuous fascia.
   // Camden's delegated report 2009/5177/L under 2007/2611/L, p3, records submission of paint-removal
   // trials and Architectural Paint Analysis Volume 1, but does not specify the selected restored palette:
   // https://camdocs.camden.gov.uk/HPRMWebDrawer/Record/3355818/file/document
   // The drawn ironwork and lining paint colours remain ASSUMED (see materials.ts).
-  const valleyTop = sp + (R + ROOF_SKIN) * Math.sin(cut);
-  const valleyX = spine;
-  const valley = new Batch();
-  for (const [side, x] of [[-1, valleyX - VALLEY_HALF], [1, valleyX + VALLEY_HALF]] as [number, number][]) {
-    // boards run along the shed: texture u across them (here the height), v along (metres north)
-    const near: V3[] = [[x, sp, 0], [x, sp, -L], [x, valleyTop, -L], [x, valleyTop, 0]];
-    const pts = side > 0 ? near : [near[1], near[0], near[3], near[2]] as V3[];
-    valley.poly(pts, pts.map((p): [number, number] => [p[1], -p[2]]));
-  }
-  const soffit: V3[] = [[valleyX - VALLEY_HALF, sp, -L], [valleyX + VALLEY_HALF, sp, -L], [valleyX + VALLEY_HALF, sp, 0], [valleyX - VALLEY_HALF, sp, 0]];
-  valley.poly(soffit, soffit.map((p): [number, number] => [p[0], -p[2]]));
-  group.add(mesh(valley.build(), material('valleyLining'), 'shed-valley-girder'));
-  // a pilaster at every rib and a rail along the foot, painted like the ribs, so the fascia reads as framed panels in the ribs' rhythm
-  const frame = new Batch();
-  for (const side of [-1, 1]) {
-    const x = valleyX + side * (VALLEY_HALF + 0.05);
-    for (const v of ribPos) frame.box([x, (sp + valleyTop) / 2, -v], [0.1, valleyTop - sp, 0.22], { skip: ['+y', '-y'] });
-    frame.box([x, sp + 0.11, -L / 2], [0.1, 0.22, L], { skip: ['+z', '-z'] });
-  }
-  group.add(mesh(frame.build(), material('ribPaint'), 'shed-valley-frame'));
+  const valleyY = valleyTop(sp);
 
   // ---- brick: flank walls with piers and windows, the aisle roofs, the north aisle ends --------
   const brick = new Batch();
@@ -696,10 +699,12 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
     if (W > o1) brick.box([(o1 + W) / 2, (head + GROUND_Y) / 2, z], [W - o1, head - GROUND_Y, WALL_THICK]); // the jamb against the east wall
   }
   const spineBrick = new Batch();
-  buildSpineWall(spineBrick, spine, L, sp);
+  const spineStone = new Batch();
+  buildSpineWall(spineBrick, spineStone, spine, L, sp, valleyY, [-1, 1]);
+  buildNorthPier(spineBrick, spineStone, spine, L, valleyY);
   // the east vault's east springing, between the vault and the east aisle, stands on an arcade of the spine wall's pattern (EAST_ARCADE)
   const eastArcade = new Batch();
-  buildSpineWall(eastArcade, eastArcadeU(layout), L, sp);
+  buildSpineWall(eastArcade, spineStone, eastArcadeU(layout), L, sp, sp, [-1]);
 
   // ---- the south front: across the two vaults, centred on the spine (the mesh's x runs from its west end, fx0) ------------
   const outline = new THREE.Shape([new THREE.Vector2(0, GROUND_Y), new THREE.Vector2(FW, GROUND_Y), new THREE.Vector2(FW, frontTop), new THREE.Vector2(0, frontTop)]);
@@ -784,6 +789,7 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   // its own mesh, the same brick, so that it is not a sun-shadow caster (lighting.ts SHADOW_CASTERS): the pass has no room for it
   group.add(mesh(spineBrick.build(), material('brickFoot'), 'shed-spine'));
   group.add(mesh(eastArcade.build(), material('brickFoot'), 'shed-east-arcade')); // not a sun-shadow caster either, for the same reason
+  group.add(mesh(spineStone.build(), material('stoneFoot'), 'shed-spine-stone')); // the two walls' bands and corbels: not a sun-shadow caster either
   group.add(mesh(stone.build(), material('stoneFoot'), 'shed-stone'));
   group.add(mesh(slate.build(), material('slate'), 'shed-aisle-roofs'));
   group.add(mesh(windows.build(), material('sash'), 'shed-windows'));
@@ -794,25 +800,24 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   return group;
 }
 
+type Face = '+x' | '-x' | '+y' | '-y' | '+z' | '-z';
+
 /**
- * The central spine wall (SPINE_WALL, every figure ASSUMED) on the line u = `x`, from v = 0 to `length`, ground to `top` (the springing),
- * into the brick batch: a solid foot to the sill, a pier under every rib, and over each opening its brick above the crown and a semicircular
- * head (both faces, the soffit). The caller gives it its own batch, the mesh `shed-spine`, which casts no sun shadow.
+ * One storey of an arcaded wall on the line u = `x`, from y0 to y1, along v from 0 to `length`: piers between the openings, and over each
+ * opening (centre `vc`, half width `r`, its semicircular head springing at `jamb`) the brick above its crown and the head (both faces, the
+ * soffit). The piers' and the spandrels' tops and feet are left out (the storey above or below, or the caller, closes them).
  */
-export function buildSpineWall(brick: Batch, x: number, length: number, top: number): void {
-  const { thick, opening, sill, jamb, crown } = SPINE_WALL;
-  // n chords to a quarter of each head (a 0.007 m sag at most); the faces nothing sees are left out: the top (under the valley fascia), the foot's floor
-  const h = thick / 2, r = opening / 2, n = 8;
-  const box = (v0: number, v1: number, y0: number, y1: number, skip: ('+x' | '-x' | '+y' | '-y' | '+z' | '-z')[]): void => {
-    if (v1 - v0 > 1e-6 && y1 - y0 > 1e-6) brick.box([x, (y0 + y1) / 2, -(v0 + v1) / 2], [thick, y1 - y0, v1 - v0], { skip });
+function arcadeStorey(brick: Batch, x: number, length: number, y0: number, y1: number, opens: { vc: number; r: number; jamb: number }[]): void {
+  const { thick } = SPINE_WALL;
+  const h = thick / 2, n = 8; // n chords to a quarter of each head
+  const box = (v0: number, v1: number, b0: number, b1: number, skip: Face[]): void => {
+    if (v1 - v0 > 1e-6 && b1 - b0 > 1e-6) brick.box([x, (b0 + b1) / 2, -(v0 + v1) / 2], [thick, b1 - b0, v1 - v0], { skip });
   };
-  // the foot, inside the island platform: its top 0.02 m under the platform's, so the platform top shows in the openings without fighting it
-  box(0, length, GROUND_Y, sill - 0.02, ['-y']);
-  const opens = spineOpenings(length);
   let start = 0;
-  for (const vc of opens) {
-    box(start, vc - r, sill - 0.02, top, ['+y', '-y']); // the pier
-    box(vc - r, vc + r, crown, top, ['+y', '-y', '+z', '-z']); // the brick over the head
+  for (const { vc, r, jamb } of opens) {
+    const crown = jamb + r;
+    box(start, vc - r, y0, y1, ['+y', '-y']); // the pier
+    box(vc - r, vc + r, crown, y1, ['+y', '-y', '+z', '-z']); // the brick over the head
     // the head: a semicircle about (vc, jamb); on each face two spandrels, fans from the corner at the crown's height
     const arc = (k: number): [number, number] => [vc - r * Math.cos((Math.PI * k) / (2 * n)), jamb + r * Math.sin((Math.PI * k) / (2 * n))];
     for (const side of [-1, 1]) {
@@ -835,7 +840,65 @@ export function buildSpineWall(brick: Batch, x: number, length: number, top: num
     // the jambs' faces are the piers' ends; between the jamb top and the head the reveal is the head's soffit
     start = vc + r;
   }
-  box(start, length, sill - 0.02, top, ['+y', '-y']); // the last pier, to the north gable
+  box(start, length, y0, y1, ['+y', '-y']); // the last pier
+}
+
+/** The lower storey's openings of the spine wall (SPINE_WALL): two in every rib bay, `pitch` apart about its middle. */
+export function spineLowerOpenings(length: number): { vc: number; r: number; jamb: number }[] {
+  const { opening, pitch, jamb } = SPINE_WALL;
+  return spineOpenings(length).flatMap(v => [v - pitch / 2, v + pitch / 2].map(vc => ({ vc, r: opening / 2, jamb })));
+}
+/** The upper storey's great openings of the spine wall under a valley at `top`: one in every rib bay, its crown `upperBelowValley` under the valley. */
+export function spineUpperOpenings(length: number, top: number): { vc: number; r: number; jamb: number }[] {
+  const r = SPINE_WALL.upperSpan / 2;
+  return spineOpenings(length).map(vc => ({ vc, r, jamb: top - SPINE_WALL.upperBelowValley - r }));
+}
+/** The height of the band's top and of the corbels' tops: where the ribs' feet land, a little under the springing. */
+export const ribLanding = (springing: number): number => springing - SPINE_WALL.corbel.drop;
+
+/**
+ * An arcaded brick wall (SPINE_WALL) on the line u = `x`, from v = 0 to `length`, ground to `top`, into the brick batch; its stone (the band and
+ * a corbel under every rib) into `stone`, on the faces `faces` (-1 west, +1 east) that vault ribs land on. Under the ribs' landing a lower
+ * storey with two openings a bay; when `top` stands well over the springing (the spine, up to the valley), an upper storey of one great
+ * opening a bay from the band to the top, and the wall's top closed. The caller gives the brick its own batch (`shed-spine`,
+ * `shed-east-arcade`), and the stone `shed-spine-stone`: none of them casts a sun shadow.
+ */
+export function buildSpineWall(brick: Batch, stone: Batch, x: number, length: number, springing: number, top: number, faces: readonly (-1 | 1)[]): void {
+  const { thick, sill, band, bandOut, corbel } = SPINE_WALL;
+  const h = thick / 2;
+  const landing = ribLanding(springing);
+  const upper = top > springing + 1;
+  const mid = upper ? landing : top;
+  // the foot, inside the island platform: its top 0.02 m under the platform's, so the platform top shows in the openings without fighting it
+  brick.box([x, (GROUND_Y + sill - 0.02) / 2, -length / 2], [thick, sill - 0.02 - GROUND_Y, length], { skip: ['-y'] });
+  arcadeStorey(brick, x, length, sill - 0.02, mid, spineLowerOpenings(length));
+  if (upper) {
+    const opens = spineUpperOpenings(length, top);
+    arcadeStorey(brick, x, length, landing, top, opens);
+    // the sill of each great opening, and the wall's top under the valley (seen from above when the roof is x-rayed)
+    for (const { vc, r } of opens) brick.poly([[x - h, landing, -(vc - r)], [x + h, landing, -(vc - r)], [x + h, landing, -(vc + r)], [x - h, landing, -(vc + r)]], [[0, vc - r], [thick, vc - r], [thick, vc + r], [0, vc + r]], { facing: [0, 1, 0] });
+    brick.poly([[x - h, top, 0], [x + h, top, 0], [x + h, top, -length], [x - h, top, -length]], [[0, 0], [thick, 0], [thick, length], [0, length]], { facing: [0, 1, 0] });
+  }
+  for (const side of faces) {
+    const f = x + side * h;
+    const back: Face = side > 0 ? '-x' : '+x';
+    stone.box([f + side * bandOut / 2, landing - band / 2, -length / 2], [bandOut, band, length], { skip: [back] });
+    // the corbel: two stepped blocks, the upper one reaching under the rib's inner boom
+    const up = corbel.height * 0.45;
+    for (const v of ribPositions(length)) {
+      stone.box([f + side * corbel.out / 2, landing - up / 2, -v], [corbel.out, up, corbel.wide], { skip: [back] });
+      stone.box([f + side * corbel.out * 0.3, landing - up - (corbel.height - up) / 2, -v], [corbel.out * 0.6, corbel.height - up, corbel.wide * 0.8], { skip: [back] });
+    }
+  }
+}
+
+/** The north pier (NORTH_PIER) at the spine's north end, `valley` the height of the valley: brick into `brick`, its coping into `stone`. */
+export function buildNorthPier(brick: Batch, stone: Batch, x: number, length: number, valley: number): void {
+  const { half, upperHalf, south, north, top } = NORTH_PIER;
+  const v0 = length - south, v1 = length + north;
+  brick.box([x, (GROUND_Y + valley) / 2, -(v0 + v1) / 2], [2 * half, valley - GROUND_Y, v1 - v0], { skip: ['-y'] });
+  brick.box([x, (valley + top) / 2, -(v0 + v1) / 2], [2 * upperHalf, top - valley, v1 - v0], { skip: ['-y'] });
+  stone.box([x, top + 0.15, -(v0 + v1) / 2], [2 * upperHalf + 0.3, 0.3, v1 - v0 + 0.3]);
 }
 
 /**

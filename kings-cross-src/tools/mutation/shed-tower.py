@@ -30,8 +30,14 @@ M = [
  ('vane mast floats above cap', 'vane.box([0, (capTop - 0.15 + CLOCK_TOWER_HEIGHT) / 2, 0], [0.045, CLOCK_TOWER_HEIGHT - capTop + 0.15, 0.045]);', 'vane.box([0, (capTop + 0.2 + CLOCK_TOWER_HEIGHT) / 2, 0], [0.045, CLOCK_TOWER_HEIGHT - capTop - 0.2, 0.045]);'),
  ('overall tower height grows', 'CLOCK_TOWER_HEIGHT - capTop + 0.15, 0.045]', 'CLOCK_TOWER_HEIGHT - capTop + 0.55, 0.045]'),
  ('the east aisle roof open underneath', 'for (const [a, b] of aisles) slate.box([(a + b) / 2, wallH - 0.15, -L / 2], [b - a, 0.3, L]);', "for (const [a, b] of aisles) slate.box([(a + b) / 2, wallH - 0.15, -L / 2], [b - a, 0.3, L], { skip: ['-y'] });"),
- ('the east arcade stops short of the springing', 'buildSpineWall(eastArcade, eastArcadeU(layout), L, sp);', 'buildSpineWall(eastArcade, eastArcadeU(layout), L, sp - 0.5);'),
- ('the spine wall back in shed-brick, a sun-shadow caster', 'buildSpineWall(spineBrick, spine, L, sp);', 'buildSpineWall(brick, spine, L, sp);'),
+ ('the east arcade stops short of the springing', 'buildSpineWall(eastArcade, spineStone, eastArcadeU(layout), L, sp, sp, [-1]);', 'buildSpineWall(eastArcade, spineStone, eastArcadeU(layout), L, sp - 0.5, sp - 0.5, [-1]);'),
+ ('the spine wall back in shed-brick, a sun-shadow caster', 'buildSpineWall(spineBrick, spineStone, spine, L, sp, valleyY, [-1, 1]);', 'buildSpineWall(brick, spineStone, spine, L, sp, valleyY, [-1, 1]);'),
+ ('the spine wall stopped at the springing again, no upper storey', 'const upper = top > springing + 1;', 'const upper = false;'),
+ ('one lower opening a bay, in its middle', '[v - pitch / 2, v + pitch / 2].map(', '[v].map('),
+ ('corbels on the west face only', 'buildSpineWall(spineBrick, spineStone, spine, L, sp, valleyY, [-1, 1]);', 'buildSpineWall(spineBrick, spineStone, spine, L, sp, valleyY, [-1]);'),
+ ('corbels short of the rib\'s inner boom', 'corbel: { height: 0.95, wide: 0.6, out: 0.93, drop: 0.13 }', 'corbel: { height: 0.95, wide: 0.6, out: 0.6, drop: 0.13 }'),
+ ('the north pier left out', 'buildNorthPier(spineBrick, spineStone, spine, L, valleyY);', ''),
+ ('the north pier no wider than the wall', 'NORTH_PIER = { half: 1.4,', 'NORTH_PIER = { half: 0.5,'),
 ]
 def run(name):
  try: r = kxmut.run_process(['node','--test','--test-reporter=tap','--test-timeout=10000','web/tests/shed-tower.test.ts','web/tests/shed.test.ts'],cwd=work,timeout=30)

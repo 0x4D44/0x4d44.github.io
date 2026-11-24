@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
 import { SHED_SPAN_WIDTH, shedLayout, worldToShed } from '../../core/station.ts';
-import { EAST_AISLE_OPENING, eastArcadeU, SPINE_WALL } from '../../web/src/shed.ts';
+import { EAST_AISLE_OPENING, eastArcadeU, NORTH_PIER, SPINE_WALL } from '../../web/src/shed.ts';
 import { roofHeight } from '../../core/train.ts';
 import { stationData } from '../station-scene.mjs';
 import { describeInterference, shedTracks, stationWalls, TRAIN_ENVELOPE, trackWallInterferences } from '../track-walls.mjs';
@@ -104,6 +104,16 @@ test('the spine wall\'s faces stand at least 1 m clear of the nearest train enve
   }
   assert.ok(Number.isFinite(worst[0]) && Number.isFinite(worst[1]), `a track on each side: ${worst}`);
   assert.ok(worst[0] >= 1.0 && worst[1] >= 1.0, `the tightest gaps: ${worst[0].toFixed(2)} m west, ${worst[1].toFixed(2)} m east`);
+});
+
+// 2026-11-24: the massive pier at the spine's north end (NORTH_PIER, R-kx-front-d) is wider than the wall; its faces keep the same 1 m as the wall's.
+test('the north pier\'s faces stand at least 1 m clear of the nearest train envelope on both sides, over its whole depth', () => {
+  let worst = Infinity;
+  for (let v = layout.length - NORTH_PIER.south; v <= layout.length + NORTH_PIER.north + 1e-9; v += 0.25) {
+    const [w, e] = spineGaps(v).map(g => g + SPINE_WALL.thick / 2 - NORTH_PIER.half);
+    worst = Math.min(worst, w, e);
+  }
+  assert.ok(Number.isFinite(worst) && worst >= 1.0, `the tightest gap: ${worst.toFixed(2)} m`);
 });
 
 test('the swept walls include the spine wall: shed-spine runs on the spine line, from the ground into the envelope\'s height, the length of the shed', () => {

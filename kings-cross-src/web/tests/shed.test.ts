@@ -7,7 +7,7 @@ import { CLOCK_TOWER_HEIGHT, SHED_LENGTH, SHED_SPAN_WIDTH, shedLayout, shedToWor
 import { shedRoofY } from '../src/furniture.ts';
 import { SHADOW_CASTERS } from '../src/lighting.ts';
 import { material } from '../src/materials.ts';
-import { buildShed, buildTower, eastArcadeU, buildWesternRange, gableBars, GABLE_GLASS_FROM, glazedHalfAngle, GLAZED_STRIP_WIDTH, GLASS_OPACITY, glazingOpacity, lunetteBars, MEMBER_SIZE, RIB_SPACING, ribMembers, ribPositions, ROOF_SKIN, roofOpacity, SPINE_WALL, spineOpenings, TOWER_SIZE, valleyCut, VALLEY_HALF, vaultBand, vaultPoint, WESTERN_RANGE, WESTERN_RANGE_DEPTH_BEFORE, westernArches, westernBays, westernBlock, westernWindows, XRAY_OPACITY } from '../src/shed.ts';
+import { buildShed, buildTower, eastArcadeU, NORTH_PIER, ribLanding, spineLowerOpenings, spineUpperOpenings, valleyTop, buildWesternRange, gableBars, GABLE_GLASS_FROM, glazedHalfAngle, GLAZED_STRIP_WIDTH, GLASS_OPACITY, glazingOpacity, lunetteBars, MEMBER_SIZE, RIB_SPACING, ribMembers, ribPositions, ROOF_SKIN, roofOpacity, SPINE_WALL, spineOpenings, TOWER_SIZE, valleyCut, vaultBand, vaultPoint, WESTERN_RANGE, WESTERN_RANGE_DEPTH_BEFORE, westernArches, westernBays, westernBlock, westernWindows, XRAY_OPACITY } from '../src/shed.ts';
 
 const data: KxData = JSON.parse(readFileSync(new URL('../src/data/kx-track.json', import.meta.url), 'utf8'));
 const layout = shedLayout(data);
@@ -223,14 +223,18 @@ test('the ironwork is dark grey steel, as in R-lighting-materials-a2 and -b, and
     return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
   };
   const lining = luminance(material('lining'));
-  for (const name of ['shed-ribs', 'shed-front-bars', 'shed-gable-bars', 'shed-valley-frame']) {
+  // re-pinned 2026-11-24 (the spine wall rebuilt from R-kx-shed-interior-c): the valley's grey fascia and its painted frame are gone, replaced by the
+  // spine wall's brick up to the valley (R-c shows brick there); the ribs and bars keep every check, and the brick is checked below
+  for (const name of ['shed-ribs', 'shed-front-bars', 'shed-gable-bars']) {
     const m = byName(group, name).material as THREE.MeshLambertMaterial;
     assert.equal(m, material('ribPaint'), `${name} is painted like the ribs`);
     assert.ok(luminance(m) > 0.02 && luminance(m) <= luminance(material('steel')), `${name}: dark steel, no lighter than the station's steel and not black: luminance ${luminance(m).toFixed(3)}`);
     assert.ok(8 * luminance(m) < lining, `${name} is at least eight times darker than the lining it stands against`);
     assert.ok(m.emissive.r + m.emissive.g + m.emissive.b < 0.2, `${name}'s lift is a floor, not a glow`);
   }
-  for (const [name, key] of [['shed-roof-lining', 'lining'], ['shed-valley-girder', 'valleyLining']] as const) {
+  assert.ok(!group.getObjectByName('shed-valley-girder'), 'no grey fascia in the valley: R-c shows brick');
+  assert.equal(byName(group, 'shed-spine').material, material('brickFoot'), 'the valley is the spine wall\'s brick');
+  for (const [name, key] of [['shed-roof-lining', 'lining']] as const) {
     const m = byName(group, name).material as THREE.MeshLambertMaterial;
     assert.equal(m, material(key), name);
     assert.ok(luminance(m) > 0.6, `${name}: luminance ${luminance(m).toFixed(2)}`);
@@ -241,43 +245,34 @@ test('the ironwork is dark grey steel, as in R-lighting-materials-a2 and -b, and
   assert.equal((byName(group, 'shed-roof-lining').material as THREE.Material).side, THREE.BackSide, 'the lining is seen from inside');
 });
 
-test('buildShed: the valley is a thin board-lined fascia, not a slab: its faces look along the shed or down, and a frame stands at every rib', () => {
+// Re-pinned 2026-11-24 (the spine wall rebuilt from R-kx-shed-interior-c, which shows brick up to the gutter, not a fascia): this test pinned the
+// grey board-lined fascia that closed the valley from the springing to the skins. The same closure is now the wall's brick: it spans the same
+// height (springing to where the skins meet, EPS), on the same line, and nothing of it faces down between the springing and the valley except the
+// heads of its openings; the ribs' rhythm is the wall's piers and corbels (tested below), not a painted frame.
+test('buildShed: the valley is closed by the spine wall\'s brick, from the springing up to where the skins meet, the length of the shed', () => {
   const group = buildShed(layout);
-  const valley = layout.spine; // re-pinned 2026-11-24: the valley is the layout's spine (it was aisle + 2R, which equals it only with even aisles)
-  const fascia = byName(group, 'shed-valley-girder');
-  const b = bbox(fascia);
-  close(b.min.x, valley - VALLEY_HALF, EPS);
-  close(b.max.x, valley + VALLEY_HALF, EPS);
-  assert.ok(2 * VALLEY_HALF <= 0.5, 'no thicker than the slab it replaces');
-  assert.equal((fascia.geometry.index as THREE.BufferAttribute).count / 3, 6, 'two vertical faces and a soffit, two triangles each');
-  const nor = fascia.geometry.getAttribute('normal');
-  let sides = 0;
-  let soffits = 0;
-  for (let i = 0; i < nor.count; i++) {
-    assert.ok(nor.getY(i) < 0.5, 'nothing faces up: the top is the roof skins');
-    if (Math.abs(nor.getX(i)) > 0.99) sides++;
-    else if (nor.getY(i) < -0.99) soffits++;
+  const valley = layout.spine;
+  const wall = byName(group, 'shed-spine');
+  const p = positions(wall.geometry);
+  const top = layout.springing + (R + ROOF_SKIN) * Math.sin(valleyCut(R + ROOF_SKIN));
+  close(valleyTop(layout.springing), top, 1e-12);
+  let yMax = -Infinity, zMin = Infinity, zMax = -Infinity, xMin = Infinity, xMax = -Infinity;
+  for (let i = 0; i < p.count; i++) {
+    if (-p.getZ(i) > layout.length + EPS) continue; // the north pier
+    if (Math.abs(p.getX(i) - valley) > SPINE_WALL.thick / 2 + EPS) continue;
+    yMax = Math.max(yMax, p.getY(i)); zMin = Math.min(zMin, p.getZ(i)); zMax = Math.max(zMax, p.getZ(i));
+    xMin = Math.min(xMin, p.getX(i)); xMax = Math.max(xMax, p.getX(i));
   }
-  assert.equal(sides, 8, 'a quad on each side');
-  assert.equal(soffits, 4, 'and a soffit under it');
-  // the boards run along the shed: on the vertical faces UV u is the height and v the distance north, so
-  // the texture's long axis (the boards) follows the length, not the 3 m of height
-  const uv = fascia.geometry.getAttribute('uv');
-  let umax = 0;
-  let vmax = 0;
-  for (let i = 0; i < uv.count; i++) {
-    if (Math.abs(nor.getX(i)) < 0.99) continue;
-    umax = Math.max(umax, uv.getX(i));
-    vmax = Math.max(vmax, uv.getY(i));
-  }
-  close(vmax, layout.length, 1e-3);
-  close(umax, layout.springing + (R + ROOF_SKIN) * Math.sin(valleyCut(R + ROOF_SKIN)), 1e-3);
-  // a pilaster at every rib on both sides, and a rail along each foot (4 faces of 2 triangles each)
-  const frame = byName(group, 'shed-valley-frame');
-  assert.equal((frame.geometry.index as THREE.BufferAttribute).count / 3, 2 * (ribPositions(layout.length).length * 8 + 8));
-  const fb = bbox(frame);
-  assert.ok(fb.min.x < valley - VALLEY_HALF && fb.max.x > valley + VALLEY_HALF, 'the frame stands proud of the fascia on both sides');
-  assert.ok(fb.min.y >= layout.springing - EPS && fb.max.y <= layout.springing + (R + ROOF_SKIN) * Math.sin(valleyCut(R + ROOF_SKIN)) + EPS, 'and within its height');
+  close(yMax, top, EPS);
+  close((xMin + xMax) / 2, valley, EPS);
+  close(zMin, -layout.length, EPS);
+  close(zMax, 0, EPS);
+  assert.ok(2 * (xMax - valley) >= 0.5, 'no thinner than the fascia it replaces');
+  // the wall's top is closed (seen from above when the roof is x-rayed): one quad the length of the shed at the valley's height, facing up
+  const nor = wall.geometry.getAttribute('normal');
+  let tops = 0;
+  for (let i = 0; i < p.count; i++) if (nor.getY(i) > 0.99 && Math.abs(p.getY(i) - top) < EPS) tops++;
+  assert.ok(tops >= 4, `${tops} vertices of the wall's top`);
 });
 
 test('the Western Range runs between the two OSM footprint corners that bound it', () => {
@@ -342,9 +337,12 @@ test('buildShed: every mesh has finite positions and the roof skin never crosses
     if (Math.abs(Math.hypot(x - east, y - sp) - rs) < EPS) { onEast++; assert.ok(x >= valley - EPS, `east skin reaches ${(valley - x).toFixed(2)} m past the valley line`); }
   }
   assert.ok(onWest > 20 && onEast > 20);
-  // the valley girder closes the gap from the springing to where the skins start
-  const girder = bbox(byName(group, 'shed-valley-girder'));
-  close(girder.min.y, sp, EPS);
+  // the spine wall closes the gap from the springing to where the skins start (re-pinned 2026-11-24: it was the valley girder, the grey fascia
+  // that R-kx-shed-interior-c does not show; the wall reaches from below the springing, so its bottom is checked as under it)
+  const wp = positions(byName(group, 'shed-spine').geometry);
+  const girder = new THREE.Box3();
+  for (let i = 0; i < wp.count; i++) if (-wp.getZ(i) <= layout.length + EPS && Math.abs(wp.getX(i) - valley) <= SPINE_WALL.thick / 2 + EPS) girder.expandByPoint(new THREE.Vector3(wp.getX(i), wp.getY(i), wp.getZ(i)));
+  assert.ok(girder.min.y <= sp + EPS);
   close(girder.max.y, sp + rs * Math.sin(valleyCut(rs)), EPS);
   close((girder.min.x + girder.max.x) / 2, valley, EPS);
   close(girder.min.z, -layout.length, EPS);
@@ -486,7 +484,9 @@ test('the roof the platform furniture hangs from (shedRoofY) is this shed\'s arc
 
 // The shed realignment of 2026-11-24 (wrk_docs/2026.11.23 - KXLIVE - Shed realignment and centre arcade design.md, signed off): the arcaded
 // spine wall stands under the valley, its top at the springing, where both vaults spring; every figure of the wall is ASSUMED (SPINE_WALL).
-test('buildShed: the spine wall meets the springing: its top is the springing, both vaults spring from its line, each still 105 ft across', () => {
+// Re-pinned 2026-11-24 (the spine wall rebuilt from R-kx-shed-interior-c): the wall's top was the springing, under a grey fascia; R-c shows the
+// brick going on up to the gutter, so its top is now where the skins meet (valleyTop), at the same tolerance. The vaults still spring from its line.
+test('buildShed: the spine wall meets the springing: it stands up to the valley, both vaults spring from its line, each still 105 ft across', () => {
   const group = buildShed(layout);
   // the wall is its own mesh, the shed's brick, and casts no sun shadow (lead follow-up 2026-11-24: the shadow pass has no room for it)
   const brick = byName(group, 'shed-spine');
@@ -503,7 +503,7 @@ test('buildShed: the spine wall meets the springing: its top is the springing, b
     xMin = Math.min(xMin, x); xMax = Math.max(xMax, x); zMin = Math.min(zMin, p.getZ(i)); zMax = Math.max(zMax, p.getZ(i));
   }
   assert.ok(n > 1000, `${n} brick vertices on the spine line`);
-  close(top, sp, 1e-6); // the design asks 1e-9; the drawn positions are float32, good to about 5e-7 m at this height
+  close(top, valleyTop(sp), 1e-6); // the design asks 1e-9; the drawn positions are float32, good to about 5e-7 m at this height
   assert.ok(foot < 0, 'from the ground');
   close(xMin, layout.spine - half, 1e-5); // float32 positions: 32.504 is stored as 32.5040016
   close(xMax, layout.spine + half, 1e-5);
@@ -521,10 +521,10 @@ test('buildShed: the spine wall meets the springing: its top is the springing, b
   close(east - R, layout.spine, 1e-5); // the east vault's west springing
   close(2 * R, SHED_SPAN_WIDTH, 1e-12);
   close(west - R, 0, 1e-5); // and the west vault springs from the west wall: no west aisle
-  // the valley fascia stands on the wall, centred on it
-  const fascia = bbox(byName(group, 'shed-valley-girder'));
-  close((fascia.min.x + fascia.max.x) / 2, layout.spine, 1e-6);
-  close(fascia.min.y, sp, 1e-6);
+  // the wall runs on up through the springing to the valley, centred on the spine (re-pinned 2026-11-24: it was the fascia standing on the wall at
+  // the springing, centred on it, at 1e-6)
+  close((xMin + xMax) / 2, layout.spine, 1e-6);
+  assert.ok(foot < sp - 1e-6 && top > sp + 1e-6, 'through the springing');
   // one round-headed opening in every rib bay: the openings sit between the ribs, so a pier stands under each
   const opens = spineOpenings(layout.length), ribV = ribPositions(layout.length);
   assert.equal(opens.length, ribV.length - 1);
@@ -610,4 +610,96 @@ test('buildShed: the east vault\'s east springing stands on the east arcade, a w
       close(hit.distance, 3 - half, 1e-3);
     }
   }
+});
+
+// The spine wall rebuilt 2026-11-24 from the photographs (SPINE_WALL, NORTH_PIER: measured in memory from R-kx-shed-interior-c, -a, -d and
+// R-kx-front-d; the scorers of score-arcade-2 read the first build as a squat viaduct under a grey fascia). Rays across the wall in the shed frame.
+const across = (g: THREE.Object3D, mesh: THREE.Object3D, u: number, v: number, y: number, reach = 3): THREE.Intersection | undefined => {
+  const [x0, z0] = shedToWorld(layout, u - reach, v), [x1, z1] = shedToWorld(layout, u + reach, v);
+  const dir = new THREE.Vector3(x1 - x0, 0, z1 - z0).normalize();
+  g.updateMatrixWorld(true);
+  return new THREE.Raycaster(new THREE.Vector3(x0, y, z0), dir, 0, 2 * reach).intersectObject(mesh, false)[0];
+};
+const down = (g: THREE.Object3D, mesh: THREE.Object3D, u: number, v: number, y: number, reach = 2): THREE.Intersection | undefined => {
+  const [x, z] = shedToWorld(layout, u, v);
+  g.updateMatrixWorld(true);
+  return new THREE.Raycaster(new THREE.Vector3(x, y, z), new THREE.Vector3(0, -1, 0), 0, reach).intersectObject(mesh, true)[0];
+};
+
+test('the spine wall\'s upper storey: a great round-headed opening in every rib bay over the band, crowned as high as the valley allows (R-kx-shed-interior-c)', () => {
+  const g = shedWorld(), wall = byName(g, 'shed-spine'), s = layout.spine, sp = layout.springing;
+  const top = valleyTop(sp), opens = spineUpperOpenings(layout.length, top);
+  assert.equal(opens.length, ribPositions(layout.length).length - 1, 'one a bay');
+  // R-c: the span is 0.72-0.76 of the 6.1 m bay (MEASURED), so the piers under the ribs are narrower than the arches
+  assert.ok(SPINE_WALL.upperSpan / RIB_SPACING >= 0.7 && SPINE_WALL.upperSpan / RIB_SPACING <= 0.78, `span ${SPINE_WALL.upperSpan}`);
+  // R-c puts the crown about 8.6 m over the platform (the scorers read about 8); the model's valley caps it, so it must stand within 1.6 m of that
+  // and at least 0.3 m under the valley, with brick over it
+  for (const { vc, r, jamb } of opens) {
+    const crown = jamb + r;
+    assert.ok(crown - 0.9 >= 7.0 && crown - 0.9 <= 8.9, `crown ${(crown - 0.9).toFixed(2)} m over the platform`);
+    assert.ok(crown <= top - 0.3, 'brick over the head');
+    assert.ok(!across(g, wall, s, vc, crown - 0.1), `open under the crown at v ${vc.toFixed(1)}`);
+    assert.ok(across(g, wall, s, vc, crown + 0.15), `brick over the crown at v ${vc.toFixed(1)}`);
+    const y = ribLanding(sp) + 0.3;
+    for (const side of [-1, 1]) {
+      assert.ok(!across(g, wall, s, vc + side * (r - 0.2), y), `open to its jamb at v ${vc.toFixed(1)}`);
+      assert.ok(across(g, wall, s, vc + side * (r + 0.2), y), `a pier past its jamb at v ${vc.toFixed(1)}`);
+    }
+  }
+});
+
+test('the spine wall\'s lower storey: two round-headed openings in every rib bay at the platform, a pier between them (R-kx-shed-interior-c)', () => {
+  const g = shedWorld(), wall = byName(g, 'shed-spine'), s = layout.spine;
+  const opens = spineLowerOpenings(layout.length);
+  assert.equal(opens.length, 2 * (ribPositions(layout.length).length - 1));
+  assert.ok(SPINE_WALL.opening / RIB_SPACING >= 0.2 && SPINE_WALL.opening / RIB_SPACING <= 0.3, 'each a quarter of the bay, as measured');
+  assert.ok(SPINE_WALL.crown < ribLanding(layout.springing) - SPINE_WALL.band, 'crowned under the band');
+  for (const v of spineOpenings(layout.length)) assert.ok(across(g, wall, s, v, 2.5), `a pier between the pair at v ${v.toFixed(1)}`);
+  for (const { vc } of opens) assert.ok(!across(g, wall, s, vc, 2.5), `open at v ${vc.toFixed(1)}`);
+  for (const v of ribPositions(layout.length)) assert.ok(across(g, wall, s, v, 2.5), `a pier under the rib at v ${v.toFixed(1)}`);
+});
+
+test('every rib lands on a stone corbel on the wall\'s face at the springing, both faces of the spine and the vault face of the east arcade, over a stone band', () => {
+  const g = shedWorld(), stone = byName(g, 'shed-spine-stone'), sp = layout.springing;
+  assert.equal(stone.material, material('stoneFoot'));
+  assert.ok(!SHADOW_CASTERS.has('shed-spine-stone'), 'not a sun-shadow caster');
+  const half = SPINE_WALL.thick / 2;
+  // the rib's foot runs from its outer boom at the springing line to its inner boom 1.3 m inside it (ribMembers): the corbel reaches under it
+  const faces: [number, number][] = [[layout.spine, -1], [layout.spine, 1], [eastArcadeU(layout), -1]];
+  for (const [u, side] of faces) {
+    for (const v of ribPositions(layout.length)) {
+      for (const d of [half + 0.1, 1.3]) {
+        const hit = down(g, stone, u + side * d, v, sp);
+        assert.ok(hit, `no corbel ${d} m out at u ${u.toFixed(1)} side ${side}, v ${v.toFixed(1)}`);
+        close(hit.point.y, ribLanding(sp), 1e-3);
+      }
+    }
+    // the band runs between the corbels, its top at the ribs' landing
+    for (const v of spineOpenings(layout.length).filter((_, i) => i % 5 === 0)) {
+      const hit = down(g, stone, u + side * (half + 0.04), v, sp);
+      assert.ok(hit, `no band at u ${u.toFixed(1)} side ${side}, v ${v.toFixed(1)}`);
+      close(hit.point.y, ribLanding(sp), 1e-3);
+    }
+  }
+  assert.ok(sp - ribLanding(sp) <= 0.15, 'the corbels meet the ribs\' feet');
+});
+
+test('a massive brick pier stands at the spine\'s north end under the gables\' valley, rising over them (R-kx-front-d)', () => {
+  const g = shedWorld(), wall = byName(g, 'shed-spine'), s = layout.spine, L = layout.length;
+  // R-kx-front-d: its face 2.3-4.7 m across (MEASURED); here 2.8 m at the platform
+  assert.ok(2 * NORTH_PIER.half >= 2.3 && 2 * NORTH_PIER.half <= 4.7);
+  for (const v of [L - NORTH_PIER.south + 0.1, L - 0.5, L + NORTH_PIER.north - 0.1]) {
+    for (const y of [1.5, valleyTop(layout.springing) - 0.2]) {
+      const hit = across(g, wall, s, v, y, 4);
+      assert.ok(hit, `the pier at v ${v.toFixed(1)}, y ${y}`);
+      close(hit.distance, 4 - NORTH_PIER.half, 1e-3);
+    }
+  }
+  // it rises over the valley, coped in stone, to about the springing + 5.9 m (MEASURED)
+  const top = down(g, g, s, L - 0.5, 20, 20);
+  assert.ok(top && top.point.y >= layout.springing + 5.5, `the pier tops out at ${top?.point.y.toFixed(2)}`);
+  // and stands proud of the gables' arch rings (0.5 m deep, behind the gable plane)
+  const [x0, z0] = shedToWorld(layout, s + NORTH_PIER.upperHalf - 0.1, L + 6), [x1, z1] = shedToWorld(layout, s + NORTH_PIER.upperHalf - 0.1, L);
+  const hit = new THREE.Raycaster(new THREE.Vector3(x0, 4, z0), new THREE.Vector3(x1 - x0, 0, z1 - z0).normalize(), 0, 6).intersectObject(wall, false)[0];
+  assert.ok(hit && hit.distance < 6 - 0.5 - 1e-3, 'the pier\'s north face stands outside the arch rings');
 });

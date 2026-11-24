@@ -43,7 +43,7 @@ import type { Pt } from '../../core/geo.ts';
 import type { KxData } from '../../core/osm.ts';
 import { PLATFORM_HEIGHT } from '../../core/scene.ts';
 import { isSurfacePlatform, longAxis, platformDrawingOutline, PLATFORM_9_OUTLINE_BASIS, PLATFORM_REFS, pointInPolygon, SHED_PLATFORM_REFS, SHED_SPAN_WIDTH, shedToWorld, stationPlatforms, worldToShed } from '../../core/station.ts';
-import { eastArcadeU, SPINE_WALL } from './shed.ts';
+import { eastArcadeU, ribPositions, SPINE_WALL } from './shed.ts';
 import type { ShedLayout } from '../../core/station.ts';
 import { Batch, material, rgb, rng, TEXTURES } from './materials.ts';
 import type { Rgb, V3 } from './materials.ts';
@@ -931,7 +931,20 @@ export function furniturePlan(data: FurnitureData, layout: FurnitureLayout): Fur
 
     // 5. departure screens, hung from the shed roof along the middle of the platform
     if (SHED_REFS.has(ref)) {
-      for (const t of slots(f, FIGURES.screenSpacing, index * STAGGER.screen, FIGURES.endSouth, FIGURES.endNorth)) {
+      // the corbels under the ribs on the walls' faces (web/src/shed.ts SPINE_WALL.corbel) hang lower than a screen's top, so where screens
+      // are bracketed off a wall the platform's row of screens is shifted along (the smallest shift, in 0.1 m steps) until each clears them
+      const ribs = ribPositions(layout.length), clear = FIGURES.screenWidth / 2 + SPINE_WALL.corbel.wide / 2 + 0.05;
+      const offCorbels = (t: number): boolean => {
+        const at = screenAt(f, t);
+        if (!at?.wall) return true;
+        const v = worldToShed(layout, worldPoint(f, t, at.s)).v;
+        return ribs.every((r) => Math.abs(r - v) >= clear);
+      };
+      let phase = index * STAGGER.screen;
+      for (let k = 0; k < 61; k++) {
+        if (slots(f, FIGURES.screenSpacing, phase + k * 0.1, FIGURES.endSouth, FIGURES.endNorth).every(offCorbels)) { phase += k * 0.1; break; }
+      }
+      for (const t of slots(f, FIGURES.screenSpacing, phase, FIGURES.endSouth, FIGURES.endNorth)) {
         const at = screenAt(f, t);
         if (!at) continue;
         const [x, z] = worldPoint(f, t, at.s);
