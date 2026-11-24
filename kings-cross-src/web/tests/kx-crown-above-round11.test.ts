@@ -34,19 +34,27 @@ test('crownOutside is 0 anywhere under the roof, rises over ROOF_EXTERIOR.fade m
   for (const p of [[W + fade, 10, -100], [W / 2, 10, fade + 1], [W / 2, layout.crown + 1 + fade / 4, -100]] as [number, number, number][]) assert.equal(out(p, layout), 1, `outside at ${p}`);
 });
 
-test('crownAbove: nothing at level 0; at full a bar is lifted about twice and a pane a little, so the bars stay finer and darker than the glass, not a grid', () => {
-  const src = L.CROWN_ABOVE_GLSL as string | undefined;
-  assert.ok(src, 'CROWN_ABOVE_GLSL is exported');
-  const glsl = new Glsl(src), env = { vars: {}, fns: {} }, c = [0.3, 0.45, 0.62];
-  const above = (w: number, pane: number): number[] => glsl.call('crownAbove', [c, w, pane], env) as number[];
-  assert.deepEqual(above(0, 0), c, 'level 0: the colour as it was, on a bar');
-  assert.deepEqual(above(0, 1), c, 'level 0: on a pane');
-  const bar = luma(above(1, 0)) / luma(c), pane = luma(above(1, 1)) / luma(c);
-  assert.ok(bar >= 1.8 && bar <= 2.2, `a bar lifted ${bar.toFixed(2)} times`);
-  assert.ok(pane >= 1.05 && pane <= 1.25, `a pane lifted ${pane.toFixed(2)} times`);
-  assert.ok(bar > pane, 'the bars lifted more than the panes: their contrast falls');
-  const far = luma(above(1, 0.72)) / luma(c);
-  assert.ok(far > pane && far < bar, `far off, where the mask is the pane's share of the tile, between: ${far.toFixed(2)}`);
+test('crownAbove: nothing at level 0; at full the pane is lifted about 1.3 times and a bar to within about 10% of it, read off the texel; nothing pushed past the cap', () => {
+  const src = L.CROWN_ABOVE_GLSL as string | undefined, A = L.CROWN_ABOVE as { pane: number; share: number; paneLuma: number; barLuma: number; max: number } | undefined;
+  assert.ok(src && A, 'CROWN_ABOVE and its GLSL are exported');
+  // the tile's own colours (materials.ts paintShedGlass), decoded as the GPU decodes the sRGB texture
+  const lin = (v: number): number => { const x = v / 255; return x <= 0.04045 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; };
+  const paneRgb = [178, 208, 230].map(lin), barRgb = [66, 74, 82].map(lin);
+  assert.ok(Math.abs(luma(paneRgb) - A.paneLuma) < 0.002 && Math.abs(luma(barRgb) - A.barLuma) < 0.002, `the pane ${luma(paneRgb).toFixed(4)} and the bar ${luma(barRgb).toFixed(4)} as painted`);
+  const glsl = new Glsl(src), env = { vars: {}, fns: {} };
+  const above = (c: number[], w: number, texel: number[]): number[] => glsl.call('crownAbove', [c, w, luma(texel)], env) as number[];
+  const lit = (rgb: number[], k: number): number[] => rgb.map((x) => x * k); // the texel under a light: what outgoingLight is
+  for (const t of [paneRgb, barRgb]) assert.deepEqual(above(lit(t, 0.6), 0, t), lit(t, 0.6), 'level 0: the colour as it was');
+  const pane = above(lit(paneRgb, 0.6), 1, paneRgb), bar = above(lit(barRgb, 0.6), 1, barRgb);
+  const lift = luma(pane) / luma(lit(paneRgb, 0.6)), was = luma(barRgb) / luma(paneRgb), now = luma(bar) / luma(pane);
+  assert.ok(lift >= 1.25 && lift <= 1.35, `a pane lifted ${lift.toFixed(2)} times`);
+  assert.ok(was < 0.15 && now >= 0.85 && now <= 0.95, `a bar against the pane ${now.toFixed(3)}, from ${was.toFixed(3)}`);
+  const half = paneRgb.map((x, i) => (x + (barRgb[i] as number)) / 2), mid = luma(above(lit(half, 0.6), 1, half)) / luma(pane);
+  assert.ok(mid > now - 0.1 && mid < 1.05, `a texel half bar (a filtered edge) comes out with the rest, not as a bright line: ${mid.toFixed(3)}`);
+  const bright = [0.8, 0.86, 0.95], capped = above(bright, 1, paneRgb);
+  capped.forEach((x, i) => assert.ok(x <= Math.max(bright[i] as number, A.max) + 1e-9 && x >= (bright[i] as number) - 1e-9, `channel ${i}: ${x.toFixed(3)} capped at ${A.max}, never darker`));
+  const sheen = above(lit(paneRgb, 0.6), 1, paneRgb.map((x) => x * 1.15));
+  assert.ok(Math.abs(luma(sheen) / luma(pane) - 1) < 1e-6, 'the lighter sheen band counts as pane');
 });
 
 test('the shed\'s glass carries it, by day only and on a face that looks up; with that one line and its declarations taken out the program is the one it was', () => {
@@ -58,8 +66,9 @@ test('the shed\'s glass carries it, by day only and on a face that looks up; wit
   const line = L.CROWN_ABOVE_LINE as string, src = L.CROWN_ABOVE_GLSL as string;
   const now = compile(glass), f = now.fragmentShader;
   assert.equal(f.split(line).length - 1, 1, 'the line once');
-  assert.ok(line.startsWith('if ( uCrownAbove * uCrownBelow > 0.0 )') && line.includes('clamp( dot( normal, viewMatrix[ 1 ].xyz ), 0.0, 1.0 )'), 'skipped at level 0 or by night; by how far the face looks up');
-  assert.ok(f.indexOf('float crownPaneK =') < f.indexOf(line) && f.indexOf(line) < f.indexOf('#include <opaque_fragment>'), 'after the pane mask, before the output');
+  assert.ok(line.includes('\nif ( uCrownAbove * uCrownBelow > 0.0 )') && line.includes('clamp( dot( normal, viewMatrix[ 1 ].xyz ), 0.0, 1.0 )'), 'skipped at level 0 or by night; by how far the face looks up');
+  assert.ok(line.includes('dot( sampledDiffuseColor.rgb,') && f.indexOf('#include <map_fragment>') < f.indexOf(line) && f.indexOf(line) < f.indexOf('#include <opaque_fragment>'), 'read off the texel after the map is sampled, before the output');
+  assert.ok(line.endsWith('), crownTexel );'), 'the lift is masked by that texel');
   // the program before round 11: the same glass, given only the look from below
   const was = (material('shedGlass') as THREE.MeshLambertMaterial).clone();
   lighting.addCrownBelow(was);
