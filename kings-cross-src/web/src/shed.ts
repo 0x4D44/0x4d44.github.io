@@ -1527,7 +1527,12 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
     }
     const [t0, t1] = PORCH_INFILL.transom;
     const halfAt = (y: number): number => entryR * Math.sqrt(Math.max(0, 1 - ((y - entryFoot - SOUTH_FRONT_ARCADES.jambHeight) / SOUTH_FRONT_ARCADES.archRise) ** 2));
-    frames.box([x, entryFoot + (t0 + t1) / 2, zf], [2 * halfAt(entryFoot + t1) - 0.04, (t1 - t0) / 3, fr], { skip: ['-z'] });
+    // round 25b (porch-close: the box, cut to the arch's width at its top, stopped short of the reveal at its foot once the dark head ring went): the
+    // transom sits in the arch head, so its ends follow the arch line, its front, top and foot drawn, its ends against the reveal left out
+    const yb = entryFoot + (t0 + t1) / 2 - (t1 - t0) / 6, yt = yb + (t1 - t0) / 3, hb = halfAt(yb), ht = halfAt(yt), zb = zf - fr / 2, zt = zf + fr / 2;
+    frames.poly([[x - hb, yb, zt], [x + hb, yb, zt], [x + ht, yt, zt], [x - ht, yt, zt]], undefined, { facing: [0, 0, 1] }); // its front
+    frames.poly([[x - ht, yt, zb], [x + ht, yt, zb], [x + ht, yt, zt], [x - ht, yt, zt]], undefined, { facing: [0, 1, 0] }); // its top
+    frames.poly([[x - hb, yb, zb], [x + hb, yb, zb], [x + hb, yb, zt], [x - hb, yb, zt]], undefined, { facing: [0, -1, 0] }); // its foot
     // round 20: the concourse behind the glass, under the transom: a dim warm plane on the glass, and the ticket barriers' silhouettes on it
     const gz = -PORCH_DEPTH.glass + 0.004, bz = gz + 0.003, [bw, bh] = PORCH_DEPTH.barrier; // the barriers a hair in front of the plane
     interior.poly([[x - entryR + 0.02, entryFoot + 0.3, gz], [x + entryR - 0.02, entryFoot + 0.3, gz], [x + entryR - 0.02, entryFoot + t0, gz], [x - entryR + 0.02, entryFoot + t0, gz]], [[0, 0], [1, 0], [1, 1], [0, 1]], { facing: [0, 0, 1] });

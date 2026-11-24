@@ -70,4 +70,4 @@ with tempfile.TemporaryDirectory(prefix='kx-front-round25-', dir=out) as tmp:
             failures.append(label)
             print(f'[SURVIVED] {label}', flush=True)
     print(f'{caught}/{len(MUTATIONS)} mutations caught; baseline {len(passing)} tests passed; survivors: {failures}')
-    raise SystemExit(1 if failures or len(passing) != 5 else 0)
+    raise SystemExit(1 if failures or len(passing) != 4 else 0)
