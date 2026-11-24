@@ -624,7 +624,7 @@ test('wet ground: the shader of each named surface is patched once with the shar
   const roofOnly = compile(brick);
   assert.notEqual(roofOnly.fragmentShader, pristine.fragmentShader);
   assert.ok(roofOnly.fragmentShader.includes('uniform vec4 uRoofShade;') && !roofOnly.fragmentShader.includes('uWet'), 'the roof shade, and none of the wet ground\'s code');
-  assert.deepEqual(Object.keys(roofOnly.uniforms).sort(), [...Object.keys(coverUniforms), 'uRoofShade', 'uInteriorFill', 'uShedDiffuse', 'uShedFrame', 'uShedSize', ...Object.keys(headlampUniforms)].sort(), 'the cover, the shade, the concourse\'s fill, the milky crown (lighting.ts SHED_GLASS) and the headlamps\' slots, and nothing else');
+  assert.deepEqual(Object.keys(roofOnly.uniforms).sort(), [...Object.keys(coverUniforms), 'uRoofShade', 'uInteriorFill', 'uShedDiffuse', 'uShedFrame', 'uShedSize', ...Object.keys(headlampUniforms)].sort(), 'the cover, the shade, the concourse\'s fill, the sky through the crown (lighting.ts SHED_GLASS) and the headlamps\' slots, and nothing else');
 
   const s = compile(asphalt);
   const f = s.fragmentShader;

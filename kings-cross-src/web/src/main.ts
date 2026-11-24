@@ -376,7 +376,7 @@ function start(): void {
     const remoteLamps = selected === 'edinburgh-waverley' ? stations.edinburgh()?.live?.lampTrains?.()
       : selected === 'perth' ? stations.perth()?.live?.lampTrains?.() : undefined;
     headlamps.update(shown === scene ? trains : remoteLamps ?? [], camera, dt);
-    grade(renderer, sky !== null, sky?.rig.exposure ?? 1, shown === scene ? sky?.rig.hemisphere.intensity : 0, sky?.weather.cloud, sky !== null && sky.rig.sun.intensity >= sky.rig.moon.intensity); // (the concourse's fill and the milky crown are London's; the crown softens the sun's shadow, never the moon's)
+    grade(renderer, sky !== null, sky?.rig.exposure ?? 1, shown === scene ? sky?.rig.hemisphere.intensity : 0, sky?.weather.cloud, sky !== null && sky.rig.sun.intensity >= sky.rig.moon.intensity); // (the concourse's fill and the shed's crown are London's, and the crown's by day only: it lifts the sun's shade, never the moon's)
     renderer.render(shown, camera);
     tooltip?.frame(); // after the render, so every matrix is this frame's
     if (kx.firstFrameMs === 0) kx.firstFrameMs = performance.now();

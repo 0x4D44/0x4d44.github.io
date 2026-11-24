@@ -73,7 +73,7 @@ L = Where(LIGHTING, 'lighting')  # lighting.ts, judged by the page's own tests o
 LOAD = Where(LIGHTING, 'hooks')  # a mutation that stops lighting.ts loading: lighting.test.ts dies on its import, the hooks test loads it inside a try
 HOOK = Where(LIGHTING, 'lighting', 'hooks', 'three')  # a change to what the page does to three's shader text: the squeezed text must still take it
 V = Where(VITE, 'glsl', 'three', 'hooks')
-SG = Where(LIGHTING, 'shed-glass', 'hooks')  # the milky crown, judged by its own tests
+SG = Where(LIGHTING, 'shed-glass', 'hooks')  # the sky through the crown and the crown from below, judged by their own tests
 SGS = Where('web/src/shed.ts', 'shed-glass')  # where the shed tells the shaders it stands
 MATERIALS, CONCOURSE, LANDMARKS = Where('web/src/materials.ts', 'lighting'), Where('web/src/concourse.ts', 'lighting'), Where('web/src/landmarks.ts', 'lighting')
 
@@ -335,17 +335,24 @@ MUTATIONS = [
     ('the cover read is added where the program has no common chunk', HOOK, "fragment.replace('#include <common>', `#include <common>\\n${COVER_GLSL}`)", "fragment.replace('#include <commons>', `#include <commons>\\n${COVER_GLSL}`)"),
     ('the cover read is declared after the shade that uses it', HOOK, "fragment.replace('#include <common>', `#include <common>\\n${COVER_GLSL}`)", "fragment.replace('#include <lights_lambert_pars_fragment>', `#include <lights_lambert_pars_fragment>\\n${COVER_GLSL}`)"),
     ('the roof shade function is left out of the program', HOOK, r'\nuniform vec4 uShedSize;\n${ROOF_SHADE_GLSL}${SHED_GLASS_GLSL}`)', r'\nuniform vec4 uShedSize;\n${SHED_GLASS_GLSL}`)'),
-    # the milky crown (SHED_GLASS: the sun's shadow softened under the shed's glazed vaults by day), judged by its own tests (web/tests/shed-daylight.test.ts)
-    ('the milky crown softens the moon\'s shadow', SG, 'graded && hemisphere > 0 && sunKey ? SHED_GLASS.diffuse : 0;', 'graded && hemisphere > 0 ? SHED_GLASS.diffuse : 0;'),
-    ('the milky crown softens every graded scene\'s shadow', SG, 'graded && hemisphere > 0 && sunKey ? SHED_GLASS.diffuse : 0;', 'graded && sunKey ? SHED_GLASS.diffuse : 0;'),
-    ('the milky crown reaches over the east aisle', SG, 'min( min( q.x - uShedSize.x, uShedSize.y - q.x ), min( -q.z, uShedSize.w + q.z ) )', 'min( q.x - uShedSize.x, min( -q.z, uShedSize.w + q.z ) )'),
-    ('the milky crown reaches past the north end', SG, 'min( -q.z, uShedSize.w + q.z )', '-q.z'),
-    ('the milky crown reaches over the roof', SG, ' * ( 1.0 - smoothstep( uShedSize.z, uShedSize.z + 1.0, q.y ) );', ';'),
+    # the sky through the crown (SHED_GLASS: the shade lifted in the shed's vaults by day) and the crown from below (CROWN_BELOW), judged by their own tests (web/tests/shed-daylight.test.ts)
+    ('the sky fill lifts the moon\'s shadow', SG, 'const day = graded && hemisphere > 0 && sunKey;', 'const day = graded && hemisphere > 0;'),
+    ('the sky fill lifts every graded scene\'s shadow', SG, 'const day = graded && hemisphere > 0 && sunKey;', 'const day = graded && sunKey;'),
+    ('the crown from below is on by night', SG, 'crownBelowUniforms.uCrownBelow.value = day ? 1 : 0;', 'crownBelowUniforms.uCrownBelow.value = 1;'),
+    ('the crown from below is never on', SG, 'crownBelowUniforms.uCrownBelow.value = day ? 1 : 0;', 'crownBelowUniforms.uCrownBelow.value = 0;'),
+    ('the crown from below keeps the sky\'s colour', SG, 'return mix( c, vec3(', 'return mix( c, c + 0.0 * vec3('),
+    ('the crown from below is not brightened', SG, '* ( l * ${CROWN_BELOW.gain.toFixed(2)} ), w );', '* l, w );'),
+    ('the crown glass is not given its look from below', SGS, '  addCrownBelow(glassMat); // grey-white from below by day (lighting.ts CROWN_BELOW)\n', ''),
+    ('the crown from below shares a program key', SG, 'material.customProgramCacheKey = () => `${ownKey}+crownBelow`;', 'material.customProgramCacheKey = () => ownKey;'),
+    ('the sky fill reaches over the east aisle', SG, 'min( min( q.x - uShedSize.x, uShedSize.y - q.x ), min( -q.z, uShedSize.w + q.z ) )', 'min( q.x - uShedSize.x, min( -q.z, uShedSize.w + q.z ) )'),
+    ('the sky fill reaches past the north end', SG, 'min( -q.z, uShedSize.w + q.z )', '-q.z'),
+    ('the sky fill reaches over the springing, to the roof', SG, ' * ( 1.0 - smoothstep( uShedSize.z - 1.5, uShedSize.z - 1.0, q.y ) );', ';'),
+    ('the sky fill reaches the walls\' outer faces', SG, 'return smoothstep( -0.3, 0.0, e ) *', 'return smoothstep( -1.3, -1.0, e ) *'),
     ('the shed\'s frame is the world from the shed, not the shed from the world', SG, 'roofShadeUniforms.uShedFrame.value.copy(group.matrixWorld).invert();', 'roofShadeUniforms.uShedFrame.value.copy(group.matrixWorld);'),
-    ('the softening mixes the wrong way', SG, '`directLight.color *= mix( $1, ${SHED_GLASS.lit.toFixed(2)}, shedSoft );`', '`directLight.color *= mix( ${SHED_GLASS.lit.toFixed(2)}, $1, shedSoft );`'),
+    ('the sky fill dims the sun\'s streaks', SG, "'directLight.color *= mix( $1, 1.0, shedSoft );'", "'directLight.color *= mix( $1, 0.45, shedSoft );'"),
     ('the softening is never on', SG, 'float shedSoft = uShedDiffuse > 0.0 ? uShedDiffuse * shedInside(', 'float shedSoft = uShedDiffuse < 0.0 ? uShedDiffuse * shedInside('),
     ('three\'s own lights chunk is left in', SG, "      .replace('#include <lights_fragment_begin>', shedSoftenedLights())", ''),
-    ('the shed does not say where it stands', SGS, '  setShedGlass(group, spine - 2 * R, spine + 2 * R, crown, L);', ''),
+    ('the shed does not say where it stands', SGS, '  setShedGlass(group, spine - 2 * R, spine + 2 * R, sp, L);', ''),
     ('the roof shade uniform is not declared', HOOK, r'\nuniform vec4 uRoofShade;\nuniform vec3 uInteriorFill;', r'\nuniform vec3 uInteriorFill;'),
     ('the concourse fill uniform is not declared', HOOK, r'uniform vec4 uRoofShade;\nuniform vec3 uInteriorFill;\n', r'uniform vec4 uRoofShade;\n'),
     ('the shade is added where the program has no lights chunk', HOOK, "fragment.replace('#include <lights_lambert_pars_fragment>', `#include <lights_lambert_pars_fragment>", "fragment.replace('#include <lights_lambert_pars_fragments>', `#include <lights_lambert_pars_fragments>"),

@@ -184,10 +184,10 @@ test('Waverley roof fog switches on and off through weather while Waverley and L
     const londonDay = london.map(fingerprint);
     assert.deepEqual(day, [
       '88bfc7b244a2892a7870c19f817280831533a634374bb5e26674a3d6738bf9ef',
-      'a8499feb03f705d771f2f7c8b7f99e7b75f4063f03cfa42c32b5810ae59b1bd4',
-      'b61dd30623d4a1cac9b4adb97f2fb19aed17e5a2522a97c0a07eeee767df2998',
-      '50233f3beea235ea36f5193ebd8e4a8105674052b352cfc5ff9c593d544ae60a',
-      '616781eb2bd82953ff3670f8adbd7cd6597e7cf9f16e19b1b369f16730f14c83',
+      'eac34c51a56ff0d5593c89d549d45f4340e78423fac37764ff60f4dc0194d772',
+      '9b4c2f2c6766f89359c1476d67655616a4fe6cbe9d990fd3474e0f359657ed48',
+      '70cefbe573e46d062acb74d349196aae0fa157f339e7e83c01b2d43dd6930aa6',
+      '4a229774de551f46b6c1c3124a75311229ecf2c57c82f5206fbc8dce15dffd80',
     ]);
     assert.deepEqual(londonDay, [
       '92c1407c78636c8b3a721d9865a1d6c56c4f9eabe55f948799cdded1e5f6bf42',

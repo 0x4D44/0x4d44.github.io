@@ -16,7 +16,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { CLOCK_TOWER_HEIGHT, SHED_SPAN_WIDTH } from '../../core/station.ts';
 import type { ClockDial } from './clocks.ts';
 import type { ShedLayout } from '../../core/station.ts';
-import { setShedGlass } from './lighting.ts';
+import { addCrownBelow, setShedGlass } from './lighting.ts';
 import { Batch, material, paneUv, windowNight, withBuildingNightMaterial } from './materials.ts';
 import type { V2, V3 } from './materials.ts';
 import { GROUND_Y } from './world.ts';
@@ -737,6 +737,7 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   // the glazing follows the cladding: a bright daylit panel from inside or close up, a see-through tint from far off
   const glassMat = (material('shedGlass') as THREE.MeshLambertMaterial).clone();
   glassMat.opacity = glazingOpacity(1);
+  addCrownBelow(glassMat); // grey-white from below by day (lighting.ts CROWN_BELOW)
   cladding.onBeforeRender = (_renderer, _scene, camera) => {
     inverse.copy(group.matrixWorld).invert();
     local.copy(camera.position).applyMatrix4(inverse);
@@ -988,7 +989,7 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   group.rotation.y = -layout.heading;
   group.position.set(layout.origin[0], 0, layout.origin[1]);
   group.updateMatrixWorld();
-  setShedGlass(group, spine - 2 * R, spine + 2 * R, crown, L); // the milky crown softens the sun's shadow under the two vaults (lighting.ts SHED_GLASS)
+  setShedGlass(group, spine - 2 * R, spine + 2 * R, sp, L); // the crown's sky fill lifts the shade in the two vaults, below the springing (lighting.ts SHED_GLASS)
   return group;
 }
 

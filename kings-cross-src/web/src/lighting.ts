@@ -37,7 +37,7 @@ const materialsOf = (o: THREE.Object3D): THREE.Material[] => {
  * shade into every scene that uses them, and the cover map it reads is the shown scene's (station-weather.ts), which a scene with no
  * climate does not have, so there it is switched off. `hemisphere` and `cloud` (the shown sky's hemisphere intensity and cloud) are given
  * for London's scene only, and give the concourse its fill (`INTERIOR`); left out, there is none.
- * `sunKey` (the key light is the sun, not the moon) lets the milky crown (`SHED_GLASS`) soften the sun's shadow in London's shed; by night it does not.
+ * `sunKey` (the key light is the sun, not the moon) lets the crown's sky fill (`SHED_GLASS`) lift the shade in London's shed and its glass read grey-white from below (`CROWN_BELOW`); by night neither does.
  */
 export function grade(renderer: THREE.WebGLRenderer, graded: boolean, exposure: number, hemisphere = 0, cloud = 0, sunKey = true): void {
   const mapping = graded ? THREE.ACESFilmicToneMapping : THREE.NoToneMapping;
@@ -45,7 +45,9 @@ export function grade(renderer: THREE.WebGLRenderer, graded: boolean, exposure: 
   renderer.toneMappingExposure = graded ? exposure : 1;
   roofShadeUniforms.uRoofShade.value.set(...(graded ? ROOF_SHADE_LOSS : NO_ROOF_SHADE));
   interiorFillFor(graded ? hemisphere : 0, cloud, roofShadeUniforms.uInteriorFill.value);
-  roofShadeUniforms.uShedDiffuse.value = graded && hemisphere > 0 && sunKey ? SHED_GLASS.diffuse : 0;
+  const day = graded && hemisphere > 0 && sunKey;
+  roofShadeUniforms.uShedDiffuse.value = day ? SHED_GLASS.fill : 0;
+  crownBelowUniforms.uCrownBelow.value = day ? 1 : 0;
 }
 
 /**
@@ -393,51 +395,90 @@ export function interiorFillFor(hemisphereIntensity: number, cloud: number, out 
 }
 
 /**
- * THE MILKY CROWN. The shed's crown glazing scatters the sun: under it the light is mostly soft, and a rib's shadow is a grey band, not a black bar. MEASURED in
- * memory from shed-a-north-from-footbridge-2019 (the key view): on the east arcade wall, where the ribs' shadows fall, the brick's luminance runs from p10 128 to
- * p90 214 (two patches, 128/214 and 132/220): the shade is 0.6 of the lit brick on the screen. The model drew the same wall at p10 37 to p90 109 (0.34) at
- * platform-eye-p8-south (f0745dc4, noon rig), with the platform's rib shadows as hard. So inside the shed (and only there: `uShedFrame` and `uShedSize`, set by
- * shed.ts) the sun's shadow factor s is taken as (1 - diffuse) s + diffuse lit: the glass passes `1 - diffuse` of the sun straight, and spreads the rest evenly
- * at `lit`, the share of the sky's sun the crown lets through as a whole (about its glazed share). With the numbers below a point in a rib's shadow keeps 0.27
- * of the sun and a sunlit one 0.72: 2.7 to 1 in the sun's term where it was all or none, the hemisphere's shade on top. The amounts are ASSUMED, fitted by eye
- * to that ratio. London's scene only (`grade` sets `uShedDiffuse` from the hemisphere it is given, which is London's alone), so Waverley, Perth and the
- * outside of the shed draw as they did. The night's lamps are not the sun and are not touched.
+ * SKY THROUGH THE CROWN. Under the shed the crown's glass is clear: the sun's streaks on the platforms and the arcade walls are crisp and their lit brick is near
+ * white (shed-b-south-screen-2019, a minute after shed-a). What the glass adds is the sky's light in the shade: a rib's shadow is lit by the bright crown around it.
+ * MEASURED in memory from shed-a-north-from-footbridge-2019 (the key view): on the east arcade wall, where the ribs' shadows fall, the brick's luminance runs from
+ * p10 128 to p90 214 (two patches, 128/214 and 132/220): the shade is about 0.6 of the lit brick on the screen. The model drew the same wall at p10 37 to p90 109
+ * (0.34) at platform-eye-p8-south (f0745dc4, noon rig). So inside the shed, below the springing (only there: `uShedFrame` and `uShedSize`, set by shed.ts; the
+ * roof's shell and the walls' outer faces are outside it), the sun's shadow factor s is taken as s + (1 - s) `fill`: a lit point keeps exactly 1, a shadowed one
+ * `fill`. The fill is fitted to that ratio: the base capture's 0.34 on screen is about 0.093 linear (a 2.2 curve), which puts the wall's own shade light at
+ * 0.1025 of the sun's; ((0.1025 + fill) / 1.1025)^(1 / 2.2) is 0.60 at fill 0.25 (ASSUMED: a 2.2 curve for the tone map in that range).
+ * London's scene by day only (`grade` sets `uShedDiffuse` from the hemisphere it is given, which is London's alone, and only while the sun is the key light), so
+ * Waverley, Perth, the night and the outside of the shed draw as they did.
  */
-export const SHED_GLASS = { diffuse: 0.6, lit: 0.45 } as const;
+export const SHED_GLASS = { fill: 0.25 } as const;
 
-/** GLSL: how far the world point `p` is under the shed's two glazed vaults, 0 to 1 (1 a metre in from their outer walls and the ends, below the crown; 0 outside, in the east aisle, or before a shed is set). */
+/** GLSL: how far the world point `p` is in the shed's two vaults, 0 to 1 (1 from the inner faces of their walls in, up to 1.5 m under the springing, where the eaves' gutters hang; 0 outside the walls' line, above the springing, in the east aisle, or before a shed is set). */
 export const SHED_GLASS_GLSL = /* glsl */`
 float shedInside( vec3 p ) {
   if ( uShedSize.w <= 0.0 ) return 0.0;
   vec3 q = ( uShedFrame * vec4( p, 1.0 ) ).xyz;
   float e = min( min( q.x - uShedSize.x, uShedSize.y - q.x ), min( -q.z, uShedSize.w + q.z ) );
-  return smoothstep( -0.5, 1.0, e ) * ( 1.0 - smoothstep( uShedSize.z, uShedSize.z + 1.0, q.y ) );
+  return smoothstep( -0.3, 0.0, e ) * ( 1.0 - smoothstep( uShedSize.z - 1.5, uShedSize.z - 1.0, q.y ) );
 }
 `;
 
-/** What every roof-shaded program shares: the shade's loss (see `ROOF_SHADE`; zero while a scene other than London's is drawn), the concourse's fill (`interiorFillFor`, set by `grade` every frame, for London's scene only) and the milky crown (`SHED_GLASS`). */
+/** What every roof-shaded program shares: the shade's loss (see `ROOF_SHADE`; zero while a scene other than London's is drawn), the concourse's fill (`interiorFillFor`, set by `grade` every frame, for London's scene only), and the sky through the crown (`SHED_GLASS`). */
 export const roofShadeUniforms = {
   uRoofShade: { value: new THREE.Vector4(...ROOF_SHADE_LOSS) },
   uInteriorFill: { value: new THREE.Vector3(0, 0, 0) },
-  /** `SHED_GLASS.diffuse` while London's scene is drawn, else 0 */
+  /** `SHED_GLASS.fill` while London's scene is drawn by day, else 0 */
   uShedDiffuse: { value: 0 },
   /** world to the shed's own frame (shed.ts: x across from its west side, z north from its south front, negative) */
   uShedFrame: { value: new THREE.Matrix4() },
-  /** the two vaults' west and east walls (x in the shed's frame), the crown's height and the shed's length, metres; zero until a shed is built */
+  /** the two vaults' west and east walls (x in the shed's frame), the springing's height and the shed's length, metres; zero until a shed is built */
   uShedSize: { value: new THREE.Vector4(0, 0, 0, 0) },
 };
 
-/** Tell the shaders where the shed stands: `group` the built shed (its world matrix current), the vaults' west and east walls in its frame, the crown's height and the length. */
-export function setShedGlass(group: THREE.Object3D, west: number, east: number, crown: number, length: number): void {
+/** The crown's glass seen from below (`CROWN_BELOW`): 1 while London's scene is drawn by day, else 0. The shed glass's own program alone holds it. */
+export const crownBelowUniforms = { uCrownBelow: { value: 0 } };
+
+/** Tell the shaders where the shed stands: `group` the built shed (its world matrix current), the vaults' west and east walls in its frame, the springing's height and the length. */
+export function setShedGlass(group: THREE.Object3D, west: number, east: number, springing: number, length: number): void {
   roofShadeUniforms.uShedFrame.value.copy(group.matrixWorld).invert();
-  roofShadeUniforms.uShedSize.value.set(west, east, crown, length);
+  roofShadeUniforms.uShedSize.value.set(west, east, springing, length);
 }
 
-/** The directional light's shadow line in three's lights chunk (as this module's patch above leaves it), with the milky crown's softening wrapped round it. */
+/**
+ * THE CROWN FROM BELOW. Seen from the platforms the crown read as blue sky through clear glass (roof-underside, f0745dc4: (97, 130, 161)), where shed-a and shed-b show
+ * the glazing grey-white: MEASURED in memory in shed-a's crown, (147, 157, 168) and (135, 144, 149) with the bright panes at p90 220 to 240. So the shed's glass, on a face
+ * that looks down at the camera (seen from below: from outside, over the roof, a face never does), has its colour turned toward a neutral of `gain` times its own
+ * luminance, tinted `tint`, by `amount` times how far down the face looks (full from `full` up). Its bars and pane texture keep their tone. Only by day in London's scene
+ * (`uCrownBelow`, set by `grade` with the shed's sky fill); by night the branch is not taken and the glass draws exactly as it did. The amounts are ASSUMED, by eye.
+ */
+export const CROWN_BELOW = { gain: 1.5, tint: [0.97, 0.99, 1.0], amount: 0.85, full: 0.35 } as const;
+
+/** GLSL: the crown glass's colour `c` seen from below by `w` (0 none, 1 all of it): toward a grey-white of `CROWN_BELOW.gain` times its luminance. */
+export const CROWN_BELOW_GLSL = /* glsl */`
+vec3 crownBelow( vec3 c, float w ) {
+  float l = dot( c, vec3( 0.2126, 0.7152, 0.0722 ) );
+  return mix( c, vec3( ${CROWN_BELOW.tint.map((v) => v.toFixed(2)).join(', ')} ) * ( l * ${CROWN_BELOW.gain.toFixed(2)} ), w );
+}
+`;
+
+/**
+ * Give the shed's crown glass its look from below (`CROWN_BELOW`): a patch of its own program only, so no other program's text changes. Call before the
+ * atmosphere's roof shade reaches the material (the shade keeps this patch and its key).
+ */
+export function addCrownBelow(material: THREE.MeshLambertMaterial): void {
+  const before = material.onBeforeCompile;
+  const ownKey = material.customProgramCacheKey();
+  material.onBeforeCompile = (shader, renderer) => {
+    before.call(material, shader, renderer);
+    shader.uniforms.uCrownBelow = crownBelowUniforms.uCrownBelow;
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', `#include <common>\nuniform float uCrownBelow;\n${CROWN_BELOW_GLSL}`)
+      .replace('#include <opaque_fragment>', `if ( uCrownBelow > 0.0 ) outgoingLight = crownBelow( outgoingLight, uCrownBelow * ${CROWN_BELOW.amount.toFixed(2)} * smoothstep( 0.0, ${CROWN_BELOW.full.toFixed(2)}, clamp( dot( normal, -viewMatrix[ 1 ].xyz ), 0.0, 1.0 ) ) );\n#include <opaque_fragment>`);
+  };
+  material.customProgramCacheKey = () => `${ownKey}+crownBelow`;
+  material.needsUpdate = true;
+}
+
+/** The directional light's shadow line in three's lights chunk (as this module's patch above leaves it), with the crown's sky fill wrapped round it: the shade lifted, the sun's streaks left at 1. */
 function shedSoftenedLights(): string {
   const chunk = (THREE.ShaderChunk as unknown as Record<string, string>).lights_fragment_begin as string;
   const next = chunk.replace(/directLight\.color \*= (\( directLight\.visible && receiveShadow && dot\( geometryNormal, directLight\.direction \) > 0\.0 \) \? getShadow\( directionalShadowMap\[ i \][^;]*);/,
-    `directLight.color *= mix( $1, ${SHED_GLASS.lit.toFixed(2)}, shedSoft );`);
+    'directLight.color *= mix( $1, 1.0, shedSoft );');
   if (next === chunk) throw new Error('lighting.ts: three\'s lights_fragment_begin chunk has changed');
   return `float shedSoft = uShedDiffuse > 0.0 ? uShedDiffuse * shedInside( cameraPosition - vViewPosition * mat3( viewMatrix ) ) : 0.0;\n${next}`;
 }
