@@ -62,7 +62,7 @@ export const AXES = [
 export const ELEMENT_VIEWS = {
   'lighting-materials': ['overview', 'south-front', 'front-oblique-solid-slate', 'platform-eye', 'concourse', 'great-northern-hotel', 'midland-grand-front', 'gasworks-portals', 'facade-brick-close'],
   'kx-front': ['south-front', 'front-oblique', 'front-oblique-solid-slate', 'roof-above-solid-slate', 'north-gable', 'tower-close', 'front-southwest-pedestrian', 'shed-east-flank', 'gable-oblique'],
-  'shed-interior': ['platform-eye', 'platform-eye-south', 'shed-interior', 'platform-eye-p1-north', 'platform-eye-p8-south', 'roof-underside', 'furniture-close', 'suburban-p9', 'platform-clock'],
+  'shed-interior': ['platform-eye', 'platform-eye-south', 'shed-interior', 'platform-eye-p1-north', 'platform-eye-p8-south', 'roof-underside', 'furniture-close', 'suburban-p9', 'platform-clock', 'platform-furniture'],
   'western-concourse': ['concourse', 'concourse-roof-detail', 'western-range', 'western-range-gateline', 'concourse-hotel-junction', 'concourse-exterior-square', 'concourse-funnel-up', 'western-range-full', 'concourse-exterior-west'],
   'historic-neighbours': ['great-northern-hotel', 'midland-grand-front', 'st-pancras-shed', 'st-pancras-shed-oblique', 'gnh-from-square', 'midland-euston-road', 'midland-clock-tower', 'barlow-interior'],
   'city-surroundings': ['overview', 'gasworks-portals', 'front-oblique', 'granary-square', 'gasholders', 'canal-lock', 'kings-boulevard', 'euston-road-east'],
@@ -494,6 +494,14 @@ const FROZEN_STATION_CAMERAS = {
     pos: [14.6943, 2.5, -155.9474],
     target: [10.382, 4.62, -168.0727],
     source: 'R-kx-shed-interior-d (shed-d-platform-furniture-2022.jpg): platform 8, 12 m south of the platform clock along its south face\'s normal and 4 m east, eye 1.6 m, looking at the middle of its beam so the beam and its wall fixing are in frame',
+    fov: 50, near: 0.1,
+  },
+  // Round 17 (platform-round-4 score, section 5: no capture shows the new furniture near): the furniture group on the platforms 6-7 island (furniture.ts EXTRAS:
+  // its blade, bins and trolley point within 6.1 m of each other), from 10 m south along the platform and 1 m east, eye 1.6 m above the platform, looking at the group's middle
+  'platform-furniture': {
+    pos: [25.0523, 2.5, -96.8263],
+    target: [24.3667, 2.4, -106.7900],
+    source: 'R-kx-shed-interior-e (shed-e-footbridge-lift-2014.jpg): the furniture group on the platforms 6-7 island (its number blade, bin pair and trolley point), 10 m south of it along the platform and 1 m east, eye 1.6 m',
     fov: 50, near: 0.1,
   },
   // R-kx-shed-interior-a (shed-a-north-from-footbridge-2019.jpg): the roof underside, ribs and glazing. Platform 4 midpoint,

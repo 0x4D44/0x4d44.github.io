@@ -44,7 +44,7 @@ import { PLATFORM_HEIGHT } from '../../core/scene.ts';
 import { isSurfacePlatform, longAxis, platformDrawingOutline, PLATFORM_9_OUTLINE_BASIS, PLATFORM_REFS, pointInPolygon, SHED_PLATFORM_REFS, SHED_SPAN_WIDTH, shedToWorld, stationPlatforms, worldToShed } from '../../core/station.ts';
 import { eastArcadeU, PLATFORM_CLOCK, ribPositions, SPINE_WALL, westernPassages } from './shed.ts';
 import type { ShedLayout } from '../../core/station.ts';
-import { Batch, material, rgb, rng, TEXTURES } from './materials.ts';
+import { Batch, material, rgb, rng, TEXTURES, windowNight } from './materials.ts';
 import type { Rgb, V3 } from './materials.ts';
 import { GROUND_Y } from './world.ts';
 
@@ -519,16 +519,22 @@ function addWalls(b: Batch, edges: readonly PlatformEdge[]): void {
   }
 }
 
+/** An edge strip whose edge runs within this of the z axis (radians) takes the tops' world v, so its joints line up with theirs (round 17). */
+export const STRIP_WORLD_V = (10 * Math.PI) / 180;
 function addStrip(b: Batch, chain: StripChain, edges: readonly PlatformEdge[]): void {
   const y = PLATFORM_HEIGHT + FIGURES.stripLift;
   for (let k = 0; k + 1 < chain.outer.length; k++) {
     const e = edges[chain.edges[k] as number] as PlatformEdge;
     const s0 = chain.s[k] as number;
     // UVs in metres, read off the corners themselves so they hold however a corner was cut:
-    // u = distance in from the edge (the coping is u = 0), v = distance along it from the start of the run
+    // u = distance in from the edge (the coping is u = 0), v = distance along it from the start of the run.
+    // Round 16's scorer (platform-round-4, the joint jog): on an edge that runs along the platforms (within STRIP_WORLD_V of the z axis), v is the world's -z,
+    // as the tops' is (addTop), so the strip's slab joints (materials.ts PLATFORM_JOINT) are the tops' lines carried on across it, not a course of their own
+    // at a phase and an angle (the edge's 1-2 degrees off z) of the run's start.
+    const worldV = Math.abs(e.dir[1]) >= Math.cos(STRIP_WORLD_V);
     const corner = (p: Pt): { at: V3; uv: [number, number] } => {
       const rel: Pt = [p[0] - e.a[0], p[1] - e.a[1]];
-      return { at: [p[0], y, p[1]], uv: [dot2(rel, e.inward), s0 + dot2(rel, e.dir)] };
+      return { at: [p[0], y, p[1]], uv: [dot2(rel, e.inward), worldV ? -p[1] : s0 + dot2(rel, e.dir)] };
     };
     const quad = [chain.outer[k], chain.outer[k + 1], chain.inner[k + 1], chain.inner[k]].map((p) => corner(p as Pt));
     b.poly(quad.map((q) => q.at), quad.map((q) => q.uv), { normal: [0, 1, 0] });
@@ -1248,12 +1254,12 @@ export interface ExtraPlacement extends Placement {
  * Round 16 (rubric shed-interior B5; R-kx-shed-interior-e, viewed: a blue platform-number blade, "7", on a post among the island's columns; a pair of green
  * wheelie bins against a column; a "Trolley Point" board on two legs with a stack of trolleys; R-kx-shed-interior-a: a trolley point board in the middle distance,
  * blue bins at the platform's south end). One of each a platform or shared island, along it from its middle totem by `offsets` (metres), `r` the footprint
- * radius, `across` the half-width. Counts and sizes ASSUMED from the two photographs: neither shows a platform's full length.
+ * radius, `across` the half-width (round 17: the bins and the trolley point first tried beside the blade, so a platform has one group of them, as shed-e shows them together). Counts and sizes ASSUMED from the two photographs: neither shows a platform's full length.
  */
 export const EXTRAS = {
-  bins: { offsets: [18.3, -18.3, 24.4, -24.4, 30.5, -30.5], r: 0.8, across: 0.4 },
+  bins: { offsets: [12.2, -12.2, 18.3, -18.3, 24.4, -24.4, 30.5, -30.5], r: 0.8, across: 0.4 },
   blade: { offsets: [9.15, -9.15, 15.25, -15.25, 21.35, -21.35], r: 0.45, across: 0.4 },
-  trolley: { offsets: [-27.45, 27.45, -33.55, 33.55, -39.65, 39.65], r: 1.5, across: 0.55 },
+  trolley: { offsets: [15.25, -15.25, -27.45, 27.45, -33.55, 33.55, -39.65, 39.65], r: 1.5, across: 0.55 },
 } as const;
 /** the platform clock's bay is left clear: no extra within this of its rib, metres (round 15's scorer: nothing within about 6 m of the clock) */
 export const EXTRA_CLOCK_CLEAR = 9;
@@ -1264,8 +1270,17 @@ const TROLLEY_GREY = rgb(0x9aa1a8);
 /** seven-segment digits: which of a, b, c, d, e, f, g each lights */
 const SEGMENTS: Record<string, string> = { '0': 'abcdef', '1': 'bc', '2': 'abged', '3': 'abgcd', '4': 'fgbc', '5': 'afgcd', '6': 'afgedc', '7': 'abc', '8': 'abcdefg', '9': 'abcdfg' };
 /** One extra at y = 0, local z along the platform; nothing floats: every part stands on the platform or on another part. */
-export function extraGeometry(e: { kind: ExtraKind; label: string }): THREE.BufferGeometry {
+/**
+ * Round 17 (platform-round-4 score, section 5): the blade bigger, to read at 30-60 m (shed-e's "7" is about the width of the screens' head beside it), and its
+ * panel wholly above the pole clocks' displays and the totems (FIGURES.clockHeight 2.9 m, totemHeight 2.5 m) with `clear` to spare, so from eye height on the
+ * platform it never stands in front of them: `top` of the panel, its `size` (height, and least width), the numerals `digit` tall at `pitch`, their `stroke`.
+ * At night its face is lit from within (`night`, a share of its own colour, windowNight). All ASSUMED.
+ */
+export const BLADE = { top: 4.3, size: 1.0, digit: 0.66, pitch: 0.56, stroke: 0.085, clear: 0.3, night: 0.45 } as const;
+/** `part`: the post (body), the panel and its numerals (face), or both. */
+export function extraGeometry(e: { kind: ExtraKind; label: string }, part: 'all' | 'body' | 'face' = 'all'): THREE.BufferGeometry {
   const b = newBatch();
+  if (part === 'face' && e.kind !== 'blade') return b.build();
   if (e.kind === 'bins') {
     for (const sx of [-0.33, 0.33]) {
       b.aabb(sx - 0.29, 0, -0.35, sx + 0.29, 1.0, 0.35, BIN_GREEN);
@@ -1276,16 +1291,18 @@ export function extraGeometry(e: { kind: ExtraKind; label: string }): THREE.Buff
     b.aabb(-0.5, 1.0, -0.035, 0.5, 2.25, 0.035, SIGN_BLUE, true);
     b.aabb(-0.42, 1.95, -0.045, 0.42, 2.12, 0.045, SIGN_WHITE, true); // the board's heading strip, both faces
     b.aabb(-0.35, 0, 0.25, 0.35, 1.0, 1.45, TROLLEY_GREY); // the nested trolleys in front of it
-  } else {
-    const top = 3.4, size = 0.7;
-    b.aabb(-0.05, 0, -0.05, 0.05, top, 0.05, IRON);
+  } else if (part !== 'face') {
+    b.aabb(-0.05, 0, -0.05, 0.05, BLADE.top, 0.05, IRON); // its own post
+  }
+  if (e.kind === 'blade' && part !== 'body') {
+    const { top, size, digit, pitch, stroke: t } = BLADE;
     const digits = e.label.replace(/[^0-9]/g, '').slice(0, 2);
-    const w = Math.max(size, 0.42 * digits.length + 0.28);
+    const w = Math.max(size, pitch * digits.length + 0.4);
     b.aabb(-w / 2, top - size, -0.03, w / 2, top, 0.03, SIGN_BLUE, true);
     // the numbers in white seven-segment strokes on both faces
-    const sh = 0.4, sw = 0.24, t = 0.05, y0 = top - size / 2 - sh / 2;
+    const sh = digit, sw = digit * 0.58, y0 = top - size / 2 - sh / 2;
     [...digits].forEach((ch, i) => {
-      const cx = -((digits.length - 1) * 0.42) / 2 + i * 0.42, x0 = cx - sw / 2, x1 = cx + sw / 2, ym = y0 + sh / 2, y1 = y0 + sh;
+      const cx = -((digits.length - 1) * pitch) / 2 + i * pitch, x0 = cx - sw / 2, x1 = cx + sw / 2, ym = y0 + sh / 2, y1 = y0 + sh;
       const seg: Record<string, [number, number, number, number]> = {
         a: [x0, y1 - t, x1, y1], g: [x0, ym - t / 2, x1, ym + t / 2], d: [x0, y0, x1, y0 + t],
         f: [x0, ym, x0 + t, y1], b: [x1 - t, ym, x1, y1], e: [x0, y0, x0 + t, ym], c: [x1 - t, y0, x1, ym],
@@ -1392,6 +1409,21 @@ function instanced(name: string, geometry: THREE.BufferGeometry, mat: THREE.Mate
   mesh.instanceMatrix.needsUpdate = true;
   mesh.computeBoundingSphere();
   return mesh;
+}
+
+let bladeMat: THREE.MeshLambertMaterial | null = null;
+/** The blades' faces: vertex-coloured as the rest, and after dark (windowNight) lit from within at BLADE.night of their own colour (the numerals pale, the field blue). */
+export function bladeFace(): THREE.MeshLambertMaterial {
+  if (bladeMat) return bladeMat;
+  const m = new THREE.MeshLambertMaterial({ vertexColors: true });
+  m.userData.night = BLADE.night;
+  m.onBeforeCompile = (shader) => {
+    shader.uniforms.uWinNight = windowNight;
+    shader.fragmentShader = shader.fragmentShader.replace('#include <common>', '#include <common>\nuniform float uWinNight;').replace('#include <emissivemap_fragment>',
+      `#include <emissivemap_fragment>\ntotalEmissiveRadiance = max( totalEmissiveRadiance, vColor.rgb * ${BLADE.night.toFixed(2)} * uWinNight );`);
+  };
+  m.customProgramCacheKey = () => 'platform-blade-night';
+  return (bladeMat = m);
 }
 
 let furnitureMat: THREE.MeshLambertMaterial | null = null;
@@ -1600,15 +1632,24 @@ export function buildFurniture(data: FurnitureData, layout: FurnitureLayout): TH
   }
   if (plan.extras.length > 0) {
     // round 16: every bin pair, number blade and trolley point merged in place: one draw, vertex-coloured, casting no shadow (lighting.ts SHADOW_CASTERS)
-    const m = new THREE.Matrix4(), parts = plan.extras.map((e) => {
-      const g = extraGeometry(e);
+    const m = new THREE.Matrix4(), placed = (part: 'body' | 'face', items: readonly ExtraPlacement[]) => items.map((e) => {
+      const g = extraGeometry(e, part);
       g.applyMatrix4(m.compose(new THREE.Vector3(e.x, PLATFORM_HEIGHT, e.z), new THREE.Quaternion().setFromAxisAngle(_up, e.rotY), new THREE.Vector3(1, 1, 1)));
       return g;
     });
+    const parts = placed('body', plan.extras);
     const extras = new THREE.Mesh(mergeGeometries(parts) as THREE.BufferGeometry, lit);
     for (const p of parts) p.dispose();
     extras.name = 'platform-extras';
     add(extras);
+    // round 17: the blades' panels and numerals, their own draw, lit from within after dark (bladeFace)
+    const faces = placed('face', plan.extras.filter((e) => e.kind === 'blade'));
+    if (faces.length) {
+      const blades = new THREE.Mesh(mergeGeometries(faces) as THREE.BufferGeometry, bladeFace());
+      for (const p of faces) p.dispose();
+      blades.name = 'platform-blades';
+      add(blades);
+    }
   }
 
   if (plan.canopies.length > 0) {

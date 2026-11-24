@@ -56,7 +56,8 @@ test('B5: one merged mesh, casting no shadow, standing on the platform; the blad
   const n = (geo: THREE.BufferGeometry) => geo.getAttribute('position').count;
   assert.ok(n(blade8) > n(blade) && n(blade67) > n(blade8), 'the number drawn in strokes: 8 has more than 7, and "6 7" both digits');
   blade.computeBoundingBox();
-  assert.ok(blade.boundingBox!.max.y > 3 && blade.boundingBox!.max.y < 4, 'the blade over head height, on its post');
+  // re-pinned round 17 (same 1 m band, raised): the bigger blade stands clear above the pole clocks' and totems' heads (furniture.ts BLADE)
+  assert.ok(blade.boundingBox!.max.y > 3.5 && blade.boundingBox!.max.y < 4.5, 'the blade over head height, on its post');
 });
 
 /** The fills a painter makes, in a recording context. */

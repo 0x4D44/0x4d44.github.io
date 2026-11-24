@@ -24,6 +24,7 @@ import {
   platformFrame,
   shedRoofY,
   stripChains,
+  STRIP_WORLD_V,
   surfacePlatforms,
   trackSegments,
 } from '../src/furniture.ts';
@@ -334,11 +335,14 @@ test('edge strips: UVs in metres (u in from the edge, v along it), 1.6 m deep or
     const [o0, o1] = q.outer;
     const length = Math.hypot(o1[0] - o0[0], o1[1] - o0[1]);
     const dir: Pt = [(o1[0] - o0[0]) / length, (o1[1] - o0[1]) / length];
-    near(q.outerUV[1][1] - q.outerUV[0][1], length, 1e-3, 'v grows by the length of the edge in metres');
+    // re-pinned round 17: an edge within STRIP_WORLD_V of the z axis takes the tops' world v (-z) so its joints line up with theirs; v then grows by the edge's
+    // run in -z (its length times the cosine of a degree or two), and elsewhere, as before, by its length
+    const worldV = Math.abs(dir[1]) >= Math.cos(STRIP_WORLD_V), along = (p: Pt): number => (worldV ? -(p[1] - o0[1]) : (p[0] - o0[0]) * dir[0] + (p[1] - o0[1]) * dir[1]);
+    near(q.outerUV[1][1] - q.outerUV[0][1], along(o1), 1e-3, 'v grows by the length of the edge in metres (world -z on an edge along the platforms)');
     q.inner.forEach((p, k) => {
       const [u, v] = q.innerUV[k] as [number, number];
       near(u, lineDistance(p, o0, o1), 1e-3, 'u is the distance in from the edge, in metres');
-      near(v - q.outerUV[0][1], (p[0] - o0[0]) * dir[0] + (p[1] - o0[1]) * dir[1], 1e-3, 'v is the distance along the edge, in metres');
+      near(v - q.outerUV[0][1], along(p), 1e-3, 'v is the distance along the edge, in metres (world -z on an edge along the platforms)');
       assert.ok(u > 0.2 && u <= FIGURES.stripWidth + 1e-6, `an inner corner ${u} m in`);
       if (u >= FIGURES.stripWidth - 1e-6) full++;
     });

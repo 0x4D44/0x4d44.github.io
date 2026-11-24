@@ -1723,7 +1723,8 @@ export function buildPlatformClock(length: number): THREE.Group {
   g.name = 'shed-platform-clock';
   // each face its own CircleGeometry disc (as the tower's), so the night dial lights (night.ts createDialLights) give it a glow after dark
   const clockMat = clockMaterial(PLATFORM_DIAL_LOOK), faceGeo = new THREE.CircleGeometry(radius, 40); // round 16: a white face, a gold chapter ring
-  clockMat.userData.glowScale = PLATFORM_CLOCK.glow; // its glow capped (night.ts), its field under clipping after dark so the numerals' ring survives
+  clockMat.userData.glowScale = PLATFORM_CLOCK.glow;
+  clockMat.userData.glowNeutral = true; // round 17: its night dial neutral white, not DIAL_GLOW's blue (night.ts DIAL_GLOW_NEUTRAL) // its glow capped (night.ts), its field under clipping after dark so the numerals' ring survives
   const faces = [1, -1].map((s) => {
     const f = mesh(faceGeo, clockMat, 'shed-platform-clock-faces');
     f.position.set(cx, y, z + (s * drum) / 2);

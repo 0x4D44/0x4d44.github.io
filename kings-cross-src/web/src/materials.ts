@@ -689,6 +689,24 @@ function nightFloor<T extends THREE.MeshLambertMaterial>(m: T, floor: number, ke
   m.customProgramCacheKey = () => key;
   return m;
 }
+/**
+ * Round 17 (platform-round-4 score, section 5: inside the shed after dark the coping does not read; its paleness by day does not carry into the night): after
+ * dark (`windowNight`) the edge strip's coping band (u under `band` m of the strip's `width`) holds its own light at least `floor`, about lit concrete's
+ * (sRGB per channel, ASSUMED: ARCADE_FRAME.night's order), so it reads as a pale line, not a glow strip. By day uWinNight is 0: nothing changes.
+ */
+export const COPING_NIGHT = { floor: 0x2c2c29, band: 0.2 } as const;
+function copingNight<T extends THREE.MeshLambertMaterial>(m: T): T {
+  const before = m.onBeforeCompile.bind(m), key = m.customProgramCacheKey();
+  const c = new THREE.Color(COPING_NIGHT.floor), u = COPING_NIGHT.band / TEXTURES.platformEdge.tile[0];
+  m.onBeforeCompile = (shader, renderer) => {
+    before(shader, renderer);
+    shader.uniforms.uWinNight = windowNight;
+    shader.fragmentShader = shader.fragmentShader.replace('#include <common>', '#include <common>\nuniform float uWinNight;').replace('#include <emissivemap_fragment>',
+      `#include <emissivemap_fragment>\n#ifdef USE_MAP\nif ( vMapUv.x < ${glslFloat(u)} ) totalEmissiveRadiance = max( totalEmissiveRadiance, vec3( ${glslFloat(c.r)}, ${glslFloat(c.g)}, ${glslFloat(c.b)} ) * uWinNight );\n#endif`);
+  };
+  m.customProgramCacheKey = () => `${key}+coping-night`;
+  return m;
+}
 function stoneDressing(): THREE.MeshLambertMaterial {
   const m = tiled('stone');
   if (m.map) {
@@ -1455,7 +1473,7 @@ const makers: Readonly<Record<MaterialName, () => THREE.Material>> = {
   pane: () => nearer(new THREE.MeshLambertMaterial({ color: 0x232c38 })),
   // The coping / tactile / white-line strip laid on a platform's surface: the platform-edge texture with the
   // polygon offset that keeps it clear of the surface at any range.
-  platformEdgeStrip: () => nearer(tiled('platformEdge')),
+  platformEdgeStrip: () => copingNight(nearer(tiled('platformEdge'))),
   // The King's Cross front's brick and stone (shed.ts: the front wall, its plinth and courses, the clock tower, the shed's end walls) with the contact shade at the foot of a wall (round five, E2):
   // these walls stand on the ground and their UVs are in metres from it. The Western Range's walls keep the plain ones, the colour it was fitted to.
   // Round six (the E2 scorer: "the south-front foot shade is barely visible"): a deeper long fall-off than the landmarks' (FRONT_FOOT): the piers' feet, the plinth and the arcade's wall are a clear darker

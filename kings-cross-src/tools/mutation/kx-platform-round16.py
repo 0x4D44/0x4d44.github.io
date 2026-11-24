@@ -21,13 +21,13 @@ if out == src or out.is_relative_to(src) or src.is_relative_to(out):
 out.mkdir(parents=True, exist_ok=True)
 
 MUTATIONS = [
-    ('no trolley points', 'web/src/furniture.ts', "  trolley: { offsets: [-27.45, 27.45, -33.55, 33.55, -39.65, 39.65], r: 1.5, across: 0.55 },\n", "  trolley: { offsets: [], r: 1.5, across: 0.55 },\n", 'B5: bins'),
+    ('no trolley points', 'web/src/furniture.ts', "  trolley: { offsets: [15.25, -15.25, -27.45, 27.45, -33.55, 33.55, -39.65, 39.65], r: 1.5, across: 0.55 },\n", "  trolley: { offsets: [], r: 1.5, across: 0.55 },\n", 'B5: bins'),
     # dropping the clock-bay guard (EXTRA_CLOCK_CLEAR) is an equivalent mutant on today's track data: no extra's offset lands within 6 m of the clock's rib
     ('extras not checked against their neighbours', 'web/src/furniture.ts', "          const c: ExtraPlacement = { ref: at.home.ref, x: at.x, z: at.z, rotY: by.rotY, r: spec.r, across: spec.across, kind, label: refs.join(' ') };\n          const clear = near.every(", "          const c: ExtraPlacement = { ref: at.home.ref, x: at.x, z: at.z, rotY: by.rotY, r: spec.r, across: spec.across, kind, label: refs.join(' ') };\n          const clear = true || near.every(", 'B5: bins'),
     ('two of each per island', 'web/src/furniture.ts', "            plan.extras.push(c);\n            near.push(c);\n            break extra;", "            plan.extras.push(c);\n            near.push(c);", 'B5: bins'),
     ('the extras cast', 'web/src/lighting.ts', "'shed-arch-rings',", "'shed-arch-rings', 'platform-extras',", 'B5: one merged'),
     ('the extras unbuilt', 'web/src/furniture.ts', "  if (plan.extras.length > 0) {", "  if (plan.extras.length < 0) {", 'B5: one merged'),
-    ('a floating blade', 'web/src/furniture.ts', "    b.aabb(-0.05, 0, -0.05, 0.05, top, 0.05, IRON);", "    b.aabb(-0.05, 1.2, -0.05, 0.05, top, 0.05, IRON);", 'B5: one merged'),
+    ('a floating blade', 'web/src/furniture.ts', "    b.aabb(-0.05, 0, -0.05, 0.05, BLADE.top, 0.05, IRON);", "    b.aabb(-0.05, 1.2, -0.05, 0.05, BLADE.top, 0.05, IRON);", 'B5: one merged'),
     ('a blank blade', 'web/src/furniture.ts', "      for (const s of SEGMENTS[ch] ?? '') for (const side of [-1, 1]) {", "      for (const s of '') for (const side of [-1, 1]) {", 'B5: one merged'),
     ('one digit only', 'web/src/furniture.ts', ".replace(/[^0-9]/g, '').slice(0, 2);", ".replace(/[^0-9]/g, '').slice(0, 1);", 'B5: one merged'),
     ('no joints on the tops', 'web/src/materials.ts', "  for (let v = 0; v < TEXTURES.platformTop.tile[1] - 1e-6; v += PLATFORM_JOINT) joint(g, w, v * pxm);", "", 'B4'),
