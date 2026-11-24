@@ -130,10 +130,12 @@ export const FRONT_COLOURS = { steel: 0x2a2c2e, steelLift: 0x0c0d0e, glass: 0x56
 export const FRONT_FASCIA_TEXT = { words: 'ENTRANCE  \u00b7  EXIT', ink: '#e8e4d8', height: 0.5 } as const;
 export const GLASS_STRUCTURE = { height: 4.4, stops: [[0, 0.62], [2.2, 0.7], [2.75, 1.0], [3.15, 1.0], [3.35, 0.8], [4.4, 0.95]], gain: 1.35 } as const;
 /**
- * Round 6 (A4 brick): R-kx-front-c shows the tower in a darker yellow stock, greyed by weathering, against the front's mid-tan. The tower's
- * brick is its own mesh, so a tint on a clone of the front's brick material costs no draw: `TOWER_BRICK_TINT` multiplies the texture.
+ * Round 6 (A4 brick): R-kx-front-c shows the tower a little darker and greyer than the front's stock (olive-grey, not chocolate), and
+ * front-a and -b read one continuous brick front. The tower's brick is its own mesh, so a tint on a clone of the front's brick material costs
+ * no draw: `TOWER_BRICK_TINT` multiplies the texture. The held round 1a: the warm 0xb4a68a rendered 0.59 of the screen's luminance and
+ * orange; this near-neutral, very slightly green-grey multiplier is about 0.88 of it (sRGB) with the screen's hue (B/R, G/R) kept.
  */
-export const TOWER_BRICK_TINT = 0xb4a68a;
+export const TOWER_BRICK_TINT = 0xe0e2e1;
 export const FRONT_GLOW_FADE = { from: 1.6, to: 4.0, head: 0.3 } as const;
 export const FRONT_NIGHT = { glass: [0xffc98a, 0.45], fascia: [0x2a5cc0, 0.35], downlight: [0xffe2b8, 1.1] } as const;
 

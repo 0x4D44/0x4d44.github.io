@@ -27,9 +27,11 @@ MUTATIONS = [
     ('flat glass', 'web/src/shed.ts', 'stops: [[0, 0.62], [2.2, 0.7], [2.75, 1.0], [3.15, 1.0], [3.35, 0.8], [4.4, 0.95]]', 'stops: [[0, 0.9], [4.4, 0.9]]', 'entrance glass is structured'),
     ('glow not shaped', 'web/src/shed.ts', ", { defines: { KX_GLOW_BY_MAP: '' } })", ', {})', 'entrance glass is structured'),
     ('structure upside down', 'web/src/shed.ts', 't.repeat.set(0, 1 / GLASS_STRUCTURE.height);', 't.repeat.set(0, -1 / GLASS_STRUCTURE.height);', 'entrance glass is structured'),
-    ('tower brick untinted', 'web/src/shed.ts', 'export const TOWER_BRICK_TINT = 0xb4a68a;', 'export const TOWER_BRICK_TINT = 0xffffff;', 'darker yellow stock'),
-    ('tower brick untinted at night', 'web/src/shed.ts', "if (kind === 'tower' && source === 'brickFoot') m.color.multiply", "if (kind === 'none' && source === 'brickFoot') m.color.multiply", 'darker yellow stock'),
-    ('tower brick grey-blue', 'web/src/shed.ts', 'export const TOWER_BRICK_TINT = 0xb4a68a;', 'export const TOWER_BRICK_TINT = 0x8a9ab4;', 'darker yellow stock'),
+    ('tower brick untinted', 'web/src/shed.ts', 'export const TOWER_BRICK_TINT = 0xe0e2e1;', 'export const TOWER_BRICK_TINT = 0xffffff;', 'slightly darker, no warmer'),
+    ('tower brick untinted at night', 'web/src/shed.ts', "if (kind === 'tower' && source === 'brickFoot') m.color.multiply", "if (kind === 'none' && source === 'brickFoot') m.color.multiply", 'slightly darker, no warmer'),
+    ('tower brick warm again (the held tint)', 'web/src/shed.ts', 'export const TOWER_BRICK_TINT = 0xe0e2e1;', 'export const TOWER_BRICK_TINT = 0xb4a68a;', 'slightly darker, no warmer'),
+    ('tower brick orange at the same luminance', 'web/src/shed.ts', 'export const TOWER_BRICK_TINT = 0xe0e2e1;', 'export const TOWER_BRICK_TINT = 0xf0dcc4;', 'slightly darker, no warmer'),
+    ('tower brick grey-blue', 'web/src/shed.ts', 'export const TOWER_BRICK_TINT = 0xe0e2e1;', 'export const TOWER_BRICK_TINT = 0x8a9ab4;', 'slightly darker, no warmer'),
 ]
 
 def run(work: Path) -> subprocess.CompletedProcess[str]:

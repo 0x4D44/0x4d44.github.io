@@ -56,15 +56,18 @@ test('A3: the entrance glass is structured, darker low behind the doors, a lit c
   assert.ok(Math.abs(v(foot)) < 1e-6 && Math.abs(v(foot + GLASS_STRUCTURE.height) - 1) < 1e-6, 'from the openings\' foot to the arch head');
 });
 
-test('A4: the tower is a darker yellow stock than the front, by day and at night, on the same texture and program', () => {
+test('A4: the tower is a slightly darker, no warmer stock than the front, by day and at night, on the same texture and program', () => {
   const brick = material('brickFoot') as THREE.MeshLambertMaterial;
   const tower = group.getObjectByName('tower-brick') as THREE.Mesh, day = tower.material as THREE.MeshLambertMaterial;
   const night = buildingNightMaterialsOf(tower)!.night as THREE.MeshLambertMaterial, frontNight = buildingNightMaterialsOf(group.getObjectByName('shed-front') as THREE.Mesh)!.night as THREE.MeshLambertMaterial;
   assert.ok(day !== brick && day.map === brick.map && day.customProgramCacheKey() === brick.customProgramCacheKey(), 'a clone on the same texture and program');
   for (const [t, f, when] of [[day, brick, 'by day'], [night, frontNight, 'at night']] as const) {
+    // re-pinned 2026-11-24 (the held round 1a: the 0.55-0.8 band let a warm tint render 0.59 of the screen's luminance and orange, breaking
+    // front-a's one continuous brick front): 0.85 to 0.95 of the front's luminance, and its B/R and G/R (sRGB) within 0.02 below the front's
     const ratio = lum(t.color) / lum(f.color);
-    assert.ok(ratio <= 0.8 && ratio >= 0.55, `${when}: the tower's brick ${ratio.toFixed(2)} of the front's`);
-    const warm = (c: THREE.Color): number => c.r / Math.max(c.b, 1e-6);
-    assert.ok(t.color.r >= t.color.g && t.color.g >= t.color.b && warm(t.color) >= 0.95 * warm(f.color), `${when}: still a yellow stock, no bluer than the front's`);
+    assert.ok(ratio <= 0.95 && ratio >= 0.85, `${when}: the tower's brick ${ratio.toFixed(2)} of the front's`);
+    const s = (c: THREE.Color): { r: number; g: number; b: number } => c.getRGB(new THREE.Color(), THREE.SRGBColorSpace);
+    const [ts, fs] = [s(t.color), s(f.color)];
+    assert.ok(ts.b / ts.r >= fs.b / fs.r - 0.02 && ts.g / ts.r >= fs.g / fs.r - 0.02, `${when}: no more orange than the front: B/R ${(ts.b / ts.r).toFixed(3)} vs ${(fs.b / fs.r).toFixed(3)}, G/R ${(ts.g / ts.r).toFixed(3)} vs ${(fs.g / fs.r).toFixed(3)}`);
   }
 });
