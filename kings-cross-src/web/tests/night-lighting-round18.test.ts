@@ -205,7 +205,7 @@ test('day changes contribute exactly zero and Perth keeps its shader and window 
     const digest = createHash('sha256').update(vertexShader).update(fragmentShader)
       .update(JSON.stringify(material.defines)).digest('hex');
     const reflectionDigest = createHash('sha256').update(MIDLAND_PANE_GLSL).digest('hex');
-    assert.equal(digest,'4b8ae371289c9462a3b5e26b238120b13080ac0783b8eff941871b9c8cb8246b');
+    assert.equal(digest,'0f9c981d43c61ca8028bbc2fd320310c592054772cf5c12f0f677ac6bb9098fc');
     assert.equal(reflectionDigest,'b6c76cc9367e5d37f18edf389d4c7759e67b541bfba8c82e2f3eac9d5c0afb50');
     const tower = meshNamed(f.group,towerName);
     const at = (u:number) => luma(emission(tower,'balmoral-tower-wash',[0,44,0],[0,0,-1],castleAlbedo,{u}));

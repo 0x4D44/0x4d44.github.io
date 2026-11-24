@@ -37,13 +37,15 @@ const materialsOf = (o: THREE.Object3D): THREE.Material[] => {
  * shade into every scene that uses them, and the cover map it reads is the shown scene's (station-weather.ts), which a scene with no
  * climate does not have, so there it is switched off. `hemisphere` and `cloud` (the shown sky's hemisphere intensity and cloud) are given
  * for London's scene only, and give the concourse its fill (`INTERIOR`); left out, there is none.
+ * `sunKey` (the key light is the sun, not the moon) lets the milky crown (`SHED_GLASS`) soften the sun's shadow in London's shed; by night it does not.
  */
-export function grade(renderer: THREE.WebGLRenderer, graded: boolean, exposure: number, hemisphere = 0, cloud = 0): void {
+export function grade(renderer: THREE.WebGLRenderer, graded: boolean, exposure: number, hemisphere = 0, cloud = 0, sunKey = true): void {
   const mapping = graded ? THREE.ACESFilmicToneMapping : THREE.NoToneMapping;
   if (renderer.toneMapping !== mapping) renderer.toneMapping = mapping;
   renderer.toneMappingExposure = graded ? exposure : 1;
   roofShadeUniforms.uRoofShade.value.set(...(graded ? ROOF_SHADE_LOSS : NO_ROOF_SHADE));
   interiorFillFor(graded ? hemisphere : 0, cloud, roofShadeUniforms.uInteriorFill.value);
+  roofShadeUniforms.uShedDiffuse.value = graded && hemisphere > 0 && sunKey ? SHED_GLASS.diffuse : 0;
 }
 
 /**
@@ -390,11 +392,55 @@ export function interiorFillFor(hemisphereIntensity: number, cloud: number, out 
   return out.set(INTERIOR.tint[0] * k, INTERIOR.tint[1] * k, INTERIOR.tint[2] * k);
 }
 
-/** What every roof-shaded program shares: the shade's loss (see `ROOF_SHADE`; zero while a scene other than London's is drawn) and the concourse's fill (`interiorFillFor`, set by `grade` every frame, for London's scene only). */
+/**
+ * THE MILKY CROWN. The shed's crown glazing scatters the sun: under it the light is mostly soft, and a rib's shadow is a grey band, not a black bar. MEASURED in
+ * memory from shed-a-north-from-footbridge-2019 (the key view): on the east arcade wall, where the ribs' shadows fall, the brick's luminance runs from p10 128 to
+ * p90 214 (two patches, 128/214 and 132/220): the shade is 0.6 of the lit brick on the screen. The model drew the same wall at p10 37 to p90 109 (0.34) at
+ * platform-eye-p8-south (f0745dc4, noon rig), with the platform's rib shadows as hard. So inside the shed (and only there: `uShedFrame` and `uShedSize`, set by
+ * shed.ts) the sun's shadow factor s is taken as (1 - diffuse) s + diffuse lit: the glass passes `1 - diffuse` of the sun straight, and spreads the rest evenly
+ * at `lit`, the share of the sky's sun the crown lets through as a whole (about its glazed share). With the numbers below a point in a rib's shadow keeps 0.27
+ * of the sun and a sunlit one 0.72: 2.7 to 1 in the sun's term where it was all or none, the hemisphere's shade on top. The amounts are ASSUMED, fitted by eye
+ * to that ratio. London's scene only (`grade` sets `uShedDiffuse` from the hemisphere it is given, which is London's alone), so Waverley, Perth and the
+ * outside of the shed draw as they did. The night's lamps are not the sun and are not touched.
+ */
+export const SHED_GLASS = { diffuse: 0.6, lit: 0.45 } as const;
+
+/** GLSL: how far the world point `p` is under the shed's two glazed vaults, 0 to 1 (1 a metre in from their outer walls and the ends, below the crown; 0 outside, in the east aisle, or before a shed is set). */
+export const SHED_GLASS_GLSL = /* glsl */`
+float shedInside( vec3 p ) {
+  if ( uShedSize.w <= 0.0 ) return 0.0;
+  vec3 q = ( uShedFrame * vec4( p, 1.0 ) ).xyz;
+  float e = min( min( q.x - uShedSize.x, uShedSize.y - q.x ), min( -q.z, uShedSize.w + q.z ) );
+  return smoothstep( -0.5, 1.0, e ) * ( 1.0 - smoothstep( uShedSize.z, uShedSize.z + 1.0, q.y ) );
+}
+`;
+
+/** What every roof-shaded program shares: the shade's loss (see `ROOF_SHADE`; zero while a scene other than London's is drawn), the concourse's fill (`interiorFillFor`, set by `grade` every frame, for London's scene only) and the milky crown (`SHED_GLASS`). */
 export const roofShadeUniforms = {
   uRoofShade: { value: new THREE.Vector4(...ROOF_SHADE_LOSS) },
   uInteriorFill: { value: new THREE.Vector3(0, 0, 0) },
+  /** `SHED_GLASS.diffuse` while London's scene is drawn, else 0 */
+  uShedDiffuse: { value: 0 },
+  /** world to the shed's own frame (shed.ts: x across from its west side, z north from its south front, negative) */
+  uShedFrame: { value: new THREE.Matrix4() },
+  /** the two vaults' west and east walls (x in the shed's frame), the crown's height and the shed's length, metres; zero until a shed is built */
+  uShedSize: { value: new THREE.Vector4(0, 0, 0, 0) },
 };
+
+/** Tell the shaders where the shed stands: `group` the built shed (its world matrix current), the vaults' west and east walls in its frame, the crown's height and the length. */
+export function setShedGlass(group: THREE.Object3D, west: number, east: number, crown: number, length: number): void {
+  roofShadeUniforms.uShedFrame.value.copy(group.matrixWorld).invert();
+  roofShadeUniforms.uShedSize.value.set(west, east, crown, length);
+}
+
+/** The directional light's shadow line in three's lights chunk (as this module's patch above leaves it), with the milky crown's softening wrapped round it. */
+function shedSoftenedLights(): string {
+  const chunk = (THREE.ShaderChunk as unknown as Record<string, string>).lights_fragment_begin as string;
+  const next = chunk.replace(/directLight\.color \*= (\( directLight\.visible && receiveShadow && dot\( geometryNormal, directLight\.direction \) > 0\.0 \) \? getShadow\( directionalShadowMap\[ i \][^;]*);/,
+    `directLight.color *= mix( $1, ${SHED_GLASS.lit.toFixed(2)}, shedSoft );`);
+  if (next === chunk) throw new Error('lighting.ts: three\'s lights_fragment_begin chunk has changed');
+  return `float shedSoft = uShedDiffuse > 0.0 ? uShedDiffuse * shedInside( cameraPosition - vViewPosition * mat3( viewMatrix ) ) : 0.0;\n${next}`;
+}
 
 /**
  * A define a roof-shaded Lambert material can carry (`material.defines = { [GLOW_BELOW]: '' }`) to be seen against the light from underneath: the roof's own emissive glow
@@ -468,7 +514,8 @@ export function addRoofShade(material: THREE.MeshLambertMaterial): void {
     if (!fragment.includes('float coverGroundAt')) fragment = fragment.replace('#include <common>', `#include <common>\n${COVER_GLSL}`);
     if (flooded && !declared) fragment = fragment.replace('#include <common>', '#include <common>\nuniform float uWinNight;');
     if (!fragment.includes('vec3 headlampOne(')) fragment = fragment.replace('#include <common>', `#include <common>\n${HEADLAMP_FRAGMENT}`);
-    fragment = fragment.replace('#include <lights_lambert_pars_fragment>', `#include <lights_lambert_pars_fragment>\nuniform vec4 uRoofShade;\nuniform vec3 uInteriorFill;\n${ROOF_SHADE_GLSL}`)
+    fragment = fragment.replace('#include <lights_lambert_pars_fragment>', `#include <lights_lambert_pars_fragment>\nuniform vec4 uRoofShade;\nuniform vec3 uInteriorFill;\nuniform float uShedDiffuse;\nuniform mat4 uShedFrame;\nuniform vec4 uShedSize;\n${ROOF_SHADE_GLSL}${SHED_GLASS_GLSL}`)
+      .replace('#include <lights_fragment_begin>', shedSoftenedLights())
       .replace('#include <color_fragment>', `#include <color_fragment>
 #ifdef ${MOTTLE}
   vec2 slab = vMapUv * 2.0;

@@ -16,6 +16,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { CLOCK_TOWER_HEIGHT, SHED_SPAN_WIDTH } from '../../core/station.ts';
 import type { ClockDial } from './clocks.ts';
 import type { ShedLayout } from '../../core/station.ts';
+import { setShedGlass } from './lighting.ts';
 import { Batch, material, paneUv, windowNight, withBuildingNightMaterial } from './materials.ts';
 import type { V2, V3 } from './materials.ts';
 import { GROUND_Y } from './world.ts';
@@ -986,6 +987,8 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   for (const g of disposables) g.dispose();
   group.rotation.y = -layout.heading;
   group.position.set(layout.origin[0], 0, layout.origin[1]);
+  group.updateMatrixWorld();
+  setShedGlass(group, spine - 2 * R, spine + 2 * R, crown, L); // the milky crown softens the sun's shadow under the two vaults (lighting.ts SHED_GLASS)
   return group;
 }
 
