@@ -18,10 +18,10 @@ const S = shed as unknown as Record<string, unknown>;
 const front = group.getObjectByName('shed-front') as THREE.Mesh;
 const infill = group.getObjectByName('shed-front-infill') as THREE.Mesh;
 const frontTop = Math.max(...front.geometry.getAttribute('position').array.filter((_, i) => i % 3 === 1));
-const ray = (o: [number, number, number], targets: THREE.Object3D[]): { z: number; mat: number } | null => {
+const ray = (o: [number, number, number], targets: THREE.Object3D[]): { z: number; mat: number; uv: THREE.Vector2 | undefined; nz: number } | null => {
   const origin = group.localToWorld(new THREE.Vector3(...o)), dir = new THREE.Vector3(0, 0, -1).transformDirection(group.matrixWorld);
   const h = new THREE.Raycaster(origin, dir, 0, 40).intersectObjects(targets, true)[0];
-  return h ? { z: group.worldToLocal(h.point.clone()).z, mat: h.face?.materialIndex ?? -1 } : null;
+  return h ? { z: group.worldToLocal(h.point.clone()).z, mat: h.face?.materialIndex ?? -1, uv: h.uv, nz: h.face?.normal.z ?? 0 } : null;
 };
 const lum = (c: THREE.Color): number => 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
 
@@ -64,4 +64,26 @@ test('A3: the porch interior is darker by day by PORCH_DEPTH.dayDark, back to it
   assert.ok(at > 0, 'the diffuse scaled by day, not at night');
   const [c, g] = shed.FRONT_NIGHT.glass;
   assert.ok((m.userData.nightGlow as THREE.Color).equals(new THREE.Color(c).multiplyScalar(g)), 'the night glow the glass\'s own');
+});
+
+test('A2 (round 27b): each panel head carries the brick map in metres as the panel\'s own face does, its normal out toward the light', () => {
+  const T = S.FRONT_TYMPANUM as { band: number; recess: number }, Hd = S.FRONT_PANEL_HEAD as { height: number };
+  const yH = frontTop - 0.9 - 0.25 - 0.25 - 0.1 - T.band + 0.05;
+  const pos = front.geometry.getAttribute('position'), nrm = front.geometry.getAttribute('normal');
+  for (const xa of [X0 + 2.5, layout.spine + shed.TOWER_SIZE / 2 + 1.5, layout.spine - shed.TOWER_SIZE / 2 - 1.5, X0 + 4 * R - 2.5]) {
+    const a = ray([xa, yH - 0.1, 5], [front]), b = ray([xa + 0.7, yH - Hd.height + 0.1, 5], [front]), below = ray([xa, yH - Hd.height - 0.3, 5], [front]);
+    assert.ok(a && b && below && a.mat === 1 && a.uv && b.uv && below.uv, `the head at x ${xa.toFixed(1)}`);
+    // the panel's face maps 1 m to 1 unit of uv: so must the head, and on the same grid
+    assert.ok(Math.abs((b.uv!.x - a.uv!.x) - 0.7) < 0.01 && Math.abs((a.uv!.y - b.uv!.y) - (Hd.height - 0.2)) < 0.01, `the head's uv runs with it: ${a.uv!.toArray()} to ${b.uv!.toArray()}`);
+    assert.ok(Math.abs(a.uv!.x - below.uv!.x) < 0.01 && Math.abs((a.uv!.y - below.uv!.y) - (Hd.height + 0.2)) < 0.01, `on the panel's grid: ${a.uv!.toArray()} over ${below.uv!.toArray()}`);
+    assert.ok(a.nz > 0.99, `its face turned out (${a.nz.toFixed(2)})`);
+  }
+  // and its vertex normals out too (the lighting's, not only the winding's)
+  const grp = front.geometry.groups.find(g => g.materialIndex === 1)!;
+  let n = 0;
+  for (let k = grp.start; k < grp.start + grp.count; k++) {
+    const y = pos.getY(k), z = pos.getZ(k);
+    if (Math.abs(z + T.recess - 0.005) < 1e-4 && y > yH - Hd.height - 1e-3 && y < yH + 1e-3) { n++; assert.ok(nrm.getZ(k) > 0.99, `a head vertex's normal ${nrm.getZ(k).toFixed(2)}`); }
+  }
+  assert.ok(n >= 24, `${n} head vertices`);
 });

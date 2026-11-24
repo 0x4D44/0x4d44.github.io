@@ -1401,7 +1401,9 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   // face, its inner end behind the orders; 2 triangles a panel, paid for by the inner order's coarser arc
   {
     const head = new Batch(), z = FRONT_THICK - FRONT_TYMPANUM.recess + 0.005, h = FRONT_PANEL_HEAD.height;
-    for (const [x0, x1, y] of heads) head.poly([[x0, y - h, z], [x1, y - h, z], [x1, y, z], [x0, y, z]], undefined, { facing: [0, 0, 1] });
+    // round 27b (tower-close: with no UVs the strip sampled one texel, a flat near-black stripe): the brick map in metres, as the panel's own face (its
+    // extruded cap's x, y), so the strip reads as the panel's brick in shade
+    for (const [x0, x1, y] of heads) head.poly([[x0, y - h, z], [x1, y - h, z], [x1, y, z], [x0, y, z]], [[x0, y - h], [x1, y - h], [x1, y], [x0, y]], { facing: [0, 0, 1] });
     if (heads.length) { const hg = plainGeometry(head.build().toNonIndexed()); hg.addGroup(0, hg.getAttribute('position').count, 1); frontParts.push(hg); }
   }
   const faces: THREE.BufferGeometry[] = [], returns: THREE.BufferGeometry[] = [], orderFaces: THREE.BufferGeometry[] = [];
