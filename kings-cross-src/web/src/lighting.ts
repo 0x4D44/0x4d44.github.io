@@ -414,7 +414,7 @@ float shedInside( vec3 p ) {
   if ( uShedSize.w <= 0.0 ) return 0.0;
   vec3 q = ( uShedFrame * vec4( p, 1.0 ) ).xyz;
   float e = min( min( q.x - uShedSize.x, uShedSize.y - q.x ), min( -q.z, uShedSize.w + q.z ) );
-  return smoothstep( -0.3, 0.0, e ) * ( 1.0 - smoothstep( uShedSize.z - 1.5, uShedSize.z - 1.0, q.y ) );
+  return smoothstep( -0.05, 0.0, e ) * ( 1.0 - smoothstep( uShedSize.z - 0.1, uShedSize.z, q.y ) );
 }
 `;
 
@@ -446,13 +446,29 @@ export function setShedGlass(group: THREE.Object3D, west: number, east: number, 
  * luminance, tinted `tint`, by `amount` times how far down the face looks (full from `full` up). Its bars and pane texture keep their tone. Only by day in London's scene
  * (`uCrownBelow`, set by `grade` with the shed's sky fill); by night the branch is not taken and the glass draws exactly as it did. The amounts are ASSUMED, by eye.
  */
-export const CROWN_BELOW = { gain: 1.5, tint: [0.97, 0.99, 1.0], amount: 0.85, full: 0.35 } as const;
+export const CROWN_BELOW = { pane: 3.0, bar: 0.6, bars: [0.1, 0.05], tint: [0.97, 0.99, 1.0], amount: 0.85, full: 0.35 } as const;
+/*
+ * PANES AND BARS. Round two (the scorer of shed-daylight-round-1): the crown read as one grey sheet (median 159, p95 170), where shed-a and shed-b show bright panes
+ * between darker bars. MEASURED in memory in shed-a's crown (x 960-1150, y 40-130): luminance p5 69, p25 106, p50 141, p75 219, p95 245, a third of it over 200 (the
+ * panes) and the glazing bars a mid grey (120 to 190) two or three pixels wide in a period of about twelve along a row (x 900-1200 at y 40, 60, 90): the bars take
+ * about a fifth of the glazing on the picture. So the grey-white is `pane` times the glass's luminance on a pane and `bar` times it on a bar (from 159 at 1.5: about
+ * 218 and 110 on the screen on a 2.2 curve), the bars a `bars` share of the tile (the shedGlass texture's 0.9 x 1.8 m pane, so 9 cm across the arc and 9 cm along
+ * it, each side of the tile's edge; ASSUMED: the photograph's blur widens them). Where a bar is under a pixel (`fw`, the tile's change across one) the mask fades to
+ * the share of pane it covers, so the far crown neither shimmers nor turns into a sheet of bars.
+ */
 
-/** GLSL: the crown glass's colour `c` seen from below by `w` (0 none, 1 all of it): toward a grey-white of `CROWN_BELOW.gain` times its luminance. */
+/** GLSL: `crownPane(uv, fw)` is 1 on a pane and 0 on a bar of the shed glass's tile (uv in tiles, fw its change across a pixel); `crownBelow(c, w, pane)` the glass's colour `c` seen from below by `w`, toward a grey-white of its luminance times `pane` or `bar`. */
 export const CROWN_BELOW_GLSL = /* glsl */`
-vec3 crownBelow( vec3 c, float w ) {
+float crownPane( vec2 uv, vec2 fw ) {
+  vec2 hw = vec2( ${CROWN_BELOW.bars.map((v) => v.toFixed(3)).join(', ')} );
+  vec2 d = abs( fract( uv + 0.5 ) - 0.5 );
+  vec2 f = max( fw, vec2( 0.0001 ) );
+  vec2 k = mix( smoothstep( hw - f, hw + f, d ), vec2( 1.0 ) - 2.0 * hw, smoothstep( hw, 4.0 * hw, f ) );
+  return k.x * k.y;
+}
+vec3 crownBelow( vec3 c, float w, float pane ) {
   float l = dot( c, vec3( 0.2126, 0.7152, 0.0722 ) );
-  return mix( c, vec3( ${CROWN_BELOW.tint.map((v) => v.toFixed(2)).join(', ')} ) * ( l * ${CROWN_BELOW.gain.toFixed(2)} ), w );
+  return mix( c, vec3( ${CROWN_BELOW.tint.map((v) => v.toFixed(2)).join(', ')} ) * ( l * mix( ${CROWN_BELOW.bar.toFixed(2)}, ${CROWN_BELOW.pane.toFixed(2)}, pane ) ), w );
 }
 `;
 
@@ -468,7 +484,7 @@ export function addCrownBelow(material: THREE.MeshLambertMaterial): void {
     shader.uniforms.uCrownBelow = crownBelowUniforms.uCrownBelow;
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', `#include <common>\nuniform float uCrownBelow;\n${CROWN_BELOW_GLSL}`)
-      .replace('#include <opaque_fragment>', `if ( uCrownBelow > 0.0 ) outgoingLight = crownBelow( outgoingLight, uCrownBelow * ${CROWN_BELOW.amount.toFixed(2)} * smoothstep( 0.0, ${CROWN_BELOW.full.toFixed(2)}, clamp( dot( normal, -viewMatrix[ 1 ].xyz ), 0.0, 1.0 ) ) );\n#include <opaque_fragment>`);
+      .replace('#include <opaque_fragment>', `#ifdef USE_MAP\nfloat crownPaneK = crownPane( vMapUv, fwidth( vMapUv ) );\n#else\nfloat crownPaneK = 1.0 - 2.0 * ${CROWN_BELOW.bars[0].toFixed(3)};\n#endif\nif ( uCrownBelow > 0.0 ) outgoingLight = crownBelow( outgoingLight, uCrownBelow * ${CROWN_BELOW.amount.toFixed(2)} * smoothstep( 0.0, ${CROWN_BELOW.full.toFixed(2)}, clamp( dot( normal, -viewMatrix[ 1 ].xyz ), 0.0, 1.0 ) ), crownPaneK );\n#include <opaque_fragment>`);
   };
   material.customProgramCacheKey = () => `${ownKey}+crownBelow`;
   material.needsUpdate = true;

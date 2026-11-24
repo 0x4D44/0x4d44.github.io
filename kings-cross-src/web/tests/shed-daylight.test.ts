@@ -40,9 +40,9 @@ function inside(p: [number, number, number]): number {
 /** The wall's own shade light, as a share of the sun's, read off the f0745dc4 capture (p8-south: shade 0.34 of lit on screen, about 0.093 linear on a 2.2 curve). */
 const WALL_SHADE = 0.093 / (1 - 0.093);
 
-test('the sky through the crown: in the vaults by day a sunlit point keeps exactly all its sun, and a rib\'s shadow on the wall reads 0.55 to 0.65 of the lit brick on the screen (shed-a, 0.6); it was 0.34, then 0.68 with the sun dimmed to 0.72 (594f0db0)', () => {
+test('the sky through the crown: in the vaults by day a sunlit point keeps exactly all its sun, and a rib\'s shadow on the wall, up to 0.2 m under the springing (round two: the top 1.5 m kept a hard shadow), reads 0.55 to 0.65 of the lit brick on the screen (shed-a, 0.6); it was 0.34, then 0.68 with the sun dimmed to 0.72 (594f0db0)', () => {
   lighting.grade(fakeRenderer(), true, 1, 1.02, 0);
-  for (const [u, v, y] of [[layout.spine - R, 100, 1.5], [layout.spine + R, 200, 1.5], [layout.spine - 2 * R + 0.02, 150, 3], [layout.spine + 2 * R - 0.02, 120, 2]] as const) {
+  for (const [u, v, y] of [[layout.spine - R, 100, 1.5], [layout.spine + R, 200, 1.5], [layout.spine - 2 * R + 0.02, 150, 3], [layout.spine + 2 * R - 0.02, 120, 2], [layout.spine - 2 * R + 0.02, 140, layout.springing - 0.2], [layout.spine + 2 * R - 0.02, 160, layout.springing - 1.2]] as const) {
     const p = at(u, v, y);
     assert.equal(sunFactor(1, p), 1, `at ${u.toFixed(1)}, ${v}, ${y}: a sunlit point keeps all its sun`);
     const screen = ((WALL_SHADE + sunFactor(0, p)) / (WALL_SHADE + 1)) ** (1 / 2.2);
@@ -58,7 +58,7 @@ test('the sky through the crown leaves the roof\'s shell and the walls\' outer f
     assert.ok(m, `${name} is in the shed`);
     const pos = m.geometry.getAttribute('position');
     let worst = 0;
-    for (let i = 0; i < pos.count; i += 7) { v.fromBufferAttribute(pos, i).applyMatrix4(m.matrixWorld); worst = Math.max(worst, inside([v.x, v.y, v.z])); }
+    for (let i = 0; i < pos.count; i++) { v.fromBufferAttribute(pos, i).applyMatrix4(m.matrixWorld); worst = Math.max(worst, inside([v.x, v.y, v.z])); }
     assert.equal(worst, 0, `${name}: the most any vertex takes is ${worst}`);
   }
   for (const [u, y] of [[layout.spine - 2 * R - 0.6, 3], [layout.spine + 2 * R + 0.6, 3], [layout.spine - 2 * R - 0.85, 1]] as const) {
@@ -109,9 +109,9 @@ test('the crown from below: grey-white by day in London\'s scene, untouched by n
   const blue = [0.3, 0.45, 0.62];
   const luma = (c: number[]): number => 0.2126 * (c[0] as number) + 0.7152 * (c[1] as number) + 0.0722 * (c[2] as number);
   const spread = (c: number[]): number => Math.max(...c) / Math.min(...c);
-  assert.deepEqual(glsl.call('crownBelow', [blue, 0], { vars: {}, fns: {} }), blue, 'none of it: the colour as it was');
+  assert.deepEqual(glsl.call('crownBelow', [blue, 0, 0.72], { vars: {}, fns: {} }), blue, 'none of it: the colour as it was');
   const w = (L.CROWN_BELOW as { amount: number }).amount;
-  const out = glsl.call('crownBelow', [blue, w], { vars: {}, fns: {} }) as number[];
+  const out = glsl.call('crownBelow', [blue, w, 0.72], { vars: {}, fns: {} }) as number[]; // the far crown: the panes' share of the tile
   assert.ok(spread(out) < 1.25, `grey-white, not sky blue: ${out.map((x) => x.toFixed(3))} (was ${spread(blue).toFixed(2)} across)`);
   assert.ok(luma(out) >= 1.3 * luma(blue), `brighter: ${luma(out).toFixed(3)} from ${luma(blue).toFixed(3)}`);
   const below = L.crownBelowUniforms as { uCrownBelow: THREE.IUniform } | undefined;
@@ -130,11 +130,31 @@ test('the crown from below: grey-white by day in London\'s scene, untouched by n
   glass.onBeforeCompile(shader as unknown as THREE.WebGLProgramParametersWithUniforms, undefined as never);
   const f = shader.fragmentShader;
   assert.ok(below && shader.uniforms.uCrownBelow === below.uCrownBelow, 'the shared level');
+  assert.ok(f.includes('float crownPaneK = crownPane( vMapUv, fwidth( vMapUv ) );') && f.indexOf('float crownPaneK = crownPane(') < f.indexOf('outgoingLight = crownBelow('), 'the pane mask is read off the glass\'s own tile, with its change across a pixel');
   const line = `if ( uCrownBelow > 0.0 ) outgoingLight = crownBelow( outgoingLight, uCrownBelow * ${w.toFixed(2)} * smoothstep( 0.0, `;
   assert.equal(f.split(line).length - 1, 1, 'applied once, and only while the level is on (the night skips it)');
-  assert.ok(f.includes(', clamp( dot( normal, -viewMatrix[ 1 ].xyz ), 0.0, 1.0 ) ) );') && f.indexOf(line) < f.indexOf('#include <opaque_fragment>'), 'by how far the face seen looks down, before the output');
+  assert.ok(f.includes(', clamp( dot( normal, -viewMatrix[ 1 ].xyz ), 0.0, 1.0 ) ), crownPaneK );') && f.indexOf(line) < f.indexOf('#include <opaque_fragment>'), 'by how far the face seen looks down, before the output');
   for (const name of ['shed-roof-cladding', 'shed-roof-lining', 'shed-roof-bars']) {
     const m = (shed.getObjectByName(name) as THREE.Mesh).material as THREE.Material;
     assert.ok(!m.customProgramCacheKey().includes('crownBelow'), `${name} is not given it`);
   }
+});
+
+test('the crown from below has panes and bars: a pane is bright and a bar dark (shed-a: panes p95 245, bars a mid grey, a fifth of the glazing); a bar under a pixel fades to the pane\'s share of the tile, not to a sheet of bars or of panes (round two: one grey sheet, median 159, p95 170)', () => {
+  const src = L.CROWN_BELOW_GLSL as string | undefined;
+  assert.ok(src && src.includes('float crownPane('), 'the pane mask is in the crown\'s GLSL');
+  const glsl = new Glsl(src);
+  const env = { vars: {}, fns: {} };
+  const pane = (u: number, v: number, fw: number): number => glsl.call('crownPane', [[u, v], [fw, fw]], env) as number;
+  assert.ok(pane(0.5, 0.5, 0.002) > 0.999, `the middle of a pane: ${pane(0.5, 0.5, 0.002)}`);
+  assert.ok(pane(0.0, 0.5, 0.002) < 0.001 && pane(0.5, 0.01, 0.002) < 0.001 && pane(3.99, 7.5, 0.002) < 0.001, 'on a bar, across or along, in any tile');
+  const share = pane(0.37, 0.61, 2);
+  const bars = (L.CROWN_BELOW as { bars: [number, number] }).bars;
+  assert.ok(Math.abs(share - (1 - 2 * bars[0]) * (1 - 2 * bars[1])) < 1e-9 && share > 0.6 && share < 0.85, `far off, the pane's share of the tile wherever the pixel falls: ${share.toFixed(3)}`);
+  assert.ok(Math.abs(pane(0.02, 0.02, 2) - share) < 1e-9, 'the same over a bar');
+  const grey = [0.3, 0.32, 0.34];
+  const luma = (c: number[]): number => 0.2126 * (c[0] as number) + 0.7152 * (c[1] as number) + 0.0722 * (c[2] as number);
+  const lit = (k: number): number => luma(glsl.call('crownBelow', [grey, 1, k], env) as number[]);
+  const screen = (lit(1) / lit(0)) ** (1 / 2.2);
+  assert.ok(screen >= 1.6 && screen <= 2.4, `a pane against a bar on the screen ${screen.toFixed(2)} (shed-a: about 235 against 110 to 150)`);
 });
