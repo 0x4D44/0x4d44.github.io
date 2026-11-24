@@ -49,7 +49,7 @@ test('A3: a pale soffit, glowing warm by night, closes each opening\'s head over
   assert.ok(soffit, 'a sixth material, the soffits\'');
   const hsl = { h: 0, s: 0, l: 0 };
   soffit.color.getHSL(hsl);
-  assert.ok(hsl.l > 0.6, `pale (${hsl.l.toFixed(2)})`);
+  assert.ok(hsl.l > 0.25, `not dark (${hsl.l.toFixed(2)})`); // re-pinned round 24: the stone dressings' tone by day, not a pale tan (front-piers-round-3b score, A3)
   assert.ok(typeof soffit.onBeforeCompile === 'function' && soffit.customProgramCacheKey().includes('soffit'), 'with its own night glow');
   for (const x of doors) {
     const up = ray([x + 0.3, entryFoot + 2.9, -0.5], [0, 1, 0], [infill]);

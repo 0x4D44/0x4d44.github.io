@@ -25,7 +25,7 @@ group.updateMatrixWorld(true);
 const porch = group.getObjectByName('shed-front-porch-arches') as THREE.Mesh;
 const infill = group.getObjectByName('shed-front-infill') as THREE.Mesh | undefined;
 const mats = (m: THREE.Mesh): THREE.MeshLambertMaterial[] => (Array.isArray(m.material) ? m.material : [m.material]) as THREE.MeshLambertMaterial[];
-const steelIndex = mats(porch).findIndex(m => m !== material('stone'));
+const steelIndex = mats(porch).findIndex(m => m !== material('stone') && m !== material('stoneFoot')); // re-pinned round 24: the voussoirs are in the floodlit stoneFoot now
 const rgb = (c: THREE.Color): [number, number, number] => { const h = c.getHex(); return [(h >> 16) & 255, (h >> 8) & 255, h & 255]; };
 
 /** the first hit of a ray from (x, y, z) along `dir` (shed frame) on `target`'s material `index`, as a shed-frame point */

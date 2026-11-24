@@ -117,8 +117,8 @@ export const FRONT_CORNICE = { out: 0.9, height: 0.9 } as const;
  */
 export const FRONT_PIERS = { rise: 2.8, cap: 0.4, step: 0.6, stepRun: 3.0, width: 5.2, out: 1.15, face: 0.15 } as const; // round 23b: `cap` a plain coping 0.4 m deep overhanging 0.25 m, `out` 1.15 so the screen's cornice and corona (0.9, 1.1) end inside the mass (ASSUMED, R-kx-front-a/b)
 /** Round 21 (A2): each great arch's spandrel a recessed panel, framed by brick `out` m proud: a `band` m band under the cornice, `strip` m strips at its sides (ASSUMED). */
-export const FRONT_TYMPANUM = { out: 0.5, band: 0.45, strip: 0.5 } as const; // round 22 (A2: 0.15 m read about 1 px square-on): 0.3; round 23b (the painted line was black at night): 0.5, the band's own soffit casting the shadow line
-export const PORCH_DEPTH = { glass: 0.8, frame: 0.3, interior: 0x7a6a55, barriers: 6, barrier: [0.22, 1.0] as const, figures: 2, figure: [0.45, 1.7] as const, gradient: [0.75, 1.0] as const, soffit: 0xe6d6b4 } as const; // round 21: figures (ASSUMED); round 22: `gradient`, the interior's brightness at its foot and at its top (ASSUMED); round 23 (A3): the glass 0.8 m back (was 0.45: the returns read about 1 px), the gradient's foot 0.75 (0.5 dimmed the figures), and `soffit`, the lit ceiling over each opening's head
+export const FRONT_TYMPANUM = { out: 0.5, band: 0.45, strip: 0.5, recess: 0.2 } as const; // round 22 (A2: 0.15 m read about 1 px square-on): 0.3; round 23b (the painted line was black at night): 0.5, the band's own soffit casting the shadow line
+export const PORCH_DEPTH = { glass: 0.8, frame: 0.3, interior: 0x7a6a55, barriers: 6, barrier: [0.22, 1.0] as const, figures: 2, figure: [0.45, 1.7] as const, gradient: [0.75, 1.0] as const, soffit: 0xa99a7c } as const; // round 24: `soffit` the stone dressings' tone (was 0xe6d6b4, a light tan shelf); // round 21: figures (ASSUMED); round 22: `gradient`, the interior's brightness at its foot and at its top (ASSUMED); round 23 (A3): the glass 0.8 m back (was 0.45: the returns read about 1 px), the gradient's foot 0.75 (0.5 dimmed the figures), and `soffit`, the lit ceiling over each opening's head
 /**
  * The low canopy along the front (R-kx-front-a, 2026, and R-kx-front-b, 2016): a flat dark steel roof on slender columns at the bay lines,
  * passing in front of the tower's foot. Its top at 3.85 m (MEASURED from R-a by the same scale as FRONT_RELIEF); its fascia, depth and
@@ -159,7 +159,9 @@ export const GLASS_STRUCTURE = { height: 4.4, stops: [[0, 0.62], [2.2, 0.7], [2.
  */
 export const TOWER_BRICK_TINT = 0xe0e2e1;
 export const FRONT_GLOW_FADE = { from: 1.6, to: 4.0, head: 0.3 } as const;
-export const FRONT_NIGHT = { glass: [0xffc98a, 0.45], fascia: [0x2a5cc0, 0.35], downlight: [0xffe2b8, 1.1] } as const;
+/** Round 24: the share of the front's night wash that a soffit (a face turned down) takes, the floodlights standing below it (ASSUMED). */
+export const FRONT_WASH_SOFFIT = 0.8;
+export const FRONT_NIGHT = { glass: [0xffc98a, 0.45], fascia: [0x2a5cc0, 0.35], downlight: [0xffe2b8, 1.1], canopy: [0xffe2b8, 0.12], shade: [0x8a6a48, 0.12] } as const; // round 24: `canopy`, the canopy steel's night lift from its downlights (ASSUMED)
 
 /** `m` with a steady glow `colour * gain` scaled by the night level (materials.ts windowNight); `key` names its program. */
 function frontNightGlow(m: THREE.MeshLambertMaterial, [colour, gain]: readonly [number, number], key: string, fade?: [number, number, number]): THREE.MeshLambertMaterial {
@@ -997,7 +999,9 @@ function frontWash(source: 'brickFoot' | 'stoneFoot', kind: 'front' | 'tower', w
   float edge = exp(-pow(endPier/spread,2.0)) + exp(-pow(spine/spread,2.0));
   float shoulder = abs(abs(spine-${R.toFixed(4)})-${(R*0.88).toFixed(4)});
   float arch = exp(-pow(shoulder/(1.7+0.085*y),2.0)) * smoothstep(1.0,6.0,y);
-  float wash = (0.84*edge*exp(-y/7.8) + 0.17*arch*exp(-y/11.0)) * max(vKxWashNormal.z,0.0);
+  // round 24 (front-piers-round-3b score, A2: the spandrel band's soffit stayed a hard black line at night): the floodlights stand below the front, so a
+  // face turned down (a soffit) takes FRONT_WASH_SOFFIT of the wash as well as a face turned out
+  float wash = (0.84*edge*exp(-y/7.8) + 0.17*arch*exp(-y/11.0)) * (max(vKxWashNormal.z,0.0) + ${FRONT_WASH_SOFFIT.toFixed(2)}*max(-vKxWashNormal.y,0.0));
 ` : /* glsl */`
   float faceU = dot(abs(vKxWashPos.xz),abs(vKxWashNormal.zx));
   float rail = exp(-pow(abs(faceU-2.6)/(0.61+0.078*y),2.0));
@@ -1288,7 +1292,29 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   const entryFoot = GROUND_Y + SOUTH_FRONT_ARCADES.footAboveGround;
   const entryCentres = southFrontArcadeCentres(FW, TOWER_SIZE).map(x => x + fx0);
   for (const x of entryCentres) outline.holes.push(segmentalArchOpening(x - fx0, entryFoot, entryR, SOUTH_FRONT_ARCADES.jambHeight, SOUTH_FRONT_ARCADES.archRise));
+  // round 24 (front-piers-round-3b score, A2: the frame's projection alone did not read): each spandrel's panel recessed FRONT_TYMPANUM.recess behind the
+  // wall's face: a hole in the wall under the frame's band, inside its side strips and outside the outer order (each edge hidden behind the frame or the
+  // order), plugged by a slab whose face stands `recess` back; the arc is six straight steps (the order covers it), so the shadow pass stays in budget
+  const panels: THREE.Path[] = [];
+  {
+    const { band, strip } = FRONT_TYMPANUM, rH = R + FRONT_RELIEF.orders * FRONT_RELIEF.orderWidth - 0.1;
+    const yH = frontTop - 0.9 - FRONT_RELIEF.bedMould.height - FRONT_RELIEF.shadowLine - 0.1 - band + 0.05, n = 6;
+    centres.forEach((uc, vault) => {
+      const xa = (vault === 0 ? fx0 + 1.0 : spine + TOWER_SIZE / 2) + strip - 0.05, xb = (vault === 0 ? spine - TOWER_SIZE / 2 : fx1 - 1.0) - strip + 0.05;
+      const reach = Math.sqrt(Math.max(0, rH * rH - (yH - sp) ** 2));
+      for (const [xo, xi] of [[xa, uc - reach], [xb, uc + reach]] as const) {
+        if (Math.abs(xi - xo) < 0.5 || (xi - xo) * (xo < uc ? 1 : -1) < 0) continue;
+        const ao = Math.atan2(Math.sqrt(Math.max(0, rH * rH - (xo - uc) ** 2)), xo - uc), ai = Math.atan2(yH - sp, xi - uc);
+        const pts = [new THREE.Vector2(xo - fx0, yH)];
+        for (let k = 0; k <= n; k++) { const a = ai + ((ao - ai) * k) / n; pts.push(new THREE.Vector2(uc + rH * Math.cos(a) - fx0, sp + rH * Math.sin(a))); }
+        if (xo > uc) pts.reverse();
+        panels.push(new THREE.Path(xo < uc ? pts : [pts[pts.length - 1]!, ...pts.slice(0, -1)]));
+      }
+    });
+    outline.holes.push(...panels);
+  }
   const frontParts: THREE.BufferGeometry[] = [new THREE.ExtrudeGeometry(outline, { depth: FRONT_THICK, bevelEnabled: false, curveSegments: 40 })];
+  for (const h of panels) frontParts.push(new THREE.ExtrudeGeometry(new THREE.Shape(h.getPoints()), { depth: FRONT_THICK - FRONT_TYMPANUM.recess, bevelEnabled: false }));
   // each great arch's reveal: three brick orders, the outermost standing furthest forward, each inner one a step back toward the glass
   // (FRONT_RELIEF); round 22 (A2: the orders stopped in mid-air at the front's end) each runs down onto the springing course at both ends, its
   // feet at the front's end standing on the impost against the end pier's mass (FRONT_PIERS)
@@ -1425,7 +1451,11 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   }
   const canopyGeo = plainGeometry(canopy.build().toNonIndexed());
   const entryRingGeo = mergeGeometries(entryRings, false);
-  const porch = new THREE.Mesh(mergeGeometries([entryRingGeo, canopyGeo], true), [material('stone'), frontSteel]);
+  // round 24 (A3: at night the voussoirs and the canopy's underside were pure black in porch-close): the voussoirs in the floodlit dressing stone
+  // (stoneFoot, as the front's other dressings), and the canopy's steel lifted after dark by its own downlights (a clone of the frames' steel: the
+  // frames keep their charcoal)
+  const canopySteel = frontNightGlow(frontSteel.clone(), FRONT_NIGHT.canopy, 'kx-front-canopy-steel');
+  const porch = new THREE.Mesh(mergeGeometries([entryRingGeo, canopyGeo], true), [material('stoneFoot'), canopySteel]);
   porch.name = 'shed-front-porch-arches';
   group.add(porch);
   disposables.push(...entryRings, entryRingGeo, canopyGeo);
@@ -1484,13 +1514,22 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
       const rx = x + sd * (entryR - 0.003), yj = entryFoot + SOUTH_FRONT_ARCADES.jambHeight;
       frames.poly([[rx, entryFoot, 0], [rx, entryFoot, -PORCH_DEPTH.glass], [rx, yj, -PORCH_DEPTH.glass], [rx, yj, 0]], undefined, { facing: [-sd, 0, 0] }); // the reveal's return
     }
+    // round 24 (A3: the porch depth did not read at front-southwest-pedestrian): the reveal's dark return carried round the arched head too, from the
+    // face back to the glass, so each opening is outlined dark above the canopy as in R-kx-front-a/b (non-casting)
+    {
+      const n = 8, at = (k: number): [number, number] => { const dx = -entryR + (2 * entryR * k) / n; return [x + dx * 0.999, headY(Math.abs(dx)) - 0.003]; };
+      for (let k = 0; k < n; k++) {
+        const [xa0, ya0] = at(k), [xa1, ya1] = at(k + 1), tl = Math.hypot(xa1 - xa0, ya1 - ya0);
+        frames.poly([[xa0, ya0, 0], [xa1, ya1, 0], [xa1, ya1, -PORCH_DEPTH.glass], [xa0, ya0, -PORCH_DEPTH.glass]], undefined, { facing: [(ya1 - ya0) / tl, -(xa1 - xa0) / tl, 0] });
+      }
+    }
     // the signage fascia: navy, across the top of the opening right under the canopy's sheet, near the face (R-kx-front-a)
     const s1 = GROUND_Y + FRONT_CANOPY.top - FRONT_CANOPY.sheet - 0.02, s0 = s1 - PORCH_INFILL.sign;
     const fw = 2 * halfAt(s1) - 0.04;
     fasciae.box([x, (s0 + s1) / 2, -0.2], [fw, s1 - s0, 0.1], { skip: ['+z'] });
     fasciae.poly([[x - fw / 2, s0, -0.15], [x + fw / 2, s0, -0.15], [x + fw / 2, s1, -0.15], [x - fw / 2, s1, -0.15]], [[0, 0], [1, 0], [1, 1], [0, 1]], { facing: [0, 0, 1] }); // its face, the lettering's whole width
     // round 23 (A3): a lit soffit over the opening's head, the porch's ceiling from the fascia's back to the glass, under the fascia's foot: pale by day, warm by night
-    const sw = 2 * halfAt(s0) - 0.04;
+    const sw = fw; // round 24: it ends inside the sign band's width, within the opening (2 * halfAt(s0) ran past the band)
     soffits.poly([[x - sw / 2, s0 - 0.004, -PORCH_DEPTH.glass + 0.01], [x + sw / 2, s0 - 0.004, -PORCH_DEPTH.glass + 0.01], [x + sw / 2, s0 - 0.004, -0.25], [x - sw / 2, s0 - 0.004, -0.25]], undefined, { facing: [0, -1, 0] });
     frames.box([x, entryFoot + PORCH_INFILL.rail, zIn + fd / 2], [(4 * entryR) / PORCH_INFILL.bays, 0.06, 0.06]); // the doors' push rail, across the middle two bays
     // the doors (the tower pass, the round-2 scorer): a pair of leaves in the middle bay, told from the fixed glazing by their stiles, a meeting
@@ -1502,14 +1541,17 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   }
   for (const [c, s] of stems) frames.box(c, s, { skip: ['+y', '-y'] });
   // the cornice's shadow line (round 7: the bed mould read as a faint line at south-front): the cornice's and the bed mould's soffits and a
-  // band of the wall's face under the bed mould, in the frames' charcoal (they do not cast: no shadow-pass cost)
+  // band of the wall's face under the bed mould, in the frames' charcoal (they do not cast: no shadow-pass cost). Round 24 (front-piers-round-3b score, A2:
+  // a hard black line under the band at night): their own material, the frames' charcoal by day but lifted after dark to the floodlit wall's value
+  // (FRONT_NIGHT.shade), so the line does not stay black where the flood lights the wall round it
+  const shades = new Batch();
   {
     const yc = frontTop - 0.9, yb = yc - FRONT_RELIEF.bedMould.height, out = FRONT_RELIEF.bedMould.out, x0 = fx0 - 0.4, x1 = fx1 + 0.4, e = 0.004;
-    frames.poly([[x0, yc - e, out], [x1, yc - e, out], [x1, yc - e, FRONT_CORNICE.out], [x0, yc - e, FRONT_CORNICE.out]], undefined, { facing: [0, -1, 0] }); // the cornice's soffit
-    frames.poly([[x0 + 0.1, yb - e, 0], [x1 - 0.1, yb - e, 0], [x1 - 0.1, yb - e, out], [x0 + 0.1, yb - e, out]], undefined, { facing: [0, -1, 0] }); // the bed mould's
-    frames.poly([[fx0, yb - FRONT_RELIEF.shadowLine, e], [fx1, yb - FRONT_RELIEF.shadowLine, e], [fx1, yb, e], [fx0, yb, e]], undefined, { facing: [0, 0, 1] }); // the shadow line
+    shades.poly([[x0, yc - e, out], [x1, yc - e, out], [x1, yc - e, FRONT_CORNICE.out], [x0, yc - e, FRONT_CORNICE.out]], undefined, { facing: [0, -1, 0] }); // the cornice's soffit
+    shades.poly([[x0 + 0.1, yb - e, 0], [x1 - 0.1, yb - e, 0], [x1 - 0.1, yb - e, out], [x0 + 0.1, yb - e, out]], undefined, { facing: [0, -1, 0] }); // the bed mould's
+    shades.poly([[fx0, yb - FRONT_RELIEF.shadowLine, e], [fx1, yb - FRONT_RELIEF.shadowLine, e], [fx1, yb, e], [fx0, yb, e]], undefined, { facing: [0, 0, 1] }); // the shadow line
   }
-  const infillParts = [mergeGeometries(infillGlass, false), plainGeometry(frames.build()), plainGeometry(fasciae.build()), plainGeometry(downlights.build()), plainGeometry(interior.build()), plainGeometry(soffits.build())];
+  const infillParts = [mergeGeometries(infillGlass, false), plainGeometry(frames.build()), plainGeometry(fasciae.build()), plainGeometry(downlights.build()), plainGeometry(interior.build()), plainGeometry(soffits.build()), plainGeometry(shades.build())];
   const infillMats = [
     frontNightGlow(Object.assign(new THREE.MeshLambertMaterial({ color: FRONT_COLOURS.glass, emissive: FRONT_COLOURS.glassSky, map: glassStructureTexture(entryFoot) }), { defines: { KX_GLOW_BY_MAP: '' } }), FRONT_NIGHT.glass, 'kx-front-infill-glass', [entryFoot + FRONT_GLOW_FADE.from, entryFoot + FRONT_GLOW_FADE.to, FRONT_GLOW_FADE.head]),
     frontSteel,
@@ -1518,7 +1560,8 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
     // round 20: the concourse behind the screens, dim and warm by day, glowing warm after dark (the glass's night colour and its fade)
     frontNightGlow(new THREE.MeshLambertMaterial({ color: PORCH_DEPTH.interior, emissive: 0x140e08, map: interiorGradientTexture() }), FRONT_NIGHT.glass, 'kx-front-infill-interior', [entryFoot + FRONT_GLOW_FADE.from, entryFoot + FRONT_GLOW_FADE.to, FRONT_GLOW_FADE.head]),
     // round 23: the heads' soffits, pale stone lit from inside by day, warm after dark (the downlights' night colour)
-    frontNightGlow(new THREE.MeshLambertMaterial({ color: PORCH_DEPTH.soffit, emissive: 0x3a3020 }), FRONT_NIGHT.downlight, 'kx-front-infill-soffit'),
+    frontNightGlow(new THREE.MeshLambertMaterial({ color: PORCH_DEPTH.soffit }), FRONT_NIGHT.downlight, 'kx-front-infill-soffit'), // round 24: no day emissive (it read as a light tan shelf)
+    frontNightGlow(new THREE.MeshLambertMaterial({ color: FRONT_COLOURS.steel, emissive: FRONT_COLOURS.steelLift }), FRONT_NIGHT.shade, 'kx-front-infill-shade'),
   ];
   const infill = new THREE.Mesh(mergeGeometries(infillParts, true), infillMats);
   infill.name = 'shed-front-infill';

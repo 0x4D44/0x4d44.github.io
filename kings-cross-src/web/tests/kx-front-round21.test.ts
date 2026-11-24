@@ -31,16 +31,17 @@ const masonry = ['shed-front', 'shed-brick', 'shed-stone'].map(n => group.getObj
 const zAt = (x: number, y: number) => ray([x, y, 10], [0, 0, -1], masonry);
 
 test('A2: each great arch\'s spandrel is a recessed panel in a brick frame 0.1-0.6 m proud: a band under the cornice and strips at its sides', () => {
-  const T = S.FRONT_TYMPANUM as { out: number; band: number; strip: number } | undefined;
+  const T = S.FRONT_TYMPANUM as { out: number; band: number; strip: number; recess?: number } | undefined;
+  const deep = (T?.out ?? 0) + (T?.recess ?? 0); // re-pinned round 24: the panel itself recessed `recess` behind the wall's face (A2), so the frame stands out + recess over it
   assert.ok(T && T.out >= 0.1 && T.out <= 0.6, 'FRONT_TYMPANUM, 0.1 to 0.6 m'); // re-pinned round 22: 0.15 m read about 1 px square-on, so A2 asked for about 2 px (0.3 m); round 23b: 0.5 m, its own soffit the shadow line (the painted one was black at night)
   const yBandMid = frontTop - 0.9 - 0.25 - 0.25 - 0.1 - T.band / 2;
   for (const [xa, xb] of [[X0 + 1.0, layout.spine - shed.TOWER_SIZE / 2], [layout.spine + shed.TOWER_SIZE / 2, X1 - 1.0]] as const) {
     const xm = xa + 2.5; // over the outer order's foot: the plain spandrel
     const band = zAt(xm, yBandMid), panel = zAt(xm, yBandMid - T.band / 2 - 1.0);
-    assert.ok(band && panel && Math.abs(band.z - panel.z - T.out) < 0.02, `the band ${band?.z.toFixed(2)} over the panel ${panel?.z.toFixed(2)}`);
+    assert.ok(band && panel && Math.abs(band.z - panel.z - deep) < 0.02, `the band ${band?.z.toFixed(2)} over the panel ${panel?.z.toFixed(2)}`);
     for (const x of [xa + T.strip / 2, xb - T.strip / 2]) {
       const s = zAt(x, yBandMid - T.band / 2 - 0.5), beside = zAt(x + (x < (xa + xb) / 2 ? 1 : -1) * (T.strip + 0.3), yBandMid - T.band / 2 - 0.5);
-      assert.ok(s && beside && Math.abs(s.z - beside.z - T.out) < 0.02, `a side strip at x ${x.toFixed(1)}: ${s?.z.toFixed(2)} against ${beside?.z.toFixed(2)}`);
+      assert.ok(s && beside && Math.abs(s.z - beside.z - deep) < 0.02, `a side strip at x ${x.toFixed(1)}: ${s?.z.toFixed(2)} against ${beside?.z.toFixed(2)}`);
     }
   }
 });
