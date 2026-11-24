@@ -661,7 +661,9 @@ test('the spine wall\'s lower storey: two round-headed openings in every rib bay
 
 test('every rib lands on a stone corbel on the wall\'s face at the springing, both faces of the spine and the vault face of the east arcade, over a stone band', () => {
   const g = shedWorld(), stone = byName(g, 'shed-spine-stone'), sp = layout.springing;
-  assert.equal(stone.material, material('stoneFoot'));
+  // Re-pinned 2026-11-24 (scorer of shed-arcade-round-4, B2: the dressings read as the front's dull brown stone; R-c and R-a show them pale): the
+  // shed's own pale stone, not the front's stoneFoot. The same equality, to the new material (see the pale-stone test below).
+  assert.equal(stone.material, material('stoneDressing'));
   assert.ok(!SHADOW_CASTERS.has('shed-spine-stone'), 'not a sun-shadow caster');
   const half = SPINE_WALL.thick / 2;
   // the rib's foot runs from its outer boom at the springing line to its inner boom RIB_FOOT inside it (ribMembers): the corbel reaches under it.
@@ -780,4 +782,102 @@ test('a massive brick pier stands at the spine\'s north end under the gables\' v
   const [x0, z0] = shedToWorld(layout, s + NORTH_PIER.upperHalf - 0.1, L + 6), [x1, z1] = shedToWorld(layout, s + NORTH_PIER.upperHalf - 0.1, L);
   const hit = new THREE.Raycaster(new THREE.Vector3(x0, 4, z0), new THREE.Vector3(x1 - x0, 0, z1 - z0).normalize(), 0, 6).intersectObject(wall, false)[0];
   assert.ok(hit && hit.distance < 6 - 0.5 - 1e-3, 'the pier\'s north face stands outside the arch rings');
+});
+
+// Scorer of 2026-11-24 (shed-arcade-round-4, B2): the corbels and the band read as dull brown stone (the front's stoneFoot); R-kx-shed-interior-c and
+// -a show them near-white. Sampled in memory (medians, sRGB): shed-c's band (186, 180, 161) and (171, 162, 143), shed-a's band (205, 200, 176) and a
+// bracket (215, 207, 183); their mean (194, 187, 166). The dressings take a stone of their own, within 12 levels a channel of that mean and at least
+// 25 levels of luminance lighter than stoneFoot (the front's stone, which other buildings keep), with stoneFoot's contact shade and floodlight.
+test('the arcades\' bands and corbels are a pale stone of their own, as sampled from R-c and R-a, lighter than the front\'s stone and lit as it is after dark', () => {
+  const pale = material('stoneDressing') as THREE.MeshLambertMaterial, front = material('stoneFoot') as THREE.MeshLambertMaterial;
+  assert.notEqual(pale, front, 'a material of its own');
+  // the colour in sRGB bytes (Node draws no texture, so a material's colour is its average: TEXTURES.stone.average for the front's)
+  const srgb = (m: THREE.MeshLambertMaterial): number[] => { const h = m.color.getHex(); return [h >> 16, (h >> 8) & 255, h & 255]; };
+  const [a, b] = [srgb(pale), srgb(front)];
+  const lum = (c: number[]): number => 0.2126 * c[0]! + 0.7152 * c[1]! + 0.0722 * c[2]!;
+  const sampled = [194, 187, 166];
+  sampled.forEach((x, i) => assert.ok(Math.abs(a[i]! - x) <= 12, `channel ${i}: ${a[i]} against the photographs' ${x}`));
+  assert.ok(lum(a) - lum(b) >= 25, `luminance ${lum(a).toFixed(1)} against stoneFoot's ${lum(b).toFixed(1)}`);
+  assert.deepEqual(pale.defines, front.defines, 'the front stone\'s contact shade and floodlight: it takes the night as the shed\'s stone did');
+  assert.equal(front.color.getHex(), 0xa99a7c, 'the front\'s stone is unchanged');
+  const g = shedWorld();
+  assert.equal(byName(g, 'shed-spine-stone').material, pale, 'the spine\'s, the east arcade\'s and the west arcade\'s dressings');
+  assert.equal(byName(g, 'shed-stone').material, front, 'the front\'s and the walls\' copings keep the front\'s stone');
+});
+
+// Scorer of 2026-11-24 (shed-arcade-round-4, B3): from platform 8 the west wall read as a low wall with generic windows; R-kx-shed-interior-a shows the
+// side walls as round-arched arcades, the vault's ribs on corbels. The west arcade (shed.ts WEST_ARCADE) takes the east arcade's arches (one a bay,
+// 3.6 m, 0.59 of the bay: MEASURED in shed-a 0.55-0.6 +-20%, so 0.44-0.72 here), from the wall's line 0.5 m into the shed, its face where the spine's
+// stands from its springing line.
+test('the west wall\'s inner face is an arcade: a round-headed arch in every rib bay within the measured span, a pier under every rib, a corbel under every rib on its face (R-kx-shed-interior-a)', () => {
+  const g = shedWorld(), wall = byName(g, 'shed-west-arcade'), stone = byName(g, 'shed-spine-stone'), sp = layout.springing;
+  assert.equal(wall.material, material('brickFoot'));
+  assert.ok(!SHADOW_CASTERS.has('shed-west-arcade'), 'not a sun-shadow caster');
+  const box = bbox(wall);
+  close(box.min.x, 0, 1e-5);
+  const depth = box.max.x;
+  close(depth, SPINE_WALL.thick / 2, 1e-5); // its face stands from the springing line as the spine's does
+  const opens = eastArcadeOpenings(layout.length);
+  assert.equal(opens.length, ribPositions(layout.length).length - 1, 'one arch a bay');
+  const passage = (v: number): boolean => v > 8 && v < 48; // the Western Concourse's gateline (shed.ts westernCuts): piers hung from its head
+  // a ray from the shed westward into the arcade at (v, y), as one sees it from platform 8 (its back face is the wall's): is there brick?
+  const solidAt = (v: number, y: number): boolean => {
+    const [x0, z0] = shedToWorld(layout, depth + 0.5, v), [x1, z1] = shedToWorld(layout, 0, v);
+    return new THREE.Raycaster(new THREE.Vector3(x0, y, z0), new THREE.Vector3(x1 - x0, 0, z1 - z0).normalize(), 0, 0.5 + depth / 2).intersectObject(wall, false).length > 0;
+  };
+  let bays = 0;
+  for (const { vc, r, jamb } of opens) {
+    const span = 2 * r;
+    assert.ok(span / RIB_SPACING >= 0.44 && span / RIB_SPACING <= 0.72, `span ${span} m, ${(span / RIB_SPACING).toFixed(2)} of the bay`);
+    // open below the head across its span, round-headed: open just under the circle, brick just over it, at the crown and at 45 degrees
+    for (const d of [0, r * Math.SQRT1_2, -r * Math.SQRT1_2]) {
+      const head = jamb + Math.sqrt(r * r - d * d);
+      assert.ok(!solidAt(vc + d, head - 0.08), `open under the head at v ${(vc + d).toFixed(2)}`);
+      assert.ok(solidAt(vc + d, head + 0.08), `brick over the head at v ${(vc + d).toFixed(2)}, y ${(head + 0.08).toFixed(2)}`);
+    }
+    assert.ok(!solidAt(vc, 1.5) && !solidAt(vc - r + 0.05, 1.5) && !solidAt(vc + r - 0.05, 1.5), `open at the platform at v ${vc.toFixed(1)}`);
+    bays++;
+  }
+  for (const v of ribPositions(layout.length)) {
+    assert.ok(solidAt(v, passage(v) ? 4.0 : 1.5), `a pier under the rib at v ${v.toFixed(1)}`);
+    // the rib's foot lands on a corbel on the arcade's face, as on the spine's
+    for (const d of [depth + 0.1, RIB_FOOT]) {
+      const hit = down(g, stone, d, v, sp);
+      assert.ok(hit, `no corbel ${d.toFixed(2)} m out at v ${v.toFixed(1)}`);
+      close(hit.point.y, ribLanding(sp), 1e-3);
+    }
+    assert.ok(!down(g, stone, depth + SPINE_WALL.corbel.out + 0.03, v, sp), `a corbel prouder than its cap at v ${v.toFixed(1)}`);
+  }
+  assert.ok(bays >= 39, `${bays} bays`);
+  // the gateline passages stay open through the wall and the arcade, and the blind arches elsewhere are dark panes, not windows
+  // (shed.ts WESTERN_GATES: five 6.6 m passages, centres v0 + 4 + 8i; the piers over them hung from their 3.6 m head), across their whole width
+  for (const c of [12.1, 20.1, 28.1, 36.1, 44.1]) for (let v = c - 3.2; v <= c + 3.2; v += 0.4) {
+    const [x0, z0] = shedToWorld(layout, -1.2, v), [x1, z1] = shedToWorld(layout, 1.2, v);
+    const hits = new THREE.Raycaster(new THREE.Vector3(x0, 1.5, z0), new THREE.Vector3(x1 - x0, 0, z1 - z0).normalize(), 0, 2.4).intersectObject(g, true);
+    assert.equal(hits.length, 0, `the passage at v ${v.toFixed(1)} is open`);
+  }
+  const panes = byName(g, 'shed-west-arcade-panes');
+  assert.equal(panes.material, material('pane'));
+  const windows = bbox(byName(g, 'shed-windows'));
+  assert.ok(windows.min.x > layout.width - 1, 'no generic windows left on the west wall');
+});
+
+// Scorer of 2026-11-24 (shed-arcade-round-4, platform-eye-p1-north): through the nearest east-arcade arches, the dark underside of the east aisle's
+// slate roof showed as a pointed dark wedge in the top of each round arch. A line of sight from the eye through the top of each arch 4-30 m ahead
+// (at the arcade's east face, 0.1 m under the crown) meets the aisle's pale ceiling within 15 m beyond the arcade.
+test('from platform 1\'s eye, the top of each near east-arcade arch shows the east aisle\'s pale ceiling, not the slate\'s dark underside', () => {
+  const g = shedWorld(), x = eastArcadeU(layout), half = SPINE_WALL.thick / 2;
+  const eye = worldToShed(layout, [67.66190476190475, -206.35238095238097]), ey = 0.9 + 1.6;
+  const [ex, ez] = shedToWorld(layout, eye.u, eye.v);
+  const from = new THREE.Vector3(ex, ey, ez);
+  const near = eastArcadeOpenings(layout.length).filter(o => o.vc - eye.v >= 4 && o.vc - eye.v <= 30);
+  assert.ok(near.length >= 4, `${near.length} arches`);
+  for (const { vc, r, jamb } of near) {
+    const [px, pz] = shedToWorld(layout, x + half, vc);
+    const to = new THREE.Vector3(px, jamb + r - 0.1, pz), dir = to.clone().sub(from), d0 = dir.length();
+    const hit = new THREE.Raycaster(from, dir.normalize(), d0 + 1e-3, d0 + 15).intersectObject(g, true)[0];
+    assert.ok(hit, `nothing within 15 m beyond the arch at ${(vc - eye.v).toFixed(1)} m ahead`);
+    assert.equal(hit.object.name, 'shed-aisle-ceiling', `at ${(vc - eye.v).toFixed(1)} m ahead`);
+    assert.equal((hit.object as THREE.Mesh).material, material('valleyLining'), 'the vaults\' pale lining');
+  }
 });

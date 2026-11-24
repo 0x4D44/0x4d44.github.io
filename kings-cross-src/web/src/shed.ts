@@ -139,6 +139,19 @@ export const eastArcadeU = (layout: Pick<ShedLayout, 'spine'>): number => layout
  * lower storey, under the band, ASSUMED.
  */
 export const EAST_ARCADE = { opening: 3.6, crown: 4.5 } as const;
+/**
+ * The west wall's inner face, seen from platform 8 (2026-11-24, scorer of shed-arcade-round-4, B3: the west wall read as a low wall with generic
+ * windows, where R-kx-shed-interior-a shows the shed's side walls as round-arched arcades with the vault's ribs landing on them). The west wall
+ * itself is barely in view in any reference (shed-a shows it edge-on in shadow at its left margin), so its pattern is the arcade shed-a shows on
+ * the wall across the vault from the camera: one wide round-headed arch a bay under the band, its span about 0.55-0.6 of the rib bay (MEASURED in
+ * memory, rough, +-20%: an oblique view; the east arcade's EAST_ARCADE reading of the same photograph), a pier under every rib, the ribs on
+ * stepped corbels over a stone band. So it takes EAST_ARCADE's openings (`opening` 3.6 m, 0.59 of the 6.1 m bay; `crown` 4.5 m, ASSUMED) and the
+ * spine's band and corbels. `depth` 0.5 m, the arcade's projection from the wall's line into the shed: MODEL, the depth that puts its face where
+ * the spine's face stands from its own springing line (SPINE_WALL.thick / 2), so the west ribs' feet (RIB_FOOT) land on the corbels' caps as the
+ * spine's do. The wall behind it stays (it backs the Western Range): the arches are blind, a dark pane in each (ASSUMED: no source shows what is
+ * behind them), and open through at the Western Concourse's gateline passages.
+ */
+export const WEST_ARCADE = { depth: 0.5 } as const;
 /** v of the centre of each opening of the spine wall: the middle of every rib bay. */
 export function spineOpenings(length: number): number[] {
   const ribs = ribPositions(length);
@@ -696,13 +709,15 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
       const bottom = outward < 0 && westernCuts().some(([a, b]) => v + 0.45 > a && v - 0.45 < b) ? WESTERN_HEAD : GROUND_Y;
       const pierH = wallH - bottom - 0.3;
       brick.box([x0 + outward * (WALL_THICK + 0.25), (wallH + bottom) / 2 - 0.15, -v], [0.5, pierH, 0.9]); // pier outside
-      brick.box([x0 - outward * 0.15, (wallH + bottom) / 2 - 0.15, -v], [0.3, pierH, 0.9]); // pier inside
+      if (outward > 0) brick.box([x0 - outward * 0.15, (wallH + bottom) / 2 - 0.15, -v], [0.3, pierH, 0.9]); // pier inside (the west wall's inner face is the west arcade, below)
     }
-    // a window in every bay between the piers, on the inner face (and the outer face of the east wall)
-    for (let i = 0; i + 1 < ribPos.length; i++) {
-      const z = -(((ribPos[i] as number) + (ribPos[i + 1] as number)) / 2);
-      if (outward > 0 || !westernCuts().some(([a, b]) => -z + 0.7 > a && -z - 0.7 < b)) windowQuad(windows, [x0 - outward * 0.02, 1.9, z], outward < 0 ? '+x' : '-x');
-      if (outward > 0) windowQuad(windows, [x0 + WALL_THICK + 0.02, 1.9, z], '+x');
+    // the east wall: a window in every bay between the piers, on both faces (the west wall's inner face is the west arcade's blind arches)
+    if (outward > 0) {
+      for (let i = 0; i + 1 < ribPos.length; i++) {
+        const z = -(((ribPos[i] as number) + (ribPos[i + 1] as number)) / 2);
+        windowQuad(windows, [x0 - outward * 0.02, 1.9, z], '-x');
+        windowQuad(windows, [x0 + WALL_THICK + 0.02, 1.9, z], '+x');
+      }
     }
   }
   // aisle roofs: flat slabs at the springing, slate on top (ASSUMED flat; the real aisle roofs are not surveyed). Since the 2026-11-24
@@ -711,6 +726,13 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   // closed underneath too: at 10.25 m wide (since the realignment) the east aisle's roof is in plain view from platforms 0 and 1, and an open
   // underside showed the sky through it
   for (const [a, b] of aisles) slate.box([(a + b) / 2, wallH - 0.15, -L / 2], [b - a, 0.3, L]);
+  // the east aisle's ceiling: the vault's pale lining, just under the slab (scorer of shed-arcade-round-4: through the east arcade's arches the
+  // slab's dark slate underside read as a void, a pointed dark wedge in the top of each round arch from platform 1). ASSUMED finish, as the vaults'.
+  const ceiling = new Batch();
+  if (layout.aisleEast > 1e-6) {
+    const a = eastArcadeU(layout) + SPINE_WALL.thick / 2, y = wallH - 0.32;
+    ceiling.poly([[a, y, 0], [W, y, 0], [W, y, -L], [a, y, -L]], [[a, 0], [W, 0], [W, L], [a, L]], { facing: [0, -1, 0] });
+  }
   // the north end of each aisle is closed by a brick wall; the east one is pierced where platform 0's line runs out (EAST_AISLE_OPENING)
   if (layout.aisleWest > 1e-6) brick.box([layout.aisleWest / 2, (wallH + GROUND_Y) / 2, -L - WALL_THICK / 2], [layout.aisleWest, wallH - GROUND_Y, WALL_THICK]);
   if (layout.aisleEast > 1e-6) {
@@ -727,6 +749,10 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   // the east vault's east springing, between the vault and the east aisle, stands on an arcade of the spine wall's pattern (EAST_ARCADE)
   const eastArcade = new Batch();
   buildSpineWall(eastArcade, spineStone, eastArcadeU(layout), L, sp, sp, [-1], eastArcadeOpenings(L));
+  // the west vault's west springing stands on the west arcade (WEST_ARCADE) on the inner face of the west wall
+  const westArcade = new Batch();
+  const westPanes = new Batch();
+  buildWestArcade(westArcade, spineStone, westPanes, L, sp);
 
   // ---- the south front: across the two vaults, centred on the spine (the mesh's x runs from its west end, fx0) ------------
   const outline = new THREE.Shape([new THREE.Vector2(0, GROUND_Y), new THREE.Vector2(FW, GROUND_Y), new THREE.Vector2(FW, frontTop), new THREE.Vector2(0, frontTop)]);
@@ -811,7 +837,10 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   // its own mesh, the same brick, so that it is not a sun-shadow caster (lighting.ts SHADOW_CASTERS): the pass has no room for it
   group.add(mesh(spineBrick.build(), material('brickFoot'), 'shed-spine'));
   group.add(mesh(eastArcade.build(), material('brickFoot'), 'shed-east-arcade')); // not a sun-shadow caster either, for the same reason
-  group.add(mesh(spineStone.build(), material('stoneFoot'), 'shed-spine-stone')); // the two walls' bands and corbels: not a sun-shadow caster either
+  group.add(mesh(westArcade.build(), material('brickFoot'), 'shed-west-arcade')); // not a sun-shadow caster either
+  group.add(mesh(westPanes.build(), material('pane'), 'shed-west-arcade-panes'));
+  group.add(mesh(spineStone.build(), material('stoneDressing'), 'shed-spine-stone')); // the three arcades' pale bands and corbels (STONE_DRESSING): not a sun-shadow caster either
+  group.add(mesh(ceiling.build(), material('valleyLining'), 'shed-aisle-ceiling'));
   group.add(mesh(stone.build(), material('stoneFoot'), 'shed-stone'));
   group.add(mesh(slate.build(), material('slate'), 'shed-aisle-roofs'));
   group.add(mesh(windows.build(), material('sash'), 'shed-windows'));
@@ -829,20 +858,24 @@ type Face = '+x' | '-x' | '+y' | '-y' | '+z' | '-z';
  * opening (centre `vc`, half width `r`, its semicircular head springing at `jamb`) the brick above its crown and the head (both faces, the
  * soffit). The piers' and the spandrels' tops and feet are left out (the storey above or below, or the caller, closes them).
  */
-function arcadeStorey(brick: Batch, x: number, length: number, y0: number, y1: number, opens: { vc: number; r: number; jamb: number }[]): void {
-  const { thick } = SPINE_WALL;
+function arcadeStorey(brick: Batch, x: number, length: number, y0: number, y1: number, opens: { vc: number; r: number; jamb: number }[], thick: number = SPINE_WALL.thick, sides: readonly (-1 | 1)[] = [-1, 1], pierFoot?: (v0: number, v1: number) => number): void {
   const h = thick / 2, n = 8; // n chords to a quarter of each head
   const box = (v0: number, v1: number, b0: number, b1: number, skip: Face[]): void => {
     if (v1 - v0 > 1e-6 && b1 - b0 > 1e-6) brick.box([x, (b0 + b1) / 2, -(v0 + v1) / 2], [thick, b1 - b0, v1 - v0], { skip });
   };
+  // a pier hung over a passage (pierFoot over y0) shows its underside
+  const pier = (v0: number, v1: number): void => {
+    const foot = Math.max(y0, pierFoot?.(v0, v1) ?? y0);
+    box(v0, v1, foot, y1, foot > y0 ? ['+y'] : ['+y', '-y']);
+  };
   let start = 0;
   for (const { vc, r, jamb } of opens) {
     const crown = jamb + r;
-    box(start, vc - r, y0, y1, ['+y', '-y']); // the pier
+    pier(start, vc - r); // the pier
     box(vc - r, vc + r, crown, y1, ['+y', '-y', '+z', '-z']); // the brick over the head
     // the head: a semicircle about (vc, jamb); on each face two spandrels, fans from the corner at the crown's height
     const arc = (k: number): [number, number] => [vc - r * Math.cos((Math.PI * k) / (2 * n)), jamb + r * Math.sin((Math.PI * k) / (2 * n))];
-    for (const side of [-1, 1]) {
+    for (const side of sides) {
       const xf = x + side * h;
       const facing: V3 = [side, 0, 0];
       for (const mirror of [1, -1]) {
@@ -862,7 +895,7 @@ function arcadeStorey(brick: Batch, x: number, length: number, y0: number, y1: n
     // the jambs' faces are the piers' ends; between the jamb top and the head the reveal is the head's soffit
     start = vc + r;
   }
-  box(start, length, y0, y1, ['+y', '-y']); // the last pier
+  pier(start, length); // the last pier
 }
 
 /** The lower storey's openings of the spine wall (SPINE_WALL): two in every rib bay, `pitch` apart about its middle. */
@@ -880,6 +913,8 @@ export function eastArcadeOpenings(length: number): { vc: number; r: number; jam
   const r = EAST_ARCADE.opening / 2;
   return spineOpenings(length).map(vc => ({ vc, r, jamb: EAST_ARCADE.crown - r }));
 }
+/** The west arcade's arches (WEST_ARCADE): the east arcade's, one wide opening in the middle of every rib bay. */
+export const westArcadeOpenings = eastArcadeOpenings;
 /** The height of the band's top and of the corbels' tops: where the ribs' feet land, a little under the springing. */
 export const ribLanding = (springing: number): number => springing - SPINE_WALL.corbel.drop;
 
@@ -891,7 +926,7 @@ export const ribLanding = (springing: number): number => springing - SPINE_WALL.
  * `shed-east-arcade`), and the stone `shed-spine-stone`: none of them casts a sun shadow.
  */
 export function buildSpineWall(brick: Batch, stone: Batch, x: number, length: number, springing: number, top: number, faces: readonly (-1 | 1)[], lower = spineLowerOpenings(length)): void {
-  const { thick, sill, band, bandOut, corbel } = SPINE_WALL;
+  const { thick, sill } = SPINE_WALL;
   const h = thick / 2;
   const landing = ribLanding(springing);
   const upper = top > springing + 1;
@@ -906,18 +941,46 @@ export function buildSpineWall(brick: Batch, stone: Batch, x: number, length: nu
     for (const { vc, r } of opens) brick.poly([[x - h, landing, -(vc - r)], [x + h, landing, -(vc - r)], [x + h, landing, -(vc + r)], [x - h, landing, -(vc + r)]], [[0, vc - r], [thick, vc - r], [thick, vc + r], [0, vc + r]], { facing: [0, 1, 0] });
     brick.poly([[x - h, top, 0], [x + h, top, 0], [x + h, top, -length], [x - h, top, -length]], [[0, 0], [thick, 0], [thick, length], [0, length]], { facing: [0, 1, 0] });
   }
-  for (const side of faces) {
-    const f = x + side * h;
-    const back: Face = side > 0 ? '-x' : '+x';
-    stone.box([f + side * bandOut / 2, landing - band / 2, -length / 2], [bandOut, band, length], { skip: [back] });
-    // the corbel: its courses stepped in under one another, the cap carrying the rib's inner boom
-    for (const v of ribPositions(length)) {
-      let y = landing;
-      for (const [wide, tall, out] of corbel.steps) {
-        stone.box([f + side * out / 2, y - tall / 2, -v], [out, tall, wide], { skip: [back] });
-        y -= tall;
-      }
+  for (const side of faces) dressFace(stone, x + side * h, side, length, springing);
+}
+
+/** The stone on a wall's face at u = `f`, facing `side`, that vault ribs land on: the band, and a stepped corbel (SPINE_WALL.corbel) under every rib. */
+function dressFace(stone: Batch, f: number, side: -1 | 1, length: number, springing: number): void {
+  const { band, bandOut, corbel } = SPINE_WALL;
+  const landing = ribLanding(springing);
+  const back: Face = side > 0 ? '-x' : '+x';
+  stone.box([f + side * bandOut / 2, landing - band / 2, -length / 2], [bandOut, band, length], { skip: [back] });
+  // the corbel: its courses stepped in under one another, the cap carrying the rib's inner boom
+  for (const v of ribPositions(length)) {
+    let y = landing;
+    for (const [wide, tall, out] of corbel.steps) {
+      stone.box([f + side * out / 2, y - tall / 2, -v], [out, tall, wide], { skip: [back] });
+      y -= tall;
     }
+  }
+}
+
+/**
+ * The west wall's inner face as an arcade (WEST_ARCADE), from the wall's line (u = 0, the west vault's springing) `depth` into the shed: a pier
+ * under every rib and a round-headed arch in every bay, the band and a corbel under every rib on its face, the vault's west ribs landing on them
+ * as the spine's do. Brick into `brick`, the stone into `stone`, a dark pane in the back of every arch that is not a gateline passage into `panes`.
+ * Where a pier stands over one of the Western Concourse's gateline passages (westernCuts) it is hung from the passage's head.
+ */
+export function buildWestArcade(brick: Batch, stone: Batch, panes: Batch, length: number, springing: number): void {
+  const { depth } = WEST_ARCADE;
+  const cuts = westernCuts();
+  const overCut = (v0: number, v1: number): boolean => cuts.some(([a, b]) => v1 > a && v0 < b);
+  const opens = westArcadeOpenings(length);
+  arcadeStorey(brick, depth / 2, length, GROUND_Y, springing, opens, depth, [1], (v0, v1) => (overCut(v0, v1) ? WESTERN_HEAD : GROUND_Y));
+  brick.poly([[0, springing, 0], [depth, springing, 0], [depth, springing, -length], [0, springing, -length]], [[0, 0], [depth, 0], [depth, length], [0, length]], { facing: [0, 1, 0] }); // its top
+  dressFace(stone, depth, 1, length, springing);
+  const n = 8;
+  for (const { vc, r, jamb } of opens) {
+    if (overCut(vc - r, vc + r)) continue;
+    const pts: V3[] = [[0.02, GROUND_Y, -(vc - r)]];
+    for (let k = 0; k <= 2 * n; k++) { const a = (Math.PI * k) / (2 * n); pts.push([0.02, jamb + r * Math.sin(a), -(vc - r * Math.cos(a))]); }
+    pts.push([0.02, GROUND_Y, -(vc + r)]);
+    panes.poly(pts, pts.map((p): V2 => [-p[2], p[1]]), { facing: [1, 0, 0] });
   }
 }
 

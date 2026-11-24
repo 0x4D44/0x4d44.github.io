@@ -565,7 +565,7 @@ export type MaterialName =
   | 'brick' | 'stone' | 'slate' | 'asphalt' | 'platformEdge' | 'ballast'
   | 'roofGlass' | 'glass' | 'window' | 'windowArch'
   | 'concrete' | 'steel' | 'whiteSteel' | 'ribPaint' | 'lining' | 'valleyLining' | 'shedGlass' | 'panel' | 'concourseFloor'
-  | 'brickRed' | 'slateBothSides' | 'sash' | 'sashArch' | 'pane' | 'platformEdgeStrip' | 'brickFoot' | 'stoneFoot';
+  | 'brickRed' | 'slateBothSides' | 'sash' | 'sashArch' | 'pane' | 'platformEdgeStrip' | 'brickFoot' | 'stoneFoot' | 'stoneDressing';
 
 /**
  * A wall material with the contact shade at its foot, the define lighting.ts `FOOT_SHADE` names (not imported: lighting.ts is the page's chunk, this its own; a test holds the two to one name).
@@ -595,6 +595,25 @@ const FRONT_FLOOD = { brick: [0.25, 14, 0.35], stone: [0.14, 14, 0.35] } as cons
 function tiled(name: TextureName, extra: THREE.MeshLambertMaterialParameters = {}): THREE.MeshLambertMaterial {
   const t = texture(name);
   return new THREE.MeshLambertMaterial({ map: t, color: t ? 0xffffff : TEXTURES[name].average, ...extra });
+}
+
+/**
+ * The shed's pale stone dressings (shed.ts: the band and the corbels of the spine wall, the east arcade and the west arcade, the north pier's coping). The scorer of
+ * shed-arcade-round-4 (B2): the corbels and the band read as the front's dull brown stone, where R-kx-shed-interior-c and -a show them near-white. Sampled in memory
+ * (2026-11-24, the median of each patch, sRGB): shed-c-arcade-2013.jpg (lamplit, 1600 px) the band at x 1460-1600, y 375-395 (186, 180, 161) and at x 0-90, y 510-525
+ * (171, 162, 143); shed-a-north-from-footbridge-2019.jpg (daylit) the band at x 1420-1480, y 505-520 (205, 200, 176) and a bracket at x 1235-1265, y 505-520
+ * (215, 207, 183). Their mean, (194, 187, 166), is the stone's average colour here: the front's stone texture tinted to it (linear, channel by channel), or that
+ * colour itself where there is no texture (Node). The front's contact shade and floodlight (FRONT_FOOT, FRONT_FLOOD.stone) as `stoneFoot`, so it takes the night
+ * as the rest of the shed's stone does, only lighter.
+ */
+export const STONE_DRESSING = 0xc2bba6;
+function stoneDressing(): THREE.MeshLambertMaterial {
+  const m = tiled('stone');
+  if (m.map) {
+    const want = new THREE.Color(STONE_DRESSING), avg = new THREE.Color(TEXTURES.stone.average);
+    m.color.setRGB(want.r / avg.r, want.g / avg.g, want.b / avg.b);
+  } else m.color.set(STONE_DRESSING);
+  return floodLit(footShaded(m, FRONT_FOOT), ...FRONT_FLOOD.stone);
 }
 
 /**
@@ -1361,6 +1380,8 @@ const makers: Readonly<Record<MaterialName, () => THREE.Material>> = {
   // Round seven (night lighting): the front is floodlit from the foot, the brick's gold and the ribs' stone brighter at the lamps (night-a-kx-square-2015-skinner.jpg, see lighting.ts `FLOOD`)
   brickFoot: () => floodLit(footShaded(tiled('brick'), FRONT_FOOT), ...FRONT_FLOOD.brick),
   stoneFoot: () => floodLit(footShaded(tiled('stone'), FRONT_FOOT), ...FRONT_FLOOD.stone),
+  // the shed's pale dressings: see STONE_DRESSING
+  stoneDressing,
 };
 
 const materials = new Map<MaterialName, THREE.Material>();

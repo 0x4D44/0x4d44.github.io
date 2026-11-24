@@ -41,6 +41,11 @@ M = [
  ('the east arcade back to the spine\'s paired openings', ", [-1], eastArcadeOpenings(L));", ", [-1]);"),
  ('the north pier left out', 'buildNorthPier(spineBrick, spineStone, spine, L, valleyY);', ''),
  ('the north pier no wider than the wall', 'NORTH_PIER = { half: 1.4,', 'NORTH_PIER = { half: 0.5,'),
+ ('the arcades\' dressings back in the front\'s brown stone', "material('stoneDressing'), 'shed-spine-stone'", "material('stoneFoot'), 'shed-spine-stone'"),
+ ('the west arcade without its corbels and band', 'dressFace(stone, depth, 1, length, springing);', ''),
+ ('the west arcade a plain wall, no arches', 'arcadeStorey(brick, depth / 2, length, GROUND_Y, springing, opens,', 'arcadeStorey(brick, depth / 2, length, GROUND_Y, springing, [],'),
+ ('the west arcade\'s piers stand in the gateline passages', '(overCut(v0, v1) ? WESTERN_HEAD : GROUND_Y)', '(GROUND_Y)'),
+ ('the east aisle\'s ceiling left out: the slate\'s dark underside in the arches', "  group.add(mesh(ceiling.build(), material('valleyLining'), 'shed-aisle-ceiling'));\n", ''),
 ]
 def run(name):
  try: r = kxmut.run_process(['node','--test','--test-reporter=tap','--test-timeout=10000','web/tests/shed-tower.test.ts','web/tests/shed.test.ts'],cwd=work,timeout=30)
