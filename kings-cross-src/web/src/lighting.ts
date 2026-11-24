@@ -502,6 +502,12 @@ export function addCrownBelow(material: THREE.MeshLambertMaterial): void {
  * 11 times. ASSUMED amounts. From inside the level is 0 and the face seen looks down, so the branch is skipped twice over and the glass is drawn as before.
  */
 export const CROWN_ABOVE = { pane: 1.3, share: 0.9, paneLuma: 0.602, barLuma: 0.0667, max: 0.83, full: 0.35 } as const;
+/**
+ * Round 11, step 3: from outside the grid was mostly what shows through the glass far off (platforms, tracks, tactile strips under the glazing's far
+ * opacity, GLASS_OPACITY.far): from outside the glass is drawn at least `CROWN_ALPHA` opaque (shed.ts crownAlpha: by crownOutside, and by the x-ray mode's
+ * factor), by day, in its program, so the material's own opacity, which the roof modes set, is untouched. ASSUMED: about 0.85, just see-through.
+ */
+export const CROWN_ALPHA = 0.85;
 export const CROWN_ABOVE_GLSL = /* glsl */`
 vec3 crownAbove( vec3 c, float w, float texel ) {
   float bar = clamp( ( ${CROWN_ABOVE.paneLuma.toFixed(4)} - texel ) / ${(CROWN_ABOVE.paneLuma - CROWN_ABOVE.barLuma).toFixed(4)}, 0.0, 1.0 );
@@ -511,22 +517,23 @@ vec3 crownAbove( vec3 c, float w, float texel ) {
 `;
 
 /** Give the shed's crown glass its look from above (`CROWN_ABOVE`), after addCrownBelow (it reads that patch's day level), with the material's own level. */
-export function addCrownAbove(material: THREE.MeshLambertMaterial, level: THREE.IUniform<number>): void {
+export function addCrownAbove(material: THREE.MeshLambertMaterial, level: THREE.IUniform<number>, alpha: THREE.IUniform<number>): void {
   const before = material.onBeforeCompile;
   const ownKey = material.customProgramCacheKey();
   material.onBeforeCompile = (shader, renderer) => {
     before.call(material, shader, renderer);
     shader.uniforms.uCrownAbove = level;
+    shader.uniforms.uCrownAlpha = alpha;
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', `#include <common>\nuniform float uCrownAbove;\n${CROWN_ABOVE_GLSL}`)
+      .replace('#include <common>', `#include <common>\nuniform float uCrownAbove;\nuniform float uCrownAlpha;\n${CROWN_ABOVE_GLSL}`)
       .replace('#include <opaque_fragment>', `${CROWN_ABOVE_LINE}\n#include <opaque_fragment>`);
   };
   material.customProgramCacheKey = () => `${ownKey}+crownAbove`;
   material.needsUpdate = true;
 }
-/** what addCrownAbove puts before the output: the texel's luminance, then the lift by the level, by day only (CROWN_BELOW's shared level: off by night, under the moon,
- * elsewhere), and by how far the face seen looks up */
-export const CROWN_ABOVE_LINE = `#ifdef USE_MAP\nfloat crownTexel = dot( sampledDiffuseColor.rgb, vec3( 0.2126, 0.7152, 0.0722 ) );\n#else\nfloat crownTexel = ${CROWN_ABOVE.paneLuma.toFixed(4)};\n#endif\nif ( uCrownAbove * uCrownBelow > 0.0 ) outgoingLight = crownAbove( outgoingLight, uCrownAbove * uCrownBelow * smoothstep( 0.0, ${CROWN_ABOVE.full.toFixed(2)}, clamp( dot( normal, viewMatrix[ 1 ].xyz ), 0.0, 1.0 ) ), crownTexel );`;
+/** what addCrownAbove puts before the output: the texel's luminance, the lift by the level, by day only (CROWN_BELOW's shared level: off by night, under the moon,
+ * elsewhere), and by how far the face seen looks up; then, by day, the glass's alpha raised to at least uCrownAlpha */
+export const CROWN_ABOVE_LINE = `#ifdef USE_MAP\nfloat crownTexel = dot( sampledDiffuseColor.rgb, vec3( 0.2126, 0.7152, 0.0722 ) );\n#else\nfloat crownTexel = ${CROWN_ABOVE.paneLuma.toFixed(4)};\n#endif\nif ( uCrownAbove * uCrownBelow > 0.0 ) outgoingLight = crownAbove( outgoingLight, uCrownAbove * uCrownBelow * smoothstep( 0.0, ${CROWN_ABOVE.full.toFixed(2)}, clamp( dot( normal, viewMatrix[ 1 ].xyz ), 0.0, 1.0 ) ), crownTexel );\nif ( uCrownAlpha * uCrownBelow > 0.0 ) diffuseColor.a = max( diffuseColor.a, uCrownAlpha );`;
 
 /** The directional light's shadow line in three's lights chunk (as this module's patch above leaves it), with the crown's sky fill wrapped round it: the shade lifted, the sun's streaks left at 1. */
 function shedSoftenedLights(): string {

@@ -68,24 +68,44 @@ test('the shed\'s glass carries it, by day only and on a face that looks up; wit
   assert.equal(f.split(line).length - 1, 1, 'the line once');
   assert.ok(line.includes('\nif ( uCrownAbove * uCrownBelow > 0.0 )') && line.includes('clamp( dot( normal, viewMatrix[ 1 ].xyz ), 0.0, 1.0 )'), 'skipped at level 0 or by night; by how far the face looks up');
   assert.ok(line.includes('dot( sampledDiffuseColor.rgb,') && f.indexOf('#include <map_fragment>') < f.indexOf(line) && f.indexOf(line) < f.indexOf('#include <opaque_fragment>'), 'read off the texel after the map is sampled, before the output');
-  assert.ok(line.endsWith('), crownTexel );'), 'the lift is masked by that texel');
+  assert.ok(line.includes('), crownTexel );\n'), 'the lift is masked by that texel');
   // the program before round 11: the same glass, given only the look from below
   const was = (material('shedGlass') as THREE.MeshLambertMaterial).clone();
   lighting.addCrownBelow(was);
   const old = compile(was);
-  assert.equal(f.replace(`\nuniform float uCrownAbove;\n${src}`, '').replace(`${line}\n`, ''), old.fragmentShader, 'the fragment shader otherwise byte for byte');
+  assert.equal(f.replace(`\nuniform float uCrownAbove;\nuniform float uCrownAlpha;\n${src}`, '').replace(`${line}\n`, ''), old.fragmentShader, 'the fragment shader otherwise byte for byte');
   assert.equal(now.vertexShader, old.vertexShader, 'the vertex shader untouched');
-  assert.deepEqual(Object.keys(now.uniforms).filter((k) => k !== 'uCrownAbove'), Object.keys(old.uniforms), 'the same uniforms but its own level');
+  assert.deepEqual(Object.keys(now.uniforms).filter((k) => k !== 'uCrownAbove' && k !== 'uCrownAlpha'), Object.keys(old.uniforms), 'the same uniforms but its own level and alpha');
   for (const k of Object.keys(old.uniforms)) assert.ok(now.uniforms[k] === old.uniforms[k], `${k} the shared one`);
   // the level follows the camera: 0 for a platform eye and under the crown, 1 from the overview's distance
-  const level = now.uniforms.uCrownAbove as THREE.IUniform<number>;
-  const eye = (x: number, y: number, z: number): number => { // a point in the shed's own frame (x from its west side, z north, negative)
-    const cam = new THREE.PerspectiveCamera();
-    cam.position.set(x, y, z).applyMatrix4(group.matrixWorld);
-    level.value = -1;
-    mesh.onBeforeRender(undefined as never, undefined as never, cam, mesh.geometry, glass, null as never);
-    return level.value;
+  const level = now.uniforms.uCrownAbove as THREE.IUniform<number>, alpha = now.uniforms.uCrownAlpha as THREE.IUniform<number>;
+  assert.ok(line.endsWith('\nif ( uCrownAlpha * uCrownBelow > 0.0 ) diffuseColor.a = max( diffuseColor.a, uCrownAlpha );'), 'by day, the alpha raised to at least uCrownAlpha, never lowered');
+  const clad = group.getObjectByName('shed-roof-cladding') as THREE.Mesh;
+  const look = (g: THREE.Group, x: number, y: number, z: number): { level: number; alpha: number; opacity: number } => { // a point in the shed's frame
+    const m = g.getObjectByName('shed-roof-glass') as THREE.Mesh, c = g.getObjectByName('shed-roof-cladding') as THREE.Mesh, mat = m.material as THREE.MeshLambertMaterial;
+    const u = compile(mat).uniforms, cam = new THREE.PerspectiveCamera();
+    cam.position.set(x, y, z).applyMatrix4(g.matrixWorld);
+    (u.uCrownAbove as THREE.IUniform<number>).value = -1; (u.uCrownAlpha as THREE.IUniform<number>).value = -1;
+    c.onBeforeRender(undefined as never, undefined as never, cam, c.geometry, c.material as THREE.Material, null as never);
+    m.onBeforeRender(undefined as never, undefined as never, cam, m.geometry, mat, null as never);
+    return { level: u.uCrownAbove!.value as number, alpha: u.uCrownAlpha!.value as number, opacity: mat.opacity };
   };
+  const eye = (x: number, y: number, z: number): number => look(group, x, y, z).level;
+  assert.ok(clad && level && alpha, 'the cladding and both uniforms');
+  // inside, the glass's opacity is what the roof gives it (GLASS_OPACITY.near) and its alpha is not raised; outside far off, at least CROWN_ALPHA
+  const near = (shedModule.GLASS_OPACITY as { near: number; far: number }), raise = L.CROWN_ALPHA as number;
+  for (const p of [[layout.spine - 10, 2.5, -100], [layout.spine + 10, layout.crown - 1, -200]] as [number, number, number][]) {
+    const v = look(group, ...p);
+    assert.ok(v.alpha === 0 && Math.abs(v.opacity - near.near) < 1e-9, `inside at ${p}: alpha ${v.alpha}, opacity ${v.opacity}`);
+  }
+  const far = look(group, layout.spine, 300, 600);
+  assert.ok(raise >= 0.8 && raise <= 0.9 && Math.abs(far.alpha - raise) < 1e-9 && Math.abs(far.opacity - near.far) < 1e-9, `far off: alpha ${far.alpha}, the material's opacity still ${far.opacity}`);
+  // the x-ray roof mode scales it as it scales the roof
+  const xray = shedModule.buildShed(layout, { range: false, roof: 'xray' });
+  xray.updateMatrixWorld(true);
+  const xr = look(xray, layout.spine, 300, 600);
+  assert.ok(Math.abs(xr.alpha - raise * (shedModule.XRAY_OPACITY as number)) < 1e-9 && Math.abs(xr.opacity - near.far) < 1e-9, `x-ray: alpha ${xr.alpha}`);
+  assert.equal(look(xray, layout.spine - 10, 2.5, -100).alpha, 0, 'x-ray, inside: not raised');
   assert.equal(eye(layout.spine - 10, 2.5, -100), 0, 'a platform eye');
   assert.equal(eye(layout.spine + 10, layout.crown - 1, -200), 0, 'just under the crown');
   assert.equal(eye(layout.spine, 60, 200), 1, 'from far off, outside');
