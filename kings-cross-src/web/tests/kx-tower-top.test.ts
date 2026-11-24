@@ -121,22 +121,26 @@ test('the round-2 scorer\'s cheap ones: the canopy lamps are not bright by day, 
   }
 });
 
-test('the dials are about 0.62 of the stage\'s face (R-kx-front-a, -c), brick above them under the frieze, and clocks.ts drives them at their size', () => {
+test('the dials are about 0.67 of the stage\'s face (R-kx-front-a, -c), on the brick, brick above them under the frieze, and clocks.ts drives them at their size', () => {
   const meshes = tower.getObjectsByProperty('type', 'Mesh') as THREE.Mesh[];
-  const ring = meshes.find(m => m.geometry instanceof THREE.RingGeometry)!, dial = meshes.find(m => m.geometry instanceof THREE.CircleGeometry)!;
-  const outer = (ring.geometry as THREE.RingGeometry).parameters.outerRadius, r = (dial.geometry as THREE.CircleGeometry).parameters.radius;
+  const dial = meshes.find(m => m.geometry instanceof THREE.CircleGeometry)!;
+  const r = (dial.geometry as THREE.CircleGeometry).parameters.radius, outer = r;
+  assert.ok(!meshes.some(m => m.geometry instanceof THREE.RingGeometry), 'no stone surround disc: the bezel sits on the brick');
   const stage = hitZ(0, clockY - 2.35, named('tower-brick'))!;
   const ratio = (2 * outer) / (2 * stage);
-  assert.ok(ratio >= 0.55 && ratio <= 0.7, `the surround ${ratio.toFixed(2)} of the stage's face`);
-  const frieze = CLOCK_TOWER_HEIGHT - 3.3;
-  assert.ok(frieze - (clockY + outer) >= 0.25, `brick above the surround: ${(frieze - (clockY + outer)).toFixed(2)} m`);
+  // re-pinned 2026-11-24 (the held round 2a): the scorer's target is the bezel's outer edge at 0.65 to 0.70 of the face (it was the stone
+  // surround at 0.55 to 0.7); the same 0.15 band, centred on it
+  assert.ok(ratio >= 0.6 && ratio <= 0.75, `the bezel ${ratio.toFixed(2)} of the stage's face`);
+  const frieze = CLOCK_TOWER_HEIGHT - 3.3, weathered = CLOCK_TOWER_HEIGHT - 8.2 + 0.45;
+  assert.ok(frieze - (clockY + outer) >= 0.4, `brick above the dial: ${(frieze - (clockY + outer)).toFixed(2)} m`);
+  assert.ok(clockY - outer - weathered >= 0.8, `brick below the dial: ${(clockY - outer - weathered).toFixed(2)} m`);
   const brickAbove = hitZ(0, (clockY + outer + frieze) / 2, named('tower-brick'));
   assert.ok(brickAbove !== null && Math.abs(brickAbove - stage) < 0.02, 'and it is the stage\'s brick');
   for (const d of tower.userData.clockDials as { radius: number }[]) assert.ok(Math.abs(d.radius - r) < 1e-6, 'clocks.ts draws to the dial\'s radius');
 });
 
-test('the dial is painted with a gilt bezel, a black chapter ring and Roman numerals (R-kx-front-c)', async () => {
-  const { paintDial } = await import('../src/shed.ts');
+test('the dial is painted with a broad gilt bezel, a black chapter band and bold Roman numerals (R-kx-front-c)', async () => {
+  const { paintDial, DIAL_BEZEL } = await import('../src/shed.ts');
   const texts: string[] = [], fills: unknown[] = [];
   let strokes = 0;
   const g = {
@@ -145,8 +149,10 @@ test('the dial is painted with a gilt bezel, a black chapter ring and Roman nume
     fill() { fills.push(this.fillStyle); }, stroke() { strokes++; }, fillText(t: string) { texts.push(t); },
   };
   paintDial(g as never, 512);
+  const px = Number(/(\d+)px/.exec(g.font)?.[1] ?? 0);
+  assert.ok(px >= 0.18 * 254, `numerals ${px} px tall on a 254 px radius: about 0.2R, to read as a dark band`);
   assert.ok(['XII', 'III', 'VI', 'IX', 'IIII', 'IV'].filter(n => texts.includes(n)).length >= 4 && texts.length === 12, `numerals painted: ${texts.join(' ')}`);
-  assert.ok(fills.includes('#c8a24a'), 'a gilt bezel');
+  assert.ok(fills[0] === DIAL_BEZEL && /^#d|^#c/.test(DIAL_BEZEL), 'a gilt bezel');
   assert.ok(strokes >= 60, `a chapter ring of minute ticks: ${strokes} strokes`);
 });
 
@@ -159,4 +165,13 @@ test('the shaft has its tall round-headed slits on the south face and both side 
     assert.ok(ray(new THREE.Vector3(-20, y, 0), new THREE.Vector3(1, 0, 0)), `a slit on the west face at ${y} m`);
     assert.ok(!ray(new THREE.Vector3(1.5, y, 20), new THREE.Vector3(0, 0, -1)), 'narrow: brick each side of it');
   }
+  // the held round 2a: near-black by day, not the cap's blue-grey slate; and the tall slit under a stone hood
+  const h = new THREE.Raycaster(new THREE.Vector3(0, 16, 20), new THREE.Vector3(0, 0, -1), 0, 40).intersectObject(cap, false)[0]!;
+  const col = cap.geometry.getAttribute('color');
+  assert.ok(col && Math.max(col.getX(h.face!.a), col.getY(h.face!.a), col.getZ(h.face!.a)) <= 0.2, 'the slit is near-black');
+  const stone = named('tower-stone');
+  let hood = 0;
+  for (let y = 17; y < 19.5; y += 0.02) { const z = hitZ(0, y, stone); if (z !== null && z > TOWER_SIZE / 2 + 0.03) hood++; }
+  assert.ok(hood > 0, 'a stone hood over the tall slit');
+  assert.ok(hitZ(0, 13.1, stone) !== null, 'and a stone sill under it');
 });
