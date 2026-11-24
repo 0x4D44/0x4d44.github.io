@@ -3,11 +3,11 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import * as THREE from 'three';
 import type { KxData } from '../../core/osm.ts';
-import { CLOCK_TOWER_HEIGHT, SHED_LENGTH, SHED_SPAN_WIDTH, shedLayout, stationBuilding, worldToShed } from '../../core/station.ts';
+import { CLOCK_TOWER_HEIGHT, SHED_LENGTH, SHED_SPAN_WIDTH, shedLayout, shedToWorld, stationBuilding, worldToShed } from '../../core/station.ts';
 import { shedRoofY } from '../src/furniture.ts';
 import { SHADOW_CASTERS } from '../src/lighting.ts';
 import { material } from '../src/materials.ts';
-import { buildShed, buildTower, buildWesternRange, gableBars, GABLE_GLASS_FROM, glazedHalfAngle, GLAZED_STRIP_WIDTH, GLASS_OPACITY, glazingOpacity, lunetteBars, MEMBER_SIZE, RIB_SPACING, ribMembers, ribPositions, ROOF_SKIN, roofOpacity, SPINE_WALL, spineOpenings, TOWER_SIZE, valleyCut, VALLEY_HALF, vaultBand, vaultPoint, WESTERN_RANGE, WESTERN_RANGE_DEPTH_BEFORE, westernArches, westernBays, westernBlock, westernWindows, XRAY_OPACITY } from '../src/shed.ts';
+import { buildShed, buildTower, eastArcadeU, buildWesternRange, gableBars, GABLE_GLASS_FROM, glazedHalfAngle, GLAZED_STRIP_WIDTH, GLASS_OPACITY, glazingOpacity, lunetteBars, MEMBER_SIZE, RIB_SPACING, ribMembers, ribPositions, ROOF_SKIN, roofOpacity, SPINE_WALL, spineOpenings, TOWER_SIZE, valleyCut, VALLEY_HALF, vaultBand, vaultPoint, WESTERN_RANGE, WESTERN_RANGE_DEPTH_BEFORE, westernArches, westernBays, westernBlock, westernWindows, XRAY_OPACITY } from '../src/shed.ts';
 
 const data: KxData = JSON.parse(readFileSync(new URL('../src/data/kx-track.json', import.meta.url), 'utf8'));
 const layout = shedLayout(data);
@@ -535,4 +535,79 @@ test('buildShed: the spine wall meets the springing: its top is the springing, b
 test('the realignment took the Range\'s depth, not its concourse face: the face, and the concourse built against it, stand where they stood', () => {
   close(WESTERN_RANGE.depth + layout.westShift, WESTERN_RANGE_DEPTH_BEFORE, 1e-12);
   assert.ok(layout.westShift > 2 && layout.westShift < 2.1, `the west wall moved ${layout.westShift} m west`);
+});
+
+// Scorer hold of 2026-11-24 (score-arcade-1, B3 and B7): the east aisle, 10.25 m wide since the realignment, showed the sky through a roof with no
+// underside, and the east vault's east edge stood on nothing. A ray straight up from a platform eye must meet a face turned towards it.
+const shedWorld = (): THREE.Group => {
+  const g = buildShed(layout);
+  g.updateMatrixWorld(true);
+  return g;
+};
+const solidMat = (m: THREE.Material): boolean => !(m.transparent && m.opacity < 0.9);
+const upHit = (g: THREE.Object3D, u: number, v: number, y: number): THREE.Intersection | undefined => {
+  const [x, z] = shedToWorld(layout, u, v);
+  const ray = new THREE.Raycaster(new THREE.Vector3(x, y, z), new THREE.Vector3(0, 1, 0), 0, 100);
+  return ray.intersectObject(g, true)[0];
+};
+
+test('buildShed: the east aisle\'s roof is closed from below over its full width and length, a solid roof under the springing', () => {
+  const g = shedWorld(), eye = 0.9 + 1.7, a = eastArcadeU(layout) + SPINE_WALL.thick / 2;
+  let n = 0;
+  for (let u = a + 0.25; u < layout.width - 0.05; u += 0.95) {
+    for (let v = 2; v < layout.length - 1; v += 12.5) {
+      const hit = upHit(g, u, v, eye);
+      assert.ok(hit, `open sky over the east aisle at (${u.toFixed(2)}, ${v})`);
+      const mats = Array.isArray((hit.object as THREE.Mesh).material) ? ((hit.object as THREE.Mesh).material as THREE.Material[]) : [(hit.object as THREE.Mesh).material as THREE.Material];
+      assert.ok(mats.every(solidMat), `at (${u.toFixed(2)}, ${v}) the first thing overhead is ${hit.object.name}, see-through`);
+      assert.ok(hit.point.y <= layout.springing + 1e-3, `at (${u.toFixed(2)}, ${v}) the roof is ${hit.point.y.toFixed(2)} m up, over the springing`);
+      n++;
+    }
+  }
+  assert.ok(n > 150, `${n} rays`);
+});
+
+test('buildShed: nowhere across the shed, west wall to east wall, does a ray straight up from the platforms see the sky', () => {
+  const g = shedWorld();
+  for (let u = 0.05; u < layout.width; u += 0.73) {
+    for (let v = 3; v < layout.length - 1; v += 40) assert.ok(upHit(g, u, v, 2.6), `open sky at (${u.toFixed(2)}, ${v})`);
+  }
+});
+
+test('buildShed: the east vault\'s east springing stands on the east arcade, a wall of the spine wall\'s pattern from ground to springing the length of the shed', () => {
+  const g = buildShed(layout);
+  const wall = byName(g, 'shed-east-arcade');
+  assert.equal(wall.material, material('brickFoot'), 'the brick of the shed');
+  assert.ok(!SHADOW_CASTERS.has('shed-east-arcade'), 'not a sun-shadow caster: the pass has no room for it');
+  const e = eastArcadeU(layout), half = SPINE_WALL.thick / 2;
+  close(e, layout.spine + 2 * R, 1e-12); // the east vault's east springing
+  const p = positions(wall.geometry);
+  let top = -Infinity, foot = Infinity, xMin = Infinity, xMax = -Infinity, zMin = Infinity, zMax = -Infinity;
+  for (let i = 0; i < p.count; i++) {
+    top = Math.max(top, p.getY(i)); foot = Math.min(foot, p.getY(i));
+    xMin = Math.min(xMin, p.getX(i)); xMax = Math.max(xMax, p.getX(i)); zMin = Math.min(zMin, p.getZ(i)); zMax = Math.max(zMax, p.getZ(i));
+  }
+  close(top, layout.springing, 1e-6); // float32 positions
+  assert.ok(foot < 0, 'from the ground');
+  close(xMin, e - half, 1e-5);
+  close(xMax, e + half, 1e-5);
+  close(zMax, 0, 1e-5);
+  close(zMin, -layout.length, 1e-4);
+  // the east vault's ribs land on it: their east feet are on its line
+  const ribs = byName(g, 'shed-ribs') as unknown as THREE.InstancedMesh;
+  const m = new THREE.Matrix4(), t = new THREE.Vector3();
+  let east = -Infinity;
+  for (let i = 0; i < ribs.count; i++) { ribs.getMatrixAt(i, m); t.setFromMatrixPosition(m); east = Math.max(east, t.x); }
+  close(east + R, e, 1e-5);
+  // a pier under every rib: a ray along the wall's thickness at mid-height, at each rib, meets brick
+  g.updateMatrixWorld(true);
+  for (const v of ribPositions(layout.length)) {
+    for (const y of [2, layout.springing - 0.3]) {
+      const [x0, z0] = shedToWorld(layout, e - 3, v), [x1, z1] = shedToWorld(layout, e + 3, v);
+      const dir = new THREE.Vector3(x1 - x0, 0, z1 - z0).normalize();
+      const hit = new THREE.Raycaster(new THREE.Vector3(x0, y, z0), dir, 0, 6).intersectObject(wall, false)[0];
+      assert.ok(hit, `no pier under the rib at v ${v.toFixed(1)}, y ${y}`);
+      close(hit.distance, 3 - half, 1e-3);
+    }
+  }
 });

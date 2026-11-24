@@ -29,6 +29,8 @@ MUTATIONS = [
     ('the opening off platform 0\'s crossing', SHED, 'EAST_AISLE_OPENING = { fromEast: 3.07, width: 3.5, head: 4.8 }', 'EAST_AISLE_OPENING = { fromEast: 4.5, width: 3.5, head: 4.8 }', 'platform 0\'s line lies in the east aisle'),
     ('the spine wall left out', SHED, 'buildSpineWall(spineBrick, spine, L, sp);', '', 'the swept walls include the spine wall'),
     ('the spine wall on the old valley line, over platform 4\'s track', SHED, 'buildSpineWall(spineBrick, spine, L, sp);', 'buildSpineWall(spineBrick, spine + 6.147, L, sp);', REAL),
+    ('the east arcade left out', SHED, 'buildSpineWall(eastArcade, eastArcadeU(layout), L, sp);', '', 'the swept walls include the east arcade'),
+    ('the east arcade on platform 0\'s line', SHED, 'buildSpineWall(eastArcade, eastArcadeU(layout), L, sp);', 'buildSpineWall(eastArcade, eastArcadeU(layout) + 7.2, L, sp);', REAL),
     ('tall triangles dropped from the sweep', SWEEP, 'if (Math.min(a.y, b.y, c.y) > top) continue;', 'if (Math.max(a.y, b.y, c.y) > top) continue;', 'as it stood closed'),
     ('the sweep stops short of the north end', SWEEP, 'v < layout.length + SWEEP.north', 'v < layout.length - 5', 'the sweep covers every'),
     ('the envelope is not turned along the track', SWEEP, 'frame.set(dz, 0, dx, x0, 0, 1, 0, 0, -dx, 0, dz, z0, 0, 0, 0, 1);', 'frame.set(1, 0, 0, x0, 0, 1, 0, 0, 0, 0, 1, z0, 0, 0, 0, 1);', 'a wall a few centimetres'),

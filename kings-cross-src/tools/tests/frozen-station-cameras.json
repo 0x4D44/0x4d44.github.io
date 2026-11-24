@@ -307,16 +307,16 @@
   },
   "front-southwest-pedestrian": {
     "pos": [
-      -18.48743081711134,
-      1.9621857789678563,
-      35.61808702106225
+      -10.487430817111338,
+      1.795114490154562,
+      38.11808702106225
     ],
     "target": [
       36.86698000209859,
       12,
       -11.848798350300951
     ],
-    "source": "R-kx-front-b standpoint (front-b-oblique-sw-2016.jpg): 62 m south-south-west of the west great arch, eye 1.7 m on the square, looking north-east",
+    "source": "R-kx-front-b standpoint (front-b-oblique-sw-2016.jpg): 59 m south-south-west of the west great arch, eye 1.7 m on the square, looking north-east",
     "fov": 60,
     "near": 0.1
   },

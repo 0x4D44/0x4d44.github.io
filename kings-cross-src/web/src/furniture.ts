@@ -43,7 +43,7 @@ import type { Pt } from '../../core/geo.ts';
 import type { KxData } from '../../core/osm.ts';
 import { PLATFORM_HEIGHT } from '../../core/scene.ts';
 import { isSurfacePlatform, longAxis, platformDrawingOutline, PLATFORM_9_OUTLINE_BASIS, PLATFORM_REFS, pointInPolygon, SHED_PLATFORM_REFS, SHED_SPAN_WIDTH, shedToWorld, stationPlatforms, worldToShed } from '../../core/station.ts';
-import { SPINE_WALL } from './shed.ts';
+import { eastArcadeU, SPINE_WALL } from './shed.ts';
 import type { ShedLayout } from '../../core/station.ts';
 import { Batch, material, rgb, rng, TEXTURES } from './materials.ts';
 import type { Rgb, V3 } from './materials.ts';
@@ -597,8 +597,9 @@ export interface Frame {
   /** extent of the polygon along the axis, metres */
   tLo: number;
   tHi: number;
-  /** the shed's spine wall, world (x, z) at its south (v = 0) and north (v = length) ends, when the layout has one: bandAt keeps clear of it */
-  spine?: [Pt, Pt];
+  /** the shed's arcaded walls on the floor (the spine wall and the east arcade), world (x, z) at their south (v = 0) and north (v = length)
+   *  ends, when the layout has a spine: bandAt keeps clear of them */
+  walls?: [Pt, Pt][];
 }
 
 export function platformFrame(
@@ -617,8 +618,9 @@ export function platformFrame(
     tLo = Math.min(tLo, t);
     tHi = Math.max(tHi, t);
   }
-  const spine: [Pt, Pt] | undefined = layout.spine === undefined ? undefined : [shedToWorld(layout, layout.spine, 0), shedToWorld(layout, layout.spine, layout.length)];
-  return { ref, pts, edges: classifyEdges(pts, others, layout, tracks), axis, n: [-axis[1], axis[0]], tLo, tHi, ...(spine ? { spine } : {}) };
+  const sp = layout.spine;
+  const walls: [Pt, Pt][] | undefined = sp === undefined ? undefined : [sp, eastArcadeU({ spine: sp })].map((u): [Pt, Pt] => [shedToWorld(layout, u, 0), shedToWorld(layout, u, layout.length)]);
+  return { ref, pts, edges: classifyEdges(pts, others, layout, tracks), axis, n: [-axis[1], axis[0]], tLo, tHi, ...(walls ? { walls } : {}) };
 }
 
 /** The point at along-coordinate t and across-coordinate s. */
@@ -665,21 +667,24 @@ export function bandAt(f: Frame, t: number, half: number, floor = true): Band | 
 }
 
 /**
- * Where the spine wall's line crosses the section at t (s, across), when it crosses within `keep` of the platform, and `keep` squared to
+ * Where the nearer arcaded wall (the spine wall or the east arcade) crosses the section at t (s, across), when it crosses within `keep` of the platform, and `keep` squared to
  * the section (the island leans off the axis, so a distance square to the wall is a little longer along the section).
  */
 function spineAt(f: Frame, t: number, sec: { lo: number; hi: number }, keep: number): { s: number; cross: number } | null {
-  if (!f.spine) return null;
-  const [a, b] = f.spine, d: Pt = [b[0] - a[0], b[1] - a[1]];
-  const p = worldPoint(f, t, 0);
-  // the section is p + s n; the spine is a + w d: solve for s and w
-  const det = f.n[0] * -d[1] + d[0] * f.n[1];
-  if (Math.abs(det) <= 1e-9) return null;
-  const rx = a[0] - p[0], rz = a[1] - p[1];
-  const s = (rx * -d[1] + d[0] * rz) / det, w = (f.n[0] * rz - f.n[1] * rx) / det;
-  if (w < 0 || w > 1 || s <= sec.lo - keep || s >= sec.hi + keep) return null;
-  const l = Math.hypot(d[0], d[1]);
-  return { s, cross: squareTo(f, { dir: [d[0] / l, d[1] / l] }, keep) };
+  let best: { s: number; cross: number } | null = null;
+  const p = worldPoint(f, t, 0), mid = (sec.lo + sec.hi) / 2;
+  for (const [a, b] of f.walls ?? []) {
+    const d: Pt = [b[0] - a[0], b[1] - a[1]];
+    // the section is p + s n; the wall is a + w d: solve for s and w
+    const det = f.n[0] * -d[1] + d[0] * f.n[1];
+    if (Math.abs(det) <= 1e-9) continue;
+    const rx = a[0] - p[0], rz = a[1] - p[1];
+    const s = (rx * -d[1] + d[0] * rz) / det, w = (f.n[0] * rz - f.n[1] * rx) / det;
+    if (w < 0 || w > 1 || s <= sec.lo - keep || s >= sec.hi + keep) continue;
+    const l = Math.hypot(d[0], d[1]);
+    if (!best || Math.abs(s - mid) < Math.abs(best.s - mid)) best = { s, cross: squareTo(f, { dir: [d[0] / l, d[1] / l] }, keep) };
+  }
+  return best;
 }
 
 /**

@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
 import { SHED_SPAN_WIDTH, shedLayout, worldToShed } from '../../core/station.ts';
-import { EAST_AISLE_OPENING, SPINE_WALL } from '../../web/src/shed.ts';
+import { EAST_AISLE_OPENING, eastArcadeU, SPINE_WALL } from '../../web/src/shed.ts';
 import { roofHeight } from '../../core/train.ts';
 import { stationData } from '../station-scene.mjs';
 import { describeInterference, shedTracks, stationWalls, TRAIN_ENVELOPE, trackWallInterferences } from '../track-walls.mjs';
@@ -123,6 +123,50 @@ test('the swept walls include the spine wall: shed-spine runs on the spine line,
     vMin = Math.min(vMin, q.v); vMax = Math.max(vMax, q.v); yMin = Math.min(yMin, p.y);
   }
   assert.ok(n > 100, `${n} brick vertices on the spine line`);
+  assert.ok(vMin < 0.01 && vMax > layout.length - 0.01, `from v ${vMin.toFixed(2)} to ${vMax.toFixed(2)}`);
+  assert.ok(yMin < TRAIN_ENVELOPE.bottom, `from y ${yMin.toFixed(2)}`);
+});
+
+// Scorer hold of 2026-11-24 (score-arcade-1): the east vault's east springing stands on the east arcade (web/src/shed.ts eastArcadeU), the
+// spine wall's pattern, between platform 1's line to the west and platform 0's to the east. It must stand on no track, as the spine does.
+test('a solid east arcade under the east springing, from the ground to the springing, the whole length of the shed, stands on no track', () => {
+  const hits = probe(shedBox([eastArcadeU(layout), (layout.springing - 0.2) / 2, layout.length / 2], [SPINE_WALL.thick, layout.springing + 0.2, layout.length]));
+  assert.deepEqual(hits.map(describeInterference), []);
+});
+
+test('the east arcade\'s faces stand at least 1 m clear of the nearest train envelope on both sides, the length of the shed (measured: 6.05 m west, platform 1\'s line; 1.84 m east, platform 0\'s)', () => {
+  const x = eastArcadeU(layout), half = SPINE_WALL.thick / 2;
+  const worst = [Infinity, Infinity], by = [null, null];
+  for (let v = 12; v <= layout.length; v += 1) {
+    for (const t of (tracks ??= shedTracks(data, layout))) {
+      let u;
+      try { u = trackU(t.id, v); } catch { continue; }
+      const k = u < x ? 0 : 1, gap = k === 0 ? x - half - (u + TRAIN_ENVELOPE.half) : u - TRAIN_ENVELOPE.half - (x + half);
+      if (gap < worst[k]) { worst[k] = gap; by[k] = t.id; }
+    }
+  }
+  assert.ok(Number.isFinite(worst[0]) && Number.isFinite(worst[1]), `a track on each side: ${worst}`);
+  assert.equal(by[1], PLATFORM_0, 'platform 0\'s line is the nearest to the east');
+  assert.ok(worst[0] >= 1.0 && worst[1] >= 1.0, `the tightest gaps: ${worst[0].toFixed(2)} m west (${by[0]}), ${worst[1].toFixed(2)} m east (${by[1]})`);
+});
+
+test('the swept walls include the east arcade: shed-east-arcade runs on its line, from the ground into the envelope\'s height, the length of the shed', () => {
+  const walls = stationWalls(data);
+  walls.updateMatrixWorld(true);
+  const brick = walls.getObjectByName('shed-east-arcade');
+  assert.ok(brick, 'shed-east-arcade is in the swept walls');
+  assert.ok(!(brick.material.transparent && brick.material.opacity < 0.9), 'and solid, so the sweep counts it');
+  const pos = brick.geometry.getAttribute('position'), x = eastArcadeU(layout);
+  const p = new THREE.Vector3();
+  let vMin = Infinity, vMax = -Infinity, yMin = Infinity, n = 0;
+  for (let i = 0; i < pos.count; i++) {
+    p.fromBufferAttribute(pos, i).applyMatrix4(brick.matrixWorld);
+    const q = worldToShed(layout, [p.x, p.z]);
+    if (Math.abs(q.u - x) > SPINE_WALL.thick / 2 + 1e-4) continue; // float32 positions
+    n++;
+    vMin = Math.min(vMin, q.v); vMax = Math.max(vMax, q.v); yMin = Math.min(yMin, p.y);
+  }
+  assert.ok(n > 100, `${n} brick vertices on the east arcade's line`);
   assert.ok(vMin < 0.01 && vMax > layout.length - 0.01, `from v ${vMin.toFixed(2)} to ${vMax.toFixed(2)}`);
   assert.ok(yMin < TRAIN_ENVELOPE.bottom, `from y ${yMin.toFixed(2)}`);
 });

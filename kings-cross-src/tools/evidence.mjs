@@ -448,9 +448,11 @@ const FROZEN_STATION_CAMERAS = {
   // south-west bearing (45 degrees) puts the eye inside the square's row of trees (a trunk 0.7 m away filled 58% of the
   // frame), so the eye keeps the 60 m but stands 38 m west and 49 m south of the arch: south-south-west, clear of them.
   'front-southwest-pedestrian': {
-    pos: [-18.48743081711134, 1.9621857789678563, 35.61808702106225],
+    // re-aimed again 2026-11-24 (scorer hold, score-arcade-1): from [-18.487, 1.962, 35.618] trees hid 91% of the west lunette (BASE: 14%);
+    // the eye stepped 8 m east and 2.5 m south, to 9% hidden, aim unchanged
+    pos: [-10.487430817111338, 1.795114490154562, 38.11808702106225],
     target: [36.86698000209859, 12, -11.848798350300951],
-    source: 'R-kx-front-b standpoint (front-b-oblique-sw-2016.jpg): 62 m south-south-west of the west great arch, eye 1.7 m on the square, looking north-east',
+    source: 'R-kx-front-b standpoint (front-b-oblique-sw-2016.jpg): 59 m south-south-west of the west great arch, eye 1.7 m on the square, looking north-east',
     fov: 60, near: 0.1,
   },
   // R-kx-front-d (front-d2-north-york-way-2019.jpg, Colin Cheesman CC BY-SA 2.0): the east flank from York Way. The OSM York Way

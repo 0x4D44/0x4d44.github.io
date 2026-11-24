@@ -29,6 +29,8 @@ M = [
  ('weather vane omitted', ", mesh(vane.build(), material('steel'), 'tower-vane')", ''),
  ('vane mast floats above cap', 'vane.box([0, (capTop - 0.15 + CLOCK_TOWER_HEIGHT) / 2, 0], [0.045, CLOCK_TOWER_HEIGHT - capTop + 0.15, 0.045]);', 'vane.box([0, (capTop + 0.2 + CLOCK_TOWER_HEIGHT) / 2, 0], [0.045, CLOCK_TOWER_HEIGHT - capTop - 0.2, 0.045]);'),
  ('overall tower height grows', 'CLOCK_TOWER_HEIGHT - capTop + 0.15, 0.045]', 'CLOCK_TOWER_HEIGHT - capTop + 0.55, 0.045]'),
+ ('the east aisle roof open underneath', 'for (const [a, b] of aisles) slate.box([(a + b) / 2, wallH - 0.15, -L / 2], [b - a, 0.3, L]);', "for (const [a, b] of aisles) slate.box([(a + b) / 2, wallH - 0.15, -L / 2], [b - a, 0.3, L], { skip: ['-y'] });"),
+ ('the east arcade stops short of the springing', 'buildSpineWall(eastArcade, eastArcadeU(layout), L, sp);', 'buildSpineWall(eastArcade, eastArcadeU(layout), L, sp - 0.5);'),
  ('the spine wall back in shed-brick, a sun-shadow caster', 'buildSpineWall(spineBrick, spine, L, sp);', 'buildSpineWall(brick, spine, L, sp);'),
 ]
 def run(name):

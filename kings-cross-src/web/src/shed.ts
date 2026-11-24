@@ -88,6 +88,13 @@ export const VALLEY_HALF = 0.25;
  * Where furniture stands beside it, it keeps `clear` (ASSUMED, 0.3 m) beyond the wall's face (web/src/furniture.ts bandAt).
  */
 export const SPINE_WALL = { thick: 1.0, opening: 3.0, sill: 0.9, jamb: 3.4, crown: 4.9, clear: 0.3 } as const;
+/**
+ * The east arcade: the wall under the east vault's east springing, between the vault and the east aisle, on the line spine + one span. Since
+ * the 2026-11-24 realignment widened the east aisle to 10.25 m, the vault's edge would otherwise stand on nothing. The real east side carries
+ * the vault on an arcaded wall (the lead's brief of 2026-11-24; no source for it was read here, and no dimension), so it takes every figure
+ * of SPINE_WALL, ASSUMED. It stands on platform 0's west half; furniture keeps the same inset from it.
+ */
+export const eastArcadeU = (layout: Pick<ShedLayout, 'spine'>): number => layout.spine + SHED_SPAN_WIDTH;
 /** v of the centre of each opening of the spine wall: the middle of every rib bay. */
 export function spineOpenings(length: number): number[] {
   const ribs = ribPositions(length);
@@ -676,7 +683,9 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   // aisle roofs: flat slabs at the springing, slate on top (ASSUMED flat; the real aisle roofs are not surveyed). Since the 2026-11-24
   // realignment there is no west aisle (aisleWest = 0), so only the east one is drawn.
   const aisles: [number, number][] = ([[0, layout.aisleWest], [W - layout.aisleEast, W]] as [number, number][]).filter(([a, b]) => b - a > 1e-6);
-  for (const [a, b] of aisles) slate.box([(a + b) / 2, wallH - 0.15, -L / 2], [b - a, 0.3, L], { skip: ['-y'] });
+  // closed underneath too: at 10.25 m wide (since the realignment) the east aisle's roof is in plain view from platforms 0 and 1, and an open
+  // underside showed the sky through it
+  for (const [a, b] of aisles) slate.box([(a + b) / 2, wallH - 0.15, -L / 2], [b - a, 0.3, L]);
   // the north end of each aisle is closed by a brick wall; the east one is pierced where platform 0's line runs out (EAST_AISLE_OPENING)
   if (layout.aisleWest > 1e-6) brick.box([layout.aisleWest / 2, (wallH + GROUND_Y) / 2, -L - WALL_THICK / 2], [layout.aisleWest, wallH - GROUND_Y, WALL_THICK]);
   if (layout.aisleEast > 1e-6) {
@@ -688,6 +697,9 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   }
   const spineBrick = new Batch();
   buildSpineWall(spineBrick, spine, L, sp);
+  // the east vault's east springing, between the vault and the east aisle, stands on an arcade of the spine wall's pattern (EAST_ARCADE)
+  const eastArcade = new Batch();
+  buildSpineWall(eastArcade, eastArcadeU(layout), L, sp);
 
   // ---- the south front: across the two vaults, centred on the spine (the mesh's x runs from its west end, fx0) ------------
   const outline = new THREE.Shape([new THREE.Vector2(0, GROUND_Y), new THREE.Vector2(FW, GROUND_Y), new THREE.Vector2(FW, frontTop), new THREE.Vector2(0, frontTop)]);
@@ -771,6 +783,7 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   group.add(mesh(brick.build(), material('brickFoot'), 'shed-brick'));
   // its own mesh, the same brick, so that it is not a sun-shadow caster (lighting.ts SHADOW_CASTERS): the pass has no room for it
   group.add(mesh(spineBrick.build(), material('brickFoot'), 'shed-spine'));
+  group.add(mesh(eastArcade.build(), material('brickFoot'), 'shed-east-arcade')); // not a sun-shadow caster either, for the same reason
   group.add(mesh(stone.build(), material('stoneFoot'), 'shed-stone'));
   group.add(mesh(slate.build(), material('slate'), 'shed-aisle-roofs'));
   group.add(mesh(windows.build(), material('sash'), 'shed-windows'));

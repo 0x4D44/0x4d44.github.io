@@ -28,7 +28,7 @@ import {
   trackSegments,
 } from '../src/furniture.ts';
 import type { Placement, TrackSegment } from '../src/furniture.ts';
-import { SPINE_WALL } from '../src/shed.ts';
+import { eastArcadeU, SPINE_WALL } from '../src/shed.ts';
 // Re-pinned 2026-11-24 (shed realignment, signed off): the vault centres are the spine -/+ R (aisle + R and aisle + 3R before, the same points while the aisles were even), the valley is the spine, and there is no west aisle, so a probe of 'the aisle' stands in the east aisle.
 
 const near = (a: number, b: number, tol: number, msg: string): void => assert.ok(Math.abs(a - b) <= tol, `${msg}: ${a} vs ${b} (tolerance ${tol})`);
@@ -653,21 +653,30 @@ test('no floor furniture stands within half the spine wall\'s thickness and 0.3 
     const gap = Math.abs(u - layout.spine) - p.across;
     if (p.ref === '4' || p.ref === '5') { near45++; worst = Math.min(worst, gap); }
     assert.ok(gap >= keep - 1e-6, `a piece on platform ${p.ref} at (${u.toFixed(2)}, ${v.toFixed(1)}), half-width ${p.across}, is ${gap.toFixed(2)} m from the spine line`);
+    // scorer hold of 2026-11-24: the east arcade, under the east vault's east springing on platform 0, takes the same inset
+    const east = Math.abs(u - eastArcadeU(layout)) - p.across;
+    assert.ok(east >= keep - 1e-6, `a piece on platform ${p.ref} at (${u.toFixed(2)}, ${v.toFixed(1)}), half-width ${p.across}, is ${east.toFixed(2)} m from the east arcade's line`);
   }
   assert.ok(near45 >= 10, `${near45} pieces on platforms 4 and 5 under the shed; the closest is ${worst.toFixed(2)} m from the spine`);
+  const on0 = [...plan.lamps, ...plan.benches, ...plan.helpPoints].filter((p) => p.ref === '0' && worldToShed(layout, [p.x, p.z]).v > 0 && worldToShed(layout, [p.x, p.z]).v < layout.length).length;
+  assert.ok(on0 >= 10, `${on0} floor pieces on platform 0 under the shed`);
 });
 
 // Lead follow-up 2026-11-24: on platforms 4 and 5 the arcade wall is the screens' natural mount. A screen there is bracketed off the wall
 // face (ASSUMED gap FIGURES.screenBracketGap) instead of keeping the floor inset, so platform 4 keeps its five or more screens.
-test('every screen bracketed off the spine wall touches its face, within the bracket gap, and does not cut into it', () => {
+// Re-pinned 2026-11-24 (scorer hold, score-arcade-1): the east arcade on platform 0 is a wall of the same pattern, so platform 0's screens are
+// bracketed off it too; each screen is measured from the nearer of the two walls' lines, and platform 0 joins 4 and 5.
+test('every screen bracketed off the spine wall or the east arcade touches its face, within the bracket gap, and does not cut into it', () => {
   const walled = plan.screens.filter((s) => s.wall);
   assert.ok(walled.length >= 3, `${walled.length} wall-mounted screens`);
   const hw = FIGURES.screenWidth / 2, hd = FIGURES.screenDepth / 2;
   for (const s of walled) {
-    assert.ok(s.ref === '4' || s.ref === '5', `a wall-mounted screen on platform ${s.ref}`);
+    assert.ok(s.ref === '4' || s.ref === '5' || s.ref === '0', `a wall-mounted screen on platform ${s.ref}`);
+    const line = [layout.spine, eastArcadeU(layout)].reduce((a, b) => (Math.abs(worldToShed(layout, [s.x, s.z]).u - a) < Math.abs(worldToShed(layout, [s.x, s.z]).u - b) ? a : b));
+    assert.equal(line === layout.spine, s.ref !== '0', `platform ${s.ref}'s screen hangs off ${line === layout.spine ? 'the spine' : 'the east arcade'}`);
     // the panel's footprint corners: local x is across (width), local z along (its two faces), turned by rotY
     const c = Math.cos(s.rotY), n = Math.sin(s.rotY);
-    const us = [-1, 1].flatMap((i) => [-1, 1].map((k) => worldToShed(layout, [s.x + c * i * hw + n * k * hd, s.z - n * i * hw + c * k * hd]).u - layout.spine));
+    const us = [-1, 1].flatMap((i) => [-1, 1].map((k) => worldToShed(layout, [s.x + c * i * hw + n * k * hd, s.z - n * i * hw + c * k * hd]).u - line));
     const side = Math.sign(us[0]!);
     assert.ok(us.every((u) => Math.sign(u) === side), 'the panel stays on one side of the wall');
     const gap = Math.min(...us.map(Math.abs)) - SPINE_WALL.thick / 2;
