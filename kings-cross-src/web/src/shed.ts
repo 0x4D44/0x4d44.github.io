@@ -46,9 +46,29 @@ export const TOWER_SIZE = 6.4; // ASSUMED
  * Network Rail records six porch arches, three each side of the tower:
  * https://www.networkrail.co.uk/who-we-are/our-history/iconic-infrastructure/the-history-of-london-kings-cross-station/
  * Equal bays, 6.8 m openings, 2 m jambs and rise, 0.2 m threshold and 0.4 m stone rings
- * are ASSUMED. No door/glass infill is modelled.
+ * are ASSUMED. The infill is PORCH_INFILL.
  */
 export const SOUTH_FRONT_ARCADES = { perSide: 3, openingWidth: 6.8, jambHeight: 2.0, archRise: 2.0, footAboveGround: 0.2, ringWidth: 0.4 } as const;
+/**
+ * The front's relief (rubric A2). R-kx-front-a (2026) and R-kx-front-b (2016) show each great arch's reveal in three brick orders stepping
+ * back to the glass (MEASURED: three orders in both photographs; their width and depth ASSUMED, held to the old stone ring's 1.2 m, since the
+ * model's lunettes span the vaults and a wider reveal would run past the front's ends), and a stone string course over the lower arcade's
+ * crowns, about half a metre under the sill course (MEASURED from R-a: impost 4.9 m and sill 5.5 m above the paving, against the arcade's
+ * crown at 4.4 m; scale from the tower's 6.4 m width).
+ */
+export const FRONT_RELIEF = { orders: 3, orderWidth: 0.4, orderStep: 0.15, impostAboveGround: 4.95, impostHeight: 0.25, impostOut: 0.2 } as const;
+/**
+ * The porch openings' infill (A3), from R-kx-front-a: dark-framed glazed screens set back in each opening, glazed doors with a push rail,
+ * a deep transom (the signage fascia) at about 2.5 m, and glazing over it in the arch head. Five bays to an opening and the frame sizes are
+ * ASSUMED; the glass is the lunettes' and sits at their depth in the wall.
+ */
+export const PORCH_INFILL = { bays: 5, mullion: 0.12, frameDepth: 0.12, rail: 1.1, transom: [2.3, 2.7] as const } as const;
+/**
+ * The low canopy along the front (R-kx-front-a, 2026, and R-kx-front-b, 2016): a flat dark steel roof on slender columns at the bay lines,
+ * passing in front of the tower's foot. Its top at 3.85 m (MEASURED from R-a by the same scale as FRONT_RELIEF); its fascia, depth and
+ * columns ASSUMED (the depth just clears the model tower's south face).
+ */
+export const FRONT_CANOPY = { top: 3.85, fascia: 0.35, sheet: 0.15, depth: 7.2, column: 0.3 } as const;
 /** The porch arcade centres across a front `width` wide (from its own west end, x = 0), three each side of a central tower. */
 export function southFrontArcadeCentres(width: number, towerWidth: number): number[] {
   const left = Array.from({ length: SOUTH_FRONT_ARCADES.perSide }, (_, i) => (i + 0.5) * (width - towerWidth) / (2 * SOUTH_FRONT_ARCADES.perSide));
@@ -606,6 +626,28 @@ function segmentalArchRing(uc: number, spring: number, halfWidth: number, rise: 
   return s;
 }
 
+/**
+ * The band r0..r1 (r0 >= R) about (uc, springing), cut by the vertical line through uc + side * R (the front's end, where the model's lunette
+ * meets it): the reveal of a great arch, so that it runs down to the springing without standing past the front.
+ */
+function endCutRing(uc: number, springing: number, r0: number, r1: number, side: -1 | 1): THREE.Shape {
+  const a0 = Math.acos(Math.min(1, R / r0)), a1 = Math.acos(R / r1);
+  const s = new THREE.Shape();
+  if (side < 0) {
+    s.moveTo(uc - R, springing + r1 * Math.sin(a1));
+    s.absarc(uc, springing, r1, Math.PI - a1, 0, true);
+    s.lineTo(uc + r0, springing);
+    s.absarc(uc, springing, r0, 0, Math.PI - a0, false);
+  } else {
+    s.moveTo(uc - r1, springing);
+    s.absarc(uc, springing, r1, Math.PI, a1, true);
+    s.lineTo(uc + R, springing + r0 * Math.sin(a0));
+    s.absarc(uc, springing, r0, a0, Math.PI, false);
+  }
+  s.closePath();
+  return s;
+}
+
 /** An arched band of radius r0..r1 about (uc, springing): the stone moulding round an arch. */
 function archRing(uc: number, springing: number, r0: number, r1: number): THREE.Shape {
   const s = new THREE.Shape();
@@ -900,8 +942,18 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   const entryFoot = GROUND_Y + SOUTH_FRONT_ARCADES.footAboveGround;
   const entryCentres = southFrontArcadeCentres(FW, TOWER_SIZE).map(x => x + fx0);
   for (const x of entryCentres) outline.holes.push(segmentalArchOpening(x - fx0, entryFoot, entryR, SOUTH_FRONT_ARCADES.jambHeight, SOUTH_FRONT_ARCADES.archRise));
-  const frontGeo = new THREE.ExtrudeGeometry(outline, { depth: FRONT_THICK, bevelEnabled: false, curveSegments: 40 });
+  const frontParts = [new THREE.ExtrudeGeometry(outline, { depth: FRONT_THICK, bevelEnabled: false, curveSegments: 40 })];
+  // each great arch's reveal: three brick orders, the outermost standing furthest forward, each inner one a step back toward the glass
+  // (FRONT_RELIEF); cut off at the front's end, which the model's lunettes reach at their springing
+  centres.forEach((uc, vault) => {
+    for (let i = 0; i < FRONT_RELIEF.orders; i++) {
+      const r0 = R + i * FRONT_RELIEF.orderWidth;
+      frontParts.push(new THREE.ExtrudeGeometry(endCutRing(uc - fx0, sp, r0, r0 + FRONT_RELIEF.orderWidth, vault === 0 ? -1 : 1), { depth: FRONT_THICK + (i + 1) * FRONT_RELIEF.orderStep, bevelEnabled: false, curveSegments: 12 }));
+    }
+  });
+  const frontGeo = mergeGeometries(frontParts, false);
   frontGeo.translate(0, 0, -FRONT_THICK);
+  disposables.push(...frontParts);
   const frontMesh = withBuildingNightMaterial(mesh(frontGeo, material('brickFoot'), 'shed-front'), frontWash('brickFoot', 'front', FW));
   frontMesh.position.x = fx0;
   group.add(frontMesh);
@@ -915,6 +967,7 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   }
   if (plinthStart < fx1 + 0.4) proud((plinthStart + fx1 + 0.4) / 2, GROUND_Y + 0.7, fx1 + 0.4 - plinthStart, 1.4, 0.35); // plinth interrupted at each entrance
   proud(spine, sp - 0.3, FW + 0.4, 0.6, 0.3); // sill course at the springing
+  proud(spine, GROUND_Y + FRONT_RELIEF.impostAboveGround, FW + 0.4, FRONT_RELIEF.impostHeight, FRONT_RELIEF.impostOut); // string course over the arcade's crowns
   proud(spine, frontTop - 0.45, FW + 1.0, 0.9, 0.7); // cornice
   proud(spine, frontTop + 0.15, FW + 0.6, 0.3, 0.4); // its coping
   for (const x of [fx0 + 0.5, fx1 - 0.5]) proud(x, (frontTop + GROUND_Y) / 2, 1.0, frontTop - GROUND_Y - 1.0, 0.25); // end piers
@@ -925,23 +978,63 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
     stone.box([(fx1 + W) / 2, wallH + 0.15, -FRONT_THICK / 2], [W - fx1, 0.3, FRONT_THICK + 0.2]);
   }
   const entryRings = entryCentres.map(x => new THREE.ExtrudeGeometry(segmentalArchRing(x, entryFoot + SOUTH_FRONT_ARCADES.jambHeight, entryR, SOUTH_FRONT_ARCADES.archRise, SOUTH_FRONT_ARCADES.ringWidth), { depth: 0.5, bevelEnabled: false, curveSegments: 24 }));
-  group.add(mesh(mergeGeometries(entryRings, false), material('stone'), 'shed-front-porch-arches'));
-  disposables.push(...entryRings);
+  // the low canopy along the front (FRONT_CANOPY): dark steel, a second material of the porch arches' mesh, so that it casts (lighting.ts
+  // SHADOW_CASTERS) without another caster: the shadow pass's mesh count and triangle budget are full
+  const canopy = new Batch();
+  {
+    const top = GROUND_Y + FRONT_CANOPY.top, d = FRONT_CANOPY.depth, cx0 = fx0 + 0.3, cx1 = fx1 - 0.3;
+    canopy.box([spine, top - FRONT_CANOPY.sheet / 2, d / 2], [cx1 - cx0, FRONT_CANOPY.sheet, d]); // the roof sheet
+    canopy.box([spine, top - FRONT_CANOPY.fascia / 2, d - 0.1], [cx1 - cx0, FRONT_CANOPY.fascia, 0.2]); // the front fascia
+    const bayW = (FW - TOWER_SIZE) / (2 * SOUTH_FRONT_ARCADES.perSide), c = FRONT_CANOPY.column;
+    for (let k = 0; k <= SOUTH_FRONT_ARCADES.perSide; k++) {
+      for (const x of [fx0 + Math.max(k * bayW, 0.3 + c / 2), fx1 - Math.max(k * bayW, 0.3 + c / 2)]) {
+        canopy.box([x, (GROUND_Y + top - FRONT_CANOPY.fascia) / 2, d - 0.3], [c, top - FRONT_CANOPY.fascia - GROUND_Y, c], { skip: ['-y'] });
+      }
+    }
+  }
+  const canopyGeo = canopy.build().toNonIndexed();
+  canopyGeo.deleteAttribute('color');
+  if (!canopyGeo.getAttribute('uv')) canopyGeo.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(canopyGeo.getAttribute('position').count * 2), 2));
+  const entryRingGeo = mergeGeometries(entryRings, false);
+  const porch = new THREE.Mesh(mergeGeometries([entryRingGeo, canopyGeo], true), [material('stone'), material('ribPaint')]);
+  porch.name = 'shed-front-porch-arches';
+  group.add(porch);
+  disposables.push(...entryRings, entryRingGeo, canopyGeo);
   const rings: THREE.BufferGeometry[] = [];
   const lunGlass: THREE.BufferGeometry[] = [];
   const bars = new Batch();
   for (const uc of centres) {
-    // the stone moulding round each great window
-    rings.push(new THREE.ExtrudeGeometry(archRing(uc, sp, R, R + 1.1), { depth: 0.5, bevelEnabled: false, curveSegments: 40 }));
+    // (the reveal round each great window is the front's brick orders, FRONT_RELIEF; the stone ring that stood proud here until round 5 is gone)
     // the glass is set back in the opening, the bars in front of it
     const g = new THREE.ShapeGeometry(halfDisc(uc, sp, R - 0.02), 40);
     g.translate(0, 0, -FRONT_THICK / 2 - 0.1);
     lunGlass.push(g);
     addBars(bars, lunetteBars(uc, sp), -FRONT_THICK / 2);
   }
+  // the porch openings' infill (PORCH_INFILL): glass at the lunettes' depth, in the same mesh and material, so it reads and darkens as they do at
+  // night; the frames are the lunettes' bars
+  const zIn = -FRONT_THICK / 2;
+  const headY = (dx: number): number => entryFoot + SOUTH_FRONT_ARCADES.jambHeight + SOUTH_FRONT_ARCADES.archRise * Math.sqrt(Math.max(0, 1 - (dx / entryR) ** 2));
+  const fd = PORCH_INFILL.frameDepth, m = PORCH_INFILL.mullion;
+  for (const x of entryCentres) {
+    const g = new THREE.ShapeGeometry(segmentalArchOpening(x, entryFoot, entryR - 0.02, SOUTH_FRONT_ARCADES.jambHeight, SOUTH_FRONT_ARCADES.archRise), 24);
+    g.translate(0, 0, zIn - 0.1);
+    lunGlass.push(g);
+    for (const side of [-1, 1]) bars.box([x + side * (entryR - m / 2), entryFoot + SOUTH_FRONT_ARCADES.jambHeight / 2, zIn], [m, SOUTH_FRONT_ARCADES.jambHeight, fd]); // the jambs
+    for (let k = 1; k < PORCH_INFILL.bays; k++) {
+      const dx = -entryR + (2 * entryR * k) / PORCH_INFILL.bays, top = headY(Math.abs(dx) + m / 2);
+      bars.box([x + dx, (entryFoot + top) / 2, zIn], [m, top - entryFoot, fd]); // the mullions, up into the arch head
+    }
+    const [t0, t1] = PORCH_INFILL.transom;
+    const tw = 2 * entryR * Math.sqrt(1 - ((entryFoot + t1 - entryFoot - SOUTH_FRONT_ARCADES.jambHeight) / SOUTH_FRONT_ARCADES.archRise) ** 2);
+    bars.box([x, entryFoot + (t0 + t1) / 2, zIn], [tw - 0.04, t1 - t0, fd + 0.04]); // the transom: the signage fascia
+    bars.box([x, entryFoot + PORCH_INFILL.rail, zIn + fd / 2], [(4 * entryR) / PORCH_INFILL.bays, 0.06, 0.06]); // the doors' push rail, across the middle two bays
+    bars.box([x, entryFoot + 0.15, zIn], [2 * entryR, 0.3, fd]); // the doors' kick rail and the screens' cill
+  }
   const lunMesh = mesh(mergeGeometries(lunGlass, false), material('glass'), 'shed-front-glass');
   lunMesh.renderOrder = 3;
   group.add(lunMesh, mesh(bars.build(), material('ribPaint'), 'shed-front-bars'));
+
 
   // ---- the north gables: glass above the trains' height, in bars, framed in stone --------------
   const gableGeos: THREE.BufferGeometry[] = [];
