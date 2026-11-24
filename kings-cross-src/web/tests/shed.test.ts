@@ -7,7 +7,7 @@ import { CLOCK_TOWER_HEIGHT, SHED_LENGTH, SHED_SPAN_WIDTH, shedLayout, shedToWor
 import { shedRoofY } from '../src/furniture.ts';
 import { SHADOW_CASTERS } from '../src/lighting.ts';
 import { material } from '../src/materials.ts';
-import { buildShed, buildTower, eastArcadeU, NORTH_PIER, ribLanding, spineLowerOpenings, spineUpperOpenings, valleyTop, buildWesternRange, gableBars, GABLE_GLASS_FROM, glazedHalfAngle, GLAZED_STRIP_WIDTH, GLASS_OPACITY, glazingOpacity, lunetteBars, MEMBER_SIZE, RIB_SPACING, ribMembers, ribPositions, ROOF_SKIN, roofOpacity, SPINE_WALL, spineOpenings, TOWER_SIZE, valleyCut, vaultBand, vaultPoint, WESTERN_RANGE, WESTERN_RANGE_DEPTH_BEFORE, westernArches, westernBays, westernBlock, westernWindows, XRAY_OPACITY } from '../src/shed.ts';
+import { buildShed, buildTower, EAST_ARCADE, eastArcadeOpenings, eastArcadeU, NORTH_PIER, RIB_FOOT, ribLanding, spineLowerOpenings, spineUpperOpenings, valleyTop, buildWesternRange, gableBars, GABLE_GLASS_FROM, glazedHalfAngle, GLAZED_STRIP_WIDTH, GLASS_OPACITY, glazingOpacity, lunetteBars, MEMBER_SIZE, RIB_SPACING, ribMembers, ribPositions, ROOF_SKIN, roofOpacity, SPINE_WALL, spineOpenings, TOWER_SIZE, valleyCut, vaultBand, vaultPoint, WESTERN_RANGE, WESTERN_RANGE_DEPTH_BEFORE, westernArches, westernBays, westernBlock, westernWindows, XRAY_OPACITY } from '../src/shed.ts';
 
 const data: KxData = JSON.parse(readFileSync(new URL('../src/data/kx-track.json', import.meta.url), 'utf8'));
 const layout = shedLayout(data);
@@ -664,11 +664,13 @@ test('every rib lands on a stone corbel on the wall\'s face at the springing, bo
   assert.equal(stone.material, material('stoneFoot'));
   assert.ok(!SHADOW_CASTERS.has('shed-spine-stone'), 'not a sun-shadow caster');
   const half = SPINE_WALL.thick / 2;
-  // the rib's foot runs from its outer boom at the springing line to its inner boom 1.3 m inside it (ribMembers): the corbel reaches under it
+  // the rib's foot runs from its outer boom at the springing line to its inner boom RIB_FOOT inside it (ribMembers): the corbel reaches under it.
+  // Re-pinned 2026-11-24 (the corbels re-measured from R-kx-shed-interior-c, the rib's foot drawn in onto the cap): the probe was 1.3 m out,
+  // where the untapered inner boom landed; it is now where the tapered one lands, at the same tolerance.
   const faces: [number, number][] = [[layout.spine, -1], [layout.spine, 1], [eastArcadeU(layout), -1]];
   for (const [u, side] of faces) {
     for (const v of ribPositions(layout.length)) {
-      for (const d of [half + 0.1, 1.3]) {
+      for (const d of [half + 0.1, RIB_FOOT]) {
         const hit = down(g, stone, u + side * d, v, sp);
         assert.ok(hit, `no corbel ${d} m out at u ${u.toFixed(1)} side ${side}, v ${v.toFixed(1)}`);
         close(hit.point.y, ribLanding(sp), 1e-3);
@@ -682,6 +684,82 @@ test('every rib lands on a stone corbel on the wall\'s face at the springing, bo
     }
   }
   assert.ok(sp - ribLanding(sp) <= 0.15, 'the corbels meet the ribs\' feet');
+});
+
+// Scorer of 2026-11-24 (shed-arcade-round-3): at platform eye the corbels read as heavy two-step boxes with dark undersides, standing well proud of
+// the wall; R-kx-shed-interior-c and -a show small, pale, stepped stone brackets. Measured in memory from R-c at three corbels against their own
+// rib bays (SPINE_WALL): the cap 0.43-0.47 m wide and 0.30-0.33 m tall, the lowest course 0.25-0.27 m wide, 0.9-1.08 m in all, the cap about
+// 0.3-0.5 m proud. Bands: the measured range widened by 15%.
+test('the corbels are R-c\'s: three or more stone courses, each narrower and less proud than the one above, sized as measured', () => {
+  const { steps, height, wide, out } = SPINE_WALL.corbel;
+  const within = (x: number, lo: number, hi: number, what: string): void => assert.ok(x >= lo * 0.85 && x <= hi * 1.15, `${what} ${x} m, measured ${lo}-${hi}`);
+  assert.ok(steps.length >= 3, `${steps.length} courses`);
+  for (let i = 1; i < steps.length; i++) {
+    assert.ok(steps[i]![0] < steps[i - 1]![0], `course ${i} is narrower than the one above`);
+    assert.ok(steps[i]![2] < steps[i - 1]![2], `course ${i} is less proud than the one above`);
+  }
+  within(steps[0]![0], 0.43, 0.47, 'the cap\'s width');
+  within(steps[0]![1], 0.30, 0.33, 'the cap\'s height');
+  within(steps[0]![2], 0.3, 0.5, 'the cap\'s projection');
+  within(steps[steps.length - 1]![0], 0.25, 0.27, 'the lowest course\'s width');
+  const tall = steps.reduce((a, s) => a + s[1], 0);
+  within(tall, 0.9, 1.08, 'the corbel\'s height');
+  close(height, tall, 1e-9);
+  close(wide, steps[0]![0], 1e-9);
+  close(out, steps[0]![2], 1e-9);
+  // the built corbels: proud by the cap's projection and no more, at every rib on every face the ribs land on
+  const g = shedWorld(), stone = byName(g, 'shed-spine-stone'), sp = layout.springing, half = SPINE_WALL.thick / 2;
+  for (const [u, side] of [[layout.spine, -1], [layout.spine, 1], [eastArcadeU(layout), -1]] as const) {
+    for (const v of ribPositions(layout.length)) {
+      assert.ok(down(g, stone, u + side * (half + out - 0.03), v, sp), `the cap at u ${u.toFixed(1)} side ${side}, v ${v.toFixed(1)}`);
+      assert.ok(!down(g, stone, u + side * (half + out + 0.03), v, sp), `a corbel prouder than its cap at u ${u.toFixed(1)} side ${side}, v ${v.toFixed(1)}`);
+    }
+  }
+});
+
+test('the rib lands on its corbel: the foot of its inner boom stands on the cap, over it and touching it', () => {
+  const sp = layout.springing, half = SPINE_WALL.thick / 2;
+  // the lowest corner of the rib's members by its west foot, in the vault's frame (u from the springing line, inward)
+  let low = Infinity, at = 0;
+  for (const m of ribMembers(sp)) {
+    const c = Math.cos(m.rotZ), s = Math.sin(m.rotZ);
+    for (const a of [-0.5, 0.5]) for (const b of [-0.5, 0.5]) {
+      const u = m.c[0] + a * m.s[0] * c - b * m.s[1] * s + R, y = m.c[1] + a * m.s[0] * s + b * m.s[1] * c;
+      if (u > half && u < R / 2 && y < low) { low = y; at = u; }
+    }
+  }
+  assert.ok(Math.abs(low - ribLanding(sp)) <= 0.01, `the rib's foot is ${(low - ribLanding(sp)).toFixed(3)} m over the corbel`);
+  assert.ok(at >= half && at <= half + SPINE_WALL.corbel.out, `the rib's foot lands ${at.toFixed(2)} m from the wall's line, the cap ${half}-${half + SPINE_WALL.corbel.out}`);
+  // the inner boom's foot is on the cap, inside its projection
+  assert.ok(RIB_FOOT + MEMBER_SIZE.boom[0] / 2 <= half + SPINE_WALL.corbel.out + 1e-9 && RIB_FOOT - MEMBER_SIZE.boom[0] / 2 >= half, `the inner boom at ${RIB_FOOT} m`);
+});
+
+// Scorer of 2026-11-24 (shed-arcade-round-3, B3): from platform 1 (the evidence camera platform-eye-p1-north, tools/evidence.mjs, eye 1.6 m over
+// the platform at the OSM polygon's midpoint, looking north) the east arcade's paired 1.5 m openings in a 1.0 m wall read blind; R-kx-shed-interior-a
+// shows the east side's lower arcade open to the trains beyond. Of the bays the camera sees from 10 to 30 m ahead, in all but one a line of sight
+// from the eye through the arcade reaches platform 0's floor beyond it, 0.9 m out from its east face (the envelope of platform 0's train is 1.84 m
+// out). The farthest closes: seen that obliquely the 1.0 m reveal hides any opening narrower than about a seventh of its distance.
+test('from platform 1\'s eye, platform 0\'s floor shows through the east arcade in all but the farthest of the bays 10-30 m ahead (R-kx-shed-interior-a)', () => {
+  assert.ok(EAST_ARCADE.opening / RIB_SPACING >= 0.6 * 0.8 && EAST_ARCADE.opening / RIB_SPACING <= 0.6 * 1.2, 'about 0.6 of the bay, as measured');
+  const g = shedWorld(), x = eastArcadeU(layout), half = SPINE_WALL.thick / 2;
+  const eye = worldToShed(layout, [67.66190476190475, -206.35238095238097]), ey = 0.9 + 1.6;
+  assert.ok(x - half - eye.u > 4 && x - half - eye.u < 8, `the eye ${(x - half - eye.u).toFixed(2)} m west of the arcade`);
+  const uT = x + half + 0.9, yT = 0.9;
+  const clear = (vAt: number): boolean => {
+    // the line from the eye to the floor point beyond the arcade that crosses the wall's line at v = vAt
+    const vT = eye.v + (vAt - eye.v) * (uT - eye.u) / (x - eye.u);
+    const [x0, z0] = shedToWorld(layout, eye.u, eye.v), [x1, z1] = shedToWorld(layout, uT, vT);
+    const from = new THREE.Vector3(x0, ey, z0), dir = new THREE.Vector3(x1, yT, z1).sub(from);
+    const far = dir.length();
+    return new THREE.Raycaster(from, dir.normalize(), 0, far - 0.05).intersectObject(g, true).length === 0;
+  };
+  const bays = spineOpenings(layout.length).filter(v => v - eye.v >= 10 && v - eye.v <= 30);
+  assert.ok(bays.length >= 3, `${bays.length} bays ahead`);
+  const blind = bays.filter(v => { for (let d = -RIB_SPACING / 2; d <= RIB_SPACING / 2; d += 0.1) if (clear(v + d)) return false; return true; });
+  assert.ok(bays.length - blind.length >= bays.length - 1, `blind bays (m ahead): ${blind.map(v => (v - eye.v).toFixed(1)).join(', ')} of ${bays.length}`);
+  // and the vault's springing is still carried: a pier under every rib, the openings crowned under the band
+  for (const { jamb, r } of eastArcadeOpenings(layout.length)) assert.ok(jamb + r < ribLanding(layout.springing) - SPINE_WALL.band, 'crowned under the band');
+  assert.ok(RIB_SPACING - EAST_ARCADE.opening >= 2 * SPINE_WALL.corbel.wide, 'a pier under each rib at least twice the corbel\'s width');
 });
 
 test('a massive brick pier stands at the spine\'s north end under the gables\' valley, rising over them (R-kx-front-d)', () => {

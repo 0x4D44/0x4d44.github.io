@@ -86,9 +86,14 @@ export const EAST_AISLE_OPENING = { fromEast: 3.07, width: 3.5, head: 4.8 } as c
  *            2.66 m apart about the bay's middle, crowns `crown` 4.5 m (1.1 m under the rib landing); `sill` at the platform top
  *            (core/scene.ts PLATFORM_HEIGHT, 0.9 m) and `jamb` (crown less the half opening) ASSUMED (a train hides their feet);
  *   band     a stone string course `band` 0.3 m deep, proud by `bandOut` 0.08 m, its top at the ribs' landing: MEASURED position, ASSUMED size;
- *   corbels  a stepped stone corbel under every rib on each face the vault ribs land on: `corbel.height` 0.95 m and `corbel.wide` 0.6 m MEASURED
- *            (55 and 35-40 px of a 340 px bay), `corbel.out` 0.93 m from the face, so it reaches under the rib's inner boom (ribMembers: 1.3 m
- *            inside the springing), MODEL; its top `corbel.drop` 0.13 m under the springing, where the rib's foot boom ends, MODEL;
+ *   corbels  a stepped stone corbel under every rib on each face the vault ribs land on, three courses each narrower and less proud than the
+ *            one above (`corbel.steps`, [wide, tall, out] from the top). Re-measured 2026-11-24 (the scorer read the first, 0.6 m wide two-block
+ *            corbels as heavy boxes) at three corbels of R-c, each against its own rib bay (x 630, 850 and 1130 of the 1600 px frame, 36, 46 and
+ *            58 px/m): the cap 0.43-0.47 m wide and 0.30-0.33 m tall, then a narrower course, the lowest 0.25-0.27 m wide; 0.9-1.08 m in all, MEASURED.
+ *            Its projection: the cap's side face shows 8-10 px against a 16-20 px front on the receding part of the wall, about 0.3-0.5 m, MEASURED
+ *            (rough: the angle of view is estimated). `corbel.out` 0.5 m (the cap) carries the rib's inner boom: the rib's foot is drawn in to it
+ *            (ribMembers, RIB_FOOT), MODEL. The middle course's size ASSUMED. Its top `corbel.drop` 0.07 m under the springing, the lowest corner
+ *            of the rib's foot boom (it was 0.13 m, a 6 cm gap under the rib), MODEL;
  *   upper storey: one great round-headed opening in every rib bay, `upperSpan` 4.5 m clear (MEASURED 0.72-0.76 of the bay), a pier of 1.6 m
  *            under each rib, its sill on the band. The photograph puts its crown about 3.9 m over the rib landing (about 8.6 m over the
  *            platform) with some 3 m of brick above it to the gutter; this model's vaults meet at 8.75 m, so the crown is held `upperBelowValley`
@@ -98,7 +103,8 @@ export const EAST_AISLE_OPENING = { fromEast: 3.07, width: 3.5, head: 4.8 } as c
  */
 export const SPINE_WALL = {
   thick: 1.0, opening: 1.5, pitch: 2.66, sill: 0.9, jamb: 3.75, crown: 4.5, clear: 0.3,
-  band: 0.3, bandOut: 0.08, corbel: { height: 0.95, wide: 0.6, out: 0.93, drop: 0.13 },
+  band: 0.3, bandOut: 0.08,
+  corbel: { height: 0.95, wide: 0.45, out: 0.5, drop: 0.07, steps: [[0.45, 0.3, 0.5], [0.34, 0.3, 0.33], [0.26, 0.35, 0.17]] as const },
   upperSpan: 4.5, upperBelowValley: 0.45,
 } as const;
 /**
@@ -120,11 +126,19 @@ export function valleyTop(springing: number): number {
  * the 2026-11-24 realignment widened the east aisle to 10.25 m, the vault's edge would otherwise stand on nothing. The real east side carries
  * the vault on an arcaded wall (the lead's brief of 2026-11-24; no source for it was read here, and no dimension), so it takes every figure
  * of SPINE_WALL, ASSUMED. It stands on platform 0's west half; furniture keeps the same inset from it. Since the 2026-11-24 rebuild of the spine
- * wall it takes that wall's lower storey, and the band and the corbels on the face the vault's ribs land on (R-kx-shed-interior-a and the B3
+ * wall it takes a lower storey of its own (EAST_ARCADE), and the band and the corbels on the face the vault's ribs land on (R-kx-shed-interior-a and the B3
  * rubric: the side walls are arcades with the ribs on corbels), but it stops at the springing: there is no vault beyond it to open into, the
  * east vault's skin crosses its line just above the springing, and the east aisle's roof sits on it there.
  */
 export const eastArcadeU = (layout: Pick<ShedLayout, 'spine'>): number => layout.spine + SHED_SPAN_WIDTH;
+/**
+ * The east arcade's lower storey (2026-11-24, scorer: the spine's paired 1.5 m openings in a 1.0 m wall read blind from platform 1, where the
+ * first build's 3 m arches showed platform 0 through them). R-kx-shed-interior-a (shed-a, looking north along the east side) shows the east
+ * side's lower arcade as one wide round-headed arch a bay, open to the trains beyond: its span about 0.6 of the rib bay (MEASURED in memory,
+ * rough, +-20%: an oblique view), so `opening` 3.6 m, one centred in every bay, a 2.5 m pier under each rib. `crown` 4.5 m as the spine's
+ * lower storey, under the band, ASSUMED.
+ */
+export const EAST_ARCADE = { opening: 3.6, crown: 4.5 } as const;
 /** v of the centre of each opening of the spine wall: the middle of every rib bay. */
 export function spineOpenings(length: number): number[] {
   const ribs = ribPositions(length);
@@ -279,6 +293,12 @@ export interface Member {
  * booms and 0.16 x 0.14 webs, which read as heavy girders).
  */
 export const MEMBER_SIZE = { boom: [0.26, 0.2], web: [0.1, 0.09] } as const;
+/**
+ * How far in from the springing line the rib's inner boom lands, metres: on the corbel's cap (SPINE_WALL.corbel.out from the wall's face), its
+ * underside on the cap. The truss is 1.4 m deep above its first panel point and tapers to its foot, as R-kx-shed-interior-c shows the ribs
+ * coming down narrow onto small corbels; the first build kept the full depth to the foot and needed a 0.93 m corbel under it.
+ */
+export const RIB_FOOT = SPINE_WALL.thick / 2 + SPINE_WALL.corbel.out - MEMBER_SIZE.boom[0] / 2;
 
 /**
  * One roof rib as a Warren truss in the plane z = 0, centred on the vault axis (u = 0): a top and
@@ -290,6 +310,8 @@ export function ribMembers(springing: number, r = R, n = 16): Member[] {
   const rt = r + 0.1;
   const rb = r - 1.3;
   const node = (rad: number, i: number): [number, number] => vaultPoint(0, springing, rad, (Math.PI * i) / n);
+  // the inner boom's nodes: at the two feet it lands RIB_FOOT inside the springing, on the corbel's cap
+  const inner = (i: number): [number, number] => node(i === 0 || i === n ? r - RIB_FOOT : rb, i);
   const out: Member[] = [];
   const add = (p: [number, number], q: [number, number], kind: 'boom' | 'web'): void => {
     const du = q[0] - p[0];
@@ -299,12 +321,12 @@ export function ribMembers(springing: number, r = R, n = 16): Member[] {
   };
   for (let i = 0; i < n; i++) {
     add(node(rt, i), node(rt, i + 1), 'boom');
-    add(node(rb, i), node(rb, i + 1), 'boom');
+    add(inner(i), inner(i + 1), 'boom');
     // the diagonals lean toward the crown on both sides, so the truss is symmetric about it
-    if (i < n / 2) add(node(rb, i), node(rt, i + 1), 'web');
-    else add(node(rb, i + 1), node(rt, i), 'web');
+    if (i < n / 2) add(inner(i), node(rt, i + 1), 'web');
+    else add(inner(i + 1), node(rt, i), 'web');
   }
-  for (let i = 0; i <= n; i++) add(node(rb, i), node(rt, i), 'web');
+  for (let i = 0; i <= n; i++) add(inner(i), node(rt, i), 'web');
   return out;
 }
 
@@ -704,7 +726,7 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   buildNorthPier(spineBrick, spineStone, spine, L, valleyY);
   // the east vault's east springing, between the vault and the east aisle, stands on an arcade of the spine wall's pattern (EAST_ARCADE)
   const eastArcade = new Batch();
-  buildSpineWall(eastArcade, spineStone, eastArcadeU(layout), L, sp, sp, [-1]);
+  buildSpineWall(eastArcade, spineStone, eastArcadeU(layout), L, sp, sp, [-1], eastArcadeOpenings(L));
 
   // ---- the south front: across the two vaults, centred on the spine (the mesh's x runs from its west end, fx0) ------------
   const outline = new THREE.Shape([new THREE.Vector2(0, GROUND_Y), new THREE.Vector2(FW, GROUND_Y), new THREE.Vector2(FW, frontTop), new THREE.Vector2(0, frontTop)]);
@@ -853,6 +875,11 @@ export function spineUpperOpenings(length: number, top: number): { vc: number; r
   const r = SPINE_WALL.upperSpan / 2;
   return spineOpenings(length).map(vc => ({ vc, r, jamb: top - SPINE_WALL.upperBelowValley - r }));
 }
+/** The east arcade's lower storey (EAST_ARCADE): one wide opening in the middle of every rib bay. */
+export function eastArcadeOpenings(length: number): { vc: number; r: number; jamb: number }[] {
+  const r = EAST_ARCADE.opening / 2;
+  return spineOpenings(length).map(vc => ({ vc, r, jamb: EAST_ARCADE.crown - r }));
+}
 /** The height of the band's top and of the corbels' tops: where the ribs' feet land, a little under the springing. */
 export const ribLanding = (springing: number): number => springing - SPINE_WALL.corbel.drop;
 
@@ -863,7 +890,7 @@ export const ribLanding = (springing: number): number => springing - SPINE_WALL.
  * opening a bay from the band to the top, and the wall's top closed. The caller gives the brick its own batch (`shed-spine`,
  * `shed-east-arcade`), and the stone `shed-spine-stone`: none of them casts a sun shadow.
  */
-export function buildSpineWall(brick: Batch, stone: Batch, x: number, length: number, springing: number, top: number, faces: readonly (-1 | 1)[]): void {
+export function buildSpineWall(brick: Batch, stone: Batch, x: number, length: number, springing: number, top: number, faces: readonly (-1 | 1)[], lower = spineLowerOpenings(length)): void {
   const { thick, sill, band, bandOut, corbel } = SPINE_WALL;
   const h = thick / 2;
   const landing = ribLanding(springing);
@@ -871,7 +898,7 @@ export function buildSpineWall(brick: Batch, stone: Batch, x: number, length: nu
   const mid = upper ? landing : top;
   // the foot, inside the island platform: its top 0.02 m under the platform's, so the platform top shows in the openings without fighting it
   brick.box([x, (GROUND_Y + sill - 0.02) / 2, -length / 2], [thick, sill - 0.02 - GROUND_Y, length], { skip: ['-y'] });
-  arcadeStorey(brick, x, length, sill - 0.02, mid, spineLowerOpenings(length));
+  arcadeStorey(brick, x, length, sill - 0.02, mid, lower);
   if (upper) {
     const opens = spineUpperOpenings(length, top);
     arcadeStorey(brick, x, length, landing, top, opens);
@@ -883,11 +910,13 @@ export function buildSpineWall(brick: Batch, stone: Batch, x: number, length: nu
     const f = x + side * h;
     const back: Face = side > 0 ? '-x' : '+x';
     stone.box([f + side * bandOut / 2, landing - band / 2, -length / 2], [bandOut, band, length], { skip: [back] });
-    // the corbel: two stepped blocks, the upper one reaching under the rib's inner boom
-    const up = corbel.height * 0.45;
+    // the corbel: its courses stepped in under one another, the cap carrying the rib's inner boom
     for (const v of ribPositions(length)) {
-      stone.box([f + side * corbel.out / 2, landing - up / 2, -v], [corbel.out, up, corbel.wide], { skip: [back] });
-      stone.box([f + side * corbel.out * 0.3, landing - up - (corbel.height - up) / 2, -v], [corbel.out * 0.6, corbel.height - up, corbel.wide * 0.8], { skip: [back] });
+      let y = landing;
+      for (const [wide, tall, out] of corbel.steps) {
+        stone.box([f + side * out / 2, y - tall / 2, -v], [out, tall, wide], { skip: [back] });
+        y -= tall;
+      }
     }
   }
 }
