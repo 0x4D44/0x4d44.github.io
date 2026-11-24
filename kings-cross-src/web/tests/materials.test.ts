@@ -9,6 +9,7 @@ import { Batch, boxProjectUV, CITY_PAINTERS, cityMaterial, footShaded, GLAZING, 
 import { MOTTLE } from '../src/lighting.ts';
 import type { PartMap, TextureName, V3 } from '../src/materials.ts';
 import { Glsl, Mat } from './glsl.ts';
+// Re-pinned 2026-11-24 (shed realignment, signed off): the vault centres are the spine -/+ R (aisle + R and aisle + 3R before, the same points while the aisles were even), the valley is the spine, and there is no west aisle, so a probe of 'the aisle' stands in the east aisle.
 
 const names = Object.keys(TEXTURES) as TextureName[];
 const close = (a: number, b: number, eps = 1e-6): void => assert.ok(Math.abs(a - b) <= eps, `${a} != ${b}`);
@@ -653,11 +654,11 @@ test('the shed\'s great windows mirror a clear sky in diagonal streaks on their 
 test('the great windows\' panes are the shed\'s real bars (a mullion every 1.6 m from the shed\'s centre line, a transom at each third), in both windows, on the front and the gables, and the glass finds the centre line itself (round six, E4)', () => {
   const data: KxData = JSON.parse(readFileSync(new URL('../src/data/kx-track.json', import.meta.url), 'utf8'));
   const layout = shedLayout(data);
-  const centre = layout.width / 2;
+  const centre = layout.spine; // re-pinned 2026-11-24: the shed's centre line is its spine (width / 2 before, the same line while the aisles were even)
   // the constants are the bars': the springing, the third of the half disc, the bar spacing
   close(GLAZING.springing, layout.springing, 1e-3);
   close(GLAZING.tier, SHED_SPAN_WIDTH / 2 / 3, 1e-3);
-  for (const uc of [layout.aisle + SHED_SPAN_WIDTH / 2, layout.aisle + 1.5 * SHED_SPAN_WIDTH]) {
+  for (const uc of [layout.spine - SHED_SPAN_WIDTH / 2, layout.spine + SHED_SPAN_WIDTH / 2]) {
     const bars = lunetteBars(uc, layout.springing);
     const mullions = bars.filter((b) => b.kind === 'mullion'), transoms = bars.filter((b) => b.kind === 'transom');
     assert.ok(mullions.length >= 15 && transoms.length === 2, `the bars are found: ${mullions.length} mullions, ${transoms.length} transoms`);

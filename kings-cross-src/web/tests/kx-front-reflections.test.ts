@@ -7,6 +7,7 @@ import { addCity } from '../src/city.ts';
 import { surfaceUniforms } from '../src/atmosphere.ts';
 import { Glsl } from './glsl.ts';
 import { lampSurfaceAt } from '../src/lamp-wet-surface.ts';
+// Re-pinned 2026-11-24 (shed realignment, signed off): the vault centres are the spine -/+ R (aisle + R and aisle + 3R before, the same points while the aisles were even), the valley is the spine, and there is no west aisle, so a probe of 'the aisle' stands in the east aisle.
 const read=(name:string)=>JSON.parse(readFileSync(new URL(`../src/data/${name}.json`,import.meta.url),'utf8'));
 const data=read('kx-track'),city=read('kx-city');
 function make(){const scene=new THREE.Scene();let layer:{setLevel(l:number):void}|undefined;const made=addCity(scene,data,city,{nightEffects:true,trees:false,night:{attach(l){layer=l;return()=>{};}}});return {scene,made,setLevel(l:number){layer!.setLevel(l);}};}
@@ -16,7 +17,7 @@ function block(s:string,name:string){const b=s.split(`// ${name}-begin`)[1]?.spl
 
 test('KX front reflections follow both built south lunette surfaces without creating extra fittings or pools',()=>{
  const r=make();try{const mesh=reflection(r.scene),layout=shedLayout(data),heads=mesh.geometry.getAttribute('reflectionHead');assert.equal(mesh.count,10);assert.equal(heads.count,mesh.count);
- const counts=[0,0];for(let i=0;i<heads.count;i++){const p=worldToShed(layout,[heads.getX(i),heads.getZ(i)]),c=layout.aisle+(p.u<layout.width/2?.5:1.5)*SHED_SPAN_WIDTH;assert.ok(Math.abs(p.v-.7)<.001,'inside the built glazing recess');assert.ok(Math.hypot(p.u-c,heads.getY(i)-layout.springing)<SHED_SPAN_WIDTH/2-.02);counts[p.u<layout.width/2?0:1]++;}
+ const counts=[0,0];for(let i=0;i<heads.count;i++){const p=worldToShed(layout,[heads.getX(i),heads.getZ(i)]),c=layout.spine+(p.u<layout.spine?-.5:.5)*SHED_SPAN_WIDTH;assert.ok(Math.abs(p.v-.7)<.001,'inside the built glazing recess');assert.ok(Math.hypot(p.u-c,heads.getY(i)-layout.springing)<SHED_SPAN_WIDTH/2-.02);counts[p.u<layout.spine?0:1]++;}
  assert.deepEqual(counts,[5,5]);const group=mesh.parent!;assert.equal(group.children.length,1,'only reflections, no source heads, pools or posts');assert.equal(mesh.geometry.index!.count/3*mesh.count,160);
  }finally{r.made.dispose();}
 });

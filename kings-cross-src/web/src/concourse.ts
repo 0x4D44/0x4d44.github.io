@@ -3,7 +3,7 @@
 // R-c conc-c-exterior-square-2016, conc-c2-dome-aerial-2016. PUBLISHED: 15 % glazed, 1,012 panels "at the perimeter and towards the funnel"
 // (refs/DIMENSIONS.md s.2); ribs 150 mm wide, 250-450 mm deep, diagonals 139-219 mm (Arup pp.13-16). Other values are ASSUMED where labelled.
 import * as THREE from 'three';
-import { concourseHeight, pointInPolygon, shedToWorld, worldToShed } from '../../core/station.ts';
+import { concourseArcU, concourseHeight, pointInPolygon, shedToWorld, worldToShed } from '../../core/station.ts';
 import type { ConcourseCanopy, ShedLayout } from '../../core/station.ts';
 import type { Pt } from '../../core/geo.ts';
 import { Batch, rgb, rng, texture } from './materials.ts';
@@ -234,8 +234,8 @@ function cellMeetsBuilding(triangle: Pt[], polygon: Pt[]): boolean {
 }
 
 /** The northern limit of the concourse in shed v: where the OSM station outline turns into the suburban roof. */
-function concourseNorth(footprint: Pt[], shed: Pick<ShedLayout, 'origin' | 'heading'>): number {
-  const arc = footprint.map(p => worldToShed(shed, p)).filter(p => p.u < -45 && p.v <= WESTERN_RANGE.v1 + .1);
+function concourseNorth(footprint: Pt[], shed: Pick<ShedLayout, 'origin' | 'heading' | 'westShift'>): number {
+  const arc = footprint.map(p => worldToShed(shed, p)).filter(p => p.u < concourseArcU(shed) && p.v <= WESTERN_RANGE.v1 + .1);
   if (arc.length < 3) throw new Error('the OSM concourse boundary is needed to build its roof');
   return Math.max(...arc.map(p => p.v));
 }

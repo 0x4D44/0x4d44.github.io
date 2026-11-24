@@ -63,7 +63,7 @@ function frontApertures(centre:number,springing:number) {
  * source remains at the real recessed glass surface. */
 export function kxFrontSources(layout:ShedLayout,surface:LampWetSurface):KxFrontSource[] {
   const sources:KxFrontSource[]=[];
-  for(const centre of [layout.aisle+SHED_SPAN_WIDTH/2,layout.aisle+3*SHED_SPAN_WIDTH/2]) {
+  for(const centre of [layout.spine-SHED_SPAN_WIDTH/2,layout.spine+SHED_SPAN_WIDTH/2]) {
     for(const aperture of frontApertures(centre,layout.springing)) {
       const [x,z]=shedToWorld(layout,aperture.u,.7);
       for(const out of [1,2,3,4,6,8,12]) {
@@ -86,9 +86,10 @@ export function createKxFrontReflections(layout:ShedLayout,surface:LampWetSurfac
 /** The three built piers and four stone arch shoulders receive the facade's
  * amber uplight. Mirror those surfaces, with no invented points in the glass. */
 export function kxFacadeSources(layout:ShedLayout,surface:LampWetSurface):KxFrontSource[] {
-  const sites = [.5,layout.width/2,layout.width-.5].map(u=>({u,y:layout.springing*.6,widthScale:.9}));
+  // the front spans the two vaults, centred on the spine: its end piers stand 0.5 m in from each end
+  const sites = [layout.spine-SHED_SPAN_WIDTH+.5,layout.spine,layout.spine+SHED_SPAN_WIDTH-.5].map(u=>({u,y:layout.springing*.6,widthScale:.9}));
   const r=SHED_SPAN_WIDTH/2+.5;
-  for(const centre of [layout.aisle+SHED_SPAN_WIDTH/2,layout.aisle+3*SHED_SPAN_WIDTH/2]) {
+  for(const centre of [layout.spine-SHED_SPAN_WIDTH/2,layout.spine+SHED_SPAN_WIDTH/2]) {
     for(const side of [-1,1])sites.push({u:centre+side*r*Math.cos(Math.PI/6),y:layout.springing+r*.5,widthScale:.65});
   }
   return sites.flatMap(s=>{

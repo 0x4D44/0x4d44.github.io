@@ -42,14 +42,15 @@ import { railShapes, shapeFrom } from '../../core/curves.ts';
 import type { Pt } from '../../core/geo.ts';
 import type { KxData } from '../../core/osm.ts';
 import { PLATFORM_HEIGHT } from '../../core/scene.ts';
-import { isSurfacePlatform, longAxis, platformDrawingOutline, PLATFORM_9_OUTLINE_BASIS, PLATFORM_REFS, pointInPolygon, SHED_PLATFORM_REFS, SHED_SPAN_WIDTH, stationPlatforms, worldToShed } from '../../core/station.ts';
+import { isSurfacePlatform, longAxis, platformDrawingOutline, PLATFORM_9_OUTLINE_BASIS, PLATFORM_REFS, pointInPolygon, SHED_PLATFORM_REFS, SHED_SPAN_WIDTH, shedToWorld, stationPlatforms, worldToShed } from '../../core/station.ts';
+import { SPINE_WALL } from './shed.ts';
 import type { ShedLayout } from '../../core/station.ts';
 import { Batch, material, rgb, rng, TEXTURES } from './materials.ts';
 import type { Rgb, V3 } from './materials.ts';
 import { GROUND_Y } from './world.ts';
 
 /** The parts of the shed layout this module reads. */
-export type FurnitureLayout = Pick<ShedLayout, 'origin' | 'heading' | 'width' | 'length' | 'aisle' | 'springing'>;
+export type FurnitureLayout = Pick<ShedLayout, 'origin' | 'heading' | 'width' | 'length' | 'spine' | 'springing'>;
 /** The platforms are all that is needed; with the rails too, an edge with no track beside it gets no strip and no safety line. */
 export type FurnitureData = Pick<KxData, 'platforms'> & Partial<Pick<KxData, 'nodes' | 'rails'>>;
 
@@ -130,6 +131,8 @@ export const FIGURES = {
   /** Screens stay this far from the shed's south front and north mouth, metres. ASSUMED. */
   screenSouth: 12,
   screenNorth: 6,
+  /** On platforms 4 and 5 a screen is bracketed off the spine wall's face, its edge this far from the face, metres. ASSUMED. */
+  screenBracketGap: 0.05,
 
   // --- canopies (platforms 9 and 10)
   /** Roof height above the platform top, metres. ASSUMED (the brief). */
@@ -594,13 +597,15 @@ export interface Frame {
   /** extent of the polygon along the axis, metres */
   tLo: number;
   tHi: number;
+  /** the shed's spine wall, world (x, z) at its south (v = 0) and north (v = length) ends, when the layout has one: bandAt keeps clear of it */
+  spine?: [Pt, Pt];
 }
 
 export function platformFrame(
   ref: string,
   pts: readonly Pt[],
   others: readonly Pt[][],
-  layout: Pick<ShedLayout, 'origin' | 'heading' | 'width' | 'length'>,
+  layout: Pick<ShedLayout, 'origin' | 'heading' | 'width' | 'length'> & Partial<Pick<ShedLayout, 'spine'>>,
   tracks?: readonly TrackSegment[],
 ): Frame {
   const la = longAxis(pts as Pt[]).axis;
@@ -612,7 +617,8 @@ export function platformFrame(
     tLo = Math.min(tLo, t);
     tHi = Math.max(tHi, t);
   }
-  return { ref, pts, edges: classifyEdges(pts, others, layout, tracks), axis, n: [-axis[1], axis[0]], tLo, tHi };
+  const spine: [Pt, Pt] | undefined = layout.spine === undefined ? undefined : [shedToWorld(layout, layout.spine, 0), shedToWorld(layout, layout.spine, layout.length)];
+  return { ref, pts, edges: classifyEdges(pts, others, layout, tracks), axis, n: [-axis[1], axis[0]], tLo, tHi, ...(spine ? { spine } : {}) };
 }
 
 /** The point at along-coordinate t and across-coordinate s. */
@@ -639,16 +645,61 @@ export interface Band {
  * least the safety line from a track-facing edge and FIGURES.otherMargin from any other edge, both
  * measured square to the edge, or null where the platform is too narrow.
  */
-export function bandAt(f: Frame, t: number, half: number): Band | null {
+export function bandAt(f: Frame, t: number, half: number, floor = true): Band | null {
   const sec = crossSection(f.pts, f.axis, t);
   if (!sec) return null;
   const lo = f.edges[sec.loEdge] as PlatformEdge;
   const hi = f.edges[sec.hiEdge] as PlatformEdge;
   const setback = (e: PlatformEdge): number => squareTo(f, e, (e.kind === 'track' ? FIGURES.safetyLine + FIGURES.safetySlack : FIGURES.otherMargin) + half);
-  const s0 = sec.lo + setback(lo);
-  const s1 = sec.hi - setback(hi);
+  let s0 = sec.lo + setback(lo);
+  let s1 = sec.hi - setback(hi);
+  // the spine wall (web/src/shed.ts SPINE_WALL) stands on the 4/5 island, near but not on its shared edge (the island leans 0.25 degrees off
+  // the shed's axis): where it crosses or runs beside this section, a floor item keeps half the wall's thickness and SPINE_WALL.clear from its line
+  const w = floor ? spineAt(f, t, sec, SPINE_WALL.thick / 2 + SPINE_WALL.clear + half) : null;
+  if (w) {
+    if (w.s <= (sec.lo + sec.hi) / 2) s0 = Math.max(s0, w.s + w.cross);
+    else s1 = Math.min(s1, w.s - w.cross);
+  }
   if (s1 < s0) return null;
   return { s0, s1, mid: (s0 + s1) / 2, loTrack: lo.kind === 'track', hiTrack: hi.kind === 'track' };
+}
+
+/**
+ * Where the spine wall's line crosses the section at t (s, across), when it crosses within `keep` of the platform, and `keep` squared to
+ * the section (the island leans off the axis, so a distance square to the wall is a little longer along the section).
+ */
+function spineAt(f: Frame, t: number, sec: { lo: number; hi: number }, keep: number): { s: number; cross: number } | null {
+  if (!f.spine) return null;
+  const [a, b] = f.spine, d: Pt = [b[0] - a[0], b[1] - a[1]];
+  const p = worldPoint(f, t, 0);
+  // the section is p + s n; the spine is a + w d: solve for s and w
+  const det = f.n[0] * -d[1] + d[0] * f.n[1];
+  if (Math.abs(det) <= 1e-9) return null;
+  const rx = a[0] - p[0], rz = a[1] - p[1];
+  const s = (rx * -d[1] + d[0] * rz) / det, w = (f.n[0] * rz - f.n[1] * rx) / det;
+  if (w < 0 || w > 1 || s <= sec.lo - keep || s >= sec.hi + keep) return null;
+  const l = Math.hypot(d[0], d[1]);
+  return { s, cross: squareTo(f, { dir: [d[0] / l, d[1] / l] }, keep) };
+}
+
+/**
+ * A departure screen's across-coordinate at t. Away from the spine wall it hangs in the middle of the band the safety line leaves. Where the
+ * floor inset from the spine wall would push it (platforms 4 and 5), it is bracketed off the wall face instead: its wall-side edge
+ * FIGURES.screenBracketGap from the face, on the platform's side. It must still keep the safety line, so it stays inside the plain band.
+ */
+export function screenAt(f: Frame, t: number): { s: number; wall: boolean } | null {
+  const half = FIGURES.screenWidth / 2;
+  const sec = crossSection(f.pts, f.axis, t);
+  const b = bandAt(f, t, half, false);
+  if (!sec || !b) return null;
+  const w = spineAt(f, t, sec, SPINE_WALL.thick / 2 + SPINE_WALL.clear + half);
+  if (!w) return { s: b.mid, wall: false };
+  const side = w.s <= (sec.lo + sec.hi) / 2 ? 1 : -1;
+  const clearOfFloor = side * (b.mid - w.s) >= w.cross;
+  if (clearOfFloor) return { s: b.mid, wall: false };
+  const l = w.cross / (SPINE_WALL.thick / 2 + SPINE_WALL.clear + half); // the squaring factor
+  const s = w.s + side * l * (SPINE_WALL.thick / 2 + FIGURES.screenBracketGap + half);
+  return s >= b.s0 - 1e-9 && s <= b.s1 + 1e-9 ? { s, wall: true } : null;
 }
 
 /** Along-platform positions at `spacing`, starting `south` metres in (plus a phase) and stopping `north` metres short of the far end. */
@@ -659,10 +710,10 @@ function slots(f: Frame, spacing: number, phase: number, south: number, north: n
 }
 
 /** The roof height over the shed floor at across-coordinate u: the two circular arches, the flat aisles at the springing line. */
-export function shedRoofY(layout: Pick<ShedLayout, 'aisle' | 'springing'>, u: number): number {
+export function shedRoofY(layout: Pick<ShedLayout, 'spine' | 'springing'>, u: number): number {
   const r = SHED_SPAN_WIDTH / 2;
-  for (const k of [1, 3]) {
-    const d = Math.abs(u - (layout.aisle + k * r));
+  for (const k of [-1, 1]) {
+    const d = Math.abs(u - (layout.spine + k * r));
     if (d <= r) return layout.springing + Math.sqrt(r * r - d * d);
   }
   return layout.springing;
@@ -683,6 +734,8 @@ export interface Placement {
 export interface ScreenPlacement extends Placement {
   /** roof height above the screen, metres */
   roofY: number;
+  /** bracketed off the spine wall's face (platforms 4 and 5) rather than hung clear of it */
+  wall: boolean;
 }
 
 export interface CanopyPlan {
@@ -874,12 +927,12 @@ export function furniturePlan(data: FurnitureData, layout: FurnitureLayout): Fur
     // 5. departure screens, hung from the shed roof along the middle of the platform
     if (SHED_REFS.has(ref)) {
       for (const t of slots(f, FIGURES.screenSpacing, index * STAGGER.screen, FIGURES.endSouth, FIGURES.endNorth)) {
-        const b = bandAt(f, t, FIGURES.screenWidth / 2);
-        if (!b) continue;
-        const [x, z] = worldPoint(f, t, b.mid);
+        const at = screenAt(f, t);
+        if (!at) continue;
+        const [x, z] = worldPoint(f, t, at.s);
         const { u, v } = worldToShed(layout, [x, z]);
         if (v < FIGURES.screenSouth || v > layout.length - FIGURES.screenNorth || u < 0.5 || u > layout.width - 0.5) continue;
-        plan.screens.push({ ref, x, z, rotY: axisFacing, r: FIGURES.screenWidth / 2 + 0.05, across: FIGURES.screenWidth / 2, roofY: shedRoofY(layout, u) });
+        plan.screens.push({ ref, x, z, rotY: axisFacing, r: FIGURES.screenWidth / 2 + 0.05, across: FIGURES.screenWidth / 2, roofY: shedRoofY(layout, u), wall: at.wall });
       }
     }
   }

@@ -5,8 +5,9 @@ import * as THREE from 'three';
 import type { KxData } from '../../core/osm.ts';
 import { CLOCK_TOWER_HEIGHT, SHED_LENGTH, SHED_SPAN_WIDTH, shedLayout, stationBuilding, worldToShed } from '../../core/station.ts';
 import { shedRoofY } from '../src/furniture.ts';
+import { SHADOW_CASTERS } from '../src/lighting.ts';
 import { material } from '../src/materials.ts';
-import { buildShed, buildTower, buildWesternRange, gableBars, GABLE_GLASS_FROM, glazedHalfAngle, GLAZED_STRIP_WIDTH, GLASS_OPACITY, glazingOpacity, lunetteBars, MEMBER_SIZE, RIB_SPACING, ribMembers, ribPositions, ROOF_SKIN, roofOpacity, TOWER_SIZE, valleyCut, VALLEY_HALF, vaultBand, vaultPoint, WESTERN_RANGE, westernArches, westernBays, westernBlock, westernWindows, XRAY_OPACITY } from '../src/shed.ts';
+import { buildShed, buildTower, buildWesternRange, gableBars, GABLE_GLASS_FROM, glazedHalfAngle, GLAZED_STRIP_WIDTH, GLASS_OPACITY, glazingOpacity, lunetteBars, MEMBER_SIZE, RIB_SPACING, ribMembers, ribPositions, ROOF_SKIN, roofOpacity, SPINE_WALL, spineOpenings, TOWER_SIZE, valleyCut, VALLEY_HALF, vaultBand, vaultPoint, WESTERN_RANGE, WESTERN_RANGE_DEPTH_BEFORE, westernArches, westernBays, westernBlock, westernWindows, XRAY_OPACITY } from '../src/shed.ts';
 
 const data: KxData = JSON.parse(readFileSync(new URL('../src/data/kx-track.json', import.meta.url), 'utf8'));
 const layout = shedLayout(data);
@@ -152,7 +153,7 @@ test('the gable bars start at the glass line: nothing below it', () => {
 });
 
 test('roofOpacity: solid inside the shed, thinning to the x-ray value as the camera pulls back', () => {
-  const l = { width: 72, length: 244, crown: 21.6 };
+  const l = { width: 72, length: 244, crown: 21.6, spine: 36 }; // the spine at the middle, as the layout had it before 2026-11-24, so the pins below hold
   assert.equal(roofOpacity([36, 8, -100], l), 1, 'inside the shed');
   assert.ok(roofOpacity([-10, 3, -100], l) > 0.99, 'close to the roof it stays solid');
   close(roofOpacity([900, 600, 500], l), XRAY_OPACITY, 1e-12);
@@ -242,7 +243,7 @@ test('the ironwork is dark grey steel, as in R-lighting-materials-a2 and -b, and
 
 test('buildShed: the valley is a thin board-lined fascia, not a slab: its faces look along the shed or down, and a frame stands at every rib', () => {
   const group = buildShed(layout);
-  const valley = layout.aisle + 2 * R;
+  const valley = layout.spine; // re-pinned 2026-11-24: the valley is the layout's spine (it was aisle + 2R, which equals it only with even aisles)
   const fascia = byName(group, 'shed-valley-girder');
   const b = bbox(fascia);
   close(b.min.x, valley - VALLEY_HALF, EPS);
@@ -300,22 +301,25 @@ test('buildShed: the published dimensions, in the shed frame', () => {
   close(glass.max.y, layout.crown + ROOF_SKIN, EPS);
   close(glass.min.z, -L, EPS);
   close(glass.max.z, 0, EPS);
-  // the front stands 2.4 m above the crowns, the full width of the shed
+  // the front stands 2.4 m above the crowns, across the two vaults (re-pinned 2026-11-24, signed off: the front spans only the two vaults,
+  // centred on the spine; it spanned the whole width W before, aisles included)
   const front = bbox(byName(group, 'shed-front'));
   close(front.max.y, layout.crown + 2.4, EPS);
-  close(front.max.x - front.min.x, W, EPS);
+  close(front.max.x - front.min.x, 2 * SHED_SPAN_WIDTH, EPS);
+  close(byName(group, 'shed-front').position.x + (front.min.x + front.max.x) / 2, layout.spine, EPS);
+  assert.ok(W > 2 * SHED_SPAN_WIDTH, 'the east aisle lies beyond it');
   // 40 ribs on each of the two vaults
   assert.equal((byName(group, 'shed-ribs') as unknown as THREE.InstancedMesh).count, 2 * ribPositions(L).length);
   // the tower stands on the spine, just in front of the front plane
   const tower = group.getObjectByName('clock-tower') as THREE.Object3D;
-  close(tower.position.x, W / 2, EPS);
+  close(tower.position.x, layout.spine, EPS); // re-pinned 2026-11-24: the tower is on the spine, which is no longer W / 2
   close(tower.position.z, TOWER_SIZE / 2 + 0.15, EPS);
 });
 
 test('buildShed: every mesh has finite positions and the roof skin never crosses the valley line', () => {
   const group = buildShed(layout);
   const sp = layout.springing;
-  const valley = layout.aisle + 2 * R;
+  const valley = layout.spine; // re-pinned 2026-11-24: the valley is the layout's spine (it was aisle + 2R, which equals it only with even aisles)
   let meshes = 0;
   group.traverse((o) => {
     const m = o as THREE.Mesh;
@@ -326,8 +330,8 @@ test('buildShed: every mesh has finite positions and the roof skin never crosses
   });
   assert.ok(meshes >= 20, `only ${meshes} meshes`);
   const clad = positions(byName(group, 'shed-roof-cladding').geometry);
-  const west = layout.aisle + R;
-  const east = layout.aisle + 3 * R;
+  const west = layout.spine - R; // re-pinned 2026-11-24: the vault centres are a half span either side of the spine
+  const east = layout.spine + R;
   const rs = R + ROOF_SKIN;
   let onWest = 0;
   let onEast = 0;
@@ -465,8 +469,8 @@ test('the Range can be left out', () => {
 
 test('the roof the platform furniture hangs from (shedRoofY) is this shed\'s arch: its crown over each arch centre, the springing over the aisles and at the valley', () => {
   const sp = layout.springing;
-  for (const k of [1, 3]) {
-    const uc = layout.aisle + k * R;
+  for (const k of [-1, 1]) {
+    const uc = layout.spine + k * R; // re-pinned 2026-11-24: the vault centres from the spine (they were aisle + R and aisle + 3R)
     close(shedRoofY(layout, uc), layout.crown, 1e-9);
     close(shedRoofY(layout, uc - R), sp, 1e-9);
     close(shedRoofY(layout, uc + R), sp, 1e-9);
@@ -477,5 +481,58 @@ test('the roof the platform furniture hangs from (shedRoofY) is this shed\'s arc
       assert.ok(r > Math.min(...booms) && r < Math.max(...booms), `at ${d} m from the axis the roof is ${r.toFixed(2)} m from the arch centre, outside the truss ${Math.min(...booms).toFixed(2)}-${Math.max(...booms).toFixed(2)}`);
     }
   }
-  close(shedRoofY(layout, layout.aisle / 2), sp, 1e-9); // over the west aisle
+  close(shedRoofY(layout, layout.width - layout.aisleEast / 2), sp, 1e-9); // over the east aisle (re-pinned 2026-11-24: there is no west aisle now)
+});
+
+// The shed realignment of 2026-11-24 (wrk_docs/2026.11.23 - KXLIVE - Shed realignment and centre arcade design.md, signed off): the arcaded
+// spine wall stands under the valley, its top at the springing, where both vaults spring; every figure of the wall is ASSUMED (SPINE_WALL).
+test('buildShed: the spine wall meets the springing: its top is the springing, both vaults spring from its line, each still 105 ft across', () => {
+  const group = buildShed(layout);
+  // the wall is its own mesh, the shed's brick, and casts no sun shadow (lead follow-up 2026-11-24: the shadow pass has no room for it)
+  const brick = byName(group, 'shed-spine');
+  assert.equal(brick.material, material('brickFoot'), 'the brick of the shed');
+  assert.ok(!SHADOW_CASTERS.has('shed-spine'), 'not a sun-shadow caster');
+  const p = positions(brick.geometry);
+  const sp = layout.springing, half = SPINE_WALL.thick / 2;
+  let top = -Infinity, foot = Infinity, n = 0, xMin = Infinity, xMax = -Infinity, zMin = Infinity, zMax = -Infinity;
+  for (let i = 0; i < p.count; i++) {
+    const x = p.getX(i);
+    if (Math.abs(x - layout.spine) > half + 1e-4) continue; // float32 positions
+    n++;
+    top = Math.max(top, p.getY(i)); foot = Math.min(foot, p.getY(i));
+    xMin = Math.min(xMin, x); xMax = Math.max(xMax, x); zMin = Math.min(zMin, p.getZ(i)); zMax = Math.max(zMax, p.getZ(i));
+  }
+  assert.ok(n > 1000, `${n} brick vertices on the spine line`);
+  close(top, sp, 1e-6); // the design asks 1e-9; the drawn positions are float32, good to about 5e-7 m at this height
+  assert.ok(foot < 0, 'from the ground');
+  close(xMin, layout.spine - half, 1e-5); // float32 positions: 32.504 is stored as 32.5040016
+  close(xMax, layout.spine + half, 1e-5);
+  close(zMax, 0, 1e-5);
+  close(zMin, -layout.length, 1e-4);
+  // the vaults: the ribs are instanced on the two vault axes, a half span either side of the spine
+  const ribs = byName(group, 'shed-ribs') as unknown as THREE.InstancedMesh;
+  const axes = new Set<string>();
+  const m = new THREE.Matrix4(), t = new THREE.Vector3();
+  for (let i = 0; i < ribs.count; i++) { ribs.getMatrixAt(i, m); t.setFromMatrixPosition(m); axes.add(t.x.toFixed(9)); }
+  const [west, east] = [...axes].map(Number).sort((a, b) => a - b) as [number, number];
+  assert.equal(axes.size, 2);
+  // (the instance matrices are float32: 16.002 is stored to about 1e-6)
+  close(west + R, layout.spine, 1e-5); // the west vault's east springing
+  close(east - R, layout.spine, 1e-5); // the east vault's west springing
+  close(2 * R, SHED_SPAN_WIDTH, 1e-12);
+  close(west - R, 0, 1e-5); // and the west vault springs from the west wall: no west aisle
+  // the valley fascia stands on the wall, centred on it
+  const fascia = bbox(byName(group, 'shed-valley-girder'));
+  close((fascia.min.x + fascia.max.x) / 2, layout.spine, 1e-6);
+  close(fascia.min.y, sp, 1e-6);
+  // one round-headed opening in every rib bay: the openings sit between the ribs, so a pier stands under each
+  const opens = spineOpenings(layout.length), ribV = ribPositions(layout.length);
+  assert.equal(opens.length, ribV.length - 1);
+  for (const v of opens) assert.ok(ribV.every(r => Math.abs(r - v) >= SPINE_WALL.opening / 2 + 0.5), `the opening at v ${v} clears every rib's pier`);
+  assert.ok(SPINE_WALL.crown < sp && Math.abs(SPINE_WALL.jamb + SPINE_WALL.opening / 2 - SPINE_WALL.crown) < 1e-9, 'a semicircular head, under the springing');
+});
+
+test('the realignment took the Range\'s depth, not its concourse face: the face, and the concourse built against it, stand where they stood', () => {
+  close(WESTERN_RANGE.depth + layout.westShift, WESTERN_RANGE_DEPTH_BEFORE, 1e-12);
+  assert.ok(layout.westShift > 2 && layout.westShift < 2.1, `the west wall moved ${layout.westShift} m west`);
 });

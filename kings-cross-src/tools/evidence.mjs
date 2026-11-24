@@ -292,6 +292,11 @@ export function stationWorld() {
  * pos, target and fov with the baseline, would have voided the view). They are literals now. Change one only on purpose, in this
  * table and in the test's copy together, and re-freeze the baseline with it. The comments keep the reasoning each camera came from
  * (the photograph, the stand, the lens); a model value they name (a height, a width) is the one it had when the camera was frozen.
+ *
+ * Re-aimed on purpose 2026-11-24 (the shed realignment: the valley and the tower moved 6.15 m west onto the 4/5 island, the west wall
+ * 2.05 m west, and an arcaded spine wall now stands there), keeping what each looks at: top and shed-interior at the footprint's new
+ * middle (width / 2); tower-close and front-southwest-pedestrian at the moved tower and west great arch; platform-eye, platform-eye-south
+ * and roof-underside off the wall (their eye stood 0.6 m from its face); furniture-close at the bench pair the wall moved 0.4 m east.
  */
 const FROZEN_STATION_CAMERAS = {
   overview: {
@@ -300,8 +305,8 @@ const FROZEN_STATION_CAMERAS = {
     source: 'shedLayout',
   },
   top: {
-    pos: [46.37560028234806, 3000, -131.62931499021622],
-    target: [46.37840361751828, 0, -131.7292756890529],
+    pos: [45.353024090970614, 3000, -131.65799249882593],
+    target: [45.355827426140834, 0, -131.75795319766263],
     source: 'shedLayout, 10 m grid',
     grid: true, fov: 12, near: 100,
   },
@@ -323,13 +328,13 @@ const FROZEN_STATION_CAMERAS = {
   },
   'shed-interior': {
     pos: [44.150000000000006, 3.2, -328.45],
-    target: [45.814933248303184, 8, -111.63717522287426],
+    target: [44.79235705692574, 8, -111.66585273148397],
     source: 'OSM platform 4 north end looking into the shed',
   },
   'platform-eye': {
-    pos: [43.54285714285716, 2.5, -210.09285714285716],
-    target: [44.66419121094691, 2.5, -250.07713667754103],
-    source: 'OSM platform 4 polygon, eye 1.6 m above platform',
+    pos: [44.38716973020361, 2.5, -210.06917892533454],
+    target: [45.50850379829336, 2.5, -250.0534584600184],
+    source: 'OSM platform 4 at its polygon midpoint\'s v, midway between the spine wall\'s east face and the platform\'s track edge (re-aimed 2026-11-24: the midpoint stands 0.6 m from the wall), eye 1.6 m above platform',
   },
   concourse: {
     pos: [-58.19823691449512, 2.5, -90.50307363615148],
@@ -370,9 +375,9 @@ const FROZEN_STATION_CAMERAS = {
     fov: 50, near: 0.1,
   },
   'platform-eye-south': {
-    pos: [43.54285714285716, 2.5, -210.09285714285716],
-    target: [42.42152307476741, 2.5, -170.10857760817328],
-    source: 'OSM platform 4 polygon, south-facing eye 1.6 m above platform',
+    pos: [44.38716973020361, 2.5, -210.06917892533454],
+    target: [43.26583566211386, 2.5, -170.08489939065066],
+    source: 'OSM platform 4 at its polygon midpoint\'s v, midway between the spine wall\'s east face and the track edge (re-aimed 2026-11-24), south-facing eye 1.6 m above platform',
   },
   // Pancras Road exterior: the concave east front sits beside the concourse. Its old
   // normal-offset camera landed below that roof and hid the hotel. The public west
@@ -433,18 +438,18 @@ const FROZEN_STATION_CAMERAS = {
   // R-kx-front-c (front-c-clocktower-2019.jpg, Acabashi CC BY-SA 4.0): the clock tower from the square. 35 m south of the
   // tower's south face at y = 28 m, aimed at the clock centre (buildTower's clockY, 5.75 m under the 112 ft overall height).
   'tower-close': {
-    pos: [41.84681231485059, 28, 29.85719398048837],
-    target: [42.82797962442912, 28.3876, -5.129050612360035],
+    pos: [35.70219423887037, 28, 29.68487201635194],
+    target: [36.6833615484489, 28.3876, -5.301372576496462],
     source: 'R-kx-front-c standpoint (front-c-clocktower-2019.jpg): 35 m south of the tower face, y = 28 m, aimed at the clock centre',
     fov: 35, near: 0.1,
   },
   // R-kx-front-b (front-b-oblique-sw-2016.jpg, Oast House Archive CC BY-SA 2.0): the front from the square's south-west,
-  // about 60 m from the west great arch (centre u = aisle + half a span), looking north-east at the front. The pure
+  // about 60 m from the west great arch (centre u = spine - half a span), looking north-east at the front. The pure
   // south-west bearing (45 degrees) puts the eye inside the square's row of trees (a trunk 0.7 m away filled 58% of the
   // frame), so the eye keeps the 60 m but stands 38 m west and 49 m south of the arch: south-south-west, clear of them.
   'front-southwest-pedestrian': {
-    pos: [-12.342812741131121, 1.8085703201461005, 35.79040898519868],
-    target: [43.01159807807881, 12, -11.676476386164524],
+    pos: [-18.48743081711134, 1.9621857789678563, 35.61808702106225],
+    target: [36.86698000209859, 12, -11.848798350300951],
     source: 'R-kx-front-b standpoint (front-b-oblique-sw-2016.jpg): 62 m south-south-west of the west great arch, eye 1.7 m on the square, looking north-east',
     fov: 60, near: 0.1,
   },
@@ -473,16 +478,16 @@ const FROZEN_STATION_CAMERAS = {
   // R-kx-shed-interior-a (shed-a-north-from-footbridge-2019.jpg): the roof underside, ribs and glazing. Platform 4 midpoint,
   // eye 1.6 m, pitched up 55 degrees and turned north-east so the sight line crosses the east vault.
   'roof-underside': {
-    pos: [43.54285714285716, 2.5, -210.09285714285716],
-    target: [56.04656167073201, 27.074561328669756, -221.9143760208631],
-    source: 'OSM platform 4 polygon midpoint, eye 1.6 m, pitched up 55 degrees across the east vault; R-kx-shed-interior-a standpoint (shed-a-north-from-footbridge-2019.jpg)',
+    pos: [44.38716973020361, 2.5, -210.06917892533454],
+    target: [56.89087425807847, 27.074561328669756, -221.89069780334046],
+    source: 'OSM platform 4 at its polygon midpoint\'s v, midway between the spine wall\'s east face and the track edge (re-aimed 2026-11-24), eye 1.6 m, pitched up 55 degrees across the east vault; R-kx-shed-interior-a standpoint (shed-a-north-from-footbridge-2019.jpg)',
   },
   // R-kx-shed-interior-d (shed-d-platform-furniture-2022.jpg, The wub CC BY-SA 4.0): the bench/lamp/help-point groups on a platform.
   // The nearest such group to the midpoint is everything within 3 m of the nearest piece; the eye stands 4 m from its centre,
   // along the platform on the midpoint's side, looking at it.
   'furniture-close': {
-    pos: [43.47617734039083, 2.5, -217.99980584974898],
-    target: [43.5883107471998, 1.7000000000000002, -221.99823380321737],
+    pos: [43.90811671332884, 2.5, -217.99016689946308],
+    target: [43.99671531417829, 1.7000000000000002, -221.98918556507687],
     source: 'OSM platform 4, 4 m from the nearest bench/lamp/help-point group (furniturePlan), eye 1.6 m; R-kx-shed-interior-d standpoint (shed-d-platform-furniture-2022.jpg)',
   },
   // R-kx-shed-interior-f (shed-f-suburban-platforms-2022.jpg, Mr Ignavy CC BY-SA 2.0): the platform 9-10 canopies. Platform 9's

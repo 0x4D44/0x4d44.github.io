@@ -314,8 +314,12 @@ test('station: the shed stands round the shed platforms, 72 m wide, 800 ft long,
   assert.ok(s.heading > 0.01 && s.heading < 0.05, `heading ${s.heading}`);
   assert.ok(s.width > 70 && s.width < 75, `width ${s.width}`);
   assert.equal(s.length, SHED_LENGTH);
-  assert.ok(s.aisle > 3 && s.aisle < 6, `aisle ${s.aisle}`);
-  assert.ok(Math.abs(s.aisle * 2 + 2 * SHED_SPAN_WIDTH - s.width) < 1e-9);
+  // re-pinned 2026-11-24 (shed realignment, option A2, signed off): the west vault springs from the west wall, so there is no west aisle,
+  // and the east aisle takes what the two published spans leave of the footprint (it was 3-6 m each side, the two even)
+  assert.equal(s.aisleWest, 0);
+  assert.ok(s.aisleEast > 9 && s.aisleEast < 12, `east aisle ${s.aisleEast}`);
+  assert.ok(Math.abs(s.aisleWest + s.aisleEast + 2 * SHED_SPAN_WIDTH - s.width) < 1e-9);
+  assert.ok(Math.abs(s.spine - s.aisleWest - SHED_SPAN_WIDTH) < 1e-9, 'the spine is one span east of the west wall');
   assert.ok(Math.abs(s.springing + SHED_SPAN_WIDTH / 2 - SHED_CROWN_HEIGHT) < 1e-9, 'a semicircular arch reaches the published crown');
   // every shed platform face lies inside the footprint along the length of the shed
   const platforms = stationPlatforms(data);
@@ -398,4 +402,31 @@ test('station: blocks whose middle is under the dome or the shed are not drawn a
   const real = buildingsUnderStation(data, shedLayout(data), concourseCanopy(data)).sort((a, b) => a - b);
   assert.deepEqual(real, [260720558, 416601715, 971709486]);
   assert.ok(!real.includes(46821177), 'the Great Northern Hotel is still drawn');
+});
+
+// The shed realignment of 2026-11-24 (wrk_docs/2026.11.23 - KXLIVE - Shed realignment and centre arcade design.md, signed off): the valley
+// (and the spine wall under it) stands on the line OSM draws between platforms 4 and 5, and moving the west wall leaves the concourse alone.
+test('station: the spine stands over the 4/5 island, within 0.6 m of the line OSM draws between platforms 4 and 5, the length of the shed', () => {
+  const s = shedLayout(data);
+  const platforms = stationPlatforms(data);
+  const local = (ref: string): Pt[] => (platforms.get(ref)?.pts ?? []).map((p): Pt => { const q = worldToShed(s, p); return [q.u, q.v]; });
+  const p4 = local('4'), p5 = local('5');
+  let worst = 0, n = 0;
+  for (let v = 12; v <= 243; v += 3) {
+    const a = xRangeAtZ(p4, v), b = xRangeAtZ(p5, v);
+    assert.ok(a && b, `platforms 4 and 5 reach v ${v}`);
+    const edge = (a[0] + b[1]) / 2;
+    assert.ok(Math.abs(a[0] - b[1]) < 0.05, `the two outlines share the edge at v ${v}`);
+    worst = Math.max(worst, Math.abs(s.spine - edge));
+    n++;
+  }
+  assert.ok(n === 78 && worst <= 0.6, `the spine is up to ${worst.toFixed(3)} m off the 4/5 edge (the island leans 0.25 degrees off the shed's axis)`);
+  assert.ok(Math.abs(s.spine - SHED_SPAN_WIDTH) < 1e-9 && s.aisleWest === 0, 'one published span east of the west wall');
+});
+
+test('station: moving the west wall does not move the Western Concourse: the arc fit is the one it was, centre and radius to 1e-6 m', () => {
+  // the fit before the realignment (2026-11-24, base 51523a20): the arc points were the footprint vertices 45 m and more west of the old west wall
+  const c = concourseCanopy(data);
+  assert.ok(Math.abs(c.centre[0] - -21.256814215392197) < 1e-6 && Math.abs(c.centre[1] - -90.50307363615148) < 1e-6, `centre ${c.centre}`);
+  assert.ok(Math.abs(c.radius - 61.56903783183821) < 1e-6, `radius ${c.radius}`);
 });

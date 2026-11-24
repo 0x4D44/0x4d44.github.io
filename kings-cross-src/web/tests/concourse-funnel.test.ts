@@ -100,7 +100,8 @@ test('funnel: it stands beside the Range, 0.45 to 1 m short of the face, never e
   const gap = RANGE_FACE - east;
   // the Range's cornice stands 0.45 m proud of its face (shed.ts): every tube of the funnel stays west of it, at every height
   assert.ok(gap > 0.45 && gap < 1, `the funnel's tubes come within ${gap.toFixed(3)} m of the Range's face (R3: next to, not touching; the cornice is 0.45 m)`);
-  assert.ok(Math.abs(axis.u + 17.7) < 1e-6, 'its axis stands 17.7 m from the shed wall, where the roof grid puts it');
+  // re-pinned 2026-11-24: 17.7 m from the shed wall as it stood before the realignment moved it layout.westShift west (the funnel did not move)
+  assert.ok(Math.abs(axis.u - layout.westShift + 17.7) < 1e-6, 'its axis stands 17.7 m from the old shed wall line, where the roof grid puts it');
 });
 
 // Round 5 (scorer): over the Range's cornice the roof's closure glass fills the cut, 0.29 m off the brick, so a funnel that came within 0.29 m of the face up there would pierce it.

@@ -153,7 +153,7 @@ MUTATIONS += [
     ('a mast is a street lamp\'s white', C, 'kind: LAMP_KIND.cool, slope: [gx, gz], mast: true }', 'kind: LAMP_KIND.warm, slope: [gx, gz], mast: true }'),
     ('a mast is not a mast', C, 'slope: [gx, gz], mast: true }', 'slope: [gx, gz] }'),
     ('a mast is a street lamp\'s height', C, 'height: MAST_HEIGHT, kind', 'height: 9, kind'),
-    ('the masts\' u and v are swapped', C, 'const [x, z] = shedToWorld(layout, u, v);', 'const [x, z] = shedToWorld(layout, v, u);'),
+    ('the masts\' u and v are swapped', C, 'const [x, z] = shedToWorld(layout, u + layout.westShift, v);', 'const [x, z] = shedToWorld(layout, v, u);'),
     ('a mast\'s slope along x is read across a step', C, 'heightAt(x - SLOPE_STEP, z)) / (2 * SLOPE_STEP);', 'heightAt(x - SLOPE_STEP, z)) / SLOPE_STEP;'),
     ('a mast\'s slope along z is read along x', C, 'const gz = (heightAt(x, z + SLOPE_STEP) - heightAt(x, z - SLOPE_STEP)) / (2 * SLOPE_STEP);', 'const gz = (heightAt(x + SLOPE_STEP, z) - heightAt(x - SLOPE_STEP, z)) / (2 * SLOPE_STEP);'),
     # ---- the forecourt's masts keep clear of the buildings (the rule that is camera-independent: core/streetlights.ts `mastIsClear`)

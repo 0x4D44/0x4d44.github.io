@@ -38,7 +38,7 @@ export function nightLightSites({ lamps, layout, canopy, footprint }: NightLight
   // Two rows under each of the shed's two vaults, a light every second rib (12.2 m), 8 m either side of the vault's crown line.
   const shed: number[] = [];
   const radius = SHED_SPAN_WIDTH / 2;
-  for (const uc of [layout.aisle + radius, layout.aisle + 3 * radius]) {
+  for (const uc of [layout.spine - radius, layout.spine + radius]) {
     for (const offset of [-8, 8]) {
       const y = layout.springing + Math.sqrt(radius * radius - offset * offset) - HANG;
       for (let v = 6.1; v < layout.length - 6; v += 12.2) {

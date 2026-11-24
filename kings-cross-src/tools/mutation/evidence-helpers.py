@@ -459,7 +459,7 @@ EVIDENCE = [
 # The station cameras are literals (FROZEN_STATION_CAMERAS) held to tools/tests/frozen-station-cameras.json, the baseline's copy. The three tests
 # of tools/tests/frozen-cameras.test.mjs all compare with that fixture, so a changed value in the table turns each of them red; the fixture is the
 # baseline's own and is not mutated. Two entries, quoted whole, for the swap of two cameras:
-FROZEN_TOP = ("  top: {\n    pos: [46.37560028234806, 3000, -131.62931499021622],\n    target: [46.37840361751828, 0, -131.7292756890529],\n"
+FROZEN_TOP = ("  top: {\n    pos: [45.353024090970614, 3000, -131.65799249882593],\n    target: [45.355827426140834, 0, -131.75795319766263],\n"
               "    source: 'shedLayout, 10 m grid',\n    grid: true, fov: 12, near: 100,\n  },\n")
 FROZEN_SIDE = ("  side: {\n    pos: [1531.8966211635652, 65, -89.9688086871672],\n    target: [46.37560028234806, 65, -131.62931499021622],\n"
                "    source: 'shedLayout, 10 m grid',\n    grid: true, fov: 7, near: 100,\n  },\n")

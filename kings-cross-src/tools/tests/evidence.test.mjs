@@ -317,9 +317,18 @@ test('every named station and sample train camera clears the rendered city build
   assert.deepEqual(cameraBuildingCollisions(cameras,buildings),[]);
   // Pin the requested clear positions; check the old footprints at street height too.
   const at=(u,v,y)=>{const [x,z]=shedToWorld(s,u,v);return [x,y,z];};
-  assert.deepEqual(cameras['south-front'].pos,at(s.width/2,-70,26));
-  assert.deepEqual(cameras['western-range'].pos,at(-WESTERN_RANGE.depth-WESTERN_RANGE_STANDOFF,(WESTERN_RANGE.v0+WESTERN_RANGE.v1)/2,1.6));
-  for (const [name,pos,id] of [['south-front',at(s.width/2,-125,2),137827419],['western-range',at(-65,185,12),1018561795]]) {
+  // Re-pinned 2026-11-24: south-front is frozen at the footprint's middle as it stood before the shed realignment moved the west wall
+  // s.westShift west, (width + westShift) / 2 in today's frame; measured bit-identical, so still deepEqual.
+  const middle=(s.width+s.westShift)/2;
+  assert.deepEqual(cameras['south-front'].pos,at(middle,-70,26));
+  // Re-pinned 2026-11-24: western-range stands where it stood, off the Range's face, which did not move. The test reaches that face as
+  // -WESTERN_RANGE.depth, and depth is now the double 12 - westShift. That subtraction rounds, and shedToWorld then multiplies the rounded u
+  // through the heading's sine and cosine, so the camera and this pin can differ in the last bit of x and z. Measured: 1.4e-14 m. Hence 1e-9 m,
+  // not bit-exact; 1e-9 m is still five orders of magnitude finer than a millimetre.
+  const near=(a,b)=>a.length===b.length&&a.every((x,i)=>Math.abs(x-b[i])<1e-9);
+  const wr=at(-WESTERN_RANGE.depth-WESTERN_RANGE_STANDOFF,(WESTERN_RANGE.v0+WESTERN_RANGE.v1)/2,1.6);
+  assert.ok(near(cameras['western-range'].pos,wr),`${cameras['western-range'].pos} against ${wr}`);
+  for (const [name,pos,id] of [['south-front',at(middle,-125,2),137827419],['western-range',at(-65,185,12),1018561795]]) {
     assert.ok(cameraBuildingCollisions({[name]:{...cameras[name],pos}},buildings).some(c=>c.buildingId===id),name);
   }
 });
@@ -695,12 +704,20 @@ test('the usage text names the official and the context view', async () => {
 // The round-4 scorer found `western-range` (a 1.6 m stand 6 m off the face, about three bays in frame) useless; the lead asked for it to be
 // moved back to show the whole west elevation. It keeps its name and is the one pre-wave-0 camera allowed to move (see its own test).
 const REFRAMED = ['western-range'];
+// Re-aimed on purpose 2026-11-24 by the shed realignment (tools/evidence.mjs says why, camera by camera): each keeps its subject, so it moved by
+// metres, not tens of metres; the frozen fixture holds the new values.
+const REAIMED = ['top', 'shed-interior', 'platform-eye', 'platform-eye-south', 'roof-underside', 'furniture-close', 'tower-close', 'front-southwest-pedestrian'];
 test('the twenty cameras that were there before wave 0 are all still there, and only western-range, re-framed on request, has moved', () => {
   const cameras = stationCameras(trackData);
   assert.deepEqual(Object.keys(OLD_CAMERAS).filter(name => !cameras[name]), [], 'none was removed or renamed');
   for (const [name, was] of Object.entries(OLD_CAMERAS)) {
     const now = cameras[name];
     if (REFRAMED.includes(name)) { assert.ok(Math.hypot(...now.pos.map((v, i) => v - was.pos[i])) > 30, `${name} was moved back from its close-up`); continue; }
+    if (REAIMED.includes(name)) {
+      for (const key of ['pos', 'target']) assert.ok(Math.hypot(...now[key].map((v, i) => v - was[key][i])) < 10, `${name}.${key} was re-aimed, not replaced`);
+      assert.equal(now.fov, was.fov, `${name}.fov`);
+      continue;
+    }
     for (const key of ['pos', 'target']) was[key].forEach((value, i) => assert.ok(Math.abs(now[key][i] - value) < 1e-3, `${name}.${key}[${i}]: ${now[key][i]} against ${value}`));
     assert.equal(now.fov, was.fov, `${name}.fov`);
     assert.equal(now.near, was.near, `${name}.near`);

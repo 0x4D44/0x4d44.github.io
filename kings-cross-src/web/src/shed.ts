@@ -48,6 +48,7 @@ export const TOWER_SIZE = 6.4; // ASSUMED
  * are ASSUMED. No door/glass infill is modelled.
  */
 export const SOUTH_FRONT_ARCADES = { perSide: 3, openingWidth: 6.8, jambHeight: 2.0, archRise: 2.0, footAboveGround: 0.2, ringWidth: 0.4 } as const;
+/** The porch arcade centres across a front `width` wide (from its own west end, x = 0), three each side of a central tower. */
 export function southFrontArcadeCentres(width: number, towerWidth: number): number[] {
   const left = Array.from({ length: SOUTH_FRONT_ARCADES.perSide }, (_, i) => (i + 0.5) * (width - towerWidth) / (2 * SOUTH_FRONT_ARCADES.perSide));
   return [...left, ...left.map(x => width - x).reverse()];
@@ -58,16 +59,40 @@ const ARC_STEPS = 12;
 /** The roof skin (slate, glass, lining) stands this far outside the nominal arch radius: on top of the ribs' top boom. */
 export const ROOF_SKIN = 0.3;
 /**
- * The opening in the north end wall of the east aisle that platform 0's line runs out through. In this frame the OSM track of platform 0
- * (way 200526794) runs from its buffer stop at u = 65.8 into the east aisle and crosses the north end at u = 69.2; the closed wall stood
- * across it (tools/tests/track-walls.test.mjs). Wikipedia ("London King's Cross railway station") places platform 0 to the east of the main
- * shed, under the offices of the east side, opened 2010, so its line passes out at the north end: the opening is sourced in that sense
- * only. Its width from the aisle's inner edge (clearing a 2.9 m train envelope on the line, and 0.3 m more) and its head (above the
- * trains' roofs, below the aisle roof) are ASSUMED; no drawing of the real opening was found.
+ * The opening in the north end wall of the east aisle that platform 0's line runs out through. The OSM track of platform 0 (way 200526794)
+ * runs from its buffer stop into the east aisle and crosses the north end (v = 243.84 to 244.44) at u = 71.19 to 71.17, 3.06 to 3.09 m west of
+ * the east wall (measured 2026-11-24 with tools/track-walls.mjs shedTracks; the east wall stands where OSM puts it, so this is fixed to it, not
+ * to the aisle's inner edge, which the 2026-11-24 realignment moved). The closed wall stood across it (tools/tests/track-walls.test.mjs).
+ * Wikipedia ("London King's Cross railway station") places platform 0 to the east of the main shed, under the offices of the east side,
+ * opened 2010, so its line passes out at the north end: the opening is sourced in that sense only. `fromEast`, the opening's centre line
+ * measured west from the east wall, is that crossing. Its width (a 2.9 m train envelope on the line and 0.3 m more each side) and its head
+ * (above the trains' roofs, below the aisle roof) are ASSUMED; no drawing of the real opening was found.
  */
-export const EAST_AISLE_OPENING = { width: 3.0, head: 4.8 } as const;
+export const EAST_AISLE_OPENING = { fromEast: 3.07, width: 3.5, head: 4.8 } as const;
 /** Half the thickness of the board-lined valley fascia between the vaults, metres: ASSUMED (the first build's slab was 0.5 m thick). */
 export const VALLEY_HALF = 0.25;
+/**
+ * The central arcaded brick spine wall under the valley, on the line `layout.spine`, from the back of the south front (v = 0) to the north
+ * gables (v = length), from the ground up to the springing, where the valley fascia sits on it. Sources for the wall itself: Historic England
+ * list entry 1078328, Interior, a "round-arched brick central colonnade"
+ * (https://historicengland.org.uk/listing/the-list/list-entry/1078328?section=official-list-entry), and Camden's delegated report 2009/5099/L
+ * under 2007/2611/L, p3, the "central spine wall" with late-C20 timber boarding above it
+ * (https://camdocs.camden.gov.uk/HPRMWebDrawer/Record/3357544/file/document). Neither gives a dimension, so every figure here is ASSUMED
+ * (signed off 2026-11-24, wrk_docs/2026.11.23 - KXLIVE - Shed realignment and centre arcade design.md, which overrides the 2026-11-09 ruling
+ * that the arcade wait for a dimensioned source):
+ *   thick    1.0 m, ASSUMED (the valley fascia above it is 0.5 m);
+ *   opening  3.0 m clear, ASSUMED, one round-headed opening in every rib bay (RIB_SPACING, itself ASSUMED), the piers under the ribs;
+ *   sill     the opening's foot, the platform top (core/scene.ts PLATFORM_HEIGHT, 0.9 m), ASSUMED to be where the arcade's floor is;
+ *   jamb     the springing of each opening's semicircular head, 3.4 m, ASSUMED;
+ *   crown    of each head, 4.9 m (jamb + opening / 2), ASSUMED, leaving 0.74 m of brick under the vault springing.
+ * Where furniture stands beside it, it keeps `clear` (ASSUMED, 0.3 m) beyond the wall's face (web/src/furniture.ts bandAt).
+ */
+export const SPINE_WALL = { thick: 1.0, opening: 3.0, sill: 0.9, jamb: 3.4, crown: 4.9, clear: 0.3 } as const;
+/** v of the centre of each opening of the spine wall: the middle of every rib bay. */
+export function spineOpenings(length: number): number[] {
+  const ribs = ribPositions(length);
+  return ribs.slice(1).map((v, i) => (v + ribs[i]!) / 2);
+}
 
 /**
  * The Western Range: Cubitt's 1850s brick range along the west side of the shed, between the shed
@@ -82,13 +107,19 @@ export const VALLEY_HALF = 0.25;
  * Extending three storeys along this entire procedural range and treating the shed/Range walls
  * as coincident are ASSUMED simplifications, not a dimensioned wall survey. The former LB09
  * section 2.3 attribution was not verified (see the corrected Camden references in buildShed).
- * Depth, storey height and bay width are also ASSUMED, as is the size of a flank window (1.2 m x 2.4 m, scaled from the brick centre's top-storey sash: see
+ * Depth (see WESTERN_RANGE_DEPTH_BEFORE), storey height and bay width are also ASSUMED, as is the size of a flank window (1.2 m x 2.4 m, scaled from the brick centre's top-storey sash: see
  * buildWesternRange). Tests pin v0 and v1 to the OSM numbers.
  * `centre` is the funnel's v (the concourse's centre in this frame; tested to agree) and `block` how far from it the brick centre of the face runs
  * (R-a, R-ab, R-b: the funnel stands before a brick block of about 30 m, with dressed windows and tall arched openings, and glazed curtain
  * walls either side, which concourse.ts draws): the bays whose centres lie within it. ASSUMED, scaled off the photographs.
  */
-export const WESTERN_RANGE = { v0: 8.1, v1: 141.5, depth: 12, storey: 4.1, storeys: 3, bay: 3.4, roofRise: 3.0, centre: 72.85, block: 17, windows: 6 } as const;
+export const WESTERN_RANGE = { v0: 8.1, v1: 141.5, depth: 9.954043532552989, storey: 4.1, storeys: 3, bay: 3.4, roofRise: 3.0, centre: 72.85, block: 17, windows: 6 } as const;
+/**
+ * The Range's depth before the 2026-11-24 shed realignment, metres (ASSUMED, as above). The realignment moved the shed's west wall
+ * `layout.westShift` (2.045956467447011 m, measured) west into the Range; its concourse face, the Western Concourse built against it and the
+ * frozen cameras that look at them stay where they were, so the Range lost that much of its depth: `depth` is this less the shift.
+ */
+export const WESTERN_RANGE_DEPTH_BEFORE = 12;
 
 /** F7: Arup Journal 2/2012 pp24–25 (circulation), p27 fig4 (southern location), p29 (five bays and concrete/Y support):
  * https://www.arup.com/globalassets/downloads/arup-journal/the-arup-journal-2012-issue-2.pdf
@@ -313,12 +344,12 @@ const smoothstep = (a: number, b: number, x: number): number => {
  * 60 m to `XRAY_OPACITY` beyond 220 m, so the trains and platforms stay readable from the overview
  * cameras while a close look at the roof still shows slate.
  */
-export function roofOpacity(cam: V3, layout: Pick<ShedLayout, 'width' | 'length' | 'crown'>, mode: RoofMode = 'auto'): number {
+export function roofOpacity(cam: V3, layout: Pick<ShedLayout, 'width' | 'length' | 'crown' | 'spine'>, mode: RoofMode = 'auto'): number {
   if (mode === 'solid') return 1;
   if (mode === 'xray') return XRAY_OPACITY;
   const [x, y, z] = cam;
   if (x > 0 && x < layout.width && z < 0 && z > -layout.length && y < layout.crown + 1) return 1;
-  const d = Math.hypot(x - layout.width / 2, y - layout.crown, z + layout.length / 2);
+  const d = Math.hypot(x - layout.spine, y - layout.crown, z + layout.length / 2);
   return 1 - (1 - XRAY_OPACITY) * smoothstep(60, 220, d);
 }
 
@@ -441,7 +472,8 @@ function mesh<M extends THREE.Material>(g: THREE.BufferGeometry, m: M, name: str
 const frontWashMaterials = new Map<string, THREE.MeshLambertMaterial>();
 
 /** Rake the south piers with amber light and pick out the clock stage and
- * its projecting cornice. The existing broad flood remains the fill. */
+ * its projecting cornice. The existing broad flood remains the fill. For the front, `width` is the front's own width
+ * and the mesh's x runs from its west end, so the spine (and the tower) is at width / 2. */
 function frontWash(source: 'brickFoot' | 'stoneFoot', kind: 'front' | 'tower', width: number): THREE.MeshLambertMaterial {
   const key = `kx-front-wash-${source}-${kind}-${width}`;
   const cached = frontWashMaterials.get(key);
@@ -514,7 +546,10 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   const crown = layout.crown;
   const wallH = sp;
   const frontTop = crown + FRONT_ABOVE_CROWN;
-  const centres = [layout.aisle + R, layout.aisle + 3 * R];
+  const spine = layout.spine;
+  const centres = [spine - R, spine + R];
+  // the south front spans the two vaults only, centred on the spine; the east aisle's south end is a lower plain wall
+  const fx0 = spine - 2 * R, fx1 = spine + 2 * R, FW = fx1 - fx0;
   const phi = glazedHalfAngle();
   const disposables: THREE.BufferGeometry[] = [];
 
@@ -585,14 +620,15 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   // It does not establish this fascia's continuous extent, width, framing or closure at the springing:
   // those are ASSUMED model geometry. Neither checked source establishes the formerly claimed two-storey,
   // stepped-flat-arch profile or exact masonry bearing level. The former LB09 section 2.2 attribution is
-  // unverified; these Camden records are delegated reports, not that submission. The OSM tracks run along
-  // this model line (a buffer stop stands at u = 36.1), so the wall is not drawn below the springing.
+  // unverified; these Camden records are delegated reports, not that submission. Since the 2026-11-24
+  // realignment the valley stands on the 4/5 island, clear of the tracks, and the arcaded spine wall
+  // (SPINE_WALL, every figure ASSUMED) is drawn under it, below.
   // Camden's delegated report 2009/5177/L under 2007/2611/L, p3, records submission of paint-removal
   // trials and Architectural Paint Analysis Volume 1, but does not specify the selected restored palette:
   // https://camdocs.camden.gov.uk/HPRMWebDrawer/Record/3355818/file/document
   // The drawn ironwork and lining paint colours remain ASSUMED (see materials.ts).
   const valleyTop = sp + (R + ROOF_SKIN) * Math.sin(cut);
-  const valleyX = layout.aisle + 2 * R;
+  const valleyX = spine;
   const valley = new Batch();
   for (const [side, x] of [[-1, valleyX - VALLEY_HALF], [1, valleyX + VALLEY_HALF]] as [number, number][]) {
     // boards run along the shed: texture u across them (here the height), v along (metres north)
@@ -637,39 +673,53 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
       if (outward > 0) windowQuad(windows, [x0 + WALL_THICK + 0.02, 1.9, z], '+x');
     }
   }
-  // aisle roofs: flat slabs at the springing, slate on top (ASSUMED flat; the real aisle roofs are not surveyed)
-  for (const x0 of [0, W - layout.aisle]) slate.box([x0 + layout.aisle / 2, wallH - 0.15, -L / 2], [layout.aisle, 0.3, L], { skip: ['-y'] });
+  // aisle roofs: flat slabs at the springing, slate on top (ASSUMED flat; the real aisle roofs are not surveyed). Since the 2026-11-24
+  // realignment there is no west aisle (aisleWest = 0), so only the east one is drawn.
+  const aisles: [number, number][] = ([[0, layout.aisleWest], [W - layout.aisleEast, W]] as [number, number][]).filter(([a, b]) => b - a > 1e-6);
+  for (const [a, b] of aisles) slate.box([(a + b) / 2, wallH - 0.15, -L / 2], [b - a, 0.3, L], { skip: ['-y'] });
   // the north end of each aisle is closed by a brick wall; the east one is pierced where platform 0's line runs out (EAST_AISLE_OPENING)
-  brick.box([layout.aisle / 2, (wallH + GROUND_Y) / 2, -L - WALL_THICK / 2], [layout.aisle, wallH - GROUND_Y, WALL_THICK]);
-  {
-    const z = -L - WALL_THICK / 2, a = W - layout.aisle, b = Math.min(W, a + EAST_AISLE_OPENING.width), head = EAST_AISLE_OPENING.head;
+  if (layout.aisleWest > 1e-6) brick.box([layout.aisleWest / 2, (wallH + GROUND_Y) / 2, -L - WALL_THICK / 2], [layout.aisleWest, wallH - GROUND_Y, WALL_THICK]);
+  if (layout.aisleEast > 1e-6) {
+    const z = -L - WALL_THICK / 2, a = W - layout.aisleEast, head = EAST_AISLE_OPENING.head;
+    const o0 = Math.max(a, W - EAST_AISLE_OPENING.fromEast - EAST_AISLE_OPENING.width / 2), o1 = Math.min(W, W - EAST_AISLE_OPENING.fromEast + EAST_AISLE_OPENING.width / 2);
     brick.box([(a + W) / 2, (wallH + head) / 2, z], [W - a, wallH - head, WALL_THICK]); // over the opening
-    if (W > b) brick.box([(b + W) / 2, (head + GROUND_Y) / 2, z], [W - b, head - GROUND_Y, WALL_THICK]); // the jamb against the east wall
+    if (o0 > a) brick.box([(a + o0) / 2, (head + GROUND_Y) / 2, z], [o0 - a, head - GROUND_Y, WALL_THICK]); // the jamb on the vault side
+    if (W > o1) brick.box([(o1 + W) / 2, (head + GROUND_Y) / 2, z], [W - o1, head - GROUND_Y, WALL_THICK]); // the jamb against the east wall
   }
+  const spineBrick = new Batch();
+  buildSpineWall(spineBrick, spine, L, sp);
 
-  // ---- the south front ------------------------------------------------------------------------
-  const outline = new THREE.Shape([new THREE.Vector2(0, GROUND_Y), new THREE.Vector2(W, GROUND_Y), new THREE.Vector2(W, frontTop), new THREE.Vector2(0, frontTop)]);
-  for (const uc of centres) outline.holes.push(halfDisc(uc, sp, R));
+  // ---- the south front: across the two vaults, centred on the spine (the mesh's x runs from its west end, fx0) ------------
+  const outline = new THREE.Shape([new THREE.Vector2(0, GROUND_Y), new THREE.Vector2(FW, GROUND_Y), new THREE.Vector2(FW, frontTop), new THREE.Vector2(0, frontTop)]);
+  for (const uc of centres) outline.holes.push(halfDisc(uc - fx0, sp, R));
   const entryR = SOUTH_FRONT_ARCADES.openingWidth / 2;
   const entryFoot = GROUND_Y + SOUTH_FRONT_ARCADES.footAboveGround;
-  const entryCentres = southFrontArcadeCentres(W, TOWER_SIZE);
-  for (const x of entryCentres) outline.holes.push(segmentalArchOpening(x, entryFoot, entryR, SOUTH_FRONT_ARCADES.jambHeight, SOUTH_FRONT_ARCADES.archRise));
+  const entryCentres = southFrontArcadeCentres(FW, TOWER_SIZE).map(x => x + fx0);
+  for (const x of entryCentres) outline.holes.push(segmentalArchOpening(x - fx0, entryFoot, entryR, SOUTH_FRONT_ARCADES.jambHeight, SOUTH_FRONT_ARCADES.archRise));
   const frontGeo = new THREE.ExtrudeGeometry(outline, { depth: FRONT_THICK, bevelEnabled: false, curveSegments: 40 });
   frontGeo.translate(0, 0, -FRONT_THICK);
-  group.add(withBuildingNightMaterial(mesh(frontGeo, material('brickFoot'), 'shed-front'), frontWash('brickFoot', 'front', W)));
+  const frontMesh = withBuildingNightMaterial(mesh(frontGeo, material('brickFoot'), 'shed-front'), frontWash('brickFoot', 'front', FW));
+  frontMesh.position.x = fx0;
+  group.add(frontMesh);
   // stone dressings that stand proud of the front plane (z = 0) by `out` metres
   const proud = (cx: number, cy: number, sx: number, sy: number, out: number): void => stone.box([cx, cy, (out - FRONT_THICK) / 2], [sx, sy, FRONT_THICK + out]);
-  let plinthStart = -0.4;
+  let plinthStart = fx0 - 0.4;
   for (const x of entryCentres) {
     const left = x - entryR, right = x + entryR;
     if (left > plinthStart) proud((plinthStart + left) / 2, GROUND_Y + 0.7, left - plinthStart, 1.4, 0.35);
     plinthStart = right;
   }
-  if (plinthStart < W + 0.4) proud((plinthStart + W + 0.4) / 2, GROUND_Y + 0.7, W + 0.4 - plinthStart, 1.4, 0.35); // plinth interrupted at each entrance
-  proud(W / 2, sp - 0.3, W + 0.4, 0.6, 0.3); // sill course at the springing
-  proud(W / 2, frontTop - 0.45, W + 1.0, 0.9, 0.7); // cornice
-  proud(W / 2, frontTop + 0.15, W + 0.6, 0.3, 0.4); // its coping
-  for (const x of [0.5, W - 0.5]) proud(x, (frontTop + GROUND_Y) / 2, 1.0, frontTop - GROUND_Y - 1.0, 0.25); // end piers
+  if (plinthStart < fx1 + 0.4) proud((plinthStart + fx1 + 0.4) / 2, GROUND_Y + 0.7, fx1 + 0.4 - plinthStart, 1.4, 0.35); // plinth interrupted at each entrance
+  proud(spine, sp - 0.3, FW + 0.4, 0.6, 0.3); // sill course at the springing
+  proud(spine, frontTop - 0.45, FW + 1.0, 0.9, 0.7); // cornice
+  proud(spine, frontTop + 0.15, FW + 0.6, 0.3, 0.4); // its coping
+  for (const x of [fx0 + 0.5, fx1 - 0.5]) proud(x, (frontTop + GROUND_Y) / 2, 1.0, frontTop - GROUND_Y - 1.0, 0.25); // end piers
+  // the east aisle's south end: a plain brick wall up to the aisle roof at the springing (ASSUMED height and finish; no source shows it),
+  // set flush with the front's back face and coped in stone
+  if (W - fx1 > 1e-6) {
+    brick.box([(fx1 + W) / 2, (wallH + GROUND_Y) / 2, -FRONT_THICK / 2], [W - fx1, wallH - GROUND_Y, FRONT_THICK]);
+    stone.box([(fx1 + W) / 2, wallH + 0.15, -FRONT_THICK / 2], [W - fx1, 0.3, FRONT_THICK + 0.2]);
+  }
   const entryRings = entryCentres.map(x => new THREE.ExtrudeGeometry(segmentalArchRing(x, entryFoot + SOUTH_FRONT_ARCADES.jambHeight, entryR, SOUTH_FRONT_ARCADES.archRise, SOUTH_FRONT_ARCADES.ringWidth), { depth: 0.5, bevelEnabled: false, curveSegments: 24 }));
   group.add(mesh(mergeGeometries(entryRings, false), material('stone'), 'shed-front-porch-arches'));
   disposables.push(...entryRings);
@@ -713,12 +763,14 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   disposables.push(...rings, ...lunGlass, ...gableGeos);
 
   // ---- the clock tower, centred on the spine, standing just in front of the south front --------
-  group.add(buildTower(W / 2));
+  group.add(buildTower(spine));
 
   // ---- the Western Range -----------------------------------------------------------------------
   if (opts.range !== false) group.add(buildWesternRange());
 
   group.add(mesh(brick.build(), material('brickFoot'), 'shed-brick'));
+  // its own mesh, the same brick, so that it is not a sun-shadow caster (lighting.ts SHADOW_CASTERS): the pass has no room for it
+  group.add(mesh(spineBrick.build(), material('brickFoot'), 'shed-spine'));
   group.add(mesh(stone.build(), material('stoneFoot'), 'shed-stone'));
   group.add(mesh(slate.build(), material('slate'), 'shed-aisle-roofs'));
   group.add(mesh(windows.build(), material('sash'), 'shed-windows'));
@@ -727,6 +779,50 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   group.rotation.y = -layout.heading;
   group.position.set(layout.origin[0], 0, layout.origin[1]);
   return group;
+}
+
+/**
+ * The central spine wall (SPINE_WALL, every figure ASSUMED) on the line u = `x`, from v = 0 to `length`, ground to `top` (the springing),
+ * into the brick batch: a solid foot to the sill, a pier under every rib, and over each opening its brick above the crown and a semicircular
+ * head (both faces, the soffit). The caller gives it its own batch, the mesh `shed-spine`, which casts no sun shadow.
+ */
+export function buildSpineWall(brick: Batch, x: number, length: number, top: number): void {
+  const { thick, opening, sill, jamb, crown } = SPINE_WALL;
+  // n chords to a quarter of each head (a 0.007 m sag at most); the faces nothing sees are left out: the top (under the valley fascia), the foot's floor
+  const h = thick / 2, r = opening / 2, n = 8;
+  const box = (v0: number, v1: number, y0: number, y1: number, skip: ('+x' | '-x' | '+y' | '-y' | '+z' | '-z')[]): void => {
+    if (v1 - v0 > 1e-6 && y1 - y0 > 1e-6) brick.box([x, (y0 + y1) / 2, -(v0 + v1) / 2], [thick, y1 - y0, v1 - v0], { skip });
+  };
+  // the foot, inside the island platform: its top 0.02 m under the platform's, so the platform top shows in the openings without fighting it
+  box(0, length, GROUND_Y, sill - 0.02, ['-y']);
+  const opens = spineOpenings(length);
+  let start = 0;
+  for (const vc of opens) {
+    box(start, vc - r, sill - 0.02, top, ['+y', '-y']); // the pier
+    box(vc - r, vc + r, crown, top, ['+y', '-y', '+z', '-z']); // the brick over the head
+    // the head: a semicircle about (vc, jamb); on each face two spandrels, fans from the corner at the crown's height
+    const arc = (k: number): [number, number] => [vc - r * Math.cos((Math.PI * k) / (2 * n)), jamb + r * Math.sin((Math.PI * k) / (2 * n))];
+    for (const side of [-1, 1]) {
+      const xf = x + side * h;
+      const facing: V3 = [side, 0, 0];
+      for (const mirror of [1, -1]) {
+        const corner: V3 = [xf, crown, -(vc - mirror * r)];
+        const pts: V3[] = [corner];
+        for (let k = 0; k <= n; k++) { const [v, y] = arc(k); pts.push([xf, y, -(vc + mirror * (v - vc))]); }
+        brick.poly(pts, pts.map((p): V2 => [-p[2], p[1]]), { facing });
+      }
+    }
+    // the soffit of the head, facing in toward its centre
+    for (let k = 0; k < 2 * n; k++) {
+      const a0 = (Math.PI * k) / (2 * n), a1 = (Math.PI * (k + 1)) / (2 * n);
+      const p0: [number, number] = [vc - r * Math.cos(a0), jamb + r * Math.sin(a0)], p1: [number, number] = [vc - r * Math.cos(a1), jamb + r * Math.sin(a1)];
+      const am = (a0 + a1) / 2;
+      brick.poly([[x - h, p0[1], -p0[0]], [x + h, p0[1], -p0[0]], [x + h, p1[1], -p1[0]], [x - h, p1[1], -p1[0]]], [[0, r * a0], [thick, r * a0], [thick, r * a1], [0, r * a1]], { facing: [0, -Math.sin(am), -Math.cos(am)] });
+    }
+    // the jambs' faces are the piers' ends; between the jamb top and the head the reveal is the head's soffit
+    start = vc + r;
+  }
+  box(start, length, sill - 0.02, top, ['+y', '-y']); // the last pier, to the north gable
 }
 
 /**

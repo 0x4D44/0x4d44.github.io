@@ -9,6 +9,7 @@ import { PLATFORM_HEIGHT } from '../../core/scene.ts';
 import { concourseCanopy, concourseHeight, pointInPolygon, SHED_SPAN_WIDTH, shedLayout, stationBuilding, worldToShed } from '../../core/station.ts';
 import { FIGURES, furniturePlan } from '../src/furniture.ts';
 import { createNightLights, nightLightSites } from '../src/night.ts';
+// Re-pinned 2026-11-24 (shed realignment, signed off): the vault centres are the spine -/+ R (aisle + R and aisle + 3R before, the same points while the aisles were even), the valley is the spine, and there is no west aisle, so a probe of 'the aisle' stands in the east aisle.
 
 const data: KxData = JSON.parse(readFileSync(new URL('../src/data/kx-track.json', import.meta.url), 'utf8'));
 const layout = shedLayout(data);
@@ -36,7 +37,7 @@ test('the shed\'s lights hang inside it: under its two vaults, within its length
   const radius = SHED_SPAN_WIDTH / 2;
   for (const [x, y, z] of lights) {
     const { u, v } = worldToShed(layout, [x, z]);
-    assert.ok(u > layout.aisle + radius - 9 && u < layout.aisle + 3 * radius + 9, `across the vaults: ${u}`);
+    assert.ok(u > layout.spine - radius - 9 && u < layout.spine + radius + 9, `across the vaults: ${u}`);
     assert.ok(v > 0 && v < layout.length, `along the shed: ${v}`);
     assert.ok(y > layout.springing && y < layout.springing + radius, `between the springing and the crown: ${y}`);
   }

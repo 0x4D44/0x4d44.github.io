@@ -25,6 +25,7 @@ import { addWorld, DAYLIGHT } from '../src/world.ts';
 import { Glsl, toValue } from './glsl.ts';
 import { HEADLAMP_MARK, headlampUniforms } from '../src/train-headlamp-light.ts';
 import type { Env, Sampler, Value } from './glsl.ts';
+// Re-pinned 2026-11-24 (shed realignment, signed off): the vault centres are the spine -/+ R (aisle + R and aisle + 3R before, the same points while the aisles were even), the valley is the spine, and there is no west aisle, so a probe of 'the aisle' stands in the east aisle.
 
 type V3 = readonly [number, number, number];
 
@@ -632,12 +633,12 @@ test('roofShade in GLSL, run on the real roofs: a point wholly under a roof keep
   const env: Env = { vars: uniformValues(coverUniforms), fns: { texture2D } };
   const loss = [...ROOF_SHADE.ambient, ROOF_SHADE.direct];
   const shade = (x: number, y: number, z: number): number[] => glsl.call('roofShade', [[x, y, z], loss], env) as number[];
-  const under = shade(...at(layout.aisle + R, 100, 1.5)); // the platform tarmac under the shed's vault
+  const under = shade(...at(layout.spine - R, 100, 1.5)); // the platform tarmac under the shed's vault
   for (let k = 0; k < 4; k++) assert.ok(Math.abs((under[k] as number) - (1 - (loss[k] as number))) < 1e-9, `channel ${k} under the shed: ${under[k]}`);
   assert.ok((under[0] as number) > (under[1] as number) && (under[1] as number) > (under[2] as number), 'the blue goes first: what is left is warm');
-  const open = shade(...at(layout.aisle + R, -400, 1.5)); // well south of the shed, in the open
+  const open = shade(...at(layout.spine - R, -400, 1.5)); // well south of the shed, in the open
   assert.deepEqual(open, [1, 1, 1, 1]);
-  const over = shade(...at(layout.aisle + R, 100, 60)); // above the shed's crown
+  const over = shade(...at(layout.spine - R, 100, 60)); // above the shed's crown
   assert.deepEqual(over, [1, 1, 1, 1], 'over a roof is the open sky');
   // everywhere else the GPU's answer is the CPU map's: 1 - loss x the ground's cover
   let seen = 0;
@@ -651,7 +652,7 @@ test('roofShade in GLSL, run on the real roofs: a point wholly under a roof keep
   }
   assert.ok(seen > 20, `${seen} of the sample points were wholly under a roof`);
   // no loss, no shade: Edinburgh's switch
-  assert.deepEqual(glsl.call('roofShade', [[...at(layout.aisle + R, 100, 1.5)], [0, 0, 0, 0]], env), [1, 1, 1, 1]);
+  assert.deepEqual(glsl.call('roofShade', [[...at(layout.spine - R, 100, 1.5)], [0, 0, 0, 0]], env), [1, 1, 1, 1]);
 });
 
 test('ROOF_SHADE: the hemisphere light loses most of its blue and little of its red, the direct light a little; the amounts are what the shed\'s platforms show (R-lighting-materials-b)', () => {

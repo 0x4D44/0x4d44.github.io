@@ -28,6 +28,8 @@ import {
   trackSegments,
 } from '../src/furniture.ts';
 import type { Placement, TrackSegment } from '../src/furniture.ts';
+import { SPINE_WALL } from '../src/shed.ts';
+// Re-pinned 2026-11-24 (shed realignment, signed off): the vault centres are the spine -/+ R (aisle + R and aisle + 3R before, the same points while the aisles were even), the valley is the spine, and there is no west aisle, so a probe of 'the aisle' stands in the east aisle.
 
 const near = (a: number, b: number, tol: number, msg: string): void => assert.ok(Math.abs(a - b) <= tol, `${msg}: ${a} vs ${b} (tolerance ${tol})`);
 
@@ -481,12 +483,12 @@ test('furniture: screens hang only under the shed over platforms 0-8, 30 m apart
 
 test('shedRoofY: the crown over each arch centre, the springing over the aisles and where the two arches meet', () => {
   const r = SHED_SPAN_WIDTH / 2;
-  near(shedRoofY(layout, layout.aisle + r), layout.crown, 1e-9, 'west crown');
-  near(shedRoofY(layout, layout.aisle + 3 * r), layout.crown, 1e-9, 'east crown');
-  near(shedRoofY(layout, layout.aisle + 2 * r), layout.springing, 1e-9, 'the valley between the arches');
-  near(shedRoofY(layout, 1), layout.springing, 1e-9, 'the west aisle');
+  near(shedRoofY(layout, layout.spine - r), layout.crown, 1e-9, 'west crown');
+  near(shedRoofY(layout, layout.spine + r), layout.crown, 1e-9, 'east crown');
+  near(shedRoofY(layout, layout.spine), layout.springing, 1e-9, 'the valley between the arches');
+  near(shedRoofY(layout, 0), layout.springing, 1e-9, 'the west wall, where the west vault springs (no west aisle since 2026-11-24: the probe was u = 1 in the aisle)');
   near(shedRoofY(layout, layout.width - 1), layout.springing, 1e-9, 'the east aisle');
-  assert.ok(shedRoofY(layout, layout.aisle + r / 2) > layout.springing && shedRoofY(layout, layout.aisle + r / 2) < layout.crown);
+  assert.ok(shedRoofY(layout, layout.spine - 1.5 * r) > layout.springing && shedRoofY(layout, layout.spine - 1.5 * r) < layout.crown);
 });
 
 test('canopies: only on platforms 9 and 10, 5.2 m up, over the platform\'s own outline and nowhere else', () => {
@@ -637,4 +639,41 @@ test('FIGURES: the working figures the titles above quote, written out so a slip
     canopyHeight: 5.2, canopyColumnSpacing: 12,
   };
   for (const [name, value] of Object.entries(want)) assert.equal((FIGURES as Record<string, number>)[name], value, `FIGURES.${name}`);
+});
+
+// The shed realignment of 2026-11-24 (signed off): the spine wall stands on the 4/5 island, so the furniture there treats it as a wall.
+test('no floor furniture stands within half the spine wall\'s thickness and 0.3 m of its line, its own half-width added, under the shed', () => {
+  const keep = SPINE_WALL.thick / 2 + SPINE_WALL.clear;
+  assert.equal(keep, 0.8, 'the design\'s inset: half of 1.0 m and 0.3 m');
+  let near45 = 0, worst = Infinity;
+  // a screen hung clear of the wall keeps the inset too; one bracketed off the wall face is held by the next test instead
+  for (const p of [...plan.lamps, ...plan.benches, ...plan.helpPoints, ...plan.screens.filter((x) => !x.wall)]) {
+    const { u, v } = worldToShed(layout, [p.x, p.z]);
+    if (v < 0 || v > layout.length) continue;
+    const gap = Math.abs(u - layout.spine) - p.across;
+    if (p.ref === '4' || p.ref === '5') { near45++; worst = Math.min(worst, gap); }
+    assert.ok(gap >= keep - 1e-6, `a piece on platform ${p.ref} at (${u.toFixed(2)}, ${v.toFixed(1)}), half-width ${p.across}, is ${gap.toFixed(2)} m from the spine line`);
+  }
+  assert.ok(near45 >= 10, `${near45} pieces on platforms 4 and 5 under the shed; the closest is ${worst.toFixed(2)} m from the spine`);
+});
+
+// Lead follow-up 2026-11-24: on platforms 4 and 5 the arcade wall is the screens' natural mount. A screen there is bracketed off the wall
+// face (ASSUMED gap FIGURES.screenBracketGap) instead of keeping the floor inset, so platform 4 keeps its five or more screens.
+test('every screen bracketed off the spine wall touches its face, within the bracket gap, and does not cut into it', () => {
+  const walled = plan.screens.filter((s) => s.wall);
+  assert.ok(walled.length >= 3, `${walled.length} wall-mounted screens`);
+  const hw = FIGURES.screenWidth / 2, hd = FIGURES.screenDepth / 2;
+  for (const s of walled) {
+    assert.ok(s.ref === '4' || s.ref === '5', `a wall-mounted screen on platform ${s.ref}`);
+    // the panel's footprint corners: local x is across (width), local z along (its two faces), turned by rotY
+    const c = Math.cos(s.rotY), n = Math.sin(s.rotY);
+    const us = [-1, 1].flatMap((i) => [-1, 1].map((k) => worldToShed(layout, [s.x + c * i * hw + n * k * hd, s.z - n * i * hw + c * k * hd]).u - layout.spine));
+    const side = Math.sign(us[0]!);
+    assert.ok(us.every((u) => Math.sign(u) === side), 'the panel stays on one side of the wall');
+    const gap = Math.min(...us.map(Math.abs)) - SPINE_WALL.thick / 2;
+    assert.ok(gap >= 0, `a screen on platform ${s.ref} cuts ${(-gap).toFixed(3)} m into the wall`);
+    assert.ok(gap <= FIGURES.screenBracketGap + 1e-3, `a screen on platform ${s.ref} is ${gap.toFixed(3)} m off the wall face`);
+    // it hangs below the wall's top, so the wall is there to carry it
+    assert.ok(PLATFORM_HEIGHT + FIGURES.screenBottom + FIGURES.screenHeight < layout.springing, 'the screen is below the top of the wall');
+  }
 });

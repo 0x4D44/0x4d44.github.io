@@ -93,7 +93,8 @@ test('the real station scene: the clock tower view is clear, and the same aim on
   assert.ok(occluders.length >= 10, 'the track, platforms, terrain, city, shed and concourse are all in the scene');
   const tower = cameras['tower-close'];
   assert.deepEqual(clearanceFaults('tower-close', viewClearance(tower, occluders, ground, { grid: 4 })), []);
-  const s = shedLayout(data), [x, z] = shedToWorld(s, s.width / 2, -(TOWER_SIZE + .15) - 1);
+  // re-pinned 2026-11-24: the tower stands on the spine (it stood at width / 2 before the shed realignment)
+  const s = shedLayout(data), [x, z] = shedToWorld(s, s.spine, -(TOWER_SIZE + .15) - 1);
   const pressed = clearanceFaults('tower-close-moved', viewClearance({ ...tower, pos: [x, tower.pos[1], z] }, occluders, ground, { grid: 4 }));
   assert.ok(pressed.some(f => /more than half occluded|inside or touching/.test(f)), `pressed against the tower: ${pressed.join(' | ')}`);
 });
