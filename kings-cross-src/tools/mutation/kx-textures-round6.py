@@ -20,9 +20,10 @@ if out == src or out.is_relative_to(src) or src.is_relative_to(out):
 out.mkdir(parents=True, exist_ok=True)
 
 MUTATIONS = [
-    ('fascia blank', 'web/src/shed.ts', '  g.fillText(FRONT_FASCIA_TEXT.words, w / 2, h / 2, w * 0.8);', '', 'each entrance\'s navy fascia'),
+    ('fascia blank', 'web/src/shed.ts', '    g.fillText(words, w * at, h / 2, room);', '', 'each entrance\'s navy fascia'),
     ('lettering dark', 'web/src/shed.ts', "ink: '#ffffff'", "ink: '#2a3550'", 'each entrance\'s navy fascia'),
-    ('lettering runs past the ends', 'web/src/shed.ts', 'g.fillText(FRONT_FASCIA_TEXT.words, w / 2, h / 2, w * 0.8);', 'g.fillText(FRONT_FASCIA_TEXT.words, w / 2, h / 2, w * 1.2);', 'each entrance\'s navy fascia'),
+    ('No entry swapped for other words', 'web/src/shed.ts', "['No entry', 0.75]", "['Way out', 0.75]", 'each entrance\'s navy fascia'),
+    ('lettering runs past the ends', 'web/src/shed.ts', 'const room = w * 0.4,', 'const room = w * 0.6,', 'each entrance\'s navy fascia'),
     ('fascia face tiled in metres', 'web/src/shed.ts', '[[0, 0], [1, 0], [1, 1], [0, 1]], { facing: [0, 0, 1] }); // its face', '[[0, 0], [fw, 0], [fw, 1], [0, 1]], { facing: [0, 0, 1] }); // its face', 'each entrance\'s navy fascia'),
     ('flat glass', 'web/src/shed.ts', 'stops: [[0, 0.62], [2.2, 0.7], [2.75, 1.0], [3.15, 1.0], [3.35, 0.8], [4.4, 0.95]]', 'stops: [[0, 0.9], [4.4, 0.9]]', 'entrance glass is structured'),
     ('glow not shaped', 'web/src/shed.ts', ", { defines: { KX_GLOW_BY_MAP: '' } })", ', {})', 'entrance glass is structured'),

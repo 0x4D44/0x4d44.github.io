@@ -23,7 +23,8 @@ out.mkdir(parents=True, exist_ok=True)
 MUTATIONS = [
     ('stems back in the porch', 'web/src/shed.ts', "  for (const [c, s] of stems) frames.box(c, s, { skip: ['+y', '-y'] });", "  for (const [c, s] of stems) canopy.box(c, s, { skip: ['+y', '-y'] });", 'stems are the entrances'),
     ('small letters', 'web/src/shed.ts', "ink: '#ffffff', height: 0.55,", "ink: '#ffffff', height: 0.35,", "fascia's white capitals"),
-    ('no arrow', 'web/src/shed.ts', "words: 'ENTRANCE  \\u2192'", "words: 'ENTRANCE'", "fascia's white capitals"),
+    ('no arrow', 'web/src/shed.ts', "[['\\u2190 Entrance', 0.27]", "[['Entrance', 0.27]", "fascia's white capitals"),
+    ('one side only', 'web/src/shed.ts', "[['\\u2190 Entrance', 0.27], ['No entry', 0.75]]", "[['\\u2190 Entrance', 0.27]]", "fascia's white capitals"),
     ('no outline on the middle levels', 'web/src/shed.ts', 'if (h <= 32) { // pre-sharpened', 'if (h <= 0) { // pre-sharpened', "fascia's white capitals"),
     ('no pale band on the smallest levels', 'web/src/shed.ts', 'lerp(new THREE.Color(FRONT_FASCIA_TEXT.ink), FRONT_FASCIA_TEXT.band)', 'lerp(new THREE.Color(FRONT_FASCIA_TEXT.ink), 0)', "fascia's white capitals"),
     ('thin hands again', 'web/src/clocks.ts', 'minute: { length: 0.86, tail: 0.15, width: 0.065,', 'minute: { length: 0.86, tail: 0.15, width: 0.045,', 'broad at the boss'),

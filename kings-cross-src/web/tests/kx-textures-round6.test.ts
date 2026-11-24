@@ -30,7 +30,9 @@ test('A3: each entrance\'s navy fascia carries pale capitals across its face, in
   };
   paintFascia(g as never, 1024, 72);
   assert.ok(fills[0]?.style === '#' + new THREE.Color(FRONT_COLOURS.fascia).getHexString() && fills[0]!.rect![2] === 1024, 'a navy board');
-  assert.ok(texts.length === 1 && /[A-Z]{4,}/.test(texts[0]!.t) && texts[0]!.w <= 1024 * 0.9, `lettering inside the board's ends: ${texts[0]?.t}`);
+  // re-pinned 2026-11-24 (round 8, the signs-hands score: follow the photos' wording): "Entrance" on one half of the board, "No entry" (or
+  // "Exit only") on the other, each inside its half (it was one line of capitals across the board)
+  assert.ok(texts.length === 2 && /Entrance/.test(texts[0]!.t) && /No entry|Exit only/.test(texts[1]!.t) && texts.every(x => x.w <= 1024 * 0.45), `lettering in the board's two halves: ${texts.map(x => x.t).join(' | ')}`);
   assert.ok(lum(new THREE.Color(texts[0]!.style as string)) > 0.6 && FRONT_FASCIA_TEXT.height >= 0.4, 'pale, and big enough to read');
   // the board's face carries the whole lettering: its uvs run 0 to 1 across it
   const fascia = infill.geometry.groups.find(gr => gr.materialIndex === 2)!, uv = infill.geometry.getAttribute('uv'), nrm = infill.geometry.getAttribute('normal');

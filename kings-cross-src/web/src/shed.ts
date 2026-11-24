@@ -95,7 +95,7 @@ export const SOUTH_FRONT_ARCADES = { perSide: 3, openingWidth: 6.8, jambHeight: 
  * opening, flush with the wall's face, the glass's lunette 0.4 m narrower behind it (the opening's outline and springing unchanged); and a
  * stone bed mould under the parapet cornice, `bedMould` proud, so the cornice's 0.7 m overhang reads as a stepped soffit, not a block.
  */
-export const FRONT_RELIEF = { orders: 3, orderWidth: 0.4, orderStep: 0.28, innerOrder: true, bedMould: { height: 0.25, out: 0.35 }, impost: { height: 0.35, out: 1.0, past: 0.15 }, shadowLine: 0.25, impostAboveGround: 4.95, impostHeight: 0.25, impostOut: 0.2 } as const;
+export const FRONT_RELIEF = { orders: 3, orderWidth: 0.4, orderStep: 0.28, innerOrder: true, bedMould: { height: 0.25, out: 0.35 }, impost: { height: 0.35, out: 1.0, past: 0.15 }, shadowLine: 0.25, springing: { height: 0.3, out: 1.0 }, corona: { height: 0.3, out: 1.1 }, impostAboveGround: 4.95, impostHeight: 0.25, impostOut: 0.2 } as const;
 /**
  * The porch openings' infill (A3), from R-kx-front-a: dark-framed glazed screens set back in each opening, glazed doors with a push rail,
  * a deep transom (the signage fascia) at about 2.5 m, and glazing over it in the arch head. Five bays to an opening and the frame sizes are
@@ -130,7 +130,9 @@ export const FRONT_COLOURS = { steel: 0x2a2c2e, steelLift: 0x0c0d0e, glass: 0x56
 // Round 7 (the dial-text-1b score: the lettering did not read at front-southwest-pedestrian): white sans capitals 0.55 of the board's
 // height with an arrow, every mip level painted at its own size: the middle ones with the letters outlined heavier (pre-sharpened), the
 // smallest, where no letter survives, with a pale band where the words are (what the letters average to), not the navy alone
-export const FRONT_FASCIA_TEXT = { words: 'ENTRANCE  \u2192', ink: '#ffffff', height: 0.55, band: 0.45 } as const;
+// Round 8 (the signs-hands score: the wording should follow the photos): R-kx-front-b's boards read "<- Entrance" on their left half and
+// "No entry" on their right; generic words, at those two places (`sides`: the words and their centre across the board)
+export const FRONT_FASCIA_TEXT = { sides: [['\u2190 Entrance', 0.27], ['No entry', 0.75]], ink: '#ffffff', height: 0.55, band: 0.45 } as const;
 export const GLASS_STRUCTURE = { height: 4.4, stops: [[0, 0.62], [2.2, 0.7], [2.75, 1.0], [3.15, 1.0], [3.35, 0.8], [4.4, 0.95]], gain: 1.35 } as const;
 /**
  * Round 6 (A4 brick): R-kx-front-c shows the tower a little darker and greyer than the front's stock (olive-grey, not chocolate), and
@@ -175,7 +177,7 @@ export type FasciaPainter = Pick<CanvasRenderingContext2D, 'fillRect' | 'fillTex
   fillStyle: unknown; strokeStyle: unknown; lineWidth: number; lineJoin: unknown; font: string; textAlign: unknown; textBaseline: unknown;
 };
 /**
- * A fascia board `w` by `h` pixels (a mip level when small): navy, the FRONT_FASCIA_TEXT words in white sans capitals across its middle,
+ * A fascia board `w` by `h` pixels (a mip level when small): navy, each of FRONT_FASCIA_TEXT's sides in white bold sans at its place,
  * kept inside its ends; outlined heavier on a middle level (h 8 to 32 px), and on the smallest (under 8 px) a pale band the words' width.
  */
 export function paintFascia(g: FasciaPainter, w: number, h: number): void {
@@ -184,21 +186,23 @@ export function paintFascia(g: FasciaPainter, w: number, h: number): void {
   g.fillRect(0, 0, w, h);
   const px = Math.max(1, Math.round(h * FRONT_FASCIA_TEXT.height));
   g.font = `bold ${px}px sans-serif`;
-  const wide = Math.min(w * 0.8, g.measureText(FRONT_FASCIA_TEXT.words).width);
-  if (h < 8) { // no letter survives at this size: what they average to
-    g.fillStyle = '#' + navy.clone().lerp(new THREE.Color(FRONT_FASCIA_TEXT.ink), FRONT_FASCIA_TEXT.band).getHexString();
-    g.fillRect((w - wide) / 2, (h - px) / 2, wide, Math.max(1, px));
-    return;
-  }
-  g.fillStyle = FRONT_FASCIA_TEXT.ink;
   g.textAlign = 'center';
   g.textBaseline = 'middle';
-  g.fillText(FRONT_FASCIA_TEXT.words, w / 2, h / 2, w * 0.8);
-  if (h <= 32) { // pre-sharpened: the strokes outlined, so the level keeps their weight
-    g.strokeStyle = FRONT_FASCIA_TEXT.ink;
-    g.lineWidth = Math.max(1, h * 0.06);
-    g.lineJoin = 'round';
-    g.strokeText(FRONT_FASCIA_TEXT.words, w / 2, h / 2, w * 0.8);
+  for (const [words, at] of FRONT_FASCIA_TEXT.sides) {
+    const room = w * 0.4, wide = Math.min(room, g.measureText(words).width);
+    if (h < 8) { // no letter survives at this size: what they average to
+      g.fillStyle = '#' + navy.clone().lerp(new THREE.Color(FRONT_FASCIA_TEXT.ink), FRONT_FASCIA_TEXT.band).getHexString();
+      g.fillRect(w * at - wide / 2, (h - px) / 2, wide, Math.max(1, px));
+      continue;
+    }
+    g.fillStyle = FRONT_FASCIA_TEXT.ink;
+    g.fillText(words, w * at, h / 2, room);
+    if (h <= 32) { // pre-sharpened: the strokes outlined, so the level keeps their weight
+      g.strokeStyle = FRONT_FASCIA_TEXT.ink;
+      g.lineWidth = Math.max(1, h * 0.06);
+      g.lineJoin = 'round';
+      g.strokeText(words, w * at, h / 2, room);
+    }
   }
 }
 /** The fascia texture's mip chain, [width, height] from 1024 by 64 down to 1 by 1. */
@@ -1243,9 +1247,15 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   }
   if (plinthStart < fx1 + 0.4) proud((plinthStart + fx1 + 0.4) / 2, GROUND_Y + 0.7, fx1 + 0.4 - plinthStart, 1.4, 0.35); // plinth interrupted at each entrance
   proud(spine, sp - 0.325, FW + 0.6, 0.65, 0.5); // sill course at the springing: bolder since round 5's second pass (R-kx-front-a, the main band of the front)
-  proud(spine, sp - 0.1, FW + 0.8, 0.2, 0.8); // its weathered cap, overhanging: the shadow line under it is what makes the band read (the round-2a hold)
+  // its weathered cap, overhanging: the shadow line under it is what makes the band read (the round-2a hold); round 8 (R-kx-front-b: the
+  // great arches spring from a proud course running across the screen) makes it the springing course, 0.3 m thick and `springing.out` proud
+  const { springing: sc, corona } = FRONT_RELIEF;
+  stone.box([spine, sp - sc.height / 2, (sc.out - FRONT_THICK) / 2], [FW + 0.8, sc.height, FRONT_THICK + sc.out], { skip: ['-z'] });
   proud(spine, GROUND_Y + FRONT_RELIEF.impostAboveGround, FW + 0.4, FRONT_RELIEF.impostHeight, FRONT_RELIEF.impostOut); // string course over the arcade's crowns
   proud(spine, frontTop - 0.45, FW + 1.0, 0.9, 0.7); // cornice
+  // its corona (round 8: real overhang, casting): a slab over the cornice's top `corona.out` proud, its soffit throwing a shadow down the
+  // cornice's face and onto the bed mould
+  stone.box([spine, frontTop - corona.height / 2, (corona.out - FRONT_THICK) / 2], [FW + 1.2, corona.height, FRONT_THICK + corona.out], { skip: ['-z'] });
   const { height: bh, out: bo } = FRONT_RELIEF.bedMould;
   proud(spine, frontTop - 0.9 - bh / 2, FW + 0.8, bh, bo); // its bed mould: a step under the overhang, so its soffit reads
   // the great arches' impost (round 7, R-kx-front-b): a stone block at the springing over each end pier (the front's ends, where the

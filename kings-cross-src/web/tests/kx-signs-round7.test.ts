@@ -45,9 +45,12 @@ test('A3: the fascia\'s white capitals are 0.5 to 0.6 of the board, with an arro
   const levels = fasciaLevels();
   assert.ok(levels[0]![0] === 1024 && levels[0]![1] === 64 && levels.at(-1)!.join() === '1,1' && levels.every(([w, h], i) => i === 0 || (w === Math.max(1, levels[i - 1]![0] >> 1) && h === Math.max(1, levels[i - 1]![1] >> 1))), 'a full mip chain');
   const mid = record(256, 16);
-  assert.ok(mid.texts.length === 1 && mid.strokes === 1, 'a middle level: the letters outlined heavier');
+  // re-pinned 2026-11-24 (round 8: the board carries two sides' words, as R-kx-front-b's): each side outlined, a band for each on the smallest
+  const sides = FRONT_FASCIA_TEXT.sides.length;
+  assert.ok(sides === 2 && mid.texts.length === sides && mid.strokes === sides, 'a middle level: the letters outlined heavier');
   const small = record(64, 4), navy = small.fills[0]!.s as string, band = small.fills[1];
-  assert.ok(small.texts.length === 0 && band && new THREE.Color(band.s as string).getHSL({ h: 0, s: 0, l: 0 }).l > new THREE.Color(navy).getHSL({ h: 0, s: 0, l: 0 }).l + 0.15 && band.r[2]! >= 0.2 * 64, 'the smallest: a pale band where the words are');
+  const bands = small.fills.slice(1);
+  assert.ok(small.texts.length === 0 && band && bands.length === sides && new THREE.Color(band.s as string).getHSL({ h: 0, s: 0, l: 0 }).l > new THREE.Color(navy).getHSL({ h: 0, s: 0, l: 0 }).l + 0.15 && bands.reduce((s, b) => s + b.r[2]!, 0) >= 0.2 * 64, 'the smallest: a pale band where the words are');
 });
 
 test('A4: the hands are broad at the boss, 0.06 to 0.08 of the radius, a narrower shaft, and a spade near the tip', () => {
