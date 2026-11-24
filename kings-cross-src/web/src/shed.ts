@@ -1472,6 +1472,7 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
 
   // ---- the clock tower, centred on the spine, standing just in front of the south front --------
   group.add(buildTower(spine));
+  group.add(buildPlatformClock(L));
 
   // ---- the Western Range -----------------------------------------------------------------------
   if (opts.range !== false) group.add(buildWesternRange());
@@ -1691,6 +1692,43 @@ export function buildNorthPier(brick: Batch, stone: Batch, x: number, length: nu
  * diameter are ASSUMED from that appearance, not a surveyed elevation. ASSUMED: the published
  * 112 ft overall height includes the vane; the previous model allocated it all to the cap.
  */
+/**
+ * The platform clock on its bracket (round 13, rubric shed-interior B5; R-kx-shed-interior-d, the B5 key): a round two-faced clock, white dial, black Roman
+ * numerals in gilt rings (the tower's dial, clockMaterial), in a dark iron drum on a cantilever bracket from the west arcade wall over platform 8. Its size
+ * and stand are ASSUMED (the photograph gives no scale that can be trusted): `radius` 0.6 m, `drum` 0.25 m deep, its centre `out` 1.6 m off the wall's
+ * face at `y` 5.2 m over the rail head, `v` 0.55 of the shed's length from the front. Two draws (the dial faces, the iron) and neither casts a shadow
+ * (the shadow pass is at its budget); the hands are the clocks module's, from userData.clockDials.
+ */
+export const PLATFORM_CLOCK = { v: 0.55, y: 5.2, out: 1.6, radius: 0.6, drum: 0.25, rim: 0.07, arm: 0.12 } as const;
+
+export function buildPlatformClock(length: number): THREE.Group {
+  const { v, y, out, radius, drum, rim, arm } = PLATFORM_CLOCK;
+  const z = -v * length, g = new THREE.Group();
+  g.name = 'shed-platform-clock';
+  const faceGeos = [1, -1].map((s) => {
+    const c = new THREE.CircleGeometry(radius, 40);
+    if (s < 0) c.rotateY(Math.PI);
+    c.translate(out, y, z + (s * drum) / 2);
+    return c;
+  });
+  const faces = mesh(mergeGeometries(faceGeos, false), clockMaterial(), 'shed-platform-clock-faces');
+  // the iron: the drum's rim in 24 chords, the bracket's arm from the wall over the drum and a strut under it to the wall, a hanger to the drum's top
+  const iron = new Batch(), n = 24, rr = radius + rim / 2;
+  for (let i = 0; i < n; i++) {
+    const a0 = (2 * Math.PI * i) / n, a1 = (2 * Math.PI * (i + 1)) / n, am = (a0 + a1) / 2;
+    iron.box([out + rr * Math.cos(am), y + rr * Math.sin(am), z], [2 * rr * Math.sin(Math.PI / n) + 0.02, rim, drum + 0.02], { rotZ: am + Math.PI / 2 });
+  }
+  const armY = y + radius + rim + 0.35, armEnd = out + radius * 0.6;
+  iron.box([armEnd / 2, armY, z], [armEnd, arm, arm]); // the arm, from the wall's face (x = 0)
+  const sx = armEnd * 0.75, sy = 1.1; // the strut, from the wall under the arm up to it
+  iron.box([sx / 2, armY - sy / 2, z], [Math.hypot(sx, sy), arm * 0.8, arm * 0.8], { rotZ: Math.atan2(sy, sx) });
+  iron.box([out, (armY + y + rr) / 2, z], [arm * 0.6, armY - y - rr + 0.02, arm * 0.6]); // the hanger
+  iron.box([0.05, armY - 0.4, z], [0.1, 1.2, 0.4]); // the wall plate
+  g.add(faces, mesh(iron.build(), material('ribPaint'), 'shed-platform-clock-iron'));
+  g.userData.clockDials = [1, -1].map((s): ClockDial => ({ centre: [out, y, z + s * (drum / 2 + 0.005)], normal: [0, 0, s], up: [0, 1, 0], radius })); // clocks.ts
+  return g;
+}
+
 export function buildTower(x: number): THREE.Group {
   const tower = new THREE.Group();
   tower.name = 'clock-tower';

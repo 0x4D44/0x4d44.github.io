@@ -68,7 +68,7 @@ export const TEXTURES: Readonly<Record<TextureName, TextureSpec>> = {
   // Platform edge, drawn across the strip (u, 0..1.6 m from the edge inboard) and tiled along it
   // (v, 0.5 m). ASSUMED widths: coping 0.2 m, yellow tactile warning strip 0.2-0.6 m (the UK strip
   // is about 0.4 m wide: DfT, Guidance on the use of tactile paving surfaces), white line 1.05-1.15 m.
-  platformEdge: { tile: [1.6, 0.5], px: [320, 100], density: [150, 250], average: 0x6f6a55, repeat: true,
+  platformEdge: { tile: [1.6, 0.5], px: [320, 100], density: [150, 250], average: 0x938b74, repeat: true,
     source: 'tactile strip about 0.4 m wide (DfT tactile paving guidance); offsets ASSUMED' },
   ballast: { tile: [2, 2], px: [256, 256], density: [100, 160], average: 0x5f5b54, repeat: true,
     source: 'ASSUMED: crushed stone drawn at 128 texels per metre' },
@@ -321,10 +321,12 @@ function paintPlatformEdge(g: Ctx, w: number, h: number): void {
     g.fillStyle = fill;
     g.fillRect(a * pxm, 0, (b - a) * pxm, h);
   };
+  // round 13 (rubric shed-interior B4, R-kx-shed-interior-d and -a): the band order is coping, tactile strip, yellow line, then the platform's own surface; until
+  // round 13 a saturated yellow tactile strip ran into a metre of dark tarmac with a white line in it, a band the shed's platforms do not have
   band(0, 0.2, '#a6a6a0'); // coping stones
-  band(0.2, 0.6, '#d9b21a'); // yellow tactile strip
-  band(0.6, 1.6, '#4a4d52'); // tarmac
-  band(1.05, 1.15, '#e6e6de'); // white line
+  band(0.2, 0.6, '#bba77a'); // the tactile strip, buff (ASSUMED tone)
+  band(0.6, 0.7, '#d9b21a'); // the yellow line, 0.1 m (ASSUMED width)
+  band(0.7, 1.6, '#767571'); // the platform surface: the asphalt texture's own base tone (paintAsphalt), so the strip runs into the tops without a seam
   g.fillStyle = 'rgba(0,0,0,0.35)'; // the joint between coping and strip, and the coping's own joints
   g.fillRect(0.2 * pxm - 1, 0, 2, h);
   for (let y = 0; y < h; y += 0.25 * pxm) g.fillRect(0, y, 0.2 * pxm, 1.5);
@@ -335,9 +337,9 @@ function paintPlatformEdge(g: Ctx, w: number, h: number): void {
       const cx = 0.23 * pxm + (ix + 0.5) * pitch + ((iy % 2) * pitch) / 2;
       const cy = (iy + 0.5) * pitch;
       if (cx > 0.58 * pxm) continue;
-      g.fillStyle = 'rgba(120,90,0,0.55)';
+      g.fillStyle = 'rgba(90,72,30,0.45)';
       g.beginPath(); g.arc(cx + 0.7, cy + 0.9, 2.6, 0, Math.PI * 2); g.fill();
-      g.fillStyle = '#f2cf3c';
+      g.fillStyle = '#cdbb8c';
       g.beginPath(); g.arc(cx, cy, 2.3, 0, Math.PI * 2); g.fill();
     }
   }

@@ -239,8 +239,9 @@ test('the King\'s Cross tower: each of its four dials gets a glow DIAL_LIFT out 
   const shed = buildShed(layout);
   const owners: THREE.Object3D[] = [];
   shed.traverse((o) => { if (o.userData.clockDials) owners.push(o); });
-  assert.equal(owners.length, 1, 'the shed carries the tower\'s dials');
-  const kx = owners[0] as THREE.Object3D;
+  // round 13: the shed also carries the platform clock's two dials; its faces are one merged mesh, not CircleGeometry discs, so they take no glow (the scan below stays at 4)
+  assert.deepEqual(owners.map((o) => o.name).sort(), ['clock-tower', 'shed-platform-clock'], 'the shed carries the tower\'s dials, and the platform clock\'s');
+  const kx = owners.find((o) => o.name === 'clock-tower') as THREE.Object3D;
   const dials = kx.userData.clockDials as ClockDial[];
   assert.equal(dials.length, 4);
   const scene = new THREE.Scene();
