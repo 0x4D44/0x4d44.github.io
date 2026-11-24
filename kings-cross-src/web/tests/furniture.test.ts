@@ -647,7 +647,7 @@ test('shedRoofY: the crown over each arch centre, the springing over the aisles 
   assert.ok(shedRoofY(layout, layout.spine - 1.5 * r) > layout.springing && shedRoofY(layout, layout.spine - 1.5 * r) < layout.crown);
 });
 
-test('canopies: only on platforms 9 and 10, 5.2 m up, over the platform\'s own outline and nowhere else', () => {
+test('canopies: only on platforms 9 and 10, 6.4 m up, over the platform\'s own outline and nowhere else', () => {
   assert.deepEqual(plan.canopies.map((c) => c.ref).sort(), ['10', '9']);
   for (const c of plan.canopies) {
     near(c.roofY, PLATFORM_HEIGHT + FIGURES.canopyHeight, 1e-9, 'roof height');
@@ -658,12 +658,14 @@ test('canopies: only on platforms 9 and 10, 5.2 m up, over the platform\'s own o
     }
     assert.equal(c.left.length, c.right.length);
     assert.ok(c.left.length >= 4);
-    assert.ok(c.columns.length >= 10, `canopy ${c.ref} has ${c.columns.length} columns`);
+    // Re-pinned 2026-11-24 (B6, measured bay 15 m, was 12 m ASSUMED): '>= 10 columns 12 m apart' held the columns over at least 108 m; '>= 9
+    // columns 15 m apart' holds them over at least 120 m, no looser. Platform 10's band carries 9 at the measured bay.
+    assert.ok(c.columns.length >= 9, `canopy ${c.ref} has ${c.columns.length} columns`);
     for (const g of gaps(alongOf(c.ref, c.columns))) near(g, FIGURES.canopyColumnSpacing, 1e-6, 'column spacing');
   }
   // the built meshes agree: every vertex of the roof and its steel is inside one of the two outlines
   const inside = (x: number, z: number): boolean => ['9', '10'].some((r) => pointInPolygon([x, z], outline(r)));
-  for (const name of ['canopy-glass', 'canopy-steel']) {
+  for (const name of ['canopy-glass', 'canopy-steel', 'canopy-lattice']) {
     const pos = part(furniture, name).geometry.getAttribute('position');
     assert.ok(pos.count > 0);
     for (let i = 0; i < pos.count; i++) assert.ok(inside(pos.getX(i), pos.getZ(i)), `${name} has a vertex at (${pos.getX(i).toFixed(2)}, ${pos.getZ(i).toFixed(2)}) outside platforms 9 and 10`);
@@ -671,6 +673,100 @@ test('canopies: only on platforms 9 and 10, 5.2 m up, over the platform\'s own o
   const top = new THREE.Box3().setFromObject(part(furniture, 'canopy-steel'));
   near(top.max.y, PLATFORM_HEIGHT + FIGURES.canopyHeight, 1e-5, 'the highest steel is the roof edge');
   near(top.min.y, PLATFORM_HEIGHT, 1e-6, 'the columns stand on the platform');
+});
+
+// B6, R-kx-shed-interior-f (shed-f-suburban-platforms-2022.jpg), measured in memory (furniture.ts FIGURES): columns about 15 m apart (+-25%),
+// about 5.1 m to the roof steel (+-15%), a ~1.2 m lattice truss over them, a near-flat dark sheet roof with glazed strips across it, two a bay,
+// near-black steel. The bands below are the measurement's.
+test('canopies (B6): columns 12-18 m apart and 4.5-5.9 m to the truss, the roof 6.0-7.0 m up, as measured from R-kx-shed-interior-f', () => {
+  for (const c of plan.canopies) {
+    for (const g of gaps(alongOf(c.ref, c.columns))) assert.ok(g >= 12.5 && g <= 18, `canopy ${c.ref}: a column bay of ${g.toFixed(2)} m`);
+    const col = c.columnTopY - PLATFORM_HEIGHT;
+    assert.ok(col >= 4.5 && col <= 5.9, `canopy ${c.ref}: columns ${col.toFixed(2)} m tall`);
+    const roof = c.roofY - PLATFORM_HEIGHT;
+    assert.ok(roof >= 6.0 && roof <= 7.0, `canopy ${c.ref}: roof ${roof.toFixed(2)} m over the platform`);
+    near(c.roofY - c.columnTopY, FIGURES.canopyTrussDepth, 1e-9, 'the truss fills the space between the column tops and the roof');
+  }
+});
+
+test('canopies (B6): the roof is sheet with glazed strips across it, two to a column bay, a third of the roof glazed or less', () => {
+  for (const c of plan.canopies) {
+    const t0 = c.ts[0] as number, t1 = c.ts[c.ts.length - 1] as number;
+    assert.ok(c.glazing.length >= 2 * Math.floor((t1 - t0) / FIGURES.canopyColumnSpacing), `canopy ${c.ref}: ${c.glazing.length} glazed strips`);
+    for (const [lo, hi] of c.glazing) assert.ok(lo >= t0 - 1e-9 && hi <= t1 + 1e-9 && hi > lo, `canopy ${c.ref}: a strip off the roof`);
+    const inner = c.glazing.filter(([lo, hi]) => lo > t0 && hi < t1);
+    for (const g of gaps(inner.map(([lo, hi]) => (lo + hi) / 2))) near(g, FIGURES.canopyColumnSpacing / 2, 1e-6, `canopy ${c.ref}: strip pitch`);
+    const glazed = c.glazing.reduce((s, [lo, hi]) => s + hi - lo, 0) / (t1 - t0);
+    assert.ok(glazed > 0.2 && glazed < 0.4, `canopy ${c.ref}: ${(glazed * 100).toFixed(0)}% of the roof glazed`);
+  }
+  // built: one mesh, the glass (group 0) and an opaque sheet (group 1) in their measured shares of the roof's area
+  const roof = part(furniture, 'canopy-glass');
+  const mats = Array.isArray(roof.material) ? roof.material : [roof.material];
+  assert.deepEqual(mats.map((m) => m.name), ['canopyGlass', 'canopySheet']);
+  assert.ok(!(mats[1] as THREE.Material).transparent, 'the sheet is opaque');
+  const pos = roof.geometry.getAttribute('position');
+  const index = roof.geometry.index as THREE.BufferAttribute;
+  const area = [0, 0];
+  for (const [g, grp] of roof.geometry.groups.entries()) {
+    for (let i = grp.start; i < grp.start + grp.count; i += 3) {
+      const [a, b, d] = [0, 1, 2].map((k) => new THREE.Vector3().fromBufferAttribute(pos, index.getX(i + k)));
+      area[g] = (area[g] as number) + new THREE.Vector3().crossVectors(b!.clone().sub(a!), d!.clone().sub(a!)).length() / 2;
+    }
+  }
+  const share = (area[0] as number) / ((area[0] as number) + (area[1] as number));
+  assert.ok(share > 0.2 && share < 0.4, `the built roof is ${(share * 100).toFixed(0)}% glass`);
+});
+
+test('canopies (B6): near-black steel with lattice trusses down to the column tops, H columns on base plates, all inside the platform', () => {
+  const steel = part(furniture, 'canopy-steel');
+  const col = steel.geometry.getAttribute('color');
+  let lum = 0;
+  for (let i = 0; i < col.count; i++) lum += 0.2126 * col.getX(i) + 0.7152 * col.getY(i) + 0.0722 * col.getZ(i);
+  assert.ok(lum / col.count < 0.25, `the steel is painted near-black (mean luminance ${(lum / col.count).toFixed(2)})`);
+  const pos = steel.geometry.getAttribute('position');
+  const web = part(furniture, 'canopy-lattice').geometry.getAttribute('position');
+  for (const c of plan.canopies) {
+    const pts = outline(c.ref);
+    let chord = 0;
+    let lattice = 0;
+    for (let i = 0; i < pos.count; i++) {
+      if (pointInPolygon([pos.getX(i), pos.getZ(i)], pts) && Math.abs(pos.getY(i) - c.columnTopY) < 0.02) chord++;
+    }
+    for (let i = 0; i < web.count; i++) {
+      const y = web.getY(i);
+      // the diagonals' lower ends, just over the bottom chord's top (+0.15)
+      if (pointInPolygon([web.getX(i), web.getZ(i)], pts) && y > c.columnTopY + 0.16 && y < c.columnTopY + 0.21) lattice++;
+    }
+    assert.ok(chord > 200, `canopy ${c.ref}: ${chord} vertices on the trusses' bottom chords`);
+    assert.ok(lattice > 400, `canopy ${c.ref}: ${lattice} vertices of lattice web between the chords`);
+    // each column stands on a base plate wider than its own section, and its section is an H (wider than a single 0.18 m post)
+    for (const p of c.columns) {
+      let plate = 0;
+      let wide = 0;
+      for (let i = 0; i < pos.count; i++) {
+        const d = Math.hypot(pos.getX(i) - p.x, pos.getZ(i) - p.z);
+        const y = pos.getY(i);
+        if (Math.abs(y - PLATFORM_HEIGHT) < 1e-6 && d > 0.3 && d < 0.4) plate++;
+        if (y > PLATFORM_HEIGHT + 0.03 && y < PLATFORM_HEIGHT + 0.05 && d > 0.13 && d < 0.2) wide++; // the flanges' feet
+      }
+      if (plate < 4 || wide < 8) assert.fail(`canopy ${c.ref}: a column at (${p.x.toFixed(1)}, ${p.z.toFixed(1)}) has ${plate} base-plate and ${wide} flange corners`);
+    }
+  }
+});
+
+test('canopies (B6): every column\'s flanges (0.11 m) keep the safety line from the track edges and its base plate (0.25 m a side from the centre) clear of every lamp, bench and help point by the plan gap', () => {
+  const tracks = trackSegments(data);
+  for (const c of plan.canopies) {
+    const f = platformFrame(c.ref, outline(c.ref), outlines.filter((o) => o !== outline(c.ref)), layout, tracks);
+    for (const p of c.columns) {
+      const d = distanceToEdges([p.x, p.z], f.edges);
+      assert.ok(d >= FIGURES.safetyLine + 0.2, `canopy ${c.ref}: a column ${d.toFixed(2)} m from a track edge`);
+      for (const q of [...plan.lamps, ...plan.benches, ...plan.helpPoints]) {
+        const g = Math.hypot(p.x - q.x, p.z - q.z);
+        if (g < Math.SQRT2 * 0.25 + q.r + FIGURES.gap) assert.fail(`canopy ${c.ref}: a column ${g.toFixed(2)} m from a piece of furniture (r ${q.r})`);
+      }
+    }
+  }
 });
 
 // ---------------------------------------------------------------------------------------------
@@ -746,7 +842,7 @@ test('furniture: runs with the platforms alone as well (no rails: every long edg
 });
 
 test('colour: every furniture mesh carries a colour per vertex (the shared builder is told so), and the lamps, benches and help points are more than one colour', () => {
-  for (const name of ['lamps', 'benches', 'help-points', 'totems', 'canopy-glass', 'canopy-steel']) {
+  for (const name of ['lamps', 'benches', 'help-points', 'totems', 'canopy-glass', 'canopy-steel', 'canopy-lattice']) {
     const geometry = part(furniture, name).geometry;
     const color = geometry.getAttribute('color');
     assert.ok(color, `${name} has vertex colours`);
@@ -770,7 +866,8 @@ test('FIGURES: the working figures the titles above quote, written out so a slip
     benchLength: 1.8, benchPairGap: 2.4, benchSpacing: 45,
     helpHeight: 1.8, helpSpacing: 80,
     totemWidth: 1.0, totemHeight: 2.5, totemHeader: 0.65, screenWidth: 0.85, screenHeight: 1.1, totemSpacing: 100, totemSouth: 20, totemBenchGap: 3.5,
-    canopyHeight: 5.2, canopyColumnSpacing: 12,
+    // Re-pinned 2026-11-24 (B6): canopyHeight and canopyColumnSpacing are now MEASURED from R-kx-shed-interior-f (furniture.ts FIGURES), not the brief's working figures.
+    canopyHeight: 6.4, canopyColumnSpacing: 15, canopyTrussDepth: 1.2, canopyGlazeWidth: 2.5,
   };
   for (const [name, value] of Object.entries(want)) assert.equal((FIGURES as Record<string, number>)[name], value, `FIGURES.${name}`);
 });

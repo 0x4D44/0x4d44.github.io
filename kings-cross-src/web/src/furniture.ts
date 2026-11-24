@@ -146,11 +146,22 @@ export const FIGURES = {
   clockWidth: 0.65,
   clockTall: 0.25,
 
-  // --- canopies (platforms 9 and 10)
-  /** Roof height above the platform top, metres. ASSUMED (the brief). */
-  canopyHeight: 5.2,
-  /** Distance between columns along the platform, metres. ASSUMED (the brief: about 12 m). */
-  canopyColumnSpacing: 12,
+  // --- canopies (platforms 9 and 10). MEASURED in memory from R-kx-shed-interior-f (shed-f-suburban-platforms-2022.jpg, looking north along
+  // platform 9 at the steel roof over 9-10): eye about 1.6 m over the platform, horizon about y 570 of 1200, a 26 mm-equivalent lens (f ~ 1165 px).
+  // The column bases on the far platform sit at y 655, 615, 603, 597, 592 (distances f x 1.6 / dy ~ 22, 41, 56, 69, 85 m): a bay of about 15 m
+  // (+-25%). The nearest column rises 270 px over its base at 53 px/m: about 5.1 m to the underside of the roof steel. Over it the roof is a
+  // grid of black lattice trusses (X-braced, about a fifth of the column height deep, ~1.2 m) under a near-flat roof of dark corrugated
+  // sheet with glazed strips running ACROSS the platform, two to a column bay, each about a third of its half-bay. The steel is painted
+  // near-black (sampled about #26292c in shade); the sheet's underside is a dark grey (about #4a4b4a). No valance or fascia board: the edge is
+  // the lattice girder's top chord, with a small gutter. Knee braces tie each column to the beam over it.
+  /** Roof (sheet) height above the platform top, metres: the 5.2 m column plus the 1.2 m truss. MEASURED (rough, +-15%). */
+  canopyHeight: 6.4,
+  /** Distance between columns along the platform, metres. MEASURED (rough, +-25%). */
+  canopyColumnSpacing: 15,
+  /** Depth of the roof's lattice trusses and girders under the sheet, metres. MEASURED (rough, +-30%). */
+  canopyTrussDepth: 1.2,
+  /** Width of one glazed strip across the roof, metres; there are two to a column bay (a pitch of half the bay). MEASURED (rough, +-30%). */
+  canopyGlazeWidth: 2.5,
   /** The roof and its edge beams stop this far inside the platform outline, so nothing hangs over the track side, metres. ASSUMED. */
   canopyInset: 0.3,
   /** The roof starts this far from each end of the platform polygon, metres, and needs at least this width, metres. ASSUMED. */
@@ -764,6 +775,12 @@ export interface CanopyPlan {
   columns: Placement[];
   /** cross beams (left point, right point) at each column and at both ends of the roof */
   crossBeams: [Pt, Pt][];
+  /** the distance along the platform axis of each left/right sample */
+  ts: number[];
+  /** the glazed strips across the roof, as [from, to] along the platform axis (the rest of the roof is sheet) */
+  glazing: [number, number][];
+  /** the height of the columns' tops: the underside of the roof's trusses */
+  columnTopY: number;
 }
 
 export interface FurniturePlan {
@@ -797,10 +814,12 @@ function canopyFor(f: Frame): CanopyPlan | null {
   const tB = f.tHi - FIGURES.canopyEnd;
   if (tB <= tA) return null;
   const columnT: number[] = [];
-  for (let t = tA + 6; t <= tB - 6 + 1e-9; t += FIGURES.canopyColumnSpacing) columnT.push(t);
-  // sample at the ends, at every polygon vertex between them and at the columns: the outline is straight
-  // between vertices, so the roof follows it exactly
-  const raw: number[] = [tA, tB, ...columnT];
+  // the first column half a bay in from the roof's end
+  const halfBay = FIGURES.canopyColumnSpacing / 2;
+  for (let t = tA + halfBay; t <= tB - halfBay + 1e-9; t += FIGURES.canopyColumnSpacing) columnT.push(t);
+  // sample at the ends and at every polygon vertex between them: the outline is straight between vertices, so the roof follows it
+  // exactly (the cross beams at the columns are cut from the outline itself, and the mesh reads the lines between samples)
+  const raw: number[] = [tA, tB];
   for (const p of f.pts) {
     const t = dot2(p, f.axis);
     if (t > tA + 0.5 && t < tB - 0.5) raw.push(t);
@@ -844,17 +863,28 @@ function canopyFor(f: Frame): CanopyPlan | null {
     const sec = crossSection(f.pts, f.axis, t);
     if (!b || !sec) continue;
     const [x, z] = worldPoint(f, t, b.mid);
-    columns.push({ ref: f.ref, x, z, rotY: 0, r: FIGURES.columnSize, across: FIGURES.columnSize / 2 });
+    // r: the base plate's half-diagonal (0.5 m square), so nothing stands on it
+    columns.push({ ref: f.ref, x, z, rotY: 0, r: Math.SQRT2 * 0.25, across: FIGURES.columnSize / 2 });
     crossBeams.push(across(t, sec));
   }
-  return { ref: f.ref, roofY: PLATFORM_HEIGHT + FIGURES.canopyHeight, left, right, columns, crossBeams };
+  // two glazed strips to a column bay, centred a quarter and three quarters of the way along it, clipped to the roof
+  const pitch = FIGURES.canopyColumnSpacing / 2;
+  const glazing: [number, number][] = [];
+  const t0 = (columnT[0] ?? tFirst) + pitch / 2;
+  for (let k = Math.floor((tFirst - t0) / pitch); t0 + k * pitch - FIGURES.canopyGlazeWidth / 2 < tLast; k++) {
+    const lo = Math.max(tFirst, t0 + k * pitch - FIGURES.canopyGlazeWidth / 2);
+    const hi = Math.min(tLast, t0 + k * pitch + FIGURES.canopyGlazeWidth / 2);
+    if (hi - lo > 0.2) glazing.push([lo, hi]);
+  }
+  const roofY = PLATFORM_HEIGHT + FIGURES.canopyHeight;
+  return { ref: f.ref, roofY, left, right, columns, crossBeams, ts: best.map((s) => s.t), glazing, columnTopY: roofY - FIGURES.canopyTrussDepth };
 }
 
 /**
  * Where everything goes. For each platform 0-10 of the King's Cross zone:
  *  - canopies and their columns on 9 and 10 (a single row down the middle of the band that the
  *    safety line leaves, since the platforms are only about 4.8 m wide),
- *  - lamp standards on 9 and 10 (midway between columns, every second bay) and on the open ends of
+ *  - lamp standards on 9 and 10 (every 24 m from midway in the first column bay, so never at a column) and on the open ends of
  *    0-8 north of the shed's mouth (the shed lights its own platforms),
  *  - help points, then pairs of benches, each shifted along by up to 12 m if it would touch something,
  *  - two departure totems on each of platforms 0-8, inside the shed only, each before a pier where an arcaded wall is near.
@@ -891,7 +921,8 @@ export function furniturePlan(data: FurnitureData, layout: FurnitureLayout): Fur
     // 2. lamp standards
     const lampT: number[] = [];
     if (canopyPlatform) {
-      for (let t = f.tLo + FIGURES.canopyEnd + 12; t <= f.tHi - FIGURES.canopyEnd - 6; t += FIGURES.lampSpacing) lampT.push(t);
+      // the first midway between the first two columns; 24 m against the columns' 15 m keeps every lamp at least 1.5 m along from a column
+      for (let t = f.tLo + FIGURES.canopyEnd + FIGURES.canopyColumnSpacing; t <= f.tHi - FIGURES.canopyEnd - 6; t += FIGURES.lampSpacing) lampT.push(t);
     } else {
       lampT.push(...slots(f, FIGURES.lampSpacing, index * STAGGER.lamp, FIGURES.endSouth, FIGURES.endNorth));
     }
@@ -1263,31 +1294,142 @@ function canopyGlass(): THREE.Material {
   return canopyGlassMat;
 }
 
-/** The canopy of one platform: a flat translucent roof between two edge beams, cross beams, and the columns' steel. */
-function canopyMeshes(c: CanopyPlan): { glass: Batch; steel: Batch } {
-  const glass = newBatch();
-  const steel = newBatch();
-  const y = c.roofY;
-  for (let i = 0; i + 1 < c.left.length; i++) {
-    const l0 = c.left[i] as Pt;
-    const l1 = c.left[i + 1] as Pt;
-    const r0 = c.right[i] as Pt;
-    const r1 = c.right[i + 1] as Pt;
-    glass.poly([[l0[0], y - 0.05, l0[1]], [l1[0], y - 0.05, l1[1]], [r1[0], y - 0.05, r1[1]], [r0[0], y - 0.05, r0[1]]], undefined, { normal: [0, 1, 0] });
+/** The canopies' colours, sampled from R-kx-shed-interior-f (see FIGURES): near-black steel, a dark grey corrugated sheet. */
+export const CANOPY_STEEL: Rgb = [0.149, 0.161, 0.173];
+export const CANOPY_SHEET = 0x4a4b4a;
+let canopySteelMat: THREE.Material | null = null;
+const canopySteel = (): THREE.Material => {
+  if (!canopySteelMat) {
+    canopySteelMat = new THREE.MeshLambertMaterial({ vertexColors: true });
+    canopySteelMat.name = 'canopySteel';
   }
+  return canopySteelMat;
+};
+let canopySheetMat: THREE.Material | null = null;
+const canopySheet = (): THREE.Material => {
+  if (!canopySheetMat) {
+    canopySheetMat = new THREE.MeshLambertMaterial({ color: CANOPY_SHEET, side: THREE.DoubleSide });
+    canopySheetMat.name = 'canopySheet';
+  }
+  return canopySheetMat;
+};
+
+/** A box standing upright on the platform, `al` half its length along the unit `ax` (x, z) and `ac` half its width across it. */
+function uprightBox(b: Batch, x: number, z: number, ax: Pt, al: number, ac: number, y0: number, y1: number, c: Rgb): void {
+  const n: Pt = [-ax[1], ax[0]];
+  const p = (sa: number, sc: number, y: number): V3 => [x + ax[0] * al * sa + n[0] * ac * sc, y, z + ax[1] * al * sa + n[1] * ac * sc];
+  const sides: [number, number, number, number, V3][] = [[1, -1, 1, 1, [ax[0], 0, ax[1]]], [-1, 1, -1, -1, [-ax[0], 0, -ax[1]]], [-1, 1, 1, 1, [n[0], 0, n[1]]], [1, -1, -1, -1, [-n[0], 0, -n[1]]]];
+  for (const [a0, a1, c0, c1, normal] of sides) b.poly([p(a0, c0, y0), p(a1, c1, y0), p(a1, c1, y1), p(a0, c0, y1)], undefined, { normal, color: c });
+  b.poly([p(-1, -1, y1), p(1, -1, y1), p(1, 1, y1), p(-1, 1, y1)], undefined, { normal: [0, 1, 0], color: c });
+}
+
+/** The point at `t` along the platform axis on one of the canopy's sampled lines (straight between samples). */
+function lineAt(ts: readonly number[], line: readonly Pt[], t: number): Pt {
+  let i = 0;
+  while (i + 2 < ts.length && t > (ts[i + 1] as number)) i++;
+  const t0 = ts[i] as number;
+  const t1 = ts[i + 1] as number;
+  const k = t1 > t0 ? Math.max(0, Math.min(1, (t - t0) / (t1 - t0))) : 0;
+  const a = line[i] as Pt;
+  const b = line[i + 1] as Pt;
+  return [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k];
+}
+
+/**
+ * The canopy of one platform as R-kx-shed-interior-f shows it: a near-flat roof of dark sheet with glazed strips across it (`glass`, `sheet`),
+ * on black steel (`steel`): Warren lattice girders along both edges, X-braced lattice trusses across at each column and at the ends, a
+ * longitudinal beam over the columns, H-section columns on base plates with knee braces, and glazing bars in the strips.
+ */
+function canopyMeshes(c: CanopyPlan): { glass: Batch; sheet: Batch; steel: Batch; lattice: Batch } {
+  const glass = newBatch();
+  const sheet = newBatch();
+  const steel = newBatch();
+  // the thin members (lattice webs, glazing bars, knee braces) go in their own draw, which casts no sun shadow: the pass's triangle budget
+  // (lighting.ts SHADOW_CASTERS, tests/lighting.test.ts) has room for the chords and columns, not for 10,000 triangles of web under a roof
+  const lattice = newBatch();
+  const S = CANOPY_STEEL;
+  const y = c.roofY;
+  const yb = c.columnTopY;
+  const at = (line: readonly Pt[], t: number): Pt => lineAt(c.ts, line, t);
+  const tFirst = c.ts[0] as number;
+  const tLast = c.ts[c.ts.length - 1] as number;
+  // the roof: cut at every sample and every strip edge, each piece glass or sheet
+  const cuts = [...c.ts, ...c.glazing.flat()].sort((p, q) => p - q).filter((t, i, all) => i === 0 || t - (all[i - 1] as number) > 1e-6);
+  for (let i = 0; i + 1 < cuts.length; i++) {
+    const t0 = cuts[i] as number;
+    const t1 = cuts[i + 1] as number;
+    const mid = (t0 + t1) / 2;
+    const into = c.glazing.some(([lo, hi]) => mid > lo && mid < hi) ? glass : sheet;
+    const l0 = at(c.left, t0), l1 = at(c.left, t1), r0 = at(c.right, t0), r1 = at(c.right, t1);
+    into.poly([[l0[0], y - 0.05, l0[1]], [l1[0], y - 0.05, l1[1]], [r1[0], y - 0.05, r1[1]], [r0[0], y - 0.05, r0[1]]], undefined, { normal: [0, 1, 0] });
+  }
+  // glazing bars: along the platform, every 0.8 m across each strip, just under the glass
+  for (const [lo, hi] of c.glazing) {
+    const l0 = at(c.left, lo), l1 = at(c.left, hi), r0 = at(c.right, lo), r1 = at(c.right, hi);
+    const n = Math.max(2, Math.round(Math.hypot(r0[0] - l0[0], r0[1] - l0[1]) / 0.8));
+    for (let k = 1; k < n; k++) {
+      const a: Pt = [l0[0] + ((r0[0] - l0[0]) * k) / n, l0[1] + ((r0[1] - l0[1]) * k) / n];
+      const b: Pt = [l1[0] + ((r1[0] - l1[0]) * k) / n, l1[1] + ((r1[1] - l1[1]) * k) / n];
+      addBeam(lattice, [a[0], y - 0.1, a[1]], [b[0], y - 0.1, b[1]], 0.05, 0.08, S);
+    }
+  }
+  // the edge girders: top chord (its top is the roof's edge, with the gutter), bottom chord and Warren diagonals about every 1.5 m
   const bw = FIGURES.beamWidth;
   const bd = FIGURES.beamDepth;
+  const yTop = y - bd;
+  const yBot = yb + 0.15;
   for (const side of [c.left, c.right]) {
     for (let i = 0; i + 1 < side.length; i++) {
       const a = side[i] as Pt;
       const b = side[i + 1] as Pt;
-      addBeam(steel, [a[0], y - bd / 2, a[1]], [b[0], y - bd / 2, b[1]], bw, bd, WHITE);
+      addBeam(steel, [a[0], y - bd / 2, a[1]], [b[0], y - bd / 2, b[1]], bw, bd, S);
+      addBeam(steel, [a[0], yb + 0.075, a[1]], [b[0], yb + 0.075, b[1]], 0.15, 0.15, S);
+    }
+    const n = Math.max(2, Math.round((tLast - tFirst) / 1.5));
+    for (let k = 0; k < n; k++) {
+      const p = at(side, tFirst + ((tLast - tFirst) * k) / n);
+      const q = at(side, tFirst + ((tLast - tFirst) * (k + 1)) / n);
+      const [ya, yq] = k % 2 === 0 ? [yTop, yBot] : [yBot, yTop];
+      addBeam(lattice, [p[0], ya, p[1]], [q[0], yq, q[1]], 0.08, 0.08, S);
     }
   }
-  for (const [a, b] of c.crossBeams) addBeam(steel, [a[0], y - FIGURES.crossDepth / 2, a[1]], [b[0], y - FIGURES.crossDepth / 2, b[1]], bw, FIGURES.crossDepth, WHITE);
-  const half = FIGURES.columnSize / 2;
-  for (const col of c.columns) steel.aabb(col.x - half, PLATFORM_HEIGHT, col.z - half, col.x + half, y - FIGURES.crossDepth, col.z + half, WHITE, true);
-  return { glass, steel };
+  // the trusses across: top and bottom chords, X-braced panels about 2 m wide, posts at both ends
+  for (const [a, b] of c.crossBeams) {
+    addBeam(steel, [a[0], y - FIGURES.crossDepth / 2, a[1]], [b[0], y - FIGURES.crossDepth / 2, b[1]], bw, FIGURES.crossDepth, S);
+    addBeam(steel, [a[0], yb + 0.075, a[1]], [b[0], yb + 0.075, b[1]], 0.15, 0.15, S);
+    const n = Math.max(1, Math.round(Math.hypot(b[0] - a[0], b[1] - a[1]) / 2));
+    const pt = (k: number): Pt => [a[0] + ((b[0] - a[0]) * k) / n, a[1] + ((b[1] - a[1]) * k) / n];
+    for (let k = 0; k < n; k++) {
+      const p = pt(k), q = pt(k + 1);
+      addBeam(lattice, [p[0], yTop, p[1]], [q[0], yBot, q[1]], 0.07, 0.07, S);
+      addBeam(lattice, [p[0], yBot, p[1]], [q[0], yTop, q[1]], 0.07, 0.07, S);
+    }
+    for (const e of [a, b]) addBeam(lattice, [e[0], yBot, e[1]], [e[0] + 1e-4, yTop, e[1]], 0.08, 0.08, S);
+  }
+  // the longitudinal beam over the columns, under the trusses, from end truss to end truss
+  const centre = c.left.map((l, i): Pt => [(l[0] + (c.right[i] as Pt)[0]) / 2, (l[1] + (c.right[i] as Pt)[1]) / 2]);
+  for (let i = 0; i + 1 < centre.length; i++) {
+    const a = centre[i] as Pt;
+    const b = centre[i + 1] as Pt;
+    addBeam(steel, [a[0], yb - 0.2, a[1]], [b[0], yb - 0.2, b[1]], 0.16, 0.4, S);
+  }
+  // the columns: H-section (two flanges across the platform's axis and a web), a base plate, a cap, knee braces four ways
+  c.columns.forEach((col, k) => {
+    const [l, r] = c.crossBeams[k + 2] as [Pt, Pt];
+    const len = Math.hypot(r[0] - l[0], r[1] - l[1]) || 1;
+    const acr: Pt = [(r[0] - l[0]) / len, (r[1] - l[1]) / len];
+    const ax: Pt = [acr[1], -acr[0]];
+    uprightBox(steel, col.x, col.z, ax, 0.25, 0.25, PLATFORM_HEIGHT, PLATFORM_HEIGHT + 0.04, S);
+    for (const s of [-1, 1]) uprightBox(steel, col.x + ax[0] * 0.1 * s, col.z + ax[1] * 0.1 * s, ax, 0.0125, 0.11, PLATFORM_HEIGHT + 0.04, yb - 0.4, S);
+    uprightBox(steel, col.x, col.z, ax, 0.09, 0.01, PLATFORM_HEIGHT + 0.04, yb - 0.4, S);
+    for (const d of [ax, acr]) {
+      for (const s of [-1, 1]) {
+        const reach = d === ax ? 1.0 : Math.min(1.0, len / 2 - 0.3);
+        addBeam(lattice, [col.x, yb - 1.4, col.z], [col.x + d[0] * reach * s, d === ax ? yb - 0.4 : yb + 0.02, col.z + d[1] * reach * s], 0.07, 0.07, S);
+      }
+    }
+  });
+  return { glass, sheet, steel, lattice };
 }
 
 /** Counts, for logging and the dev page. */
@@ -1306,7 +1448,8 @@ export function describePlan(plan: FurniturePlan): Record<string, number> {
 /**
  * The furniture: lamp standards, benches, help points, departure totems and the canopies of platforms
  * 9 and 10, placed by furniturePlan. Every kind is one InstancedMesh (or one merged mesh), so it is a
- * handful of draw calls: lamps, benches, help-points, totems (two groups: the body and the unlit screens), canopy-glass, canopy-steel.
+ * handful of draw calls: lamps, benches, help-points, totems (two groups: the body and the unlit screens), canopy-glass (two groups: the glazed
+ * strips and the sheet), canopy-steel, canopy-lattice.
  */
 export function buildFurniture(data: FurnitureData, layout: FurnitureLayout): THREE.Group {
   const group = new THREE.Group();
@@ -1334,19 +1477,28 @@ export function buildFurniture(data: FurnitureData, layout: FurnitureLayout): TH
 
   if (plan.canopies.length > 0) {
     const glass = newBatch();
+    const sheet = newBatch();
     const steel = newBatch();
+    const lattice = newBatch();
     for (const c of plan.canopies) {
       const m = canopyMeshes(c);
       glass.append(m.glass);
+      sheet.append(m.sheet);
       steel.append(m.steel);
+      lattice.append(m.lattice);
     }
-    const roof = new THREE.Mesh(glass.build(), canopyGlass());
+    // one draw per material: the roof is the glazed strips (group 0) and the sheet between them (group 1), one mesh so the weather's cover reads it whole
+    const roofGeometry = mergeGeometries([glass.build(), sheet.build()], true);
+    const roof = new THREE.Mesh(roofGeometry, [canopyGlass(), canopySheet()]);
     roof.name = 'canopy-glass';
     roof.renderOrder = 2;
     add(roof);
-    const frame = new THREE.Mesh(steel.build(), material('whiteSteel'));
+    const frame = new THREE.Mesh(steel.build(), canopySteel());
     frame.name = 'canopy-steel';
     add(frame);
+    const web = new THREE.Mesh(lattice.build(), canopySteel());
+    web.name = 'canopy-lattice';
+    add(web);
   }
   return group;
 }

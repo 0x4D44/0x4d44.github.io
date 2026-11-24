@@ -1,6 +1,7 @@
 """Mutation check for the shed's departure totems (web/src/furniture.ts, B5 of the shed-interior rubric): they stand on the platforms, before a pier
 when an arcaded wall is near, out of the gateline passages, clear of the benches, two or three a platform (one shared on an island of 2/3 or 6/7),
-their headers numbered, their screens unlit (glowing at night); and the pole clocks, one a platform or island beside a totem.
+their headers numbered, their screens unlit (glowing at night); and the pole clocks, one a platform or island beside a totem; and the platform 9-10
+canopies (B6): measured bay, height, glazed strips in a sheet roof, near-black lattice steel, H columns on base plates clear of the furniture.
 
 usage: python3 -I -u tools/mutation/furniture.py <kings-cross-src> <scratch dir>
 The tests run in a copy with the real node_modules linked in; the unmodified copy must pass first and a
@@ -28,6 +29,16 @@ M = [
     ('islands not shared: a totem on each half again', F, [("export const TOTEM_ISLANDS: readonly (readonly [string, string])[] = [['2', '3'], ['6', '7']];", 'export const TOTEM_ISLANDS: readonly (readonly [string, string])[] = [];')]),
     ('blank headers again', F, [("if (ch !== ' ' && Number.isInteger(d)) {", 'if (false) {')]),
     ('the back face reads its number backwards', F, [('faces.poly([[-xa, dy0, -de], [-xb, dy0, -de], [-xb, dy1, -de], [-xa, dy1, -de]]', 'faces.poly([[xb, dy0, -de], [xa, dy0, -de], [xa, dy1, -de], [xb, dy1, -de]]')]),
+    # B6, the platform 9-10 canopies as R-kx-shed-interior-f measures them
+    ('canopy columns 12 m apart again', F, [('  canopyColumnSpacing: 15,', '  canopyColumnSpacing: 12,')]),
+    ('canopy roof back at 5.2 m', F, [('  canopyHeight: 6.4,', '  canopyHeight: 5.2,')]),
+    ('canopy roof all sheet, no glazed strips', F, [('    if (hi - lo > 0.2) glazing.push([lo, hi]);', '')]),
+    ('canopy roof all glass again', F, [('const roof = new THREE.Mesh(roofGeometry, [canopyGlass(), canopySheet()]);', 'const roof = new THREE.Mesh(roofGeometry, [canopyGlass(), canopyGlass()]);')]),
+    ('canopy steel painted white again', F, [('export const CANOPY_STEEL: Rgb = [0.149, 0.161, 0.173];', 'export const CANOPY_STEEL: Rgb = [1, 1, 1];')]),
+    ('canopy edge girders without their lattice', F, [('      addBeam(lattice, [p[0], ya, p[1]], [q[0], yq, q[1]], 0.08, 0.08, S);\n', '')]),
+    ('canopy columns without base plates', F, [('    uprightBox(steel, col.x, col.z, ax, 0.25, 0.25, PLATFORM_HEIGHT, PLATFORM_HEIGHT + 0.04, S);\n', '')]),
+    ('canopy columns plain posts, no flanges', F, [('    for (const s of [-1, 1]) uprightBox(steel, col.x + ax[0] * 0.1 * s,', '    for (const s of [] as number[]) uprightBox(steel, col.x + ax[0] * 0.1 * s,')]),
+    ('canopy columns as small as their post in the overlap check', F, [('r: Math.SQRT2 * 0.25, across: FIGURES.columnSize / 2 });', 'r: FIGURES.columnSize, across: FIGURES.columnSize / 2 });')]),
 ]
 TESTS = ['web/tests/furniture.test.ts']
 tally = kxmut.Tally()
