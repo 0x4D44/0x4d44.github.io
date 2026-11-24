@@ -1,7 +1,7 @@
 // Platforms and what stands on them, for the King's Cross model: the platform surfaces with their
 // edge strips (coping, yellow tactile strip, white line), the instanced furniture (lamp standards,
-// benches, help points, departure screens hung from the shed roof) and the canopies of platforms
-// 9 and 10. Procedural: no image assets, and the only texture drawn here is the screens' face.
+// benches, help points, departure totems standing on the shed's platforms) and the canopies of platforms
+// 9 and 10. Procedural: no image assets, and the only texture drawn here is the totems' screen face.
 //
 // What it replaces in web/src/main.ts: the `platforms` merged mesh and the yellow `outlineSegments`
 // lines are `buildPlatforms(data, layout)`; `buildFurniture(data, layout)` is new. Together about ten
@@ -33,9 +33,8 @@
 // NUMBERS. Every figure is in FIGURES with its source. The platform heights, the edge strip's width and
 // the asphalt scale come from the repo (scene.ts, world.ts, materials.ts). Everything else is
 // ASSUMED: the 1.6 m safety line, the furniture sizes and spacings and the canopy dimensions were
-// given by the brief as working figures and no external source was read for them. The screens' rods
-// end at the shed's circular intrados (shedRoofY, from layout.springing and SHED_SPAN_WIDTH, the same
-// arcs web/src/shed.ts draws): if the shed's roof changes shape, so must that function.
+// given by the brief as working figures and no external source was read for them, except the totems,
+// measured from a photograph (see FIGURES).
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { railShapes, shapeFrom } from '../../core/curves.ts';
@@ -43,7 +42,7 @@ import type { Pt } from '../../core/geo.ts';
 import type { KxData } from '../../core/osm.ts';
 import { PLATFORM_HEIGHT } from '../../core/scene.ts';
 import { isSurfacePlatform, longAxis, platformDrawingOutline, PLATFORM_9_OUTLINE_BASIS, PLATFORM_REFS, pointInPolygon, SHED_PLATFORM_REFS, SHED_SPAN_WIDTH, shedToWorld, stationPlatforms, worldToShed } from '../../core/station.ts';
-import { eastArcadeU, ribPositions, SPINE_WALL } from './shed.ts';
+import { eastArcadeU, ribPositions, SPINE_WALL, westernPassages } from './shed.ts';
 import type { ShedLayout } from '../../core/station.ts';
 import { Batch, material, rgb, rng, TEXTURES } from './materials.ts';
 import type { Rgb, V3 } from './materials.ts';
@@ -114,25 +113,28 @@ export const FIGURES = {
   helpHeight: 1.8,
   helpSpacing: 80,
 
-  // --- departure screens, hung from the shed roof (platforms 0-8)
-  /** A double-sided 1.2 x 0.7 m panel (ASSUMED: the brief) whose lower edge is 3.5 m above the platform (ASSUMED: the brief). */
-  screenWidth: 1.2,
-  screenHeight: 0.7,
-  screenDepth: 0.08,
-  screenBottom: 3.5,
-  /** Distance between the two rods, metres. ASSUMED. */
-  rodGap: 0.9,
-  /** Rod radius, metres. ASSUMED. */
-  rodRadius: 0.02,
-  /** The rods stop this far under the roof surface, metres. ASSUMED. */
-  rodBelowRoof: 0.15,
-  /** Spacing along the middle of each shed platform, metres. ASSUMED. */
-  screenSpacing: 30,
-  /** Screens stay this far from the shed's south front and north mouth, metres. ASSUMED. */
-  screenSouth: 12,
-  screenNorth: 6,
-  /** On platforms 4 and 5 a screen is bracketed off the spine wall's face, its edge this far from the face, metres. ASSUMED. */
-  screenBracketGap: 0.05,
+  // --- departure totems: free-standing posts on the shed's platforms (0-8), a screen on each face
+  // R-kx-shed-interior-a (shed-a-north-from-footbridge-2019, 1600 px, measured in memory): no screen hangs from the roof; each platform's
+  // information stands on a slab totem near the footbridge, its faces along the platform (seen face-on looking north), a navy header with
+  // white lettering over a black screen of amber rows. MEASURED (rough, +-25%: the scale is a bicycle wheel beside it, about 83 px/m): the
+  // totem 90-97 px wide (about 1.0-1.15 m), its navy header 0.6-0.8 of the width deep, the screen under it at least 1.15 widths tall and about
+  // 0.85 of the width across. The base is out of frame: the 2.5 m height and the 0.25 m depth are ASSUMED.
+  /** Slab 1.0 m wide (across the platform), 0.25 m deep (along it), 2.5 m tall. */
+  totemWidth: 1.0,
+  totemDepth: 0.25,
+  totemHeight: 2.5,
+  /** The navy header at the top, metres deep. MEASURED rough (0.6-0.8 of the width). */
+  totemHeader: 0.65,
+  /** The screen on each face: 0.85 x 1.1 m, its top 0.05 m under the header. MEASURED rough. */
+  screenWidth: 0.85,
+  screenHeight: 1.1,
+  /** Two totems a platform, 100 m apart along the shed from 20 m inside its south front. ASSUMED: shed-a shows one per platform near the
+   *  footbridge and none north of it in the ~100 m of platform in view; the second covers the south half the photograph does not show. */
+  totemSpacing: 100,
+  totemSouth: 20,
+  totemNorth: 6,
+  /** Within this of an arcaded wall's line (the west wall, the spine, the east arcade) a totem stands in front of a pier, not an opening, metres. ASSUMED. */
+  totemWallReach: 6,
 
   // --- canopies (platforms 9 and 10)
   /** Roof height above the platform top, metres. ASSUMED (the brief). */
@@ -151,7 +153,7 @@ export const FIGURES = {
   columnSize: 0.18,
 } as const;
 
-const STAGGER = { lamp: 5.9, bench: 13.1, help: 29.3, screen: 9.7 } as const;
+const STAGGER = { lamp: 5.9, bench: 13.1, help: 29.3 } as const;
 const CANOPY_REFS: ReadonlySet<string> = new Set(['9', '10']);
 const SHED_REFS: ReadonlySet<string> = new Set(SHED_PLATFORM_REFS);
 
@@ -687,26 +689,6 @@ function spineAt(f: Frame, t: number, sec: { lo: number; hi: number }, keep: num
   return best;
 }
 
-/**
- * A departure screen's across-coordinate at t. Away from the spine wall it hangs in the middle of the band the safety line leaves. Where the
- * floor inset from the spine wall would push it (platforms 4 and 5), it is bracketed off the wall face instead: its wall-side edge
- * FIGURES.screenBracketGap from the face, on the platform's side. It must still keep the safety line, so it stays inside the plain band.
- */
-export function screenAt(f: Frame, t: number): { s: number; wall: boolean } | null {
-  const half = FIGURES.screenWidth / 2;
-  const sec = crossSection(f.pts, f.axis, t);
-  const b = bandAt(f, t, half, false);
-  if (!sec || !b) return null;
-  const w = spineAt(f, t, sec, SPINE_WALL.thick / 2 + SPINE_WALL.clear + half);
-  if (!w) return { s: b.mid, wall: false };
-  const side = w.s <= (sec.lo + sec.hi) / 2 ? 1 : -1;
-  const clearOfFloor = side * (b.mid - w.s) >= w.cross;
-  if (clearOfFloor) return { s: b.mid, wall: false };
-  const l = w.cross / (SPINE_WALL.thick / 2 + SPINE_WALL.clear + half); // the squaring factor
-  const s = w.s + side * l * (SPINE_WALL.thick / 2 + FIGURES.screenBracketGap + half);
-  return s >= b.s0 - 1e-9 && s <= b.s1 + 1e-9 ? { s, wall: true } : null;
-}
-
 /** Along-platform positions at `spacing`, starting `south` metres in (plus a phase) and stopping `north` metres short of the far end. */
 function slots(f: Frame, spacing: number, phase: number, south: number, north: number): number[] {
   const out: number[] = [];
@@ -736,12 +718,6 @@ export interface Placement {
   across: number;
 }
 
-export interface ScreenPlacement extends Placement {
-  /** roof height above the screen, metres */
-  roofY: number;
-  /** bracketed off the spine wall's face (platforms 4 and 5) rather than hung clear of it */
-  wall: boolean;
-}
 
 export interface CanopyPlan {
   ref: string;
@@ -759,7 +735,8 @@ export interface FurniturePlan {
   lamps: Placement[];
   benches: Placement[];
   helpPoints: Placement[];
-  screens: ScreenPlacement[];
+  /** departure totems on the shed's platforms */
+  totems: Placement[];
   canopies: CanopyPlan[];
 }
 
@@ -843,14 +820,14 @@ function canopyFor(f: Frame): CanopyPlan | null {
  *  - lamp standards on 9 and 10 (midway between columns, every second bay) and on the open ends of
  *    0-8 north of the shed's mouth (the shed lights its own platforms),
  *  - help points, then pairs of benches, each shifted along by up to 12 m if it would touch something,
- *  - departure screens along the middle of platforms 0-8, inside the shed only.
+ *  - two departure totems on each of platforms 0-8, inside the shed only, each before a pier where an arcaded wall is near.
  * Pure: no three.js objects, so the tests can hold every rule to it.
  */
 export function furniturePlan(data: FurnitureData, layout: FurnitureLayout): FurniturePlan {
   // Reconstructing the platform end does not locate a longer canopy or new furniture.
   const outlines = surfacePlatforms({ platforms: data.platforms }).map((p) => p.pts);
   const tracks = trackSegments(data);
-  const plan: FurniturePlan = { lamps: [], benches: [], helpPoints: [], screens: [], canopies: [] };
+  const plan: FurniturePlan = { lamps: [], benches: [], helpPoints: [], totems: [], canopies: [] };
   const kx = stationPlatforms(data);
   const underShed = (p: Pt): boolean => {
     const { u, v } = worldToShed(layout, p);
@@ -929,28 +906,37 @@ export function furniturePlan(data: FurnitureData, layout: FurnitureLayout): Fur
       }
     });
 
-    // 5. departure screens, hung from the shed roof along the middle of the platform
+    // 5. departure totems, standing in the middle of the platform's band inside the shed: one at each FIGURES.totemSpacing mark, moved to the
+    // nearest rib's v that works, so a totem near an arcaded wall stands before a pier (every wall's piers are under the ribs), out of the
+    // Western Concourse's gateline passages, and clear of everything already placed
     if (SHED_REFS.has(ref)) {
-      // the corbels under the ribs on the walls' faces (web/src/shed.ts SPINE_WALL.corbel) hang lower than a screen's top, so where screens
-      // are bracketed off a wall the platform's row of screens is shifted along (the smallest shift, in 0.1 m steps) until each clears them
-      const ribs = ribPositions(layout.length), clear = FIGURES.screenWidth / 2 + SPINE_WALL.corbel.wide / 2 + 0.05;
-      const offCorbels = (t: number): boolean => {
-        const at = screenAt(f, t);
-        if (!at?.wall) return true;
-        const v = worldToShed(layout, worldPoint(f, t, at.s)).v;
-        return ribs.every((r) => Math.abs(r - v) >= clear);
+      const ribs = ribPositions(layout.length);
+      const across = FIGURES.totemWidth / 2;
+      const r = Math.hypot(across, FIGURES.totemDepth / 2) + 0.05;
+      // the t whose band middle stands at shed v (the platforms run within a degree of the shed's axis, so a few steps converge)
+      const tAtV = (v: number): number => {
+        let t = (f.tLo + f.tHi) / 2;
+        for (let k = 0; k < 6; k++) t += v - worldToShed(layout, worldPoint(f, t, bandAt(f, t, FIGURES.totemWidth / 2)?.mid ?? 0)).v;
+        return t;
       };
-      let phase = index * STAGGER.screen;
-      for (let k = 0; k < 61; k++) {
-        if (slots(f, FIGURES.screenSpacing, phase + k * 0.1, FIGURES.endSouth, FIGURES.endNorth).every(offCorbels)) { phase += k * 0.1; break; }
-      }
-      for (const t of slots(f, FIGURES.screenSpacing, phase, FIGURES.endSouth, FIGURES.endNorth)) {
-        const at = screenAt(f, t);
-        if (!at) continue;
-        const [x, z] = worldPoint(f, t, at.s);
-        const { u, v } = worldToShed(layout, [x, z]);
-        if (v < FIGURES.screenSouth || v > layout.length - FIGURES.screenNorth || u < 0.5 || u > layout.width - 0.5) continue;
-        plan.screens.push({ ref, x, z, rotY: axisFacing, r: FIGURES.screenWidth / 2 + 0.05, across: FIGURES.screenWidth / 2, roofY: shedRoofY(layout, u), wall: at.wall });
+      for (let target = FIGURES.totemSouth; target <= layout.length - FIGURES.totemNorth; target += FIGURES.totemSpacing) {
+        const order = ribs.filter((v) => v >= FIGURES.totemSouth - 3.1 && v <= layout.length - FIGURES.totemNorth).sort((a, b) => Math.abs(a - target) - Math.abs(b - target));
+        for (const rib of order.slice(0, 8)) {
+          const t = tAtV(rib);
+          if (t < f.tLo + FIGURES.endSouth || t > f.tHi - FIGURES.endNorth) continue;
+          const b = bandAt(f, t, across);
+          if (!b) continue;
+          const [x, z] = worldPoint(f, t, b.mid);
+          const { u, v } = worldToShed(layout, [x, z]);
+          if (Math.abs(v - rib) > 0.05) continue;
+          if (u < FIGURES.totemWallReach && westernPassages().some(([lo, hi]) => rib + FIGURES.totemDepth / 2 > lo && rib - FIGURES.totemDepth / 2 < hi)) continue;
+          const p: Placement = { ref, x, z, rotY: axisFacing, r, across };
+          if (free(placed, p) && behindSafetyLine(f, p)) {
+            plan.totems.push(p);
+            placed.push(p);
+            break;
+          }
+        }
       }
     }
   }
@@ -1005,23 +991,27 @@ function helpPointGeometry(): THREE.BufferGeometry {
   return b.build();
 }
 
-/** The screen's four edges, a frame with open faces, as group 0, and the two faces as group 1. */
-function screenGeometry(): THREE.BufferGeometry {
-  const hw = FIGURES.screenWidth / 2;
-  const hh = FIGURES.screenHeight / 2;
-  const hd = FIGURES.screenDepth / 2;
-  const frame = newBatch();
-  const dark = rgb(0x0d1014);
-  frame.poly([[-hw, hh, -hd], [hw, hh, -hd], [hw, hh, hd], [-hw, hh, hd]], undefined, { normal: [0, 1, 0], color: dark });
-  frame.poly([[-hw, -hh, -hd], [hw, -hh, -hd], [hw, -hh, hd], [-hw, -hh, hd]], undefined, { normal: [0, -1, 0], color: dark });
-  frame.poly([[-hw, -hh, -hd], [-hw, hh, -hd], [-hw, hh, hd], [-hw, -hh, hd]], undefined, { normal: [-1, 0, 0], color: dark });
-  frame.poly([[hw, -hh, -hd], [hw, hh, -hd], [hw, hh, hd], [hw, -hh, hd]], undefined, { normal: [1, 0, 0], color: dark });
+const TOTEM_BODY = rgb(0x1a1d22);
+/** Sampled in memory from shed-a's totem headers (the navy of the National Rail platform signs): about (31, 42, 92). */
+const TOTEM_NAVY = rgb(0x1f2a5c);
+const TOTEM_WHITE = rgb(0xe8ecf2);
+
+/**
+ * A totem standing on the platform at y = 0: a dark slab, a navy header band with a white strip for its lettering on both faces, as group 0;
+ * the screen on each face (local +z and -z, the platform's two directions) as group 1.
+ */
+function totemGeometry(): THREE.BufferGeometry {
+  const hw = FIGURES.totemWidth / 2, hd = FIGURES.totemDepth / 2, top = FIGURES.totemHeight, head = top - FIGURES.totemHeader;
+  const body = newBatch();
+  body.aabb(-hw, 0, -hd, hw, head, hd, TOTEM_BODY);
+  body.aabb(-hw, head, -hd, hw, top, hd, TOTEM_NAVY);
+  for (const [z0, z1] of [[-hd - 0.004, -hd], [hd, hd + 0.004]] as const) body.aabb(-hw * 0.7, head + FIGURES.totemHeader * 0.4, z0, hw * 0.7, head + FIGURES.totemHeader * 0.6, z1, TOTEM_WHITE, true);
   const faces = newBatch();
-  const e = 0.002;
+  const sw = FIGURES.screenWidth / 2, y1 = head - 0.05, y0 = y1 - FIGURES.screenHeight, e = hd + 0.003;
   // seen from +z the image reads left to right along +x; seen from -z, along -x: the same picture on both sides
-  faces.poly([[-hw, -hh, hd + e], [hw, -hh, hd + e], [hw, hh, hd + e], [-hw, hh, hd + e]], [[0, 0], [1, 0], [1, 1], [0, 1]], { normal: [0, 0, 1] });
-  faces.poly([[hw, -hh, -hd - e], [-hw, -hh, -hd - e], [-hw, hh, -hd - e], [hw, hh, -hd - e]], [[0, 0], [1, 0], [1, 1], [0, 1]], { normal: [0, 0, -1] });
-  const a = frame.build();
+  faces.poly([[-sw, y0, e], [sw, y0, e], [sw, y1, e], [-sw, y1, e]], [[0, 0], [1, 0], [1, 1], [0, 1]], { normal: [0, 0, 1] });
+  faces.poly([[sw, y0, -e], [-sw, y0, -e], [-sw, y1, -e], [sw, y1, -e]], [[0, 0], [1, 0], [1, 1], [0, 1]], { normal: [0, 0, -1] });
+  const a = body.build();
   const b = faces.build();
   const merged = mergeGeometries([a, b], true) as THREE.BufferGeometry;
   a.dispose();
@@ -1029,31 +1019,24 @@ function screenGeometry(): THREE.BufferGeometry {
   return merged;
 }
 
-/** A unit-long vertical rod from y = 0 to 1; each instance scales y to its own length. */
-function rodGeometry(): THREE.BufferGeometry {
-  const b = newBatch();
-  addPrism(b, 0, 0, FIGURES.rodRadius, 0, 1, 6, rgb(0x2a3036));
-  return b.build();
-}
-
 /** A drawing of rows of amber blocks on black: abstract on purpose, no readable times or destinations. Null where there is no document. */
 function screenTexture(): THREE.CanvasTexture | null {
   if (typeof document === 'undefined') return null;
   const c = document.createElement('canvas');
   c.width = 256;
-  c.height = 150;
+  c.height = 330;
   const g = c.getContext('2d');
   if (!g) return null;
   const r = rng(71);
   g.fillStyle = '#06080a';
-  g.fillRect(0, 0, 256, 150);
+  g.fillRect(0, 0, 256, 330);
   g.fillStyle = '#ffb02e';
   g.fillRect(10, 9, 118, 9); // the header bar
   g.fillRect(206, 9, 40, 9);
   g.fillStyle = 'rgba(255,176,46,0.35)';
   g.fillRect(10, 24, 236, 2);
-  for (let row = 0; row < 5; row++) {
-    const y = 34 + row * 23;
+  for (let row = 0; row < 12; row++) {
+    const y = 34 + row * 24;
     g.fillStyle = 'rgba(255,176,46,0.9)';
     for (let k = 0; k < 4; k++) g.fillRect(10 + k * 9 + (k > 1 ? 4 : 0), y, 6, 12); // a time, as four blocks
     let x = 62;
@@ -1144,16 +1127,16 @@ export function describePlan(plan: FurniturePlan): Record<string, number> {
     lamps: plan.lamps.length,
     benches: plan.benches.length,
     helpPoints: plan.helpPoints.length,
-    screens: plan.screens.length,
+    totems: plan.totems.length,
     canopies: plan.canopies.length,
     columns: plan.canopies.reduce((n, c) => n + c.columns.length, 0),
   };
 }
 
 /**
- * The furniture: lamp standards, benches, help points, roof-hung screens and the canopies of platforms
+ * The furniture: lamp standards, benches, help points, departure totems and the canopies of platforms
  * 9 and 10, placed by furniturePlan. Every kind is one InstancedMesh (or one merged mesh), so it is a
- * handful of draw calls: lamps, benches, help-points, screens (two groups) and screen-rods, canopy-glass, canopy-steel.
+ * handful of draw calls: lamps, benches, help-points, totems (two groups: the body and the unlit screens), canopy-glass, canopy-steel.
  */
 export function buildFurniture(data: FurnitureData, layout: FurnitureLayout): THREE.Group {
   const group = new THREE.Group();
@@ -1169,25 +1152,12 @@ export function buildFurniture(data: FurnitureData, layout: FurnitureLayout): TH
   add(instanced('benches', benchGeometry(), lit, plan.benches, PLATFORM_HEIGHT));
   add(instanced('help-points', helpPointGeometry(), lit, plan.helpPoints, PLATFORM_HEIGHT));
 
-  if (plan.screens.length > 0) {
+  if (plan.totems.length > 0) {
+    // the screens are MeshBasicMaterial: unlit, so they show at full brightness by day and glow at night
     const tex = screenTexture();
     const face = new THREE.MeshBasicMaterial(tex ? { map: tex } : { color: 0x5a3b08 });
     face.name = 'screenFace';
-    const panelY = PLATFORM_HEIGHT + FIGURES.screenBottom + FIGURES.screenHeight / 2;
-    add(instanced('screens', screenGeometry(), [lit, face], plan.screens, panelY));
-    const rods = new THREE.InstancedMesh(rodGeometry(), lit, plan.screens.length * 2);
-    rods.name = 'screen-rods';
-    const rodBase = PLATFORM_HEIGHT + FIGURES.screenBottom + FIGURES.screenHeight;
-    plan.screens.forEach((s, i) => {
-      const length = Math.max(0.05, s.roofY - FIGURES.rodBelowRoof - rodBase);
-      // the rods sit either side of the panel's middle, across the platform (local x)
-      const ax = Math.cos(s.rotY);
-      const az = -Math.sin(s.rotY);
-      for (const [k, side] of [-1, 1].entries()) setInstance(rods, i * 2 + k, s.x + ax * side * FIGURES.rodGap / 2, rodBase, s.z + az * side * FIGURES.rodGap / 2, 0, length);
-    });
-    rods.instanceMatrix.needsUpdate = true;
-    rods.computeBoundingSphere();
-    add(rods);
+    add(instanced('totems', totemGeometry(), [lit, face], plan.totems, PLATFORM_HEIGHT));
   }
 
   if (plan.canopies.length > 0) {

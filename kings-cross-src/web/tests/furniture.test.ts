@@ -28,7 +28,7 @@ import {
   trackSegments,
 } from '../src/furniture.ts';
 import type { Placement, TrackSegment } from '../src/furniture.ts';
-import { eastArcadeU, NORTH_PIER, ribLanding, ribPositions, SPINE_WALL } from '../src/shed.ts';
+import { EAST_ARCADE, eastArcadeU, NORTH_PIER, spineOpenings, SPINE_WALL, westernPassages } from '../src/shed.ts';
 // Re-pinned 2026-11-24 (shed realignment, signed off): the vault centres are the spine -/+ R (aisle + R and aisle + 3R before, the same points while the aisles were even), the valley is the spine, and there is no west aisle, so a probe of 'the aisle' stands in the east aisle.
 
 const near = (a: number, b: number, tol: number, msg: string): void => assert.ok(Math.abs(a - b) <= tol, `${msg}: ${a} vs ${b} (tolerance ${tol})`);
@@ -97,7 +97,7 @@ const edgesOf = (pts: Pt[]) =>
     tracks,
   );
 const refs = [...kx.keys()];
-const placements = (): Placement[] => [...plan.lamps, ...plan.benches, ...plan.helpPoints, ...plan.screens, ...plan.canopies.flatMap((c) => c.columns)];
+const placements = (): Placement[] => [...plan.lamps, ...plan.benches, ...plan.helpPoints, ...plan.totems, ...plan.canopies.flatMap((c) => c.columns)];
 const outline = (ref: string): Pt[] => (kx.get(ref) as { pts: Pt[] }).pts;
 
 // ---------------------------------------------------------------------------------------------
@@ -465,20 +465,98 @@ test('furniture: help points are one slot every 80 m along each platform, betwee
   }
 });
 
-test('furniture: screens hang only under the shed over platforms 0-8, 30 m apart, each with the roof height above it', () => {
+// Round 7 scorer (B5, shed-a-north-from-footbridge-2019): no screen hangs under the roof; platform information stands on post-mounted totems.
+// Replaces the hanging screens' '30 m apart, roof height above each' test: the totems' measured count and spacing instead.
+test('furniture: departure totems stand only on platforms 0-8 under the shed, two or three a platform, 55-115 m apart', () => {
   const shed = new Set<string>(SHED_PLATFORM_REFS);
-  for (const s of plan.screens) assert.ok(shed.has(s.ref), `a screen on platform ${s.ref}`);
+  for (const s of plan.totems) assert.ok(shed.has(s.ref), `a totem on platform ${s.ref}`);
   for (const ref of SHED_PLATFORM_REFS) {
-    const list = plan.screens.filter((s) => s.ref === ref);
-    assert.ok(list.length >= 5, `platform ${ref} has ${list.length} screens`);
-    for (const g of gaps(alongOf(ref, list))) near(g, FIGURES.screenSpacing, 1e-6, `screen spacing on platform ${ref}`);
+    const list = plan.totems.filter((s) => s.ref === ref);
+    assert.ok(list.length >= 2 && list.length <= 3, `platform ${ref} has ${list.length} totems`);
+    for (const g of gaps(alongOf(ref, list))) assert.ok(g >= 55 && g <= 115, `totems ${g.toFixed(1)} m apart on platform ${ref}`);
   }
-  for (const s of plan.screens) {
+  for (const s of plan.totems) {
     const { u, v } = worldToShed(layout, [s.x, s.z]);
-    assert.ok(v >= FIGURES.screenSouth && v <= layout.length - FIGURES.screenNorth && u > 0 && u < layout.width, `a screen at (${u.toFixed(1)}, ${v.toFixed(1)}) is not under the shed`);
-    near(s.roofY, shedRoofY(layout, u), 1e-9, 'the roof height over the screen');
-    assert.ok(s.roofY - (PLATFORM_HEIGHT + FIGURES.screenBottom + FIGURES.screenHeight) >= 0.1, 'the rods have some length');
+    assert.ok(v >= FIGURES.totemSouth - 3.1 && v <= layout.length - FIGURES.totemNorth && u > 0 && u < layout.width, `a totem at (${u.toFixed(1)}, ${v.toFixed(1)}) is not under the shed`);
   }
+});
+
+test('furniture: every totem stands behind the safety line, clear of every bench, and its whole footprint is on its platform', () => {
+  const hw = FIGURES.totemWidth / 2, hd = FIGURES.totemDepth / 2;
+  for (const s of plan.totems) {
+    const pts = outline(s.ref);
+    const d = distanceToEdges([s.x, s.z], classifyEdges(pts, outlines.filter((o) => o !== pts), layout, tracks));
+    assert.ok(d >= FIGURES.safetyLine + hw, `a totem on platform ${s.ref} is ${d.toFixed(2)} m from a track edge`);
+    const c = Math.cos(s.rotY), n = Math.sin(s.rotY);
+    for (const i of [-1, 1]) for (const k of [-1, 1]) assert.ok(pointInPolygon([s.x + c * i * hw + n * k * hd, s.z - n * i * hw + c * k * hd], pts), `a corner of a totem on platform ${s.ref} is off it`);
+    for (const b of plan.benches) {
+      const gap = Math.hypot(b.x - s.x, b.z - s.z) - b.r - s.r;
+      assert.ok(gap >= FIGURES.gap - 1e-9, `a totem on platform ${s.ref} is ${gap.toFixed(2)} m from a bench`);
+    }
+  }
+});
+
+test('furniture: a totem near an arcaded wall stands before a pier, not an opening, and none stands in a gateline passage', () => {
+  const ribs = spineOpenings(layout.length); // bay middles
+  const hd = FIGURES.totemDepth / 2;
+  const blocked = (u: number): [number, number][] => {
+    const out: [number, number][] = [];
+    if (Math.abs(u - layout.spine) < FIGURES.totemWallReach) for (const m of ribs) for (const c of [m - SPINE_WALL.pitch / 2, m + SPINE_WALL.pitch / 2]) out.push([c - SPINE_WALL.opening / 2, c + SPINE_WALL.opening / 2]);
+    if (Math.abs(u - eastArcadeU(layout)) < FIGURES.totemWallReach || u < FIGURES.totemWallReach) for (const m of ribs) out.push([m - EAST_ARCADE.opening / 2, m + EAST_ARCADE.opening / 2]);
+    if (u < FIGURES.totemWallReach) out.push(...westernPassages());
+    return out;
+  };
+  let nearWall = 0;
+  for (const s of plan.totems) {
+    const { u, v } = worldToShed(layout, [s.x, s.z]);
+    const spans = blocked(u);
+    if (spans.length) nearWall++;
+    for (const [lo, hi] of spans) assert.ok(v + hd <= lo || v - hd >= hi, `a totem on platform ${s.ref} at v ${v.toFixed(2)} stands before an opening ${lo.toFixed(2)}-${hi.toFixed(2)}`);
+  }
+  assert.ok(nearWall >= 6, `${nearWall} totems near an arcaded wall`);
+});
+
+test('buildFurniture: no screen in the shed hangs: every one is carried by a totem standing on a platform top, and nothing reaches above it', () => {
+  assert.ok(!furniture.getObjectByName('screen-rods'), 'no rods hang from the roof');
+  assert.ok(!furniture.getObjectByName('screens'), 'no hung screens');
+  const totems = part(furniture, 'totems') as unknown as THREE.InstancedMesh;
+  assert.equal(totems.count, plan.totems.length);
+  totems.geometry.computeBoundingBox();
+  const box = totems.geometry.boundingBox as THREE.Box3;
+  near(box.min.y, 0, 1e-9, 'the totem starts at its foot');
+  near(box.max.y, FIGURES.totemHeight, 1e-9, 'and is the totem\'s height');
+  const m = new THREE.Matrix4();
+  plan.totems.forEach((s, i) => {
+    totems.getMatrixAt(i, m);
+    near(m.elements[13]!, PLATFORM_HEIGHT, 1e-5, `the foot of totem ${i} is on the platform top`);
+    assert.ok(pointInPolygon([m.elements[12]!, m.elements[14]!], outline(s.ref)), `totem ${i} stands on platform ${s.ref}`);
+  });
+  // the screens (group 1) lie within the slab's face, under its header
+  const group = totems.geometry.groups[1]!;
+  const pos = totems.geometry.getAttribute('position');
+  const idx = totems.geometry.index!;
+  for (let k = group.start; k < group.start + group.count; k++) {
+    const i = idx.getX(k);
+    assert.ok(pos.getY(i) > 0.3 && pos.getY(i) <= FIGURES.totemHeight - FIGURES.totemHeader + 1e-9, 'a screen corner within the slab, under the header');
+    assert.ok(Math.abs(pos.getX(i)) <= FIGURES.totemWidth / 2, 'within the slab\'s width');
+  }
+  const inShed = new THREE.Box3().setFromObject(furniture);
+  assert.ok(inShed.max.y <= PLATFORM_HEIGHT + Math.max(FIGURES.totemHeight, FIGURES.lampHeight, FIGURES.canopyHeight) + 1e-6, 'nothing hangs above the furniture standing on the platforms');
+});
+
+test('night: the totems\' screens glow: an unlit face on both sides of every totem', () => {
+  const totems = part(furniture, 'totems') as unknown as THREE.InstancedMesh;
+  const mats = totems.material as THREE.Material[];
+  assert.ok(Array.isArray(mats) && mats.length === 2);
+  const face = mats[1] as THREE.MeshBasicMaterial;
+  assert.ok(face instanceof THREE.MeshBasicMaterial, 'the face takes no light: it is as bright at night as by day');
+  assert.ok(face.color.getHex() > 0 && face.visible, 'and it is not black');
+  const g = totems.geometry.groups[1]!;
+  assert.equal(g.count, 12, 'two quads, one a face');
+  const nor = totems.geometry.getAttribute('normal'), idx = totems.geometry.index!;
+  const zs = new Set<number>();
+  for (let k = g.start; k < g.start + g.count; k++) zs.add(Math.sign(nor.getZ(idx.getX(k))));
+  assert.ok(zs.size === 2 && zs.has(-1) && zs.has(1), 'facing both ways along the platform');
 });
 
 test('shedRoofY: the crown over each arch centre, the springing over the aisles and where the two arches meet', () => {
@@ -539,42 +617,21 @@ function counts(root: THREE.Object3D): { calls: number; triangles: number } {
   return { calls, triangles };
 }
 
-test('buildFurniture: one instanced mesh per kind, counts as planned, screens hang 3.5 m above the platform from the roof', () => {
+test('buildFurniture: one instanced mesh per kind, counts as planned', () => {
   const named = (name: string): THREE.InstancedMesh => part(furniture, name) as unknown as THREE.InstancedMesh;
   assert.equal(named('lamps').count, plan.lamps.length);
   assert.equal(named('benches').count, plan.benches.length);
   assert.equal(named('help-points').count, plan.helpPoints.length);
-  assert.equal(named('screens').count, plan.screens.length);
-  assert.equal(named('screen-rods').count, plan.screens.length * 2);
-  assert.deepEqual(furniture.userData.counts, { lamps: plan.lamps.length, benches: plan.benches.length, helpPoints: plan.helpPoints.length, screens: plan.screens.length, canopies: 2, columns: plan.canopies.reduce((n, c) => n + c.columns.length, 0) });
-  const m = new THREE.Matrix4();
-  const screens = named('screens');
-  screens.geometry.computeBoundingBox();
-  const box = screens.geometry.boundingBox as THREE.Box3;
-  const rods = named('screen-rods');
-  rods.geometry.computeBoundingBox();
-  const rodBox = rods.geometry.boundingBox as THREE.Box3;
-  near(box.max.y - box.min.y, FIGURES.screenHeight, 1e-6, 'panel height');
-  near(box.max.x - box.min.x, FIGURES.screenWidth, 1e-6, 'panel width');
-  plan.screens.forEach((s, i) => {
-    screens.getMatrixAt(i, m);
-    const lower = m.elements[13]! + box.min.y;
-    near(lower, PLATFORM_HEIGHT + FIGURES.screenBottom, 1e-5, 'the lower edge of a screen');
-    for (const k of [0, 1]) {
-      rods.getMatrixAt(i * 2 + k, m);
-      const base = m.elements[13]! + rodBox.min.y * m.elements[5]!;
-      const topY = m.elements[13]! + rodBox.max.y * m.elements[5]!;
-      near(base, PLATFORM_HEIGHT + FIGURES.screenBottom + FIGURES.screenHeight, 1e-5, 'the rod starts at the top of the panel');
-      near(topY, s.roofY - FIGURES.rodBelowRoof, 1e-5, 'the rod ends under the roof');
-    }
-  });
-  // a screen faces along the platform: its two faces are the last group and the same picture shows from both sides
-  assert.equal(screens.geometry.groups.length, 2);
-  assert.ok(Array.isArray(screens.material) && (screens.material as THREE.Material[]).length === 2);
+  assert.equal(named('totems').count, plan.totems.length);
+  assert.deepEqual(furniture.userData.counts, { lamps: plan.lamps.length, benches: plan.benches.length, helpPoints: plan.helpPoints.length, totems: plan.totems.length, canopies: 2, columns: plan.canopies.reduce((n, c) => n + c.columns.length, 0) });
+  // a totem faces along the platform: its two screens are the last group and the same picture shows from both sides
+  const totems = named('totems');
+  assert.equal(totems.geometry.groups.length, 2);
+  assert.ok(Array.isArray(totems.material) && (totems.material as THREE.Material[]).length === 2);
 });
 
 test('buildFurniture: the face of a screen is a flat colour where there is no document, and both functions fit the draw-call budget', () => {
-  const faces = (part(furniture, 'screens').material as THREE.MeshBasicMaterial[])[1] as THREE.MeshBasicMaterial;
+  const faces = (part(furniture, 'totems').material as THREE.MeshBasicMaterial[])[1] as THREE.MeshBasicMaterial;
   assert.equal(faces.map, null, 'the canvas is drawn only when there is a document');
   assert.ok(faces.color.getHex() > 0);
   const p = counts(platforms);
@@ -584,7 +641,7 @@ test('buildFurniture: the face of a screen is a flat colour where there is no do
   assert.ok(p.triangles + f.triangles <= 40000, `${p.triangles} + ${f.triangles} triangles`);
   const box = new THREE.Box3().setFromObject(furniture).union(new THREE.Box3().setFromObject(platforms));
   for (const v of [...box.min.toArray(), ...box.max.toArray()]) assert.ok(Number.isFinite(v), 'a finite bounding box');
-  assert.ok(box.max.y <= layout.crown + 1e-6, 'nothing above the shed\'s crown: the highest things are the screen rods, hung from its roof');
+  assert.ok(box.max.y <= layout.crown + 1e-6, 'nothing above the shed\'s crown');
   const platformsBox = new THREE.Box3().setFromObject(platforms);
   near(platformsBox.max.y, PLATFORM_HEIGHT + FIGURES.stripLift, 1e-6, 'the platforms reach no higher than their edge strips');
   near(platformsBox.min.y, GROUND_Y, 1e-6, 'and no lower than the ground');
@@ -612,14 +669,14 @@ test('furniture: runs with the platforms alone as well (no rails: every long edg
 });
 
 test('colour: every furniture mesh carries a colour per vertex (the shared builder is told so), and the lamps, benches and help points are more than one colour', () => {
-  for (const name of ['lamps', 'benches', 'help-points', 'screens', 'screen-rods', 'canopy-glass', 'canopy-steel']) {
+  for (const name of ['lamps', 'benches', 'help-points', 'totems', 'canopy-glass', 'canopy-steel']) {
     const geometry = part(furniture, name).geometry;
     const color = geometry.getAttribute('color');
     assert.ok(color, `${name} has vertex colours`);
     assert.equal(color.count, geometry.getAttribute('position').count, `${name}: one colour per vertex`);
     for (let i = 0; i < color.count * 3; i++) assert.ok(color.array[i] as number >= 0 && (color.array[i] as number) <= 1, `${name}: colour channel in range`);
   }
-  for (const name of ['lamps', 'benches', 'help-points']) {
+  for (const name of ['lamps', 'benches', 'help-points', 'totems']) {
     const color = part(furniture, name).geometry.getAttribute('color');
     const seen = new Set<string>();
     for (let i = 0; i < color.count; i++) seen.add(`${color.getX(i).toFixed(3)},${color.getY(i).toFixed(3)},${color.getZ(i).toFixed(3)}`);
@@ -635,7 +692,7 @@ test('FIGURES: the working figures the titles above quote, written out so a slip
     lampHeight: 4.5, lampSpacing: 24,
     benchLength: 1.8, benchPairGap: 2.4, benchSpacing: 45,
     helpHeight: 1.8, helpSpacing: 80,
-    screenWidth: 1.2, screenHeight: 0.7, screenBottom: 3.5, screenSpacing: 30,
+    totemWidth: 1.0, totemHeight: 2.5, totemHeader: 0.65, screenWidth: 0.85, screenHeight: 1.1, totemSpacing: 100, totemSouth: 20,
     canopyHeight: 5.2, canopyColumnSpacing: 12,
   };
   for (const [name, value] of Object.entries(want)) assert.equal((FIGURES as Record<string, number>)[name], value, `FIGURES.${name}`);
@@ -646,8 +703,8 @@ test('no floor furniture stands within half the spine wall\'s thickness and 0.3 
   const keep = SPINE_WALL.thick / 2 + SPINE_WALL.clear;
   assert.equal(keep, 0.8, 'the design\'s inset: half of 1.0 m and 0.3 m');
   let near45 = 0, worst = Infinity;
-  // a screen hung clear of the wall keeps the inset too; one bracketed off the wall face is held by the next test instead
-  for (const p of [...plan.lamps, ...plan.benches, ...plan.helpPoints, ...plan.screens.filter((x) => !x.wall)]) {
+  // re-pinned (B5 totems): every totem stands on the floor, so all of them keep the inset (the hung screens clear of the wall did before)
+  for (const p of [...plan.lamps, ...plan.benches, ...plan.helpPoints, ...plan.totems]) {
     const { u, v } = worldToShed(layout, [p.x, p.z]);
     if (v < 0 || v > layout.length) continue;
     const gap = Math.abs(u - layout.spine) - p.across;
@@ -662,44 +719,10 @@ test('no floor furniture stands within half the spine wall\'s thickness and 0.3 
   assert.ok(on0 >= 10, `${on0} floor pieces on platform 0 under the shed`);
 });
 
-// Lead follow-up 2026-11-24: on platforms 4 and 5 the arcade wall is the screens' natural mount. A screen there is bracketed off the wall
-// face (ASSUMED gap FIGURES.screenBracketGap) instead of keeping the floor inset, so platform 4 keeps its five or more screens.
-// Re-pinned 2026-11-24 (scorer hold, score-arcade-1): the east arcade on platform 0 is a wall of the same pattern, so platform 0's screens are
-// bracketed off it too; each screen is measured from the nearer of the two walls' lines, and platform 0 joins 4 and 5.
-test('every screen bracketed off the spine wall or the east arcade touches its face, within the bracket gap, and does not cut into it', () => {
-  const walled = plan.screens.filter((s) => s.wall);
-  assert.ok(walled.length >= 3, `${walled.length} wall-mounted screens`);
-  const hw = FIGURES.screenWidth / 2, hd = FIGURES.screenDepth / 2;
-  for (const s of walled) {
-    assert.ok(s.ref === '4' || s.ref === '5' || s.ref === '0', `a wall-mounted screen on platform ${s.ref}`);
-    const line = [layout.spine, eastArcadeU(layout)].reduce((a, b) => (Math.abs(worldToShed(layout, [s.x, s.z]).u - a) < Math.abs(worldToShed(layout, [s.x, s.z]).u - b) ? a : b));
-    assert.equal(line === layout.spine, s.ref !== '0', `platform ${s.ref}'s screen hangs off ${line === layout.spine ? 'the spine' : 'the east arcade'}`);
-    // the panel's footprint corners: local x is across (width), local z along (its two faces), turned by rotY
-    const c = Math.cos(s.rotY), n = Math.sin(s.rotY);
-    const us = [-1, 1].flatMap((i) => [-1, 1].map((k) => worldToShed(layout, [s.x + c * i * hw + n * k * hd, s.z - n * i * hw + c * k * hd]).u - line));
-    const side = Math.sign(us[0]!);
-    assert.ok(us.every((u) => Math.sign(u) === side), 'the panel stays on one side of the wall');
-    const gap = Math.min(...us.map(Math.abs)) - SPINE_WALL.thick / 2;
-    assert.ok(gap >= 0, `a screen on platform ${s.ref} cuts ${(-gap).toFixed(3)} m into the wall`);
-    assert.ok(gap <= FIGURES.screenBracketGap + 1e-3, `a screen on platform ${s.ref} is ${gap.toFixed(3)} m off the wall face`);
-    // it hangs below the wall's top, so the wall is there to carry it
-    assert.ok(PLATFORM_HEIGHT + FIGURES.screenBottom + FIGURES.screenHeight < layout.springing, 'the screen is below the top of the wall');
-  }
-});
-
-// 2026-11-24, the spine wall rebuilt from R-kx-shed-interior-c: a stone corbel under every rib on the walls' faces hangs lower than a screen's top,
-// so a screen bracketed off a wall stands clear of them along the wall; and nothing stands in the north pier's footprint (NORTH_PIER) or its inset.
-test('a screen bracketed off the spine wall or the east arcade stands clear of the corbels along the wall, and nothing stands at the north pier', () => {
-  const ribs = ribPositions(layout.length);
-  assert.ok(PLATFORM_HEIGHT + FIGURES.screenBottom + FIGURES.screenHeight > ribLanding(layout.springing) - SPINE_WALL.corbel.height, 'the corbels reach down past the screens\' tops');
-  const walled = plan.screens.filter((s) => s.wall);
-  assert.ok(walled.length >= 3);
-  for (const s of walled) {
-    const { v } = worldToShed(layout, [s.x, s.z]);
-    const d = Math.min(...ribs.map((r) => Math.abs(r - v)));
-    assert.ok(d >= FIGURES.screenWidth / 2 + SPINE_WALL.corbel.wide / 2, `a screen on platform ${s.ref} at v ${v.toFixed(1)} is ${d.toFixed(2)} m from a rib's corbel`);
-  }
-  for (const p of [...plan.lamps, ...plan.benches, ...plan.helpPoints, ...plan.screens]) {
+// 2026-11-24: nothing stands in the north pier's footprint (NORTH_PIER) or its inset. Re-pinned (B5 totems): the screens bracketed off the spine
+// wall and the east arcade, and their corbel and wall-face tests, went with the hanging screens; the totems stand before piers instead (tested above).
+test('nothing stands at the north pier', () => {
+  for (const p of [...plan.lamps, ...plan.benches, ...plan.helpPoints, ...plan.totems]) {
     const { u, v } = worldToShed(layout, [p.x, p.z]);
     if (v < layout.length - NORTH_PIER.south - SPINE_WALL.clear - p.across || v > layout.length + NORTH_PIER.north + SPINE_WALL.clear + p.across) continue;
     assert.ok(Math.abs(u - layout.spine) - p.across >= NORTH_PIER.half + SPINE_WALL.clear, `a piece on platform ${p.ref} at (${u.toFixed(2)}, ${v.toFixed(1)}) stands at the north pier`);

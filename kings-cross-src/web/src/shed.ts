@@ -221,6 +221,8 @@ const westernCuts = (shops = false): [number, number][] => [
   ...WESTERN_GATES.map(v => [v - 3.3, v + 3.3] as [number, number]),
   ...(shops ? WESTERN_SHOPS.map(v => [v - 1.4, v + 1.4] as [number, number]) : []),
 ];
+/** The v-spans (lo, hi) of the Western Concourse's gateline passages through the west wall: furniture.ts keeps the platform totems out of them. */
+export const westernPassages = (): [number, number][] => westernCuts();
 /**
  * A tall round-headed opening on the ground floor (R-b): half its clear width, the height of its springing (the crown stands a half-width above), the stone ring's
  * width and how far its dark pane stands off the face. ASSUMED, scaled off the people in R-b.
