@@ -54,6 +54,7 @@ export const SURFACES: ReadonlyMap<string, { dark: number; sheen: number; snow: 
   ['platformTop', { dark: 0.42, sheen: 1, snow: 1 }], // the shed's platform tops since round 16: the asphalt's
   ['platformEdge', { dark: 0.3, sheen: 0.8, snow: 0.7 }],
   ['platformEdgeStrip', { dark: 0.3, sheen: 0.8, snow: 0.7 }],
+  ['platformEdgeStripShed', { dark: 0.3, sheen: 0.8, snow: 0.7 }], // round 18: the King's Cross strips' own (the night floor under the roof)
   ['ballast', { dark: 0.4, sheen: 0.15, snow: 0.8 }],
   ['concourseFloor', { dark: 0.22, sheen: 0.7, snow: 0 }],
   ['city-asphalt', { dark: 0.42, sheen: 1, snow: 1 }],

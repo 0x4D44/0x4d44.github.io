@@ -23,6 +23,7 @@ import {
   furniturePlan,
   platformFrame,
   shedRoofY,
+  SHED_STRIP_LIFT,
   stripChains,
   STRIP_WORLD_V,
   surfacePlatforms,
@@ -214,7 +215,8 @@ test('platforms: the tops sit at PLATFORM_HEIGHT, the walls run from the ground 
   const lifts = tris(part(platforms, 'platform-edges')).flatMap((t) => t.p.map((v) => v[1] - PLATFORM_HEIGHT));
   assert.ok(lifts.length > 100);
   for (const lift of lifts) assert.ok(lift > 0 && lift <= 0.05, `a strip vertex is ${lift} m above the surface`);
-  near(FIGURES.stripLift, lifts[0] as number, 1e-6, 'the lift is the documented one');
+  // re-pinned (round 18, the joint jog): the shed's strips sit SHED_STRIP_LIFT up, not FIGURES.stripLift (Waverley's and Perth's)
+  near(SHED_STRIP_LIFT, lifts[0] as number, 1e-6, 'the lift is the documented one');
 });
 
 test('platforms: every outline is triangulated exactly (the areas add up) and every top faces up', () => {
@@ -893,7 +895,7 @@ test('buildFurniture: the face of a screen is a flat colour where there is no do
   for (const v of [...box.min.toArray(), ...box.max.toArray()]) assert.ok(Number.isFinite(v), 'a finite bounding box');
   assert.ok(box.max.y <= layout.crown + 1e-6, 'nothing above the shed\'s crown');
   const platformsBox = new THREE.Box3().setFromObject(platforms);
-  near(platformsBox.max.y, PLATFORM_HEIGHT + FIGURES.stripLift, 1e-6, 'the platforms reach no higher than their edge strips');
+  near(platformsBox.max.y, PLATFORM_HEIGHT + SHED_STRIP_LIFT, 1e-6, 'the platforms reach no higher than their edge strips'); // re-pinned round 18, as above
   near(platformsBox.min.y, GROUND_Y, 1e-6, 'and no lower than the ground');
 });
 

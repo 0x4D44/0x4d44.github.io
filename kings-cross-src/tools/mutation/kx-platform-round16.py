@@ -27,7 +27,7 @@ MUTATIONS = [
     ('two of each per island', 'web/src/furniture.ts', "            plan.extras.push(c);\n            near.push(c);\n            break extra;", "            plan.extras.push(c);\n            near.push(c);", 'B5: bins'),
     ('the extras cast', 'web/src/lighting.ts', "'shed-arch-rings',", "'shed-arch-rings', 'platform-extras',", 'B5: one merged'),
     ('the extras unbuilt', 'web/src/furniture.ts', "  if (plan.extras.length > 0) {", "  if (plan.extras.length < 0) {", 'B5: one merged'),
-    ('a floating blade', 'web/src/furniture.ts', "    b.aabb(-0.05, 0, -0.05, 0.05, BLADE.top, 0.05, IRON);", "    b.aabb(-0.05, 1.2, -0.05, 0.05, BLADE.top, 0.05, IRON);", 'B5: one merged'),
+    ('a floating blade', 'web/src/furniture.ts', "    b.aabb(-0.05, 0, -0.05, 0.05, BLADE.top - BLADE.size, 0.05, IRON);", "    b.aabb(-0.05, 1.2, -0.05, 0.05, BLADE.top - BLADE.size, 0.05, IRON);", 'B5: one merged'),
     ('a blank blade', 'web/src/furniture.ts', "      for (const s of SEGMENTS[ch] ?? '') for (const side of [-1, 1]) {", "      for (const s of '') for (const side of [-1, 1]) {", 'B5: one merged'),
     ('one digit only', 'web/src/furniture.ts', ".replace(/[^0-9]/g, '').slice(0, 2);", ".replace(/[^0-9]/g, '').slice(0, 1);", 'B5: one merged'),
     ('no joints on the tops', 'web/src/materials.ts', "  for (let v = 0; v < TEXTURES.platformTop.tile[1] - 1e-6; v += PLATFORM_JOINT) joint(g, w, v * pxm);", "", 'B4'),

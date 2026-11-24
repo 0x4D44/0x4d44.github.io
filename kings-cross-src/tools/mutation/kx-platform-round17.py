@@ -21,10 +21,10 @@ if out == src or out.is_relative_to(src) or src.is_relative_to(out):
 out.mkdir(parents=True, exist_ok=True)
 
 MUTATIONS = [
-    ('the strips on their own run again', 'web/src/furniture.ts', "uv: [dot2(rel, e.inward), worldV ? -p[1] : s0 + dot2(rel, e.dir)] };", "uv: [dot2(rel, e.inward), s0 + dot2(rel, e.dir)] };", 'B4: every top'),
+    ('the strips on their own run again', 'web/src/furniture.ts', "return [dot2(rel, e.inward), worldV ? -p[1] : s0 + dot2(rel, e.dir)];", "return [dot2(rel, e.inward), s0 + dot2(rel, e.dir)];", 'B4: every top'),
     ('the world v off by half a joint', 'web/src/furniture.ts', "worldV ? -p[1] : s0", "worldV ? -p[1] + 0.375 : s0", 'B4: every top'),
     ('only exactly-z edges take it', 'web/src/furniture.ts', "export const STRIP_WORLD_V = (10 * Math.PI) / 180;", "export const STRIP_WORLD_V = 0;", 'B4: every top'),
-    ('the coping lit by day too', 'web/src/materials.ts', "${glslFloat(c.b)} ) * uWinNight );\\n#endif", "${glslFloat(c.b)} ) );\\n#endif", 'B4: after dark'),
+    ('the coping lit by day too', 'web/src/materials.ts', "* vKxCover * uWinNight );\\n#endif", "* vKxCover );\\n#endif", 'B4: after dark'),
     ('the whole strip lit', 'web/src/materials.ts', "if ( vMapUv.x < ${glslFloat(u)} ) totalEmissiveRadiance", "totalEmissiveRadiance", 'B4: after dark'),
     ('a glow strip', 'web/src/materials.ts', "export const COPING_NIGHT = { floor: 0x5a5a55,", "export const COPING_NIGHT = { floor: 0xb0b0a8,", 'B4: after dark'),
     ('the old dim floor', 'web/src/materials.ts', "export const COPING_NIGHT = { floor: 0x5a5a55,", "export const COPING_NIGHT = { floor: 0x2c2c29,", 'B4: after dark'),
@@ -32,7 +32,7 @@ MUTATIONS = [
     ('both faces mirrored', 'web/src/furniture.ts', "b.aabb(Math.min(side * a0, side * a1), b0, side > 0 ? 0.03 : -0.036, Math.max(side * a0, side * a1),", "b.aabb(Math.min(-side * a0, -side * a1), b0, side > 0 ? 0.03 : -0.036, Math.max(-side * a0, -side * a1),", 'B5: each blade face'),
     ('the old 1.2 m bins', 'web/src/furniture.ts', "for (const sx of [-0.27, 0.27]) {", "for (const sx of [-0.33, 0.33]) {", 'B5: the bins'),
     ('bins too tall', 'web/src/furniture.ts', "b.aabb(sx - 0.25, 0.95, -0.28, sx + 0.25, 1.0, 0.28, IRON, true);", "b.aabb(sx - 0.25, 0.95, -0.28, sx + 0.25, 1.12, 0.28, IRON, true);", 'B5: the bins'),
-    ('the coping not hooked', 'web/src/materials.ts', "  platformEdgeStrip: () => copingNight(nearer(tiled('platformEdge'))),", "  platformEdgeStrip: () => nearer(tiled('platformEdge')),", 'B4: after dark'),
+    ('the coping not hooked', 'web/src/materials.ts', "  platformEdgeStripShed: () => copingNight(nearer(tiled('platformEdge'))),", "  platformEdgeStripShed: () => nearer(tiled('platformEdge')),", 'B4: after dark'),
     ('the blade back at round 16\'s size', 'web/src/furniture.ts', "export const BLADE = { top: 4.3, size: 1.0, digit: 0.66,", "export const BLADE = { top: 4.3, size: 0.7, digit: 0.4,", 'B5: the blades'),
     ('the blade down among the heads', 'web/src/furniture.ts', "export const BLADE = { top: 4.3,", "export const BLADE = { top: 3.4,", 'B5: the blades'),
     ('the faces unlit at night', 'web/src/furniture.ts', "totalEmissiveRadiance = max( totalEmissiveRadiance, vColor.rgb * ${BLADE.night.toFixed(2)} * uWinNight );", "", 'B5: the blades'),

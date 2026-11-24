@@ -352,7 +352,7 @@ function paintPlatformEdge(g: Ctx, w: number, h: number): void {
   // little toward shed-e's yellow-khaki, so it separates from the surface at platform-eye range (both ASSUMED)
   // round 16 (platform-round-3 score, section 5): paler again, so the coping reads as a pale line under the night lights (ASSUMED; no emissive: the atmosphere
   // fades a built emissive after dark)
-  band(0, 0.2, '#d4d4ce'); // coping stones, pale enough to read under the night lights
+  band(0, 0.2, '#d4d4ce'); // COPING_PAINT // coping stones, pale enough to read under the night lights
   band(0.2, 1.6, '#767571'); // the platform surface (paintAsphalt's base tone)
   band(0.5, 0.9, '#92886a'); // the tactile strip, a muted yellow-khaki
   // the surface's speckle: paintAsphalt's 5,200 specks on a 2 m tile is 1,300 a square metre, each 1/128 m; here 200 px a metre
@@ -604,7 +604,7 @@ export type MaterialName =
   | 'brick' | 'stone' | 'slate' | 'asphalt' | 'platformTop' | 'platformEdge' | 'ballast'
   | 'roofGlass' | 'glass' | 'window' | 'windowArch'
   | 'concrete' | 'steel' | 'whiteSteel' | 'ribPaint' | 'lining' | 'valleyLining' | 'shedGlass' | 'panel' | 'concourseFloor'
-  | 'brickRed' | 'slateBothSides' | 'sash' | 'sashArch' | 'pane' | 'platformEdgeStrip' | 'brickFoot' | 'stoneFoot' | 'stoneDressing' | 'arcadeGlass' | 'arcadeFrame';
+  | 'brickRed' | 'slateBothSides' | 'sash' | 'sashArch' | 'pane' | 'platformEdgeStrip' | 'platformEdgeStripShed' | 'brickFoot' | 'stoneFoot' | 'stoneDressing' | 'arcadeGlass' | 'arcadeFrame';
 
 /**
  * A wall material with the contact shade at its foot, the define lighting.ts `FOOT_SHADE` names (not imported: lighting.ts is the page's chunk, this its own; a test holds the two to one name).
@@ -697,14 +697,20 @@ function nightFloor<T extends THREE.MeshLambertMaterial>(m: T, floor: number, ke
 // the floor raised in round 17's second pass (the lead: at 0x2c2c29 the edge did not show in night p8-south): about 4 times it, aiming at 1.5-2 times the night-lit
 // surface's luminance beside it (not measured here: no render)
 export const COPING_NIGHT = { floor: 0x5a5a55, band: 0.2 } as const;
+/** The coping band's paint (paintPlatformEdge's '#d4d4ce'; kx-platform-round18.test.ts holds the two together), sRGB: the texel the night floor is measured against. */
+export const COPING_PAINT = 0xd4d4ce;
 function copingNight<T extends THREE.MeshLambertMaterial>(m: T): T {
   const before = m.onBeforeCompile.bind(m), key = m.customProgramCacheKey();
   const c = new THREE.Color(COPING_NIGHT.floor), u = COPING_NIGHT.band / TEXTURES.platformEdge.tile[0];
+  // round 18 (platform-round-5, section 3): the floor is the coping's texel over the coping's paint (COPING_PAINT), so its joints and grain still read in it, and it is
+  // scaled by the strip's `kxCover` attribute (furniture.ts underShedRoof: 1 under the roof, 0 outside it; a geometry without one reads 0)
+  const p = new THREE.Color(COPING_PAINT);
   m.onBeforeCompile = (shader, renderer) => {
     before(shader, renderer);
     shader.uniforms.uWinNight = windowNight;
-    shader.fragmentShader = shader.fragmentShader.replace('#include <common>', '#include <common>\nuniform float uWinNight;').replace('#include <emissivemap_fragment>',
-      `#include <emissivemap_fragment>\n#ifdef USE_MAP\nif ( vMapUv.x < ${glslFloat(u)} ) totalEmissiveRadiance = max( totalEmissiveRadiance, vec3( ${glslFloat(c.r)}, ${glslFloat(c.g)}, ${glslFloat(c.b)} ) * uWinNight );\n#endif`);
+    shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nattribute float kxCover;\nvarying float vKxCover;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvKxCover = kxCover;');
+    shader.fragmentShader = shader.fragmentShader.replace('#include <common>', '#include <common>\nuniform float uWinNight;').replace('#include <common>', '#include <common>\nvarying float vKxCover;').replace('#include <emissivemap_fragment>',
+      `#include <emissivemap_fragment>\n#ifdef USE_MAP\nif ( vMapUv.x < ${glslFloat(u)} ) totalEmissiveRadiance = max( totalEmissiveRadiance, vec3( ${glslFloat(c.r)}, ${glslFloat(c.g)}, ${glslFloat(c.b)} ) * diffuseColor.rgb / vec3( ${glslFloat(p.r)}, ${glslFloat(p.g)}, ${glslFloat(p.b)} ) * vKxCover * uWinNight );\n#endif`);
   };
   m.customProgramCacheKey = () => `${key}+coping-night`;
   return m;
@@ -1475,7 +1481,8 @@ const makers: Readonly<Record<MaterialName, () => THREE.Material>> = {
   pane: () => nearer(new THREE.MeshLambertMaterial({ color: 0x232c38 })),
   // The coping / tactile / white-line strip laid on a platform's surface: the platform-edge texture with the
   // polygon offset that keeps it clear of the surface at any range.
-  platformEdgeStrip: () => copingNight(nearer(tiled('platformEdge'))),
+  platformEdgeStrip: () => nearer(tiled('platformEdge')), // round 18: Waverley's and Perth's, no night floor again (round 17 lit their copings too)
+  platformEdgeStripShed: () => copingNight(nearer(tiled('platformEdge'))), // the King's Cross strips: the floor under the roof (furniture.ts underShedRoof)
   // The King's Cross front's brick and stone (shed.ts: the front wall, its plinth and courses, the clock tower, the shed's end walls) with the contact shade at the foot of a wall (round five, E2):
   // these walls stand on the ground and their UVs are in metres from it. The Western Range's walls keep the plain ones, the colour it was fitted to.
   // Round six (the E2 scorer: "the south-front foot shade is barely visible"): a deeper long fall-off than the landmarks' (FRONT_FOOT): the piers' feet, the plinth and the arcade's wall are a clear darker

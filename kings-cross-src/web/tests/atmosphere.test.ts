@@ -596,7 +596,7 @@ test('every surface the weather wets or whitens exists under that name in the re
   const { scene } = setup();
   const flat = (() => { let found: THREE.Material | null = null; scene.traverse((o) => { const mm = (o as THREE.Mesh).material as THREE.Material | undefined; if (mm?.name === 'ground-flat') found = mm; }); return found; })();
   const real = new Map<string, THREE.Material>([
-    ...(['asphalt', 'platformTop', 'platformEdge', 'platformEdgeStrip', 'ballast', 'concourseFloor'] as const).map((n): [string, THREE.Material] => [material(n).name, material(n)]),
+    ...(['asphalt', 'platformTop', 'platformEdge', 'platformEdgeStrip', 'platformEdgeStripShed', 'ballast', 'concourseFloor'] as const).map((n): [string, THREE.Material] => [material(n).name, material(n)]),
     ...(['asphalt', 'pavement', 'plaza', 'grass'] as const).map((n): [string, THREE.Material] => [cityMaterial(n).name, cityMaterial(n)]),
     ...(['ground', 'bank'] as const).map((n): [string, THREE.Material] => [terrainMaterial(n).name, terrainMaterial(n)]),
     ...(flat ? [['ground-flat', flat] as [string, THREE.Material]] : []),
@@ -606,7 +606,7 @@ test('every surface the weather wets or whitens exists under that name in the re
     assert.ok(m, `no material is named "${name}" in the page`);
     assert.ok((m as THREE.MeshLambertMaterial).isMeshLambertMaterial, `"${name}" is not a Lambert material, so the shader patch does not apply`);
   }
-  assert.equal(SURFACES.size, 13); // re-pinned round 16: platformTop, the shed's platform tops (the asphalt with slab joints)
+  assert.equal(SURFACES.size, 14); // re-pinned round 16: platformTop, the shed's platform tops (the asphalt with slab joints); round 18: platformEdgeStripShed, the King's Cross strips' own
 });
 
 test('wet ground: the shader of each named surface is patched once with the shared wetness and snow, after the texture and before the output', () => {

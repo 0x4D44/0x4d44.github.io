@@ -40,7 +40,8 @@ test('B4: after dark only, the coping band holds about lit concrete\'s light; by
   const c = new THREE.Color(spec.floor), lum = 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b; // linear
   // re-pinned (round 17, second pass, the lead's capture: 0x2c2c29, about 0.025 linear, did not show): a clearly paler line, still not a glow strip
   assert.ok(lum > 0.06 && lum < 0.14, `a pale line, not a glow strip: ${lum.toFixed(3)} linear`);
-  const m = materials.material('platformEdgeStrip') as THREE.MeshLambertMaterial;
+  // re-pinned (round 18): the King's Cross strips' material is platformEdgeStripShed now; platformEdgeStrip is Waverley's and Perth's, without the floor
+  const m = materials.material('platformEdgeStripShed') as THREE.MeshLambertMaterial;
   assert.ok(m.customProgramCacheKey().includes('coping-night'), 'its own program');
   const shader = fakeShader();
   m.onBeforeCompile(shader as unknown as THREE.WebGLProgramParametersWithUniforms, {} as THREE.WebGLRenderer);

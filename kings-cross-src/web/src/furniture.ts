@@ -521,8 +521,24 @@ function addWalls(b: Batch, edges: readonly PlatformEdge[]): void {
 
 /** An edge strip whose edge runs within this of the z axis (radians) takes the tops' world v, so its joints line up with theirs (round 17). */
 export const STRIP_WORLD_V = (10 * Math.PI) / 180;
-function addStrip(b: Batch, chain: StripChain, edges: readonly PlatformEdge[]): void {
-  const y = PLATFORM_HEIGHT + FIGURES.stripLift;
+/**
+ * How far the King's Cross edge strips sit above the tops, metres (round 18). The strip carries the tops' joints on in world v (round 17), but at FIGURES.stripLift
+ * (12 mm, Waverley's and Perth's still) the same joint drawn 12 mm higher projects about 2-3 px higher from a 1.6 m eye a few metres off (dy d / (h^2 + d^2) rad):
+ * the scorer's joint jog at the boundary (platform-round-5, section 3). The strip's material is pulled forward by a polygon offset (materials.ts nearer), so 1 mm is
+ * only a tie-breaker, and the step is under a quarter of a pixel.
+ */
+export const SHED_STRIP_LIFT = 0.001;
+/**
+ * Whether a point of an edge strip is under the shed's roof (round 18, platform-round-5 section 3: after dark the coping floor (materials.ts COPING_NIGHT) lit
+ * the suburban and throat platforms' copings too, a flat strip brighter than their lamp pools). In shed coordinates: across the train shed (u 0 to width) and
+ * along it (v 0 to length). The strip carries it per vertex as `kxCover` (1 under the roof, 0 outside), which the coping's night floor is scaled by.
+ */
+export function underShedRoof(layout: Pick<ShedLayout, 'origin' | 'heading' | 'width' | 'length'>, p: Pt): boolean {
+  const { u, v } = worldToShed(layout, p);
+  return u >= 0 && u <= layout.width && v >= 0 && v <= layout.length;
+}
+function addStrip(b: Batch, chain: StripChain, edges: readonly PlatformEdge[], layout: Pick<ShedLayout, 'origin' | 'heading' | 'width' | 'length'>): void {
+  const y = PLATFORM_HEIGHT + SHED_STRIP_LIFT;
   for (let k = 0; k + 1 < chain.outer.length; k++) {
     const e = edges[chain.edges[k] as number] as PlatformEdge;
     const s0 = chain.s[k] as number;
@@ -532,12 +548,32 @@ function addStrip(b: Batch, chain: StripChain, edges: readonly PlatformEdge[]): 
     // as the tops' is (addTop), so the strip's slab joints (materials.ts PLATFORM_JOINT) are the tops' lines carried on across it, not a course of their own
     // at a phase and an angle (the edge's 1-2 degrees off z) of the run's start.
     const worldV = Math.abs(e.dir[1]) >= Math.cos(STRIP_WORLD_V);
-    const corner = (p: Pt): { at: V3; uv: [number, number] } => {
+    const uvOf = (p: Pt): [number, number] => {
       const rel: Pt = [p[0] - e.a[0], p[1] - e.a[1]];
-      return { at: [p[0], y, p[1]], uv: [dot2(rel, e.inward), worldV ? -p[1] : s0 + dot2(rel, e.dir)] };
+      return [dot2(rel, e.inward), worldV ? -p[1] : s0 + dot2(rel, e.dir)];
     };
-    const quad = [chain.outer[k], chain.outer[k + 1], chain.inner[k + 1], chain.inner[k]].map((p) => corner(p as Pt));
-    b.poly(quad.map((q) => q.at), quad.map((q) => q.uv), { normal: [0, 1, 0] });
+    // the quad cut where its outer and inner sides both cross one of the roof's two ends (shed v = 0 and v = length), so each piece is a quad wholly under
+    // the roof or wholly outside it (a quad whose end-cut side is the one crossing is left whole, and takes the cover of its middle)
+    type Q = [Pt, Pt, Pt, Pt]; // outer start, outer end, inner end, inner start
+    let pieces: Q[] = [[chain.outer[k], chain.outer[k + 1], chain.inner[k + 1], chain.inner[k]] as Q];
+    const lerp = (p: Pt, q: Pt, t: number): Pt => [p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t];
+    const cross = (p: Pt, q: Pt, vb: number): number => {
+      const a = worldToShed(layout, p).v - vb, c = worldToShed(layout, q).v - vb;
+      return a * c < 0 ? a / (a - c) : NaN;
+    };
+    for (const vb of [0, layout.length]) {
+      pieces = pieces.flatMap(([o0, o1, i1, i0]): Q[] => {
+        const to = cross(o0, o1, vb), ti = cross(i0, i1, vb);
+        if (Number.isNaN(to) || Number.isNaN(ti)) return [[o0, o1, i1, i0]];
+        const om = lerp(o0, o1, to), im = lerp(i0, i1, ti);
+        return [[o0, om, im, i0], [om, o1, i1, im]];
+      });
+    }
+    for (const poly of pieces) {
+      const c: Pt = [poly.reduce((s, p) => s + p[0], 0) / poly.length, poly.reduce((s, p) => s + p[1], 0) / poly.length];
+      const cover = underShedRoof(layout, c) ? 1 : 0;
+      b.poly(poly.map((p): V3 => [p[0], y, p[1]]), poly.map(uvOf), { normal: [0, 1, 0], color: [cover, cover, cover] });
+    }
   }
 }
 
@@ -563,18 +599,25 @@ export function buildPlatforms(data: FurnitureData, layout: Pick<ShedLayout, 'or
     addTop(tops, p.pts);
     addWalls(walls, edges);
     for (const chain of stripChains(edges)) {
-      addStrip(strips, chain, edges);
+      addStrip(strips, chain, edges, layout);
       stripRuns++;
     }
   }
   const parts: [string, Batch, THREE.Material][] = [
     ['platform-tops', tops, material('platformTop')], // round 16: the asphalt with slab joints, its own texture (materials.ts platformTop)
     ['platform-walls', walls, material('concrete')],
-    ['platform-edges', strips, material('platformEdgeStrip')],
+    ['platform-edges', strips, material('platformEdgeStripShed')], // round 18: its own material, the night floor under the roof only (the colour's red)
   ];
   for (const [name, builder, mat] of parts) {
     if (builder.count === 0) continue;
-    const mesh = new THREE.Mesh(builder.build(), mat);
+    const geo = builder.build();
+    if (builder === strips) {
+      // round 18: the strip's cover (addStrip: its colour's red) as `kxCover`, the coping's night floor's scale (materials.ts copingNight); the colour itself tints nothing
+      const col = geo.getAttribute('color');
+      geo.setAttribute('kxCover', new THREE.BufferAttribute(Float32Array.from({ length: col.count }, (_, i) => col.getX(i)), 1));
+      geo.deleteAttribute('color');
+    }
+    const mesh = new THREE.Mesh(geo, mat);
     mesh.name = name;
     group.add(mesh);
   }
@@ -1267,6 +1310,8 @@ const SIGN_BLUE = rgb(0x1f3c88);
 const SIGN_WHITE = rgb(0xf1f2f0);
 const BIN_GREEN = rgb(0x2f7a3c);
 const TROLLEY_GREY = rgb(0x9aa1a8);
+/** The nested trolleys at a trolley point (round 18): how many, how far apart (m), each basket's length and the wire's half-thickness (ASSUMED, shed-e: a short row). */
+export const TROLLEY = { n: 4, pitch: 0.16, len: 0.85, wire: 0.012 } as const;
 /** seven-segment digits: which of a, b, c, d, e, f, g each lights */
 const SEGMENTS: Record<string, string> = { '0': 'abcdef', '1': 'bc', '2': 'abged', '3': 'abgcd', '4': 'fgbc', '5': 'afgcd', '6': 'afgedc', '7': 'abc', '8': 'abcdefg', '9': 'abcdfg' };
 /** One extra at y = 0, local z along the platform; nothing floats: every part stands on the platform or on another part. */
@@ -1291,9 +1336,22 @@ export function extraGeometry(e: { kind: ExtraKind; label: string }, part: 'all'
     for (const sx of [-0.42, 0.42]) b.aabb(sx - 0.04, 0, -0.04, sx + 0.04, 2.2, 0.04, IRON);
     b.aabb(-0.5, 1.0, -0.035, 0.5, 2.25, 0.035, SIGN_BLUE, true);
     b.aabb(-0.42, 1.95, -0.045, 0.42, 2.12, 0.045, SIGN_WHITE, true); // the board's heading strip, both faces
-    b.aabb(-0.35, 0, 0.25, 0.35, 1.0, 1.45, TROLLEY_GREY); // the nested trolleys in front of it
+    // round 18 (platform-round-5, section 3: a plain grey slab, where shed-e shows a row of wire trolleys): TROLLEY.n nested wire trolleys in front of it, thin
+    // frames (rails, rims, corner posts and a handle) TROLLEY.pitch apart, so the board, the post and the bins show through them
+    const { n, pitch, len, wire: q } = TROLLEY;
+    for (let k = 0; k < n; k++) {
+      const z0 = 0.25 + k * pitch, z1 = z0 + len;
+      for (const sx of [-0.27, 0.27]) {
+        b.aabb(sx - q, 0.12, z0, sx + q, 0.12 + 2 * q, z1, TROLLEY_GREY, true); // the base rail
+        b.aabb(sx - q, 0.88, z0, sx + q, 0.88 + 2 * q, z1, TROLLEY_GREY, true); // the basket's top rim
+        for (const z of [z0, z1 - 2 * q]) b.aabb(sx - q, 0.12, z, sx + q, 0.9, z + 2 * q, TROLLEY_GREY, true); // the corner posts
+      }
+      b.aabb(-0.29, 0.88, z1 - 2 * q, 0.29, 0.88 + 2 * q, z1, TROLLEY_GREY, true); // the basket's front rim
+      b.aabb(-0.29, 1.0, z0 - 0.06, 0.29, 1.0 + 2 * q, z0 - 0.06 + 2 * q, IRON, true); // the handle
+    }
   } else if (part !== 'face') {
-    b.aabb(-0.05, 0, -0.05, 0.05, BLADE.top, 0.05, IRON); // its own post
+    // its own post, up to the panel's foot (round 18, platform-round-5 section 3: run up to the top it crossed both faces between the digits)
+    b.aabb(-0.05, 0, -0.05, 0.05, BLADE.top - BLADE.size, 0.05, IRON);
   }
   if (e.kind === 'blade' && part !== 'body') {
     const { top, size, digit, pitch, stroke: t } = BLADE;
