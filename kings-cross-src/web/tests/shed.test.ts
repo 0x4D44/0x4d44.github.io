@@ -6,7 +6,7 @@ import type { KxData } from '../../core/osm.ts';
 import { CLOCK_TOWER_HEIGHT, SHED_LENGTH, SHED_SPAN_WIDTH, shedLayout, shedToWorld, stationBuilding, worldToShed } from '../../core/station.ts';
 import { shedRoofY } from '../src/furniture.ts';
 import { createSunShadow, SHADOW_CASTERS } from '../src/lighting.ts';
-import { ARCADE_FRAME, ARCADE_GLASS, material, PANE_UV, TEXTURES, windowNight } from '../src/materials.ts';
+import { ARCADE_FRAME, ARCADE_GLASS, buildingNightMaterialsOf, material, PANE_UV, TEXTURES, windowNight } from '../src/materials.ts';
 import { FRONT_RELIEF, westArcadeOpenings, WEST_GLAZING } from '../src/shed.ts';
 import { buildShed, buildTower, EAST_ARCADE, eastArcadeOpenings, eastArcadeU, NORTH_PIER, RIB_FOOT, ribLanding, spineLowerOpenings, spineUpperOpenings, valleyTop, buildWesternRange, gableBars, GABLE_GLASS_FROM, glazedHalfAngle, GLAZED_STRIP_WIDTH, GLASS_OPACITY, glazingOpacity, lunetteBars, MEMBER_SIZE, RIB_SPACING, ribMembers, ribPositions, ROOF_SKIN, roofOpacity, SPINE_WALL, spineOpenings, TOWER_SIZE, TOWER_TOP, valleyCut, vaultBand, vaultPoint, WESTERN_RANGE, WESTERN_RANGE_DEPTH_BEFORE, westernArches, westernBays, westernBlock, westernWindows, XRAY_OPACITY } from '../src/shed.ts';
 
@@ -355,7 +355,10 @@ test('the ironwork is dark grey steel, as in R-lighting-materials-a2 and -b, and
   // spine wall's brick up to the valley (R-c shows brick there); the ribs and bars keep every check, and the brick is checked below
   for (const name of ['shed-ribs', 'shed-front-bars', 'shed-gable-bars']) {
     const m = byName(group, name).material as THREE.MeshLambertMaterial;
-    assert.equal(m, material('ribPaint'), `${name} is painted like the ribs`);
+    // re-pinned round S1 (shed-gap-scan-1, B1: the ribs read near-black navy by day): the ribs' own paint by day is ribPaint lifted by RIB_DAY_LIFT, ribPaint
+    // itself at night (kx-shed-round1); still dark steel by every check below
+    if (name === 'shed-ribs') assert.equal(buildingNightMaterialsOf(byName(group, name))?.night, material('ribPaint'), `${name} is painted like the ribs at night`);
+    else assert.equal(m, material('ribPaint'), `${name} is painted like the ribs`);
     assert.ok(luminance(m) > 0.02 && luminance(m) <= luminance(material('steel')), `${name}: dark steel, no lighter than the station's steel and not black: luminance ${luminance(m).toFixed(3)}`);
     assert.ok(8 * luminance(m) < lining, `${name} is at least eight times darker than the lining it stands against`);
     assert.ok(m.emissive.r + m.emissive.g + m.emissive.b < 0.2, `${name}'s lift is a floor, not a glow`);

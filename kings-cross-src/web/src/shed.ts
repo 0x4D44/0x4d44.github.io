@@ -668,9 +668,58 @@ export function gableBars(uc: number, springing: number, from: number, r = R): B
       const top = b.c[1] + b.s[1] / 2;
       const h = top - from;
       if (h > 0.3) out.push({ ...b, c: [b.c[0], from + h / 2, b.c[2]], s: [b.s[0], h, b.s[2]] });
-    } else if (b.c[1] > from + 0.2) out.push(b);
+    } else if (b.kind !== 'ring' && b.c[1] > from + 0.2) out.push(b); // round S1 (shed-gap-scan-1, B3): R-a's north screen is a mullion and transom grid only, no ring
   }
   return out;
+}
+
+/**
+ * Round S1 (shed-gap-scan-1, B3): the lattice girder across the foot of each north screen, under its glass line, as R-a and R-b show it: a top chord
+ * (the existing transom on the glass line), a bottom chord `depth` lower, and diagonals in a zigzag between them, `panel` m apart (ASSUMED from R-a,
+ * about 14 triangles across the span). Painted as the bars, not a shadow caster.
+ */
+export const GABLE_GIRDER = { depth: 1.5, panel: 2.3, chord: [0.2, 0.25] as const, web: [0.1, 0.15] as const } as const;
+export function gableGirder(uc: number, springing: number, top: number, r = R): BarSpec[] {
+  const { depth, panel, chord, web } = GABLE_GIRDER, y0 = top - depth;
+  const half = Math.sqrt(Math.max(0, r * r - (y0 - springing) ** 2)) - 0.12, n = Math.max(2, Math.round((2 * half) / panel)), w = (2 * half) / n;
+  const out: BarSpec[] = [{ c: [uc, y0, 0], s: [2 * half, chord[0], chord[1]], rotZ: 0, kind: 'transom' }];
+  for (let i = 0; i < n; i++) {
+    const xa = uc - half + i * w, xb = xa + w, [ya, yb] = i % 2 === 0 ? [y0, top] : [top, y0];
+    out.push({ c: [(xa + xb) / 2, (ya + yb) / 2, 0], s: [Math.hypot(w, depth) + 0.05, web[0], web[1]], rotZ: Math.atan2(yb - ya, w), kind: 'mullion' });
+  }
+  return out;
+}
+
+/**
+ * Round S1 (shed-gap-scan-1, B1): the ring in each rib's haunch, R-a and R-b's mark of this roof, where the rib leaves the wall over its corbel: in the
+ * rib's plane, in the triangle between the vertical over the inner boom's foot (on the corbel's cap) and the inner boom rising from it. HAUNCH_RING:
+ * its radius to the tube's centre and the tube's, about 1.2 m across and a 0.12 m section (ASSUMED, as the gap scan sizes it from R-a).
+ */
+export const HAUNCH_RING = { radius: 0.54, tube: 0.06 } as const;
+/** Round S1 (shed-gap-scan-1, B1: the ribs read near-black navy; R-a and R-b show them a mid blue-grey by day): the ribs' and haunch rings' paint by day, the
+ * shared ribPaint lightened this much (ASSUMED); at night they take ribPaint itself, so their silhouette stays as it was. Their own
+ * material, so the bars, the clock's iron and the front's steel that share ribPaint do not move. */
+export const RIB_DAY_LIFT = 1.38; // the gap scan asked about 1.5x; 1.38 keeps the ribs no lighter than the station's steel (shed.test, R-lighting-materials-a2, -b)
+let ribDayMaterial: THREE.MeshLambertMaterial | undefined;
+function ribDay(): THREE.MeshLambertMaterial {
+  if (ribDayMaterial) return ribDayMaterial;
+  const original = material('ribPaint') as THREE.MeshLambertMaterial;
+  const m = original.clone();
+  m.defines = { ...original.defines };
+  m.color.multiplyScalar(RIB_DAY_LIFT);
+  ribDayMaterial = m;
+  return m;
+}
+/** The haunch rings' centres in a rib's frame (u from the vault's centre), the west foot's and the east's: tangent to the vertical over the inner
+ * boom's foot, and clear of the inner boom (its second panel, nodes 1-2) by half the boom's width. */
+export function haunchRingCentres(springing: number, r = R, n = 16): [number, number][] {
+  const rho = HAUNCH_RING.radius + HAUNCH_RING.tube, rb = r - 1.3;
+  const [x1, y1] = vaultPoint(0, springing, rb, Math.PI / n), [x2, y2] = vaultPoint(0, springing, rb, (2 * Math.PI) / n);
+  const len = Math.hypot(x2 - x1, y2 - y1), dx = (x2 - x1) / len, dy = (y2 - y1) / len;
+  const cx = -(r - RIB_FOOT) + rho, clear = rho + MEMBER_SIZE.boom[0] / 2;
+  // the distance from (cx, y) to the boom's line, on the wall's side: (y - y1) dx - (cx - x1) dy = clear
+  const y = y1 + (clear + (cx - x1) * dy) / dx;
+  return [[cx, y], [-cx, y]];
 }
 
 /**
@@ -1246,13 +1295,24 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   const rib = new Batch();
   for (const m of ribMembers(sp)) rib.box(m.c, m.s, { rotZ: m.rotZ, skip: m.kind === 'boom' ? ['+x', '-x'] : ['+x', '-x', '+y', '-y'] });
   const ribPos = ribPositions(L);
-  const ribs = new THREE.InstancedMesh(rib.build(), material('ribPaint'), ribPos.length * centres.length);
+  const ribs = new THREE.InstancedMesh(rib.build(), ribDay(), ribPos.length * centres.length); // round S1: lighter by day (RIB_DAY_LIFT)
+  withBuildingNightMaterial(ribs, material('ribPaint'));
   const mat = new THREE.Matrix4();
   let k = 0;
   for (const uc of centres) for (const v of ribPos) ribs.setMatrixAt(k++, mat.makeTranslation(uc, 0, -v));
   ribs.name = 'shed-ribs';
   ribs.instanceMatrix.needsUpdate = true;
   group.add(ribs);
+  // round S1 (B1): a ring in each rib's haunch, both feet (HAUNCH_RING, haunchRingCentres): instanced, in the ribs' paint, not a shadow caster
+  const ringCentres = haunchRingCentres(sp);
+  const haunch = new THREE.InstancedMesh(new THREE.TorusGeometry(HAUNCH_RING.radius, HAUNCH_RING.tube, 4, 16), ribDay(), ribPos.length * centres.length * ringCentres.length);
+  withBuildingNightMaterial(haunch, material('ribPaint'));
+  k = 0;
+  for (const uc of centres) for (const v of ribPos) for (const [u, y] of ringCentres) haunch.setMatrixAt(k++, mat.makeTranslation(uc + u, y, -v));
+  haunch.name = 'shed-haunch-rings';
+  haunch.castShadow = false;
+  haunch.instanceMatrix.needsUpdate = true;
+  group.add(haunch);
   // the valley: where the two roofs meet, the brick spine wall (SPINE_WALL, buildSpineWall) closes the gap from the springing up to the cut
   // skins. Until 2026-11-24 a board-lined grey fascia stood there on a wall stopped at the springing; R-kx-shed-interior-c shows brick up to
   // the gutter, the ribs landing on stone corbels on the wall's faces. Camden's delegated report 2009/5099/L under 2007/2611/L, p3, mentions
@@ -1667,6 +1727,7 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
     gableGeos.push(g);
     addBars(gBars, gableBars(uc, sp, GABLE_GLASS_FROM), 0, -L);
     gBars.box([uc, GABLE_GLASS_FROM + 0.1, -L], [2 * R * Math.cos(aBase), 0.25, 0.3]); // the transom along the glass line
+    addBars(gBars, gableGirder(uc, sp, GABLE_GLASS_FROM), 0, -L); // round S1: the lattice girder under it (GABLE_GIRDER)
     const [gd, gt] = ROOF_EXTERIOR.gableRib;
     const ring = new THREE.ExtrudeGeometry(archRing(uc, sp, R, R + gd), { depth: gt, bevelEnabled: false, curveSegments: 40 });
     ring.translate(0, 0, -L - gt);
@@ -1814,6 +1875,17 @@ export function buildEastArcade(brick: Batch, stone: Batch, x: number, length: n
   pier(start, length);
   arcadeStorey(brick, x - h + EAST_ARCADE.ring / 2, length, spring, springing, opens, EAST_ARCADE.ring);
   dressFace(stone, x - h, -1, length, springing);
+  arcadeImposts(stone, x - h, -1, opens);
+}
+
+/** Round S1 (shed-gap-scan-1, B3): the cream stone impost block (ARCADE_IMPOST: along the wall, tall, out from the face; ASSUMED) under each arch's
+ * springing, on the pier beside it, its top on the springing line: R-a's east arcade and R-b's west wall show one at every pier. Into the arcades'
+ * stone (the spine's dressings, 'shed-spine-stone'), which does not cast. */
+export const ARCADE_IMPOST = { along: 0.6, tall: 0.35, out: 0.4 } as const;
+function arcadeImposts(stone: Batch, f: number, side: -1 | 1, opens: { vc: number; r: number; jamb: number }[]): void {
+  const { along, tall, out } = ARCADE_IMPOST;
+  for (const { vc, r, jamb } of opens) for (const sd of [-1, 1])
+    stone.box([f + side * out / 2, jamb - tall / 2, -(vc + sd * (r + along / 2))], [out, tall, along], { skip: [side > 0 ? '-x' : '+x'] });
 }
 
 /** The stone on a wall's face at u = `f`, facing `side`, that vault ribs land on: the band, and a stepped corbel (SPINE_WALL.corbel) under every rib. */
@@ -1847,6 +1919,7 @@ export function buildWestArcade(brick: Batch, stone: Batch, panes: Batch, length
   arcadeStorey(brick, depth / 2, length, GROUND_Y, springing, opens, depth, [1], (v0, v1) => (overCut(v0, v1) ? WESTERN_HEAD : GROUND_Y));
   brick.poly([[0, springing, 0], [depth, springing, 0], [depth, springing, -length], [0, springing, -length]], [[0, 0], [depth, 0], [depth, length], [0, length]], { facing: [0, 1, 0] }); // its top
   dressFace(stone, depth, 1, length, springing);
+  arcadeImposts(stone, depth, 1, opens);
   const n = 8;
   const { lights, radial, frame, bar, glass, out, sill, base } = WEST_GLAZING;
   const ub = glass + out;
