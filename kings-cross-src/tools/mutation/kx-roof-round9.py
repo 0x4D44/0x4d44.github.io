@@ -26,7 +26,8 @@ MUTATIONS = [
     ('end rib flush with the glass', 'web/src/shed.ts', 'gableRib: [0.9, 0.6],', 'gableRib: [0.9, 0.2],', 'north gable is framed'),
     ('seams in the ribs\' paint', 'web/src/shed.ts', "skip: ['+x', '-x', '-y', '+z', '-z'], color: seamPaint });", "skip: ['+x', '-x', '-y', '+z', '-z'] });", "crown's seams are a paler paint"),
     ('seams white', 'web/src/shed.ts', 'seamColour: 0x7d8a94,', 'seamColour: 0xffffff,', "crown's seams are a paler paint"),
-    ('rib caps paler too', 'web/src/shed.ts', "{ rotZ: Math.atan2(q[1] - p[1], q[0] - p[0]), skip: ['+x', '-x', '-y'] });\n      }\n    }\n    // the heavier end rib", "{ rotZ: Math.atan2(q[1] - p[1], q[0] - p[0]), skip: ['+x', '-x', '-y'], color: seamPaint });\n      }\n    }\n    // the heavier end rib", "crown's seams are a paler paint"),
+    # re-anchored round A5-1: the caps carry ROOF_EXTERIOR.capColour now
+    ('rib caps paler too', 'web/src/shed.ts', "skip: ['+x', '-x', '-y'], color: capPaint });", "skip: ['+x', '-x', '-y'], color: seamPaint });", "crown's seams are a paler paint"),
 ]
 
 def run(work: Path) -> subprocess.CompletedProcess[str]:

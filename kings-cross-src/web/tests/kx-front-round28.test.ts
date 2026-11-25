@@ -8,6 +8,7 @@ import type { KxData } from '../../core/osm.ts';
 import { readFileSync } from 'node:fs';
 import { shedLayout } from '../../core/station.ts';
 import * as shed from '../src/shed.ts';
+import { CROWN_ALPHA } from '../src/lighting.ts';
 // tools/evidence.mjs carries no types, so it is loaded by URL
 const evidence: Record<string, any> = await import(new URL('../../tools/evidence.mjs', import.meta.url).href);
 
@@ -105,7 +106,8 @@ test('A7: in x-ray mode, built or switched, the opacities are the documented pro
       // re-pinned round F9 (front-round-8 score, A7: the x-rayed crown's bars did not read): in x-ray the bars keep their full strength outside, crownOutside alone
       assert.equal(op('shed-roof-bars').opacity, (mode === 'xray' ? 1 : o) * shed.crownOutside(at, layout));
       assert.equal(glassAlpha(g), shed.crownAlpha(at, layout, mode), `${where} ${mode}: the crown's alpha`);
-      if (mode === 'xray') assert.equal(glassAlpha(g), shed.crownOutside(at, layout) * shed.crownAlpha([layout.width / 2, layout.crown + 500, 0], layout, 'auto') * shed.XRAY_OPACITY / shed.crownOutside([layout.width / 2, layout.crown + 500, 0], layout));
+      // re-pinned round A5-1: auto's crown alpha is CROWN_OUTSIDE.alpha (0.9) now, and x-ray's stays CROWN_ALPHA (0.85) at XRAY_OPACITY, as before
+      if (mode === 'xray') assert.equal(glassAlpha(g), shed.crownOutside(at, layout) * (CROWN_ALPHA * shed.XRAY_OPACITY));
     }
   }
   assert.equal((evidence as Record<string, unknown>).XRAY_EVIDENCE_OPACITY, shed.XRAY_OPACITY, 'the evidence page check expects the same x-ray opacity');

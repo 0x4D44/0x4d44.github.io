@@ -77,9 +77,11 @@ test('the shed\'s glass carries it, by day only and on a face that looks up; wit
   const was = (material('shedGlass') as THREE.MeshLambertMaterial).clone();
   lighting.addCrownBelow(was);
   const old = compile(was);
-  assert.equal(f.replace(`\nuniform float uCrownAbove;\nuniform float uCrownAlpha;\n${src}`, '').replace(`${line}\n`, ''), old.fragmentShader, 'the fragment shader otherwise byte for byte');
+  // re-pinned round A5-1: CROWN_OUTSIDE's uniform, functions and line ride with this patch (kx-roof-round13.test.ts pins them); taken out too
+  const outGlsl = L.CROWN_OUTSIDE_GLSL as string, outLine = L.CROWN_OUTSIDE_LINE as string;
+  assert.equal(f.replace(`\nuniform float uCrownAbove;\nuniform float uCrownAlpha;\nuniform float uCrownTint;\n${src}${outGlsl}`, '').replace(`${line}\n${outLine}\n`, ''), old.fragmentShader, 'the fragment shader otherwise byte for byte');
   assert.equal(now.vertexShader, old.vertexShader, 'the vertex shader untouched');
-  assert.deepEqual(Object.keys(now.uniforms).filter((k) => k !== 'uCrownAbove' && k !== 'uCrownAlpha'), Object.keys(old.uniforms), 'the same uniforms but its own level and alpha');
+  assert.deepEqual(Object.keys(now.uniforms).filter((k) => k !== 'uCrownAbove' && k !== 'uCrownAlpha' && k !== 'uCrownTint'), Object.keys(old.uniforms), 'the same uniforms but its own level and alpha'); // re-pinned round A5-1: and CROWN_OUTSIDE's level
   for (const k of Object.keys(old.uniforms)) assert.ok(now.uniforms[k] === old.uniforms[k], `${k} the shared one`);
   // the level follows the camera: 0 for a platform eye and under the crown, 1 from the overview's distance
   const level = now.uniforms.uCrownAbove as THREE.IUniform<number>, alpha = now.uniforms.uCrownAlpha as THREE.IUniform<number>;
@@ -104,7 +106,9 @@ test('the shed\'s glass carries it, by day only and on a face that looks up; wit
     assert.ok(v.alpha === 0 && Math.abs(v.opacity - near.near) < 1e-9, `inside at ${p}: alpha ${v.alpha}, opacity ${v.opacity}`);
   }
   const far = look(group, layout.spine, 300, 600);
-  assert.ok(raise >= 0.8 && raise <= 0.9 && Math.abs(far.alpha - raise) < 1e-9 && Math.abs(far.opacity - near.far) < 1e-9, `far off: alpha ${far.alpha}, the material's opacity still ${far.opacity}`);
+  // re-pinned round A5-1: in the physical modes (this group's auto) the raise is CROWN_OUTSIDE.alpha, 0.9 (kx-roof-round13.test.ts); CROWN_ALPHA is x-ray's base
+  const outside = (L.CROWN_OUTSIDE as { alpha: number }).alpha;
+  assert.ok(raise >= 0.8 && raise <= 0.9 && Math.abs(far.alpha - outside) < 1e-9 && Math.abs(far.opacity - near.far) < 1e-9, `far off: alpha ${far.alpha}, the material's opacity still ${far.opacity}`);
   // the x-ray roof mode scales it as it scales the roof
   const xray = shedModule.buildShed(layout, { range: false, roof: 'xray' });
   xray.updateMatrixWorld(true);

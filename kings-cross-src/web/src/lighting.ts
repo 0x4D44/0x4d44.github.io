@@ -525,16 +525,17 @@ vec3 crownAbove( vec3 c, float w, float texel, float ndv ) {
 `;
 
 /** Give the shed's crown glass its look from above (`CROWN_ABOVE`), after addCrownBelow (it reads that patch's day level), with the material's own level. */
-export function addCrownAbove(material: THREE.MeshLambertMaterial, level: THREE.IUniform<number>, alpha: THREE.IUniform<number>): void {
+export function addCrownAbove(material: THREE.MeshLambertMaterial, level: THREE.IUniform<number>, alpha: THREE.IUniform<number>, tint: THREE.IUniform<number> = { value: 0 }): void {
   const before = material.onBeforeCompile;
   const ownKey = material.customProgramCacheKey();
   material.onBeforeCompile = (shader, renderer) => {
     before.call(material, shader, renderer);
     shader.uniforms.uCrownAbove = level;
     shader.uniforms.uCrownAlpha = alpha;
+    shader.uniforms.uCrownTint = tint; // round A5-1: CROWN_OUTSIDE, after the lift
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', `#include <common>\nuniform float uCrownAbove;\nuniform float uCrownAlpha;\n${CROWN_ABOVE_GLSL}`)
-      .replace('#include <opaque_fragment>', `${CROWN_ABOVE_LINE}\n#include <opaque_fragment>`);
+      .replace('#include <common>', `#include <common>\nuniform float uCrownAbove;\nuniform float uCrownAlpha;\nuniform float uCrownTint;\n${CROWN_ABOVE_GLSL}${CROWN_OUTSIDE_GLSL}`)
+      .replace('#include <opaque_fragment>', `${CROWN_ABOVE_LINE}\n${CROWN_OUTSIDE_LINE}\n#include <opaque_fragment>`);
   };
   material.customProgramCacheKey = () => `${ownKey}+crownAbove`;
   material.needsUpdate = true;
@@ -548,6 +549,65 @@ export function addCrownAbove(material: THREE.MeshLambertMaterial, level: THREE.
  * already hides it at 0.85); one that looks up is raised to at least uCrownAlpha. Inside the level is 0 and the line is skipped.
  */
 export const CROWN_ABOVE_LINE = `#ifdef USE_MAP\nfloat crownTexel = dot( sampledDiffuseColor.rgb, vec3( 0.2126, 0.7152, 0.0722 ) );\n#else\nfloat crownTexel = ${CROWN_ABOVE.paneLuma.toFixed(4)};\n#endif\nif ( uCrownAbove * uCrownBelow > 0.0 ) outgoingLight = crownAbove( outgoingLight, uCrownAbove * uCrownBelow * smoothstep( 0.0, ${CROWN_ABOVE.full.toFixed(2)}, clamp( dot( normal, viewMatrix[ 1 ].xyz ), 0.0, 1.0 ) ), crownTexel, dot( normal, normalize( vViewPosition ) ) );\nif ( uCrownAlpha * uCrownBelow > 0.0 ) diffuseColor.a = mix( max( diffuseColor.a, uCrownAlpha ), diffuseColor.a * ( 1.0 - uCrownAbove ), smoothstep( 0.0, ${CROWN_ABOVE.full.toFixed(2)}, clamp( dot( normal, -viewMatrix[ 1 ].xyz ), 0.0, 1.0 ) ) );`;
+
+/**
+ * Round A5-1 (gap-scan-2, A5 item 1: from outside the crown still read as clear glass, the far slope's rib caps and the trusses through it a crossed-arc
+ * lattice; R-kx-front-d shows the glazed crown as an opaque pale grey-blue field crossed by fine bars down the slope). From outside, by day, in the physical
+ * roof modes (auto, solid; shed.ts crownTint gives 0 in x-ray and inside), the glass is drawn at least `alpha` opaque (shed.ts crownAlpha) and writes depth
+ * (shed.ts crownDepth), so nothing transparent behind it draws over it; its tone is taken `weight` of the way to `tint`, which reflects the sky's grey-blue
+ * by Schlick's Fresnel as CROWN_ABOVE's does, and fine bars `bars.width` wide every `bars.pitch` metres along the shed cross it down the slope, darkened by
+ * `bars.shade`: a box-filtered stripe on the pixel's footprint, faded to its mean as the footprint nears half a pitch, so it never aliases. ASSUMED amounts.
+ */
+export const CROWN_OUTSIDE = { alpha: 0.9, tint: 0xa9b6c2, weight: 0.7, bars: { pitch: 1.2, width: 0.06, shade: 0.45 } } as const;
+const crownTintRgb = new THREE.Color(CROWN_OUTSIDE.tint);
+const gl3 = (c: THREE.Color): string => `vec3( ${c.r.toFixed(4)}, ${c.g.toFixed(4)}, ${c.b.toFixed(4)} )`;
+/** a pitch-periodic stripe's coverage over [s - fw/2, s + fw/2] (the stripe on [0, width) of each pitch), faded to its mean `width / pitch` as fw nears half a pitch */
+export const stripeGlsl = (name: string, pitch: number, width: number): string => /* glsl */`
+float ${name}Run( float x ) {
+  return floor( x / ${pitch.toFixed(4)} ) * ${width.toFixed(4)} + min( x - ${pitch.toFixed(4)} * floor( x / ${pitch.toFixed(4)} ), ${width.toFixed(4)} );
+}
+float ${name}( float s, float fw ) {
+  float h = 0.5 * max( fw, 0.00001 );
+  float cover = ( ${name}Run( s + h ) - ${name}Run( s - h ) ) / ( 2.0 * h );
+  return mix( cover, ${(width / pitch).toFixed(5)}, smoothstep( ${(pitch / 8).toFixed(4)}, ${(pitch / 2).toFixed(4)}, fw ) );
+}
+`;
+export const CROWN_OUTSIDE_GLSL = stripeGlsl('crownBar', CROWN_OUTSIDE.bars.pitch, CROWN_OUTSIDE.bars.width) + /* glsl */`
+vec3 crownOutsideTone( vec3 c, float k, float bar, float ndv ) {
+  float fresnel = ${CROWN_ABOVE.f0.toFixed(2)} + ${(1 - CROWN_ABOVE.f0).toFixed(2)} * pow( 1.0 - clamp( ndv, 0.0, 1.0 ), 5.0 );
+  vec3 t = mix( ${gl3(crownTintRgb)}, vec3( ${CROWN_ABOVE.sky.map((v) => v.toFixed(2)).join(', ')} ), ${CROWN_ABOVE.reflect.toFixed(2)} * fresnel );
+  vec3 toned = mix( c, t, ${CROWN_OUTSIDE.weight.toFixed(2)} ) * ( 1.0 - ${CROWN_OUTSIDE.bars.shade.toFixed(2)} * bar );
+  return mix( c, toned, k );
+}
+`;
+/** what addCrownAbove puts after CROWN_ABOVE_LINE when given a tint level: the glass's along-shed metres are its map's v times the shedGlass tile's 1.8 m */
+export const CROWN_OUTSIDE_LINE = `#ifdef USE_MAP\nfloat crownAlong = vMapUv.y * 1.8;\n#else\nfloat crownAlong = 0.0;\n#endif\nif ( uCrownTint * uCrownAbove * uCrownBelow > 0.0 ) outgoingLight = crownOutsideTone( outgoingLight, uCrownTint * uCrownAbove * uCrownBelow * smoothstep( 0.0, ${CROWN_ABOVE.full.toFixed(2)}, clamp( dot( normal, viewMatrix[ 1 ].xyz ), 0.0, 1.0 ) ), crownBar( crownAlong, fwidth( crownAlong ) ), dot( normal, normalize( vViewPosition ) ) );`;
+
+/**
+ * Round A5-1 (gap-scan-2, A5 item 3: the slate flanks read as mottled speckle; R-kx-front-d shows them smooth dark grey with fine standing seams down the
+ * slope). In the physical roof modes (the level shed.ts sets: 0 in x-ray, so the x-rayed roof is as before) the cladding's colour is `color`, flat, crossed
+ * every `pitch` metres along the shed by a seam `width` wide, `shade` darker, box-filtered and faded as CROWN_OUTSIDE's bars are. ASSUMED amounts.
+ */
+export const SLATE_FLANK = { color: 0x3c4148, pitch: 0.5, width: 0.03, shade: 0.35 } as const;
+export const SLATE_FLANK_GLSL = stripeGlsl('slateSeam', SLATE_FLANK.pitch, SLATE_FLANK.width) + /* glsl */`
+vec3 slateFlank( vec3 c, float k, float seam ) {
+  return mix( c, ${gl3(new THREE.Color(SLATE_FLANK.color))} * ( 1.0 - ${SLATE_FLANK.shade.toFixed(2)} * seam ), k );
+}
+`;
+/** Give the shed's slate cladding SLATE_FLANK by `level` (0: the slate texture as before). Its map's v is metres along the shed over the slate tile's 1.0 m. */
+export function addSlateFlank(material: THREE.MeshLambertMaterial, level: THREE.IUniform<number>): void {
+  const before = material.onBeforeCompile;
+  const ownKey = material.customProgramCacheKey();
+  material.onBeforeCompile = (shader, renderer) => {
+    before.call(material, shader, renderer);
+    shader.uniforms.uSlateFlank = level;
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', `#include <common>\nuniform float uSlateFlank;\n${SLATE_FLANK_GLSL}`)
+      .replace('#include <map_fragment>', '#include <map_fragment>\n#ifdef USE_MAP\nif ( uSlateFlank > 0.0 ) diffuseColor.rgb = slateFlank( diffuseColor.rgb, uSlateFlank, slateSeam( vMapUv.y, fwidth( vMapUv.y ) ) );\n#endif');
+  };
+  material.customProgramCacheKey = () => `${ownKey}+slateFlank`;
+  material.needsUpdate = true;
+}
 
 /** The directional light's shadow line in three's lights chunk (as this module's patch above leaves it), with the crown's sky fill wrapped round it: the shade lifted, the sun's streaks left at 1. */
 function shedSoftenedLights(): string {
