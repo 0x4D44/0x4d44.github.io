@@ -686,7 +686,9 @@ export function gableBars(uc: number, springing: number, from: number, r = R): B
  * (the existing transom on the glass line), a bottom chord `depth` lower, and diagonals in a zigzag between them, `panel` m apart (ASSUMED from R-a,
  * about 14 triangles across the span). Painted as the bars, not a shadow caster.
  */
-export const GABLE_GIRDER = { depth: 1.5, panel: 2.3, chord: [0.2, 0.25] as const, web: [0.1, 0.15] as const } as const;
+// round F12 (front-round-11b score, A6: front-d's truss is deep, dark and open, the model's thin): 2.4 m deep (front-d: about 2.5 m against the 32 m span), its
+// chords 0.3 m and its diagonals 0.18 m (were 1.5 m, 0.2-0.25 m, 0.1-0.15 m; kx-front-round32 pins them)
+export const GABLE_GIRDER = { depth: 2.4, panel: 2.3, chord: [0.3, 0.3] as const, web: [0.18, 0.18] as const } as const;
 export function gableGirder(uc: number, springing: number, top: number, r = R): BarSpec[] {
   const { depth, panel, chord, web } = GABLE_GIRDER, y0 = top - depth;
   const half = Math.sqrt(Math.max(0, r * r - (y0 - springing) ** 2)) - 0.12, n = Math.max(2, Math.round((2 * half) / panel)), w = (2 * half) / n;

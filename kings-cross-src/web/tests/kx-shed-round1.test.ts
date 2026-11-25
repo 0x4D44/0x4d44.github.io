@@ -37,9 +37,10 @@ test('B3: the north screens are a mullion and transom grid, no ring bar crossing
   }
 });
 
-test('B3: a lattice girder 1.2-1.8 m deep spans the foot of each north screen under its glass, diagonals between its chords, not a shadow caster', () => {
-  const G = S.GABLE_GIRDER as { depth: number; panel: number };
-  assert.ok(G.depth >= 1.2 && G.depth <= 1.8, `depth ${G.depth}`);
+test('B3: a lattice girder 2.2-2.6 m deep spans the foot of each north screen under its glass, diagonals between its chords, not a shadow caster', () => {
+  const G = S.GABLE_GIRDER as { depth: number; panel: number; chord: readonly [number, number] };
+  // re-pinned round F12 (front-round-11b score, A6: front-d's truss is about 2.5 m deep; kx-front-round32 pins the new figures): was 1.2-1.8 m
+  assert.ok(G.depth >= 2.2 && G.depth <= 2.6, `depth ${G.depth}`);
   const gb = group.getObjectByName('shed-gable-bars')!;
   assert.ok(!SHADOW_CASTERS.has('shed-gable-bars'), 'the bars do not cast');
   for (const uc of centres) {
@@ -50,7 +51,8 @@ test('B3: a lattice girder 1.2-1.8 m deep spans the foot of each north screen un
     assert.ok(mid >= (2 * half) / G.panel - 2, `${mid} diagonals across x ${uc.toFixed(1)}`);
     // its bottom chord, seen from the platforms, under the middle
     const chord = hits([uc + 0.3, y0 - 3, -L + 0.0001], [0, 1, 0], [gb], 3.5)[0];
-    assert.ok(chord && Math.abs(local(chord).y - (y0 - 0.1)) < 0.05, `the bottom chord over x ${uc.toFixed(1)}: ${chord && local(chord).y.toFixed(2)}`);
+    // re-pinned round F12: the chord's underside is half its own height (G.chord[0], now 0.3 m) below its centre line, where it was a fixed 0.1 m
+    assert.ok(chord && Math.abs(local(chord).y - (y0 - G.chord[0] / 2)) < 0.05, `the bottom chord over x ${uc.toFixed(1)}: ${chord && local(chord).y.toFixed(2)}`);
   }
 });
 

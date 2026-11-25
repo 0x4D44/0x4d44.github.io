@@ -1400,6 +1400,13 @@ export const GLAZING = { spacing: 1.6, tier: 5.334, springing: 5.6388 } as const
  */
 export const GLINT_EVEN = 0.3;
 export const glintEven = { value: 0 };
+/**
+ * Round F12 (front-round-11b score, A6: head-on the outside gables read 30-40% too light, lighter than at a grazing view, and every pane the same): where
+ * glintEven is set (the north gables from outside by day) the glass's colour out is GABLE_SHEET: a dark blue-grey `tone` (sRGB, after the tone map; front-d's
+ * shaded screen reads about 61-65, 79-97, 89-125), each pane offset by up to `pane` and the screen by one broad soft ramp of up to `broad` (together at most
+ * 8%), taking the sky's haze by a Schlick Fresnel term (`f0` head-on, rising to 1 at grazing). glintEven 0 leaves the colour exactly as before.
+ */
+export const GABLE_SHEET = { tone: [0x35 / 255, 0x42 / 255, 0x4e / 255], pane: 0.04, broad: 0.04, f0: 0.05, haze: 0.3 } as const;
 const SKY_GLINT_GLSL = /* glsl */`
 #if defined( USE_FOG ) && ! defined( FLIP_SIDED )
 vec2 gm = ( floor( vec2( ( vGlassPos.x - uPaneX ) / ${GLAZING.spacing}, ( vGlassPos.y - ${GLAZING.springing} ) / ${GLAZING.tier} ) ) + 0.5 ) * vec2( ${GLAZING.spacing}, ${GLAZING.tier} ) + vec2( uPaneX, ${GLAZING.springing} );
@@ -1410,6 +1417,9 @@ float gc = smoothstep( 0.04, 0.25, fogColor.b - fogColor.r );
 float gf = min( ( 0.45 + 0.4 * ( 1.0 - abs( dot( normal, normalize( vViewPosition ) ) ) ) ) * mix( 1.0, 0.075 + 0.875 * mix( smoothstep( -0.6, 0.9, gb ), ${GLINT_EVEN}, uGlintEven ), gc ), 0.8 ) * gs;
 gl_FragColor.rgb = mix( gl_FragColor.rgb * ( 1.0 - 0.45 * gs ), mix( fogColor, vec3( 1.0 ), 0.7 * gs ), gf );
 gl_FragColor.a = mix( gl_FragColor.a, 1.0, 0.8 * gf );
+vec3 gt = vec3( ${GABLE_SHEET.tone.map(glslFloat).join(', ')} ) * ( 1.0 + ${glslFloat(GABLE_SHEET.pane)} * ( 2.0 * fract( sin( dot( gm, vec2( 12.9898, 78.233 ) ) ) * 43758.5453 ) - 1.0 ) + ${glslFloat(GABLE_SHEET.broad)} * sin( 0.06 * ( vGlassPos.x - uPaneX ) + 0.09 * vGlassPos.y + 0.8 ) );
+float gr = ( ${glslFloat(GABLE_SHEET.f0)} + ${glslFloat(1 - GABLE_SHEET.f0)} * pow( 1.0 - abs( dot( normal, normalize( vViewPosition ) ) ), 5.0 ) ) * gs;
+gl_FragColor.rgb = mix( gl_FragColor.rgb, mix( gt, mix( fogColor, vec3( 1.0 ), ${glslFloat(GABLE_SHEET.haze)} ), gr ), uGlintEven );
 #endif
 `;
 

@@ -125,7 +125,24 @@ test('A6 (F11b): with glintEven at 1 the glint is one even sheen: over a 60 m by
   };
   const streaked = worst(0), flat = worst(1);
   assert.ok(streaked > 30, `the streaks as round six made them: ${streaked.toFixed(1)} levels between neighbours`);
-  assert.ok(flat <= 2, `even: ${flat.toFixed(2)} levels between neighbouring points`);
+  // re-pinned round F12 (front-round-11b score, A6: the panes want a little life): GABLE_SHEET offsets each pane by up to 4%, so neighbours may differ by up to
+  // 7 levels (kx-front-round32 pins it); the streaks' tens of levels stay out. Was 2.
+  assert.ok(flat <= 7, `even: ${flat.toFixed(2)} levels between neighbouring points`);
   const mid = shade(1, 30, 15);
   assert.ok(Math.max(...mid) < 140 && mid[2]! > mid[0]!, `still dark blue-grey with a sheen: ${mid.map(v => v.toFixed(0)).join(', ')}`);
+  // round F12: GABLE_SHEET now sets the colour where glintEven is 1, so the flattening shows in the alpha: what of the room behind shows through must not
+  // vary pane to pane either (a streak's alpha over a lit room is a mosaic too), and stays near the sheet's own 0.86
+  const alpha = (flat: number, x: number, y: number): number => {
+    const toCamera = eye.map((c, i) => c - [x, y, 0][i]!);
+    const env = { vars: { gl_FragColor: [...dark], gl_FrontFacing: true, fogColor: day, cameraPosition: eye, viewMatrix: identity, vViewPosition: toCamera, normal: [0, 0, 1], vGlassPos: [x, y], uPaneX: 0, uGlintEven: flat } };
+    glsl.run(body, env);
+    return (env.vars.gl_FragColor as number[])[3]!;
+  };
+  let aw = 0, lo = 1, hi = 0;
+  for (let x = 0; x < 60; x += 0.75) for (let y = 0; y < 30; y += 0.75) {
+    const a = alpha(1, x, y); lo = Math.min(lo, a); hi = Math.max(hi, a);
+    aw = Math.max(aw, Math.abs(a - alpha(1, x + 0.75, y)), Math.abs(a - alpha(1, x, y + 0.75)));
+  }
+  assert.ok(aw < 0.01, `the alpha even between neighbours: ${aw.toFixed(4)}`);
+  assert.ok(lo >= 0.86 && hi <= 0.91, `the alpha near the sheet's own: ${lo.toFixed(3)} to ${hi.toFixed(3)}`);
 });
