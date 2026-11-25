@@ -309,7 +309,8 @@ function startSwing(g, f, tgt, o) {   // o = { T (s) | null for phase driven, th
 
 // ------------------------------------------------------------------------------------------------------------------------ the update
 const V_ON = 0.16, V_OFF = 0.09, ACC_TAU = 0.1, ACC_MAX = 3;
-const STEP_CAP = 1.15;   // a landing is at most this many steps (of the speed being reached) on from the other foot   // (ACC_*: the smoothing (s) and the ceiling (m/s^2) of the acceleration the landings are placed for)
+const STEP_CAP = 1.15;
+const REACH_DROP = 0.12;   // m: the most the pelvis is lowered below the stride's own height to let the feet reach   // a landing is at most this many steps (of the speed being reached) on from the other foot   // (ACC_*: the smoothing (s) and the ceiling (m/s^2) of the acceleration the landings are placed for)
 /** Advance the gait by dt (<= 1/30 s). inp = { x, z, yaw (the person's world position and heading), v (ground speed), walking (the game wants a walk),
  *  stopD (optional: the metres the body still has to travel along its heading before it comes to rest, for a person who is walking to a place to STAND - the last steps then land where
  *  they will stand instead of a stride ahead of it) } */
@@ -528,7 +529,7 @@ export function gaitTargets(g) {
   T.pelvisD = qmul(qy(yawP), qz(rollP));
   T.pelvisPos = [-sway * w, bobH, B.P0[B.ix.pelvis][2]];
   T.feet = g.feet.map((f) => f.cur);
-  T.pelvisPos[1] = lowerForReach(g, T, P);
+  { const h0 = T.pelvisPos[1]; T.pelvisPos[1] = Math.max(lowerForReach(g, T, P), h0 - REACH_DROP); }   // (lowered no more than REACH_DROP for a foot out of reach: a foot planted 0.55 - 0.73 m ahead of a body stopped at a car door brought the pelvis down 0.35 - 0.65 m, a kneel or the splits - review 59; the foot that cannot reach lifts and is stepped in instead)
   // trunk: counter-rotates against the pelvis, leans a little forward; the head stays level and straight ahead
   const yawT = -P.thorax * yawP, lean = -(P.lean + (V.stoop || 0) * D2R), rollT = 0.3 * rollP;   // (V.stoop: older walkers carry the trunk a few degrees further forward)
   const mix = (a, b, t) => a + (b - a) * t;
