@@ -9,12 +9,13 @@
 <link rel="stylesheet" href="zoo.css">
 <link rel="stylesheet" href="css/words.css">
 <link rel="stylesheet" href="css/media.css">
+<link rel="stylesheet" href="css/chance.css">
 </head>
 <body>
 <header class="masthead">
   <div class="kicker">The Almanac · 3 November 2026</div>
   <h1>The Model Zoo</h1>
-  <p class="dek">One afternoon, every OpenAI and Anthropic model we could still reach, and the same questions for all of them. Pick a number. Name your favourite colour. Draw a haggis chasing a gamekeeper. Write a joke machine. Play the Moonlight Sonata from memory. Then all of them write one story, a sentence each.</p>
+  <p class="dek">One afternoon, every OpenAI and Anthropic model we could still reach, and the same questions for all of them. Pick a number. Name your favourite colour. Draw a haggis chasing a gamekeeper. Write a joke machine. Play the Moonlight Sonata from memory. Then all of them write one story, a sentence each. And, added on 25 November, how random are they: the same question asked twice.</p>
   <div class="stats" id="stats"></div>
 </header>
 <nav class="chapters" aria-label="Chapters"><ol id="toc"></ol></nav>
@@ -28,6 +29,7 @@
   <section class="chapter" id="stories" data-title="Stories"></section>
   <section class="chapter" id="ask" data-title="Ask them anything"></section>
   <section class="chapter" id="bill" data-title="The bill"></section>
+  <section class="chapter" id="chance" data-title="Same question, twice"></section>
 </main>
 <footer id="footer">
   <p>Collected on 3 November 2026 through the OpenAI and Anthropic APIs at each model's default settings, except where a model is marked <em>thinking</em> or <em>pro mode</em>. Times include our proxy and the provider's load that afternoon: compare orders of magnitude, not close calls. Costs are tokens × published price. Built by Claude Opus 5.5, so the Claude-versus-GPT comparisons are measured mechanically and every answer is shown unedited.</p>
@@ -45,6 +47,7 @@
 <script src="js/ch-stories.js"></script>
 <script src="js/ch-ask.js"></script>
 <script src="js/ch-bill.js"></script>
+<script src="js/ch-chance.js"></script>
 <script>Zoo.start();</script>
 <script defer src="/almanac-back.js"></script>
 </body>
