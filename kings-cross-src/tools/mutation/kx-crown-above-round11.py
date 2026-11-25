@@ -29,20 +29,25 @@ MUTATIONS = [
     ('no cap', 'web/src/lighting.ts', 'return min( mix( c, lifted, w ), max( c, vec3(', 'return max( mix( c, lifted, w ), min( c, vec3(', 'crownAbove: nothing at level 0'),
     ('pane tone not the painted one', 'web/src/lighting.ts', 'paneLuma: 0.602,', 'paneLuma: 0.7,', 'crownAbove: nothing at level 0'),
     ('mask not read off the texel', 'web/src/lighting.ts', ', 0.0, 1.0 ) ), crownTexel, dot( normal, normalize( vViewPosition ) ) );\\n', ', 0.0, 1.0 ) ), 1.0 - crownPaneK, dot( normal, normalize( vViewPosition ) ) );\\n', "the shed's glass carries it"),
-    ('glass not given it', 'web/src/shed.ts', '  addCrownAbove(glassMat, crownAbove, glassAlpha);\n', '', "the shed's glass carries it"),
+    # re-anchored round A5-1: addCrownAbove takes CROWN_OUTSIDE's level too
+    ('glass not given it', 'web/src/shed.ts', '  addCrownAbove(glassMat, crownAbove, glassAlpha, glassTint);\n', '', "the shed's glass carries it"),
     ('not by day only', 'web/src/lighting.ts', 'if ( uCrownAbove * uCrownBelow > 0.0 ) outgoingLight = crownAbove( outgoingLight, uCrownAbove * uCrownBelow *', 'if ( uCrownAbove > 0.0 ) outgoingLight = crownAbove( outgoingLight, uCrownAbove *', "the shed's glass carries it"),
     ('on a face that looks down', 'web/src/lighting.ts', 'clamp( dot( normal, viewMatrix[ 1 ].xyz ), 0.0, 1.0 ) ), crownTexel,', 'clamp( dot( normal, -viewMatrix[ 1 ].xyz ), 0.0, 1.0 ) ), crownTexel,', "the shed's glass carries it"),
-    ('an extra change in the program', 'web/src/lighting.ts', "`#include <common>\\nuniform float uCrownAbove;\\nuniform float uCrownAlpha;\\n${CROWN_ABOVE_GLSL}`", "`#include <common>\\nuniform float uCrownAbove;\\nuniform float uCrownAlpha;\\n${CROWN_ABOVE_GLSL}\\nfloat crownExtra;`", "the shed's glass carries it"),
+    # re-anchored round A5-1: the header carries CROWN_OUTSIDE's uniform and functions
+    ('an extra change in the program', 'web/src/lighting.ts', 'uniform float uCrownTint;\\n${CROWN_ABOVE_GLSL}${CROWN_OUTSIDE_GLSL}`', 'uniform float uCrownTint;\\n${CROWN_ABOVE_GLSL}${CROWN_OUTSIDE_GLSL}\\nfloat crownExtra;`', "the shed's glass carries it"),
     ('level never set', 'web/src/shed.ts', '    crownAbove.value = crownOutside([local.x, local.y, local.z], layout);\n', '', "the shed's glass carries it"),
     ('alpha lowered, not raised', 'web/src/lighting.ts', 'diffuseColor.a = mix( max( diffuseColor.a, uCrownAlpha ),', 'diffuseColor.a = mix( uCrownAlpha,', "the shed's glass carries it"),
     ('alpha raised at night too', 'web/src/lighting.ts', 'if ( uCrownAlpha * uCrownBelow > 0.0 )', 'if ( uCrownAlpha > 0.0 )', "the shed's glass carries it"),
-    ('alpha raised inside', 'web/src/shed.ts', '  return crownOutside(cam, layout) * CROWN_ALPHA * (', '  return CROWN_ALPHA * (', "the shed's glass carries it"),
-    ('x-ray mode ignored', 'web/src/shed.ts', "CROWN_ALPHA * (mode === 'xray' ? XRAY_OPACITY : 1);", 'CROWN_ALPHA * 1;', "the shed's glass carries it"),
+    # re-anchored round A5-1: crownAlpha takes CROWN_OUTSIDE.alpha outside x-ray
+    ('alpha raised inside', 'web/src/shed.ts', "  return crownOutside(cam, layout) * (mode === 'xray' ? CROWN_ALPHA * XRAY_OPACITY : CROWN_OUTSIDE.alpha * crownDay(night));", "  return (mode === 'xray' ? CROWN_ALPHA * XRAY_OPACITY : CROWN_OUTSIDE.alpha * crownDay(night));", "the shed's glass carries it"),
+    # re-anchored round A5-1: as above
+    ('x-ray mode ignored', 'web/src/shed.ts', "(mode === 'xray' ? CROWN_ALPHA * XRAY_OPACITY : CROWN_OUTSIDE.alpha * crownDay(night))", "(mode === 'xray' ? CROWN_OUTSIDE.alpha * crownDay(night) : CROWN_OUTSIDE.alpha * crownDay(night))", "the shed's glass carries it"),
     ('alpha too low', 'web/src/lighting.ts', 'export const CROWN_ALPHA = 0.85;', 'export const CROWN_ALPHA = 0.5;', "the shed's glass carries it"),
-    ('alpha never set', 'web/src/shed.ts', '    glassAlpha.value = crownAlpha([local.x, local.y, local.z], layout, roofMode());\n', '', "the shed's glass carries it"),
-    ('alpha through the material opacity', 'web/src/shed.ts', '    glassAlpha.value = crownAlpha([local.x, local.y, local.z], layout, roofMode());\n', '    glassAlpha.value = 0; glassMat.opacity = Math.max(glassMat.opacity, crownAlpha([local.x, local.y, local.z], layout, roofMode()));\n', "the shed's glass carries it"),
+    ('alpha never set', 'web/src/shed.ts', '    glassAlpha.value = crownAlpha([local.x, local.y, local.z], layout, roofMode(), windowNight.value);\n', '', "the shed's glass carries it"),
+    ('alpha through the material opacity', 'web/src/shed.ts', '    glassAlpha.value = crownAlpha([local.x, local.y, local.z], layout, roofMode(), windowNight.value);\n', '    glassAlpha.value = 0; glassMat.opacity = Math.max(glassMat.opacity, crownAlpha([local.x, local.y, local.z], layout, roofMode(), windowNight.value));\n', "the shed's glass carries it"),
     ('no sky reflection', 'web/src/lighting.ts', 'f0: 0.04, reflect: 0.35', 'f0: 0.04, reflect: 0.0', 'round 12'),
-    ('reflection inverted', 'web/src/lighting.ts', 'pow( 1.0 - clamp( ndv, 0.0, 1.0 ), 5.0 )', 'pow( clamp( ndv, 0.0, 1.0 ), 5.0 )', 'round 12'),
+    # re-anchored round A5-1: CROWN_OUTSIDE_GLSL has a Fresnel of its own; this one is CROWN_ABOVE's
+    ('reflection inverted', 'web/src/lighting.ts', 'pow( 1.0 - clamp( ndv, 0.0, 1.0 ), 5.0 );\n  vec3 lifted', 'pow( clamp( ndv, 0.0, 1.0 ), 5.0 );\n  vec3 lifted', 'round 12'),
     ('reflection to the sky', 'web/src/lighting.ts', 'f0: 0.04, reflect: 0.35', 'f0: 0.04, reflect: 1.0', 'round 12'),
     ('pane tone back to 1.05', 'web/src/lighting.ts', 'pane: 0.75, share: 0.9,', 'pane: 1.05, share: 0.9,', 'round 12'),
     ('down faces not faded from outside', 'web/src/lighting.ts', 'diffuseColor.a * ( 1.0 - uCrownAbove )', 'diffuseColor.a', "the shed's glass carries it"),

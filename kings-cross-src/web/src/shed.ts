@@ -16,7 +16,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { CLOCK_TOWER_HEIGHT, SHED_SPAN_WIDTH } from '../../core/station.ts';
 import type { ClockDial } from './clocks.ts';
 import type { ShedLayout } from '../../core/station.ts';
-import { addCrownAbove, addCrownBelow, CROWN_ALPHA, setShedGlass } from './lighting.ts';
+import { addCrownAbove, addCrownBelow, addSlateFlank, CROWN_ALPHA, CROWN_OUTSIDE, setShedGlass } from './lighting.ts';
 import { Batch, gableDraw, glintEven, GLAZING, material, paneUv, windowNight, withBuildingNightMaterial } from './materials.ts';
 import type { V2, V3 } from './materials.ts';
 import { GROUND_Y } from './world.ts';
@@ -793,7 +793,9 @@ export function haunchRingCentres(springing: number, r = R, n = 16): [number, nu
  *            shows them).
  */
 export const ROOF_EXTERIOR = {
-  seamPitch: 1.8, seam: [0.06, 0.03], ribCap: [0.3, 0.12], endRib: [0.5, 0.6], rail: { height: 1.1, post: 1.525, size: 0.06 },
+  // round A5-1 (gap-scan-2, A5 item 2: the intermediate caps read as bold near-black arcs over glass and slate; front-d shows them subdued): 0.3 -> 0.15 m wide,
+  // in `capColour`, a mid grey between the ribs' paint and the seams'; the end ribs and the gable ribs stay heavy and dark
+  seamPitch: 1.8, seam: [0.06, 0.03], ribCap: [0.15, 0.12], capColour: 0x4a5058, endRib: [0.5, 0.6], rail: { height: 1.1, post: 1.525, size: 0.06 },
   gutter: [0.5, 0.45], valleyGutter: [0.8, 0.3],
   /**
    * Round 9 (the roof-exterior-round-2 score: the north end rib "cannot be told apart from the brick arch ring"; A6 "needs the dark metal end rib in front
@@ -878,8 +880,32 @@ export function roofBarsOpacity(cam: V3, layout: Pick<ShedLayout, 'width' | 'len
  * The least alpha the crown glass is drawn with from `cam` (lighting.ts CROWN_ALPHA): 0 inside, CROWN_ALPHA ROOF_EXTERIOR.fade metres out, times what the
  * mode multiplies the roof's opacity by (XRAY_OPACITY in 'xray'; 1 in 'auto' and 'solid', where the glazing's own opacity is already GLASS_OPACITY.near).
  */
-export function crownAlpha(cam: V3, layout: Pick<ShedLayout, 'width' | 'length' | 'crown'>, mode: RoofMode = 'auto'): number {
-  return crownOutside(cam, layout) * CROWN_ALPHA * (mode === 'xray' ? XRAY_OPACITY : 1);
+// round A5-1: in the physical modes CROWN_OUTSIDE.alpha (0.9), not CROWN_ALPHA (0.85); x-ray as before
+// round A5-1b: in the physical modes times crownDay, so the raise fades out through dusk (at night the program skips it, as before)
+export function crownAlpha(cam: V3, layout: Pick<ShedLayout, 'width' | 'length' | 'crown'>, mode: RoofMode = 'auto', night = 0): number {
+  return crownOutside(cam, layout) * (mode === 'xray' ? CROWN_ALPHA * XRAY_OPACITY : CROWN_OUTSIDE.alpha * crownDay(night));
+}
+/** Round A5-1b (the scorer: at dusk the far arcs showed again, the depth write cut at a night level of 0.5): the one day factor the crown's outside raise and depth write follow, 1 by day to 0 at full night. */
+// round A5-1c (the scorer on 13b: at the dusk capture, 2026-11-23T16:15Z, night level 0.62 (the sun 2.6 degrees down), the trusses and the far arcs showed
+// through, the raise faded to 0.42 there): the fade is held to the last of the dusk, 0.75 to 1, so the dusk capture keeps the full raise (the tint is dimmed
+// by the light instead, CROWN_OUTSIDE.lightDay) and the night capture (22:00Z, level 1) is as before
+export function crownDay(night: number): number {
+  return 1 - smoothstep(0.75, 1, night);
+}
+/** Round A5-1c: the night level below which the crown glass writes depth from outside (crownDepth): every view but full night (the 22:00Z capture is at 1). */
+export const CROWN_DEPTH_NIGHT = 0.95;
+/** Round A5-1: the level of CROWN_OUTSIDE's tint and bars, and of SLATE_FLANK, for `cam`: crownOutside in the physical modes, 0 in x-ray (as before there). */
+export function crownTint(cam: V3, layout: Pick<ShedLayout, 'width' | 'length' | 'crown'>, mode: RoofMode = 'auto'): number {
+  return mode === 'xray' ? 0 : crownOutside(cam, layout);
+}
+/**
+ * Round A5-1 (gap-scan-2, A5 item 1: the far slope's rib caps showed through the crown as a crossed-arc lattice): whether the crown glass writes depth. The caps
+ * and bars (shed-roof-bars) draw after it, transparent, so with no depth from the glass the far slope's drew over the near slope's glass at full strength. From
+ * outside by day in the physical modes it writes depth, so they are hidden behind it and the near ones (proud of it) still draw; inside, at night and in x-ray
+ * it writes none, as before. Round A5-1c: by day and through dusk, below CROWN_DEPTH_NIGHT, not cut at a night level of 0.5.
+ */
+export function crownDepth(cam: V3, layout: Pick<ShedLayout, 'width' | 'length' | 'crown'>, night: number, mode: RoofMode = 'auto'): boolean {
+  return mode !== 'xray' && night < CROWN_DEPTH_NIGHT && crownOutside(cam, layout) > 0;
 }
 
 /** How far outside the shed `cam` is, 0 anywhere inside it to 1 ROOF_EXTERIOR.fade metres out (a camera rising above the crown counts four times), in every roof mode. */
@@ -1307,6 +1333,8 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   });
   const cladMat = (material('slate') as THREE.MeshLambertMaterial).clone();
   cladMat.transparent = true; // its opacity changes with the view, see roofOpacity
+  const slateFlank = { value: 0 }; // round A5-1: SLATE_FLANK from outside in the physical modes (crownTint)
+  addSlateFlank(cladMat, slateFlank);
   const cladding = mesh(mergeGeometries(flanks, false), cladMat, 'shed-roof-cladding');
   // round F8 (A7): the mode is read each frame off the group's userData.roofMode, so it can be switched at run time (tools/evidence.mjs's x-ray shots) and
   // the switch touches the opacities alone, as a build in that mode would draw them
@@ -1318,20 +1346,22 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   const glassMat = (material('shedGlass') as THREE.MeshLambertMaterial).clone();
   glassMat.opacity = glazingOpacity(1);
   addCrownBelow(glassMat); // grey-white from below by day (lighting.ts CROWN_BELOW)
-  const crownAbove = { value: 0 }, glassAlpha = { value: 0 }; // pale and less see-through from outside only (lighting.ts CROWN_ABOVE, CROWN_ALPHA), set before each draw
-  addCrownAbove(glassMat, crownAbove, glassAlpha);
+  const crownAbove = { value: 0 }, glassAlpha = { value: 0 }, glassTint = { value: 0 }; // pale and less see-through from outside only (lighting.ts CROWN_ABOVE, CROWN_ALPHA, CROWN_OUTSIDE), set before each draw
+  addCrownAbove(glassMat, crownAbove, glassAlpha, glassTint);
   cladding.onBeforeRender = (_renderer, _scene, camera) => {
     inverse.copy(group.matrixWorld).invert();
     local.copy(camera.position).applyMatrix4(inverse);
     const o = roofOpacity([local.x, local.y, local.z], layout, roofMode());
     cladMat.opacity = o;
     cladMat.depthWrite = o > 0.98;
+    slateFlank.value = crownTint([local.x, local.y, local.z], layout, roofMode()); // 0 inside: from under one vault the other's outer face shows through the glass
     glassMat.opacity = glazingOpacity(o);
   };
   // the outside's structure (ROOF_EXTERIOR): rib caps, the crown's glazing bars, the gutters; dark like the ribs, thinning with the cladding
   const outer = new Batch({ colored: true }); // white (the ribs' paint) but for the seams, paler (ROOF_EXTERIOR.seamColour)
   const ribRgb = (material('ribPaint') as THREE.MeshLambertMaterial).color, seamRgb = new THREE.Color(ROOF_EXTERIOR.seamColour);
   const seamPaint: [number, number, number] = [seamRgb.r / ribRgb.r, seamRgb.g / ribRgb.g, seamRgb.b / ribRgb.b]; // over 1: the vertex colour multiplies the paint
+  const capRgb = new THREE.Color(ROOF_EXTERIOR.capColour), capPaint: [number, number, number] = [capRgb.r / ribRgb.r, capRgb.g / ribRgb.g, capRgb.b / ribRgb.b];
   const sheenRgb = new THREE.Color(ROOF_EXTERIOR.ribSheen), sheenPaint: [number, number, number] = [sheenRgb.r / ribRgb.r, sheenRgb.g / ribRgb.g, sheenRgb.b / ribRgb.b];
   const rs = R + ROOF_SKIN;
   centres.forEach((uc, vault) => {
@@ -1342,7 +1372,7 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
       for (let i = 0; i < ARC_STEPS * 2; i++) {
         const p = vaultPoint(uc, sp, capR, a0 + ((a1 - a0) * i) / (ARC_STEPS * 2));
         const q = vaultPoint(uc, sp, capR, a0 + ((a1 - a0) * (i + 1)) / (ARC_STEPS * 2));
-        outer.box([(p[0] + q[0]) / 2, (p[1] + q[1]) / 2, -v], [Math.hypot(q[0] - p[0], q[1] - p[1]) + 0.04, ROOF_EXTERIOR.ribCap[1], ROOF_EXTERIOR.ribCap[0]], { rotZ: Math.atan2(q[1] - p[1], q[0] - p[0]), skip: ['+x', '-x', '-y'] });
+        outer.box([(p[0] + q[0]) / 2, (p[1] + q[1]) / 2, -v], [Math.hypot(q[0] - p[0], q[1] - p[1]) + 0.04, ROOF_EXTERIOR.ribCap[1], ROOF_EXTERIOR.ribCap[0]], { rotZ: Math.atan2(q[1] - p[1], q[0] - p[0]), skip: ['+x', '-x', '-y'], color: capPaint });
       }
     }
     // the heavier end rib on the north gable's edge
@@ -1417,7 +1447,9 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
     inverse.copy(group.matrixWorld).invert();
     local.copy(camera.position).applyMatrix4(inverse);
     crownAbove.value = crownOutside([local.x, local.y, local.z], layout);
-    glassAlpha.value = crownAlpha([local.x, local.y, local.z], layout, roofMode());
+    glassAlpha.value = crownAlpha([local.x, local.y, local.z], layout, roofMode(), windowNight.value);
+    glassTint.value = crownTint([local.x, local.y, local.z], layout, roofMode());
+    glassMat.depthWrite = crownDepth([local.x, local.y, local.z], layout, windowNight.value, roofMode());
   };
   group.add(glassMesh);
   group.add(mesh(mergeGeometries(lining, false), material('lining'), 'shed-roof-lining'));

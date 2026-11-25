@@ -27,7 +27,8 @@ test('A7 (F9): the roof\'s three layers stay in the transparent pass in every mo
       for (const n of ['shed-roof-cladding', 'shed-roof-glass', 'shed-roof-bars']) {
         const mat = before(byName(g, n), c);
         assert.equal(mat.transparent, true, `${mode} ${where}: ${n} transparent`);
-        const dw = n === 'shed-roof-cladding' ? o > 0.98 : n === 'shed-roof-glass' ? false : shed.roofBarsOpacity(at, layout, mode) > 0;
+        // re-pinned round A5-1: the glass writes depth from outside by day in auto and solid (crownDepth; the far slope's caps hid behind it), none in x-ray or inside
+        const dw = n === 'shed-roof-cladding' ? o > 0.98 : n === 'shed-roof-glass' ? shed.crownDepth(at, layout, 0, mode) : shed.roofBarsOpacity(at, layout, mode) > 0;
         assert.equal(mat.depthWrite, dw, `${mode} ${where}: ${n} depth write`);
       }
     }

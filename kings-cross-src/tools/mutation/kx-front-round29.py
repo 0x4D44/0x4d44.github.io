@@ -21,7 +21,9 @@ out.mkdir(parents=True, exist_ok=True)
 
 MUTATIONS = [
     ('the slate opaque but in x-ray', 'web/src/shed.ts', 'cladMat.transparent = true;', "cladMat.transparent = opts.roof === 'xray';", 'three layers stay'),
-    ('the roof glass writes depth when thinned', 'web/src/shed.ts', '    glassMat.opacity = glazingOpacity(o);\n', '    glassMat.opacity = glazingOpacity(o);\n    glassMat.depthWrite = o < 0.98;\n', 'three layers stay'),
+    # re-anchored round A5-1: the glass's own draw now sets its depth write (shed.ts crownDepth) after the cladding's, so the old mutant there was overwritten;
+    # this one writes depth inside too, where it must write none
+    ('the roof glass writes depth inside', 'web/src/shed.ts', '    glassMat.depthWrite = crownDepth([local.x, local.y, local.z], layout, windowNight.value, roofMode());\n', '    glassMat.depthWrite = crownDepth([local.x, local.y, local.z], layout, windowNight.value, roofMode()) || crownOutside([local.x, local.y, local.z], layout) === 0;\n', 'three layers stay'),
     ('the glass order reversed', 'web/src/shed.ts', 'GLASS_ORDER = { gable: 2.5, roof: 3, front: 3.5 }', 'GLASS_ORDER = { gable: 3.5, roof: 3, front: 2.5 }', 'draw in a fixed order'),
     ('the front glass after the bars', 'web/src/shed.ts', 'GLASS_ORDER = { gable: 2.5, roof: 3, front: 3.5 }', 'GLASS_ORDER = { gable: 2.5, roof: 3, front: 4.5 }', 'draw in a fixed order'),
     ('the front glass shares the roof order again', 'web/src/shed.ts', '  lunMesh.renderOrder = GLASS_ORDER.front;\n', '  lunMesh.renderOrder = GLASS_ORDER.roof;\n', 'draw in a fixed order'),
@@ -32,7 +34,8 @@ MUTATIONS = [
     ('the end glass dims in auto', 'web/src/shed.ts', "  return mode === 'xray' ? glazingOpacity(XRAY_OPACITY) / glazingOpacity(1) : 1;", '  return glazingOpacity(XRAY_OPACITY) / glazingOpacity(1);', 'the end glass'),
     ('the end glass dims by the slate', 'web/src/shed.ts', "  return mode === 'xray' ? glazingOpacity(XRAY_OPACITY) / glazingOpacity(1) : 1;", "  return mode === 'xray' ? XRAY_OPACITY : 1;", 'the end glass'),
     ('the shared glass not put back', 'web/src/shed.ts', '  glass.onAfterRender = (_r, _s, _c, _g, mat) => { mat.opacity = was; };\n', '', 'the end glass'),
-    ('the gables not dimmed', 'web/src/shed.ts', '  dimInXray(gableGlass, group);\n', '', 'the end glass'),
+    # re-anchored round A5-1 (stale since F11, which moved the gables' dimming into gableGlassView; the driver stopped on it)
+    ('the gables not dimmed', 'web/src/shed.ts', 'm.opacity = (was * (1 - k) + GABLE_OUTSIDE.opacity * k) * endGlassFactor(group.userData.roofMode as RoofMode);', 'm.opacity = was * (1 - k) + GABLE_OUTSIDE.opacity * k;', 'the end glass'),
     ('north of the gables, the south order', 'web/src/shed.ts', '  if (z < -layout.length) return { front: a, roof: b, gable: c };', '  if (z < -layout.length) return { gable: a, roof: b, front: c };', 'A7/A6 (F9b)'),
     ('south of the front, the north order', 'web/src/shed.ts', '  if (z > 0) return { gable: a, roof: b, front: c };', '  if (z > 0) return { front: a, roof: b, gable: c };', 'A7/A6 (F9b)'),
     ('between, the roof first', 'web/src/shed.ts', '  return z < -layout.length / 2 ? { front: a, gable: b, roof: c } : { gable: a, front: b, roof: c };', '  return { roof: a, gable: b, front: c };', 'A7/A6 (F9b)'),
