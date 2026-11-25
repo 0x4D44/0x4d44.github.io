@@ -230,7 +230,9 @@ class GroupedSplit(unittest.TestCase):
             ax = [{"group": "0x4D44", "id": "ax-%d" % i, "article": "2025.01.01 - Private title %d" % i,
                    "text": "Marmalade passage %d." % i} for i in range(3)]
             gb = [{"group": "Saki", "id": "pg-%d" % i, "text": "Clovis %d." % i} for i in range(3)]
-            for name, rows in (("writingprompts", wp), ("author", ax), ("gutenberg", gb)):
+            wk = [{"group": "wiki-%d" % (i // 2), "id": "wiki-%02d" % i, "title": "Zeppelin harbour %d" % i,
+                   "text": "Encyclopaedic %d." % i} for i in range(6)]
+            for name, rows in (("writingprompts", wp), ("author", ax), ("gutenberg", gb), ("wikipedia", wk)):
                 with open(os.path.join(d, "human", name + ".jsonl"), "w") as f:
                     f.write("\n".join(json.dumps(r) for r in rows) + "\n")
                 for r in rows:
@@ -239,7 +241,9 @@ class GroupedSplit(unittest.TestCase):
                    for m in ("gpt-a", "claude-b") for t in range(0, 9, 2)]
             gen += [{"set": "essay", "model": m, "topic": "ax-%d" % t, "sample": 0, "ok": True, "text": "Essay %d" % t}
                     for m in ("gpt-a", "claude-b") for t in range(3)]
-            for kind in ("wp", "essay"):
+            gen += [{"set": "nf", "model": m, "topic": "wiki-%02d" % t, "sample": 0, "ok": True, "text": "Explainer %d" % t}
+                    for m in ("gpt-a", "claude-b") for t in range(6)]
+            for kind in ("wp", "essay", "nf"):
                 with open(os.path.join(d, "detect-%s.jsonl" % kind), "w") as f:
                     f.write("\n".join(json.dumps(r) for r in gen if r["set"] == kind) + "\n")
             for r in gen:
@@ -249,7 +253,8 @@ class GroupedSplit(unittest.TestCase):
 
             out = D.build(data_dir=d)
             blob = json.dumps(out).lower()
-            for w in ("lighthouse", "quentin", "marmalade", "private title", "clovis", "wp-0", "ax-"):
+            for w in ("lighthouse", "quentin", "marmalade", "private title", "clovis", "wp-0", "ax-",
+                      "zeppelin", "encyclopaedic", "wiki-"):
                 self.assertNotIn(w, blob)
             self.assertEqual(out["base"]["kinds"]["reddit"]["n_human"], 9)
             self.assertEqual(out["base"]["kinds"]["claude"]["n_model"], 8)
@@ -260,6 +265,30 @@ class GroupedSplit(unittest.TestCase):
             self.assertEqual(stories_row["matched_new"]["n_model"], 5)
             self.assertEqual(len(out["map"]), len(gen))
             self.assertIn("stories", out["distances"])
+            self.assertIn("nonfiction", out["distances"])
+            self.assertNotIn("wiki", out["base"]["kinds"])    # the original table keeps its original texts
+            nf_row = [r for r in out["matched"]["rows"] if r["genre"] == "nonfiction" and r["family"] == "claude"][0]
+            self.assertEqual(nf_row["matched_new"]["n_human"], 6)
+            self.assertEqual(nf_row["matched_new"]["n_model"], 6)
+            self.assertEqual(out["matched"]["humans_new"]["wiki"]["n_human"], 6)
+
+    def test_scrub_drops_the_heading_and_the_title(self):
+        t = D.scrub("# On Owning Nothing\n\nI wrote on owning nothing last year. On Owning Nothing, again.", "On Owning Nothing")
+        self.assertNotIn("owning nothing", t.lower())
+        self.assertFalse(t.startswith("#"))
+        self.assertEqual(t.count(D.TITLE_MARK), 2)
+        self.assertEqual(D.scrub("Plain text.", None), "Plain text.")
+
+    def test_committed_essays_carry_no_title(self):
+        data = os.path.join(os.path.dirname(HERE), "data")
+        rows = [json.loads(l) for l in open(os.path.join(data, "detect-essay.jsonl"))]
+        self.assertTrue(rows)
+        self.assertFalse([r for r in rows if (r.get("text") or "").lstrip().startswith("#")])
+        ap = os.path.join(data, "human", "author.jsonl")
+        if os.path.exists(ap):                        # the titles are local only; check them where they are
+            titles = [D.essay_title(json.loads(l)["article"]).lower() for l in open(ap)]
+            blob = "\n".join((r.get("text") or "") for r in rows).lower()
+            self.assertFalse([t for t in titles if t in blob])
 
 
 if __name__ == "__main__":
