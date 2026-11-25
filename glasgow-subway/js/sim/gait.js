@@ -293,7 +293,8 @@ function plantBoth(g) {
   for (let s = 0; s < 2; s++) { const t = standTarget(g, s), f = g.feet[s]; f.mode = 'stance'; f.H = t.H; f.psi = t.psi; f.th = 0; f.sw = null;
     // where the person's feet already are (opts.plantAt: each ankle [x, z], from the clip they were standing in), if it is near: planted at the stance's own spot instead, the
     // legs' blend from the clip to the gait slid the feet 10 - 15 cm along the floor in 0.2 s as a waiting person set off (review 34)
-    const a = g.plantAt && g.plantAt[s]; if (a && Math.hypot(a[0] - g.x, a[1] - g.z) < 0.5) { const a0 = stanceAnkle(g.body.leg[s], [0, 0], t.psi, 0); f.H = [a[0] - a0[0], a[1] - a0[2]]; }
+    // (0.75, not 0.5: a walker handed over mid-stride has the trailing ankle 0.55 - 0.6 m off the pelvis; dropped, that foot snapped 0.58 m under the body - review 64)
+    const a = g.plantAt && g.plantAt[s]; if (a && Math.hypot(a[0] - g.x, a[1] - g.z) < 0.75) { const a0 = stanceAnkle(g.body.leg[s], [0, 0], t.psi, 0); f.H = [a[0] - a0[0], a[1] - a0[2]]; }
   }
   g.plantAt = null;
 }
