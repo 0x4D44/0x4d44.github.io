@@ -33,18 +33,13 @@ MUTATIONS = [
     ('the shade at night too', 'web/src/shed.ts', "[ringDay, canopySteel]), [material('brickFoot'), canopySteel]);", '[ringDay, canopySteel]), [ringDay, canopySteel]);', "porch rings' returns"),
     ("the openings' reveals unshaded", 'web/src/shed.ts', 'if (porchReveal || centres.some(', 'if (centres.some(', 'brick reveals in the front'),
     ("the reveals' shade stops at the springing", 'web/src/shed.ts', 'y + sp < entryFoot + SOUTH_FRONT_ARCADES.jambHeight + SOUTH_FRONT_ARCADES.archRise + 0.01', 'y + sp < entryFoot + SOUTH_FRONT_ARCADES.jambHeight', 'brick reveals in the front'),
-    ('figures as light as the hall', 'web/src/shed.ts', 'figureDay: { dark: 0.2, light: 0.75, from: 0.12, to: 0.59 }', 'figureDay: { dark: 1, light: 1, from: 0.12, to: 0.59 }', 'each figure and barrier'),
-    ('round 2b\'s constant 0.75', 'web/src/shed.ts', 'figureDay: { dark: 0.2, light: 0.75, from: 0.12, to: 0.59 }', 'figureDay: { dark: 0.75, light: 0.75, from: 0.12, to: 0.59 }', 'each figure and barrier'),
-    ('bright-zone figures near black', 'web/src/shed.ts', 'figureDay: { dark: 0.2, light: 0.75, from: 0.12, to: 0.59 }', 'figureDay: { dark: 0.2, light: 0.35, from: 0.12, to: 0.59 }', 'each figure and barrier'),
-    ('the ramp too late', 'web/src/shed.ts', 'figureDay: { dark: 0.2, light: 0.75, from: 0.12, to: 0.59 }', 'figureDay: { dark: 0.2, light: 0.75, from: 0.12, to: 0.9 }', 'each figure and barrier'),
-    ('the ramp too early', 'web/src/shed.ts', 'figureDay: { dark: 0.2, light: 0.75, from: 0.12, to: 0.59 }', 'figureDay: { dark: 0.2, light: 0.75, from: 0.0, to: 0.3 }', 'each figure and barrier'),
-    ('the factor ignores the hall', 'web/src/shed.ts', 'clamp( ( kxHall.g - KX_FIG_K.z ) / ( KX_FIG_K.w - KX_FIG_K.z ), 0.0, 1.0 )', '1.0', 'each figure and barrier'),
     ('the factor on the diffuse only', 'web/src/shed.ts', 'mix( kxK * KX_FIG_DAY_EMIT,', 'mix( KX_FIG_DAY_EMIT,', 'each figure and barrier'),
     ('figures ignore the day darkening', 'web/src/shed.ts', 'multiplyScalar(PORCH_DEPTH.dayDark)),', 'multiplyScalar(1)),', 'each figure and barrier'),
     ('figures sample one row of the map', 'web/src/shed.ts', '(py - entryFoot - 0.3) / (t0 - 0.3)] as V2)', '0.5] as V2)', 'each figure and barrier'),
     ('figures without the map', 'web/src/shed.ts', 'multiplyScalar(PORCH_TONES.figureLift), map: interiorMap })', 'multiplyScalar(PORCH_TONES.figureLift) })', 'each figure and barrier'),
     ('figures keep their constant lift by day', 'web/src/shed.ts', 'totalEmissiveRadiance = mix( kxK * KX_FIG_DAY_EMIT, totalEmissiveRadiance, uWinNight );', 'totalEmissiveRadiance = totalEmissiveRadiance;', 'each figure and barrier'),
     ('figures mapped at night too', 'web/src/shed.ts', 'kxHall, KX_FIG_NIGHT, uWinNight )', 'kxHall, KX_FIG_NIGHT * kxHall, uWinNight )', 'each figure and barrier'),
+    # arcade round 3: the factor's mutants (its shape, the hall's value, both terms) moved to kx-front-arcade-round3.py with the factor's tests
 ]
 
 def run(work: Path) -> subprocess.CompletedProcess[str]:

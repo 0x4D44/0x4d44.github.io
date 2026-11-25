@@ -31,7 +31,7 @@ MUTATIONS = [
     ('panel heads on the wall face', 'web/src/shed.ts', 'z = FRONT_THICK - FRONT_TYMPANUM.recess + 0.005,', 'z = FRONT_THICK + 0.005,', 'A2: each spandrel panel'),
     ('panel heads without UVs again', 'web/src/shed.ts', '[[x0, y - h], [x1, y - h], [x1, y], [x0, y]], { facing', 'undefined, { facing', 'A2 (round 27b)'),
     ('panel heads mapped across', 'web/src/shed.ts', '[[x0, y - h], [x1, y - h], [x1, y], [x0, y]], { facing', '[[0, 0], [1, 0], [1, 1], [0, 1]], { facing', 'A2 (round 27b)'),
-    ('no day darkening', 'web/src/shed.ts', '{ defines: { KX_DAY_DARK: PORCH_DEPTH.dayDark.toFixed(3) } }', '{ defines: {} }', 'A3: the porch interior'),
+    ('no day darkening', 'web/src/shed.ts', '{ defines: { KX_DAY_DARK: PORCH_DEPTH.dayDark.toFixed(3), KX_BAND:', '{ defines: { KX_BAND:', 'A3: the porch interior'),  # re-anchored arcade round 3
     ('darkened at night instead', 'web/src/shed.ts', 'diffuseColor.rgb *= mix( KX_DAY_DARK, 1.0, uWinNight );', 'diffuseColor.rgb *= mix( 1.0, KX_DAY_DARK, uWinNight );', 'A3: the porch interior'),
     ('a mild darkening', 'web/src/shed.ts', 'dayDark: 0.55,', 'dayDark: 0.9,', 'A3: the porch interior'),
 ]

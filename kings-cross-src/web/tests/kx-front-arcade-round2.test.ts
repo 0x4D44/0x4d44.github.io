@@ -83,24 +83,19 @@ test('A3 round 2: the porch openings\' brick reveals in the front carry the grea
 
 test('A3 round 2: by day each figure and barrier is the interior\'s tone at its own spot times figureDay, about 0.6 of it in display; at night as before', () => {
   const mats = infill.material as THREE.MeshLambertMaterial[], fig = mats[7]!, interior = mats[4]!;
-  // round 2c: the factor follows the hall's own tone (its map's linear value t): `dark` up to `from`, rising to `light` at `to`
-  const K = (T as unknown as { figureDay: { dark: number; light: number; from: number; to: number } }).figureDay;
-  assert.ok(K.dark >= 0.1 && K.dark <= 0.3 && K.light >= 0.7 && K.light <= 0.8 && K.from < K.to, `figureDay ${JSON.stringify(K)}`);
-  const kAt = (t: number): number => K.dark + (K.light - K.dark) * Math.min(1, Math.max(0, (t - K.from) / (K.to - K.from)));
+  // re-pinned arcade round 3: the factor (a contrast floor through knots, two tones) is kx-front-arcade-round3's; here the hall's own tone and map
   assert.ok(fig.map && fig.map === interior.map, 'the figures sample the interior\'s map');
   const vec = (s: string): number[] => s.replace(/vec3\(|\)/g, '').split(',').map(Number);
   const defs = fig.defines as Record<string, string>, dark = Number((interior.defines as Record<string, string>).KX_DAY_DARK);
   const close = (a: number[], b: number[]): boolean => a.every((v, i) => Math.abs(v - b[i]!) < 2e-5);
   assert.ok(close(vec(defs.KX_FIG_DAY!), interior.color.toArray().map(v => v * dark)), `day diffuse ${defs.KX_FIG_DAY}`);
   assert.ok(close(vec(defs.KX_FIG_DAY_EMIT!), interior.emissive.toArray()), `day emissive ${defs.KX_FIG_DAY_EMIT}`);
-  assert.ok(close(defs.KX_FIG_K!.replace(/vec4\(|\)/g, '').split(',').map(Number), [K.dark, K.light, K.from, K.to]), `KX_FIG_K ${defs.KX_FIG_K}`);
   assert.ok(close(vec(defs.KX_FIG_NIGHT!), fig.color.toArray()), 'at night their own colour, unmapped');
   assert.ok(new THREE.Color(T.figure).equals(fig.color) && fig.emissive.equals(new THREE.Color(T.figure).multiplyScalar(T.figureLift)), 'their night colour and lift as before');
   // the shader: by day the interior's map times KX_FIG_DAY and KX_FIG_DAY_EMIT, at night their own
   const sh = { uniforms: {}, vertexShader: THREE.ShaderLib.lambert.vertexShader, fragmentShader: THREE.ShaderLib.lambert.fragmentShader } as unknown as THREE.WebGLProgramParametersWithUniforms;
   fig.onBeforeCompile(sh, undefined as unknown as THREE.WebGLRenderer);
   assert.ok(sh.fragmentShader.includes('vec3 kxHall = texture2D( map, vMapUv ).rgb;')
-    && sh.fragmentShader.includes('float kxK = mix( KX_FIG_K.x, KX_FIG_K.y, clamp( ( kxHall.g - KX_FIG_K.z ) / ( KX_FIG_K.w - KX_FIG_K.z ), 0.0, 1.0 ) );')
     && sh.fragmentShader.includes('diffuseColor.rgb = mix( kxK * KX_FIG_DAY * kxHall, KX_FIG_NIGHT, uWinNight )')
     && sh.fragmentShader.includes('totalEmissiveRadiance = mix( kxK * KX_FIG_DAY_EMIT, totalEmissiveRadiance, uWinNight )'), 'the day tone in the shader');
   // each figure's and barrier's UV is the interior plane's behind it, so it samples the interior's tone at its own spot
@@ -111,13 +106,4 @@ test('A3 round 2: by day each figure and barrier is the interior\'s tone at its 
     seen++;
   }
   assert.ok(seen >= 9);
-  // in display (re-pinned round 2c: the GPU's dark-zone figures read 5-7 on a hall of 7-13): the hall's radiance t C + E, C and E set so its map's two
-  // ends read 5 and 37 sRGB as measured; the figure k(t) times it. Where the hall reads 20 or less the figure sits 9.5 or more levels under it, or near black (1 or less), (about
-  // 10), where it reads 25 or more the figure holds round 2b's 0.67-0.76 of it, and it is never lighter
-  const s2l = (c: number): number => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
-  const G = D.gradient, V = D.vignette, tMin = s2l(G[0] * V.edge * V.top), C = (inv(37) - inv(5)) / (1 - tMin), E = inv(37) - C;
-  for (const h of [7, 10, 13, 16, 20, 25, 30, 37]) {
-    const H = inv(h), f = show(kAt((H - E) / C) * H);
-    assert.ok(f < h && (h > 20 || f <= Math.max(1, h - 9.5)) && (h < 25 || (f >= 0.67 * h && f <= 0.8 * h)), `a hall of ${h}: figure ${f.toFixed(1)}`);
-  }
 });
