@@ -4,7 +4,7 @@
 // platform tops and edge strips draw the pools in their own shader instead, from a small baked map (one texture, no light, no draw, nothing in
 // the shadow pass): after dark, under the shed, the night key and sky light the floor keeps fall to `moon`, and each lamp adds a warm-white
 // pool on the floor's own albedo (so the joints still read), brightest under the lamp and falling off along the row and across the island; the
-// track bed, not drawn with these materials, keeps only its dim base. By day the floor's sky light falls toward the vault walls, under the lined
+// track bed, not drawn with these materials, keeps only its dim base. By day the floor's light falls toward the vault walls, under the lined
 // flanks, so the platforms under the glazed crown read brighter than those beside the walls (SHED_CROWN_FLOOR).
 import * as THREE from 'three';
 import { SHED_SPAN_WIDTH, worldToShed } from '../../core/station.ts';
@@ -14,22 +14,26 @@ import { crownBelowUniforms } from './lighting.ts';
 import { windowNight } from './materials.ts';
 
 /**
- * The night pools. ASSUMED amounts (no night photograph of the shed's floor is held), fitted by an ACES estimate at the night exposure (2.3): the
- * floor's base under the moon about sRGB 48 without the old decals; with these, under a lamp about 160, midway along a 12.2 m row about 105, at
- * an island's track edge abreast of a lamp about 95, and where no lamp reaches (the spill alone) about 60.
+ * The night pools. ASSUMED amounts (no night photograph of the shed's floor is held). Round 1b (the lead's GPU capture of round 1, night
+ * platform-eye-p8-south: along the platform's centreline 146-152 under a lamp, 103-116 midway, an even warm wash at 1.4:1): fitted to that capture
+ * through ACES at the night exposure (2.3), which put the floor's lamp light at 0.125 of `gain` per unit of pool and the moon's at 0.006 (at
+ * `moon` 0.5): `sigma` 3.5 -> 2.5, `spill` 0.15 -> 0.13, `moon` 0.5 -> 0.2 and `gain` 0.7 -> 0.85 aim at about sRGB 160 under a lamp and 60
+ * midway along a 12.2 m row (about 2.7:1).
  * `sigma` the pool's gaussian radius on the floor, metres; `spill` the floor's lamp light between pools (light thrown back by the lining);
  * `max` the cap on overlapping pools; `gain` the emissive at a pool's centre as a share of the floor's albedo (linear); `tint` warm white;
  * `moon` the share of the night key and sky the floor keeps under the roof; `decal` the shed lamps' bounded pool decals' gain (0: the floor
  * draws the pool); `cell` the map's cell and `edge` the inside mask's ramp, metres.
  */
-export const SHED_POOL = { sigma: 3.5, spill: 0.15, max: 1.2, gain: 0.7, tint: 0xffe6c4, moon: 0.5, decal: 0, cell: 0.5, edge: 1 } as const;
+export const SHED_POOL = { sigma: 2.5, spill: 0.13, max: 1.2, gain: 0.85, tint: 0xffe6c4, moon: 0.2, decal: 0, cell: 0.5, edge: 1 } as const;
 
 /**
  * By day, the floor's sky light (indirect) under the shed's vaults: full under the crown's axis, falling to `flank` of it at a vault's wall,
  * from `from` to `to` of the vault's radius off its axis. The sun's streaks (direct) are untouched. ASSUMED (R-a: the platforms under the crown
- * brighter than those beside the arcade walls).
+ * brighter than those beside the arcade walls). Round 1b: on the direct light as well (the sun's shade there is SHED_GLASS's fill), so a streak by a wall is a little dimmer too.
  */
-export const SHED_CROWN_FLOOR = { flank: 0.8, from: 0.35, to: 1.0 } as const;
+// round 1b (the lead's day captures moved under 12 px): the floor's light in the shade under the roof is mostly the sun's, lifted by the crown's sky
+// fill in the direct term (lighting.ts SHED_GLASS), not the hemisphere's, so the factor now takes the direct light as well as the indirect, and is a step deeper
+export const SHED_CROWN_FLOOR = { flank: 0.78, from: 0.35, to: 1.0 } as const;
 
 /** The pool light (before `max` and the inside mask) at the world point (x, z), from lamps at `heads` (flat x, y, z). */
 export function shedPoolEnergy(heads: readonly number[], x: number, z: number): number {
@@ -56,7 +60,7 @@ export function shedCrownFloor(layout: Pick<ShedLayout, 'origin' | 'heading' | '
   return 1 - smoothstep(SHED_CROWN_FLOOR.from, SHED_CROWN_FLOOR.to, off);
 }
 
-/** The floor's factors as the shader applies them, for a CPU check: `day` the sky light's factor by day; `night` the base's factor and `pool` the emissive (times the albedo and the tint) after dark. */
+/** The floor's factors as the shader applies them, for a CPU check: `day` the floor light's factor by day (direct and indirect); `night` the base's factor and `pool` the emissive (times the albedo and the tint) after dark. */
 export function shedFloorLight(layout: Pick<ShedLayout, 'origin' | 'heading' | 'width' | 'length' | 'spine'>, heads: readonly number[], x: number, z: number): { day: number; night: number; pool: number } {
   const inside = shedFloorInside(layout, x, z);
   return {
@@ -102,7 +106,9 @@ export function shedFloorGlsl(): string {
   vec2 shedFloorUv = ( shedFloorW.xz - uShedFloorRect.xy ) * uShedFloorRect.zw;
   if ( shedFloorUv.x >= 0.0 && shedFloorUv.y >= 0.0 && shedFloorUv.x <= 1.0 && shedFloorUv.y <= 1.0 ) {
     vec4 shedFloorT = texture2D( uShedFloorMap, shedFloorUv );
-    reflectedLight.indirectDiffuse *= 1.0 + ( ${f(SHED_CROWN_FLOOR.flank)} + ${f(1 - SHED_CROWN_FLOOR.flank)} * shedFloorT.b - 1.0 ) * shedFloorT.g * uShedFloorDay;
+    float shedFloorDayK = 1.0 + ( ${f(SHED_CROWN_FLOOR.flank)} + ${f(1 - SHED_CROWN_FLOOR.flank)} * shedFloorT.b - 1.0 ) * shedFloorT.g * uShedFloorDay;
+    reflectedLight.directDiffuse *= shedFloorDayK;
+    reflectedLight.indirectDiffuse *= shedFloorDayK;
     float shedFloorNight = shedFloorT.g * uShedFloorNight;
     reflectedLight.directDiffuse *= 1.0 - ${f(1 - SHED_POOL.moon)} * shedFloorNight;
     reflectedLight.indirectDiffuse *= 1.0 - ${f(1 - SHED_POOL.moon)} * shedFloorNight;

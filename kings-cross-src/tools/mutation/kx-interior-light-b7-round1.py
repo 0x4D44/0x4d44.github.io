@@ -1,6 +1,6 @@
 """Catch shed-interior B7 round 1's regressions (the shed's floor draws its lamps' pools: brighter under a lamp than midway and at the island's
 edge, warm white, after dark and inside the shed only; the shed heads' bounded decals off; by day the floor's sky light falls from the crown toward the
-vault walls) through web/tests/kx-interior-light-b7-round1.test.ts only.
+vault walls, direct and indirect; round 1b: on-screen pool contrast 2.2-3.2:1) through web/tests/kx-interior-light-b7-round1.test.ts only.
 Usage: python3 -I -u tools/mutation/kx-interior-light-b7-round1.py SOURCE WORKTREE_SCRATCH
 Source stays untouched; all baseline and mutation logs go to WORKTREE_SCRATCH.
 """
@@ -23,26 +23,29 @@ out.mkdir(parents=True, exist_ok=True)
 
 MUTATIONS = [
     ('the decals back on (atmosphere)', 'web/src/atmosphere.ts', 'fill(SHED_POOL.decal)]', 'fill(1)]', 'decals are off'),
-    ('the decal gain 1', 'web/src/kx-shed-pools.ts', 'moon: 0.5, decal: 0,', 'moon: 0.5, decal: 1,', 'decals are off'),
+    ('the decal gain 1', 'web/src/kx-shed-pools.ts', 'moon: 0.2, decal: 0,', 'moon: 0.2, decal: 1,', 'decals are off'),
     ('the decal ignores its gain', 'web/src/streetlights.ts', "gl_FragColor.a *= vPoolGain;", "gl_FragColor.a *= 1.0;", 'decals are off'),
     ('the gain not passed', 'web/src/station-lamps.ts', 'poolGainAt:poolGain.length?(_s,i)=>poolGain[i]??1:undefined,', '', 'decals are off'),
     ('main not wired', 'web/src/main.ts', "  lightShedFloor([material('platformTop'), material('platformEdgeStripShed')], bakeShedFloor(layout, kxSites.shed));\n", "  void lightShedFloor; void bakeShedFloor; void material;\n", 'decals are off'),
     ('the floor light before the lights', 'web/src/kx-shed-pools.ts', ".replace('#include <lights_fragment_end>', `#include <lights_fragment_end>${shedFloorGlsl()}`)", ".replace('#include <lights_fragment_begin>', `${shedFloorGlsl()}\\n#include <lights_fragment_begin>`)", 'decals are off'),
-    ('a flat wash (broad pools)', 'web/src/kx-shed-pools.ts', 'SHED_POOL = { sigma: 3.5,', 'SHED_POOL = { sigma: 12,', 'B7 night'),
-    ('spots, not pools', 'web/src/kx-shed-pools.ts', 'SHED_POOL = { sigma: 3.5,', 'SHED_POOL = { sigma: 1.5,', 'B7 night'),
-    ('pools capped flat', 'web/src/kx-shed-pools.ts', 'spill: 0.15, max: 1.2,', 'spill: 0.15, max: 0.6,', 'B7 night'),
-    ('a big spill', 'web/src/kx-shed-pools.ts', 'spill: 0.15, max: 1.2,', 'spill: 0.6, max: 1.2,', 'B7 night'),
+    ('a flat wash (broad pools)', 'web/src/kx-shed-pools.ts', 'SHED_POOL = { sigma: 2.5,', 'SHED_POOL = { sigma: 12,', 'B7 night'),
+    ('spots, not pools', 'web/src/kx-shed-pools.ts', 'SHED_POOL = { sigma: 2.5,', 'SHED_POOL = { sigma: 1.2,', 'B7 night'),
+    ('pools capped flat', 'web/src/kx-shed-pools.ts', 'spill: 0.13, max: 1.2,', 'spill: 0.13, max: 0.6,', 'B7 night'),
+    ('a big spill', 'web/src/kx-shed-pools.ts', 'spill: 0.13, max: 1.2,', 'spill: 0.5, max: 1.2,', 'B7 night'),
     ('cool pools', 'web/src/kx-shed-pools.ts', 'tint: 0xffe6c4,', 'tint: 0xe6ecf5,', 'B7 night'),
     ('amber pools', 'web/src/kx-shed-pools.ts', 'tint: 0xffe6c4,', 'tint: 0xffbc74,', 'B7 night'),
-    ('the moon kept under the roof', 'web/src/kx-shed-pools.ts', 'moon: 0.5, decal: 0,', 'moon: 1, decal: 0,', 'B7 night'),
+    ('the moon kept under the roof', 'web/src/kx-shed-pools.ts', 'moon: 0.2, decal: 0,', 'moon: 0.5, decal: 0,', 'B7 night'),
     ('the pool not on the albedo', 'web/src/kx-shed-pools.ts', '* shedFloorT.r * shedFloorNight ) * diffuseColor.rgb;', '* shedFloorT.r * shedFloorNight ) * 0.18;', 'B7 night'),
     ('pools by day', 'web/src/kx-shed-pools.ts', 'float shedFloorNight = shedFloorT.g * uShedFloorNight;', 'float shedFloorNight = shedFloorT.g;', 'no pools by day'),
     ('no inside mask', 'web/src/kx-shed-pools.ts', 'return smoothstep(0, SHED_POOL.edge, Math.min(u, layout.width - u, v, layout.length - v));', 'return 1;', 'none outside'),
-    ('no crown fall-off', 'web/src/kx-shed-pools.ts', 'SHED_CROWN_FLOOR = { flank: 0.8,', 'SHED_CROWN_FLOOR = { flank: 1,', 'B7 day'),
-    ('a deep crown fall-off', 'web/src/kx-shed-pools.ts', 'SHED_CROWN_FLOOR = { flank: 0.8,', 'SHED_CROWN_FLOOR = { flank: 0.5,', 'B7 day'),
+    ('no crown fall-off', 'web/src/kx-shed-pools.ts', 'SHED_CROWN_FLOOR = { flank: 0.78,', 'SHED_CROWN_FLOOR = { flank: 1,', 'B7 day'),
+    ('a deep crown fall-off', 'web/src/kx-shed-pools.ts', 'SHED_CROWN_FLOOR = { flank: 0.78,', 'SHED_CROWN_FLOOR = { flank: 0.5,', 'B7 day'),
     ('the crown term inverted', 'web/src/kx-shed-pools.ts', 'return 1 - smoothstep(SHED_CROWN_FLOOR.from,', 'return smoothstep(SHED_CROWN_FLOOR.from,', 'B7 day'),
-    ('the crown term at night', 'web/src/kx-shed-pools.ts', '* shedFloorT.g * uShedFloorDay;', '* shedFloorT.g;', 'B7 day'),
-    ('the crown term on the sun', 'web/src/kx-shed-pools.ts', '    reflectedLight.indirectDiffuse *= 1.0 + (', '    reflectedLight.directDiffuse *= 1.0 + (', 'B7 day'),
+    ('the crown term at night', 'web/src/kx-shed-pools.ts', '* shedFloorT.g * uShedFloorDay;\n', '* shedFloorT.g;\n', 'B7 day'),
+    ('the crown term on the sky only (round 1)', 'web/src/kx-shed-pools.ts', '    reflectedLight.directDiffuse *= shedFloorDayK;\n', '', 'B7 day'),
+    ('the crown term on the sun only', 'web/src/kx-shed-pools.ts', '    reflectedLight.indirectDiffuse *= shedFloorDayK;\n', '', 'B7 day'),
+    ('pools clipped (gain doubled)', 'web/src/kx-shed-pools.ts', 'gain: 0.85,', 'gain: 1.7,', 'B7 night'),
+    ('the round-1 pools (broad, half moon)', 'web/src/kx-shed-pools.ts', 'sigma: 2.5, spill: 0.13, max: 1.2, gain: 0.85, tint: 0xffe6c4, moon: 0.2,', 'sigma: 3.5, spill: 0.15, max: 1.2, gain: 0.7, tint: 0xffe6c4, moon: 0.5,', 'B7 night'),
 ]
 
 def run(work: Path) -> subprocess.CompletedProcess[str]:

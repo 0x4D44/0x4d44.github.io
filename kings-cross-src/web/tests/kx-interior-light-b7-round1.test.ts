@@ -36,8 +36,16 @@ function sample(uv: number[]): number[] {
   return [0, 1, 2, 3].map((c) => (at(i0, j0, c) * (1 - tx) + at(i1, j0, c) * tx) * (1 - ty) + (at(i0, j1, c) * (1 - tx) + at(i1, j1, c) * tx) * ty);
 }
 
-const BASE = [0.012, 0.012, 0.014]; // the floor's light under the moon (each of direct and indirect), about the night rig's: ASSUMED
-const ALBEDO = [0.18, 0.18, 0.18, 1]; // platformTop's average texel, linear
+// Round 1b: fitted to the lead's GPU capture of round 1 (night platform-eye-p8-south, the centreline at 146-152 under a lamp and 103-116 midway): the
+// floor's light under the moon, each of direct and indirect, at the round-1 moon share (0.5) about 0.003, and the albedo that puts its lamp light at
+// 0.125 of the gain per unit of pool, 0.15 (times the tint's luminance, 0.82)
+const BASE = [0.003, 0.003, 0.0035];
+const ALBEDO = [0.15, 0.15, 0.15, 1];
+/** A linear luminance on the screen as sRGB 0-255: three's ACES filmic curve (as a grey) at the night exposure, then the sRGB transfer. */
+function screen(l: number): number {
+  const v = l * 2.3 / 0.6, a = (v * (v + 0.0245786) - 0.000090537) / (v * (0.983729 * v + 0.432951) + 0.238081), c = Math.min(1, Math.max(0, a));
+  return 255 * (c <= 0.0031308 ? 12.92 * c : 1.055 * c ** (1 / 2.4) - 0.055);
+}
 const block = shedFloorGlsl().replaceAll('reflectedLight.directDiffuse', 'rlDirect').replaceAll('reflectedLight.indirectDiffuse', 'rlIndirect');
 const run = new Glsl('uniform vec4 uShedFloorRect;').snippet(block);
 
@@ -77,18 +85,20 @@ function rowPair(): { lamp: [number, number]; mid: [number, number]; across: [nu
 test('B7 night: a pool under each shed lamp, brighter than midway along the row and than the island\'s edge abreast of it, warm white', () => {
   const { lamp, mid, across } = rowPair();
   const under = shade(...lamp, 1, 0), between = shade(...mid, 1, 0), edge = shade(...across, 1, 0);
-  const ratio = luma(under.out) / luma(between.out);
-  assert.ok(ratio >= 1.5 && ratio <= 2.6, `under a lamp / midway ${ratio.toFixed(3)} (a pool, not a flat wash, nor a spot)`);
-  const side = luma(under.out) / luma(edge.out);
-  assert.ok(side >= 1.4 && side <= 2.6, `under a lamp / 4.5 m across ${side.toFixed(3)}`);
+  // round 1b: on the screen (the lead: 2.5-3:1, under a lamp 150-170 so it does not clip, midway 55-65)
+  const u = screen(luma(under.out)), m = screen(luma(between.out)), ratio = u / m;
+  assert.ok(ratio >= 2.2 && ratio <= 3.2, `under a lamp / midway on the screen ${u.toFixed(1)} / ${m.toFixed(1)} = ${ratio.toFixed(3)} (a pool, not a flat wash, nor a spot)`);
+  assert.ok(u >= 140 && u <= 180 && m >= 45 && m <= 75, `under ${u.toFixed(1)}, midway ${m.toFixed(1)}`);
+  const side = u / screen(luma(edge.out));
+  assert.ok(side >= 1.5 && side <= 3.2, `under a lamp / 4.5 m across ${side.toFixed(3)}`);
   assert.ok(luma(between.out) > luma(BASE) * 2, 'midway is still lamp-lit, not dark');
   const e = under.emissive;
   assert.ok(e[0]! > e[1]! && e[1]! > e[2]! && e[2]! / e[0]! > 0.45 && e[2]! / e[0]! < 0.8, `warm white, not amber nor cool: ${e.map((c) => c.toFixed(4))}`);
   // the base (the moon and the sky) under the roof falls to SHED_POOL.moon of itself after dark
   assert.ok(Math.abs(under.direct[0]! - BASE[0]! * SHED_POOL.moon) < 1e-6 && Math.abs(under.indirect[0]! - BASE[0]! * SHED_POOL.moon) < 1e-6, 'the moon falls to the share kept');
-  assert.ok(SHED_POOL.moon >= 0.4 && SHED_POOL.moon <= 0.6, 'about half the moon and sky reach the floor under the roof (ASSUMED)');
+  assert.ok(SHED_POOL.moon >= 0.1 && SHED_POOL.moon <= 0.3, 'a fifth of the moon and sky reach the floor under the roof (ASSUMED; round 1b, was a half)');
   // the pool is light on the floor's own albedo, so the slab joints and the texture still read in it
-  const pale = shade(...lamp, 1, 0, [0.36, 0.36, 0.36, 1]);
+  const pale = shade(...lamp, 1, 0, ALBEDO.map((c, i) => i < 3 ? 2 * c : c));
   assert.ok(Math.abs(pale.emissive[1]! - 2 * e[1]!) < 1e-6, 'twice the albedo, twice the pool');
   // the shader matches its CPU model (shedFloorLight) at the lamp, to the map's 8 bits
   const cpu = shedFloorLight(layout, heads, ...lamp);
@@ -111,13 +121,15 @@ test('B7: no pools by day, and none outside the shed (the open platform ends kee
   }
 });
 
-test('B7 day: the floor\'s sky light is full under the crown and falls toward the vault walls; the sun\'s streaks untouched', () => {
+test('B7 day: the floor\'s light is full under the crown and falls toward the vault walls, its direct light (the shade\'s crown fill) too', () => {
   const [cx, cz] = shedToWorld(layout, layout.spine - R, 100), [wx, wz] = shedToWorld(layout, layout.spine - 2 * R + 1.5, 100);
   const crown = shade(cx, cz, 0, 1), flank = shade(wx, wz, 0, 1);
   assert.ok(Math.abs(crown.indirect[1]! - BASE[1]!) < 1e-4, 'under the crown, as before');
   const k = flank.indirect[1]! / BASE[1]!;
   assert.ok(k >= 0.75 && k <= 0.86 && Math.abs(k - SHED_CROWN_FLOOR.flank) < 0.03, `by the wall ${k.toFixed(3)}`);
-  assert.deepEqual(flank.direct, BASE, 'the direct light (the sun\'s streaks) is untouched');
+  // round 1b: the floor's day light in the shade is mostly the direct term (the sun's, lifted by lighting.ts SHED_GLASS), so the factor takes it too
+  assert.ok(Math.abs(flank.direct[1]! / BASE[1]! - k) < 1e-6, 'the direct light falls with it');
+  assert.ok(Math.abs(crown.direct[1]! - BASE[1]!) < 1e-4, 'under the crown, the direct as before');
   const night = shade(wx, wz, 1, 0);
   assert.ok(Math.abs(night.indirect[1]! - BASE[1]! * SHED_POOL.moon) < 1e-6, 'after dark the crown term is off');
 });
