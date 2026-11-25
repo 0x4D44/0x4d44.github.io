@@ -160,9 +160,9 @@ test('Midland-only night programs keep the BASE daytime materials and all remote
     update('12:00:00',0,'clear');
     const day = keys.map(key => mesh(key).material);
     const base = [
-      '4c01e4e2c93bf67f163cdf85a61dbd999dcfa700d5c04ced1fcc7787005fabb5',
-      '29c705e21fffd125c6338db93704a58c5c5dce7be7ccd8aa17b49742b943da5e',
-      'ba364442a3d4b88fd173f98ec22a4a53b3f008d4d350391deee909eb4ae3476e',
+      'ff1779edf5eb4cb8dc807c81cc6b69a7cbcace2e5e097573e53a0024a903e945',
+      'dba9aada1b19ff6510e52bc4259950865eb9cbbb1b8b9623ae6018421ea6e796',
+      '8df106a485822daacdc71ae69243c7dc3262a962643be7d3bdcd5ac9e0f646c1',
     ];
     assert.deepEqual(day.map(fingerprint), base);
     assert.deepEqual(built.stats, { meshes: 13, triangles: 67675, materials: 14 });

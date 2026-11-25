@@ -76,9 +76,11 @@ test('B7 round 6 trains: the trains\' materials carry NO_SHED_LIGHT, and a roof-
 });
 
 test('B7 round 6 near-wall bounce and crown band: the sky\'s light by the walls and under the crown, by day under the roof only, the sun\'s untouched', () => {
-  const S = L.SHED_SKY as { bounce: number; crown: number } | undefined;
-  assert.ok(S && S.bounce >= 0.6 && S.bounce <= 1.0, `SHED_SKY.bounce ${S?.bounce}`);
-  assert.ok(S.crown >= 0.5 && S.crown <= 0.7, `SHED_SKY.crown ${S.crown}`);
+  // re-pinned in round 7 (the scorer's GPU measures of round 6: the near-wall shade at 0.52 of the sunlit floor, the band invisible): bounce
+  // 0.8 -> 1.6 on the floor with the walls' own faces at round 6's 0.8, crown 0.6 -> 1.2 in a narrower band; same checks, the new amounts
+  const S = L.SHED_SKY as { bounce: number; wall: number; crown: number } | undefined;
+  assert.ok(S && S.bounce >= 1.4 && S.bounce <= 1.8, `SHED_SKY.bounce ${S?.bounce}`);
+  assert.ok(S.crown >= 1.0 && S.crown <= 1.4, `SHED_SKY.crown ${S.crown}`);
   lighting.grade(fakeRenderer(), true, 1, 1.02, 0);
   const y = PLATFORM_HEIGHT;
   // the floor by the walls: the west wall, the spine's arcade from either vault, the east wall
@@ -90,23 +92,27 @@ test('B7 round 6 near-wall bounce and crown band: the sky\'s light by the walls 
   const three = sky(at(WEST_WALL + 3, 100, y), UP).indirect;
   assert.ok(three > 1 + 0.75 * S.bounce && three < 1 + S.bounce, `3 m out ${three.toFixed(3)}`);
   assert.ok(Math.abs(sky(at(WEST_WALL + 6.5, 100, y), UP).indirect - 1) < 0.08, 'gone by 6 m (the crown band\'s foot alone)');
-  // the screen: shade by the wall (sky about 0.7 of its light, the sun's fill 0.3) at 51 aimed at about 70
-  const shade = screenDay(linearOf(51) * (0.7 * three + 0.3));
-  assert.ok(shade >= 64 && shade <= 76, `shade 3 m from the wall 51 -> ${shade.toFixed(1)}`);
+  // the screen: round 6's model (sky 0.7 of the shade) predicted 51 -> 70 at 0.8 and the GPU gave 52.5 -> 62.5; re-pinned in round 7 to the fit
+  // from that capture (the place measured takes 0.29 of `bounce`), the shaded floor at 0.6 of the sunlit floor (119.5) to 80
+  const fit = (linearOf(62.5) / linearOf(52.5) - 1) / 0.8, shade = screenDay(linearOf(52.5) * (1 + fit * S.bounce));
+  assert.ok(three > 1 && shade >= 0.6 * 119.5 && shade <= 80, `shade by the wall 52.5 -> ${shade.toFixed(1)}`);
   // the piers' lower parts take it, fading by their height; the springing keeps nothing
-  assert.ok(Math.abs(sky(at(WEST_WALL + 0.02, 100, 2), WEST_IN).indirect - 1 - S.bounce) < 1e-6, 'the west wall\'s foot');
-  assert.ok(Math.abs(sky(at(SPINE + 0.02, 100, 2), WEST_IN).indirect - 1 - S.bounce) < 1e-6, 'the spine\'s pier foot, east vault');
+  // re-pinned in round 7: a standing face takes the walls' share (`wall`), the floor's `bounce` is the floor's
+  assert.ok(Math.abs(sky(at(WEST_WALL + 0.02, 100, 2), WEST_IN).indirect - 1 - S.wall) < 1e-6, 'the west wall\'s foot');
+  assert.ok(Math.abs(sky(at(SPINE + 0.02, 100, 2), WEST_IN).indirect - 1 - S.wall) < 1e-6, 'the spine\'s pier foot, east vault');
   const high = sky(at(WEST_WALL + 0.02, 100, 5), WEST_IN).indirect;
-  assert.ok(high > 1 && high < 1 + 0.5 * S.bounce, `5 m up ${high.toFixed(3)}`);
+  assert.ok(high > 1 && high < 1 + 0.5 * S.wall, `5 m up ${high.toFixed(3)}`);
   // the crown band: full on the floor under the centre line, nothing on a standing face there, nothing near the walls but the bounce
   const crown = sky(at(CENTRE, 100, y), UP);
   assert.ok(Math.abs(crown.indirect - 1 - S.crown) < 1e-6 && crown.direct === 1, `the crown floor ${crown.indirect.toFixed(3)}`);
-  assert.ok(Math.abs(sky(at(CENTRE + 2, 140, y), UP).indirect - 1 - S.crown) < 1e-6, '2 m off the centre line');
-  const mid = sky(at(CENTRE + 0.4 * R, 140, y), UP).indirect;
-  assert.ok(mid > 1 && mid < 1 + S.crown, `0.4 of the half-span off ${mid.toFixed(3)}`);
+  // re-pinned in round 7 (the band narrowed, gone by 0.38 of the half-span): nearly full 0.3 m off the centre line, part 0.2 of the half-span off
+  assert.ok(sky(at(CENTRE + 0.3, 140, y), UP).indirect > 1 + 0.95 * S.crown, '0.3 m off the centre line');
+  const mid = sky(at(CENTRE + 0.2 * R, 140, y), UP).indirect;
+  assert.ok(mid > 1 && mid < 1 + S.crown, `0.2 of the half-span off ${mid.toFixed(3)}`);
   assert.equal(sky(at(CENTRE, 100, 1.6), EAST_IN).indirect, 1, 'a standing face under the crown (a train\'s side, a totem)');
+  // re-pinned in round 7: the lift on the centre line itself is larger (the band's +10-15 is now measured across an island, -round7.test.ts)
   const lift = screenDay(linearOf(128) * (1 + 0.3 * S.crown)) - 128;
-  assert.ok(lift >= 10 && lift <= 15, `the sunlit crown floor (sky 0.3 of it) 128 +${lift.toFixed(1)}`);
+  assert.ok(lift >= 18 && lift <= 28, `the sunlit crown floor (sky 0.3 of it) 128 +${lift.toFixed(1)}`);
   assert.ok(screenDay(linearOf(128) * (1 + 0.3 * S.crown)) < 185, 'under the sunlit brick (185-195)');
   // the south front, the outside, the night and the other scenes keep theirs
   assert.equal(sky(at(WEST_WALL + 1, 0.5, y), UP).indirect, 1, 'the floor in the porch, at the front');
