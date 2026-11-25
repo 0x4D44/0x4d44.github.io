@@ -304,7 +304,7 @@ Zoo.chapter("stories", ["stories", "detect"], function (el, data) {
     if (Ds.stories) dl.push("a Reddit story sits " + Ds.stories.unmatched.toFixed(2) + " from the models’ free stories but " + Ds.stories.matched.toFixed(2) +
       " from model stories written to its own prompt; two Reddit stories sit " + Ds.stories.human_human.toFixed(2) + " apart");
     if (Ds.essays) dl.push("a passage by this site’s author sits " + Ds.essays.unmatched.toFixed(2) + " from the free stories and " + Ds.essays.matched.toFixed(2) +
-      " from model essays on its own title; two of his passages sit " + Ds.essays.human_human.toFixed(2) + " apart");
+      " from model essays on its own title; two of the author’s passages sit " + Ds.essays.human_human.toFixed(2) + " apart");
     if (dl.length) el.appendChild(h("p", { class: "note", text: "In the full 1,536 numbers (cosine distance: 0 is the same direction, larger is further), " + dl.join("; ") + "." }));
 
     var mp = D.map || [];
