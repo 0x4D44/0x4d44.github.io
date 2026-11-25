@@ -20,13 +20,15 @@ import { windowNight } from './materials.ts';
  * `moon` 0.5): `sigma` 3.5 -> 2.5, `spill` 0.15 -> 0.13, `moon` 0.5 -> 0.2 and `gain` 0.7 -> 0.85 aim at about sRGB 160 under a lamp and 60
  * midway along a 12.2 m row (about 2.7:1). Round 2 (b7-round-1-score, section 5: at platform-eye the pools still read as one soft swell, not lamp
  * to lamp): `sigma` 2.5 -> 1.5 and `spill` 0.13 -> 0.2, by the same fit about 165 under a lamp, 117 at 2 m, 80 at 3 m and 55 from 4 m to midway (a third
- * of the peak, not black): distinct pools with a floor between them.
+ * of the peak, not black): distinct pools with a floor between them. Round 3 (the round-2 score: on p8-south the far pools merge into a rising band):
+ * `spill` 0.2 -> 0.1, so the gaps fall to about 31 (a fifth of the peak), dark enough to hold against the night haze far off, the slab texture and
+ * the yellow line still reading in them.
  * `sigma` the pool's gaussian radius on the floor, metres; `spill` the floor's lamp light between pools (light thrown back by the lining);
  * `max` the cap on overlapping pools; `gain` the emissive at a pool's centre as a share of the floor's albedo (linear); `tint` warm white;
  * `moon` the share of the night key and sky the floor keeps under the roof; `decal` the shed lamps' bounded pool decals' gain (0: the floor
  * draws the pool); `cell` the map's cell and `edge` the inside mask's ramp, metres.
  */
-export const SHED_POOL = { sigma: 1.5, spill: 0.2, max: 1.2, gain: 0.85, tint: 0xffe6c4, moon: 0.2, decal: 0, cell: 0.5, edge: 1 } as const;
+export const SHED_POOL = { sigma: 1.5, spill: 0.1, max: 1.2, gain: 0.85, tint: 0xffe6c4, moon: 0.2, decal: 0, cell: 0.5, edge: 1 } as const;
 
 /**
  * By day, the floor's sky light (indirect) under the shed's vaults: full under the crown's axis, falling to `flank` of it at a vault's wall,
@@ -36,7 +38,10 @@ export const SHED_POOL = { sigma: 1.5, spill: 0.2, max: 1.2, gain: 0.85, tint: 0
 // round 1b (the lead's day captures moved under 12 px): the floor's light in the shade under the roof is mostly the sun's, lifted by the crown's sky
 // fill in the direct term (lighting.ts SHED_GLASS), not the hemisphere's, so the factor now takes the direct light as well as the indirect, and is a step deeper
 // round 2 (b7-round-1-score, section 5: crown about 1.0, wall about 0.6, as R-a): flank 0.78 -> 0.6
-export const SHED_CROWN_FLOOR = { flank: 0.6, from: 0.35, to: 1.0 } as const;
+// round 3 (the round-2 score: by the wall about 0.85 of the crown's floor on the screen, R-a about 0.45-0.5): flank 0.6 -> 0.35 (about 0.5 on the screen at
+// the day exposure), and the ramp moved in, 0.35-1.0 -> 0.25-0.8 of the radius, so a platform a few metres from the wall is in the dark band, not on the ramp
+// (the round-2 platforms by the walls sat at about 0.75); within a quarter radius (4 m) of the axis the crown's platforms are untouched
+export const SHED_CROWN_FLOOR = { flank: 0.35, from: 0.25, to: 0.8 } as const;
 
 /** The pool light (before `max` and the inside mask) at the world point (x, z), from lamps at `heads` (flat x, y, z). */
 export function shedPoolEnergy(heads: readonly number[], x: number, z: number): number {
