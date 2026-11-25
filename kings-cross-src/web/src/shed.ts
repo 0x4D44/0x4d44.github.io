@@ -691,18 +691,22 @@ export function gableBars(uc: number, springing: number, from: number, r = R): B
 // round F13: the webs 0.18 -> 0.15 m, there being twice the diagonals and a vertical at each panel point, so it stays an open truss from inside (B3)
 // round F13b (front-round-13 score, B3: the X read as cross-hatching where R-a is a Warren with open V panels): one diagonal a panel, the panel halved
 // (2.3 -> 1.15 m), so twice F12's diagonals and none crossing, and a vertical at each panel point
-export const GABLE_GIRDER = { depth: 2.4, panel: 1.15, chord: [0.3, 0.3] as const, web: [0.15, 0.15] as const } as const;
+// round F14 (front-round-13b score, B3: 1.15 m panels on 2.4 m read too fine and steep, about 64 degrees, where R-a's are about 50-55): the panel is the
+// glazing's 1.6 m, its points on the screen's mullions (uc + k * 1.6) and the ends of the span, so the diagonals sit at about 56 degrees
+export const GABLE_GIRDER = { depth: 2.4, panel: 1.6, chord: [0.3, 0.3] as const, web: [0.15, 0.15] as const } as const;
 export function gableGirder(uc: number, springing: number, top: number, r = R): BarSpec[] {
   const { depth, panel, chord, web } = GABLE_GIRDER, y0 = top - depth;
-  const half = Math.sqrt(Math.max(0, r * r - (y0 - springing) ** 2)) - 0.12, n = Math.max(2, Math.round((2 * half) / panel)), w = (2 * half) / n;
+  const half = Math.sqrt(Math.max(0, r * r - (y0 - springing) ** 2)) - 0.12;
   const out: BarSpec[] = [{ c: [uc, y0, 0], s: [2 * half, chord[0], chord[1]], rotZ: 0, kind: 'transom' }];
-  for (let i = 0; i < n; i++) {
-    const xa = uc - half + i * w, xb = xa + w;
+  // round F14: the panel points on the mullions, k * panel from the centre, and at the span's ends (an end panel under 0.4 m is merged into its neighbour)
+  const k = Math.floor((half - 0.4) / panel), points = [-half, ...Array.from({ length: 2 * k + 1 }, (_, i) => (i - k) * panel), half].map(x => uc + x);
+  for (let i = 0; i + 1 < points.length; i++) {
+    const xa = points[i]!, xb = points[i + 1]!, w = xb - xa;
     const [ya, yb] = i % 2 === 0 ? [y0, top] : [top, y0]; // round F13b: one diagonal a panel, zigzagging (a Warren with the verticals)
     out.push({ c: [(xa + xb) / 2, (ya + yb) / 2, 0], s: [Math.hypot(w, depth) + 0.05, web[0], web[1]], rotZ: Math.atan2(yb - ya, w), kind: 'mullion' });
   }
   // and a vertical at every panel point (round F13)
-  for (let i = 0; i <= n; i++) out.push({ c: [uc - half + i * w, y0 + depth / 2, 0], s: [web[0], depth, web[1]], rotZ: 0, kind: 'mullion' });
+  for (const x of points) out.push({ c: [x, y0 + depth / 2, 0], s: [web[0], depth, web[1]], rotZ: 0, kind: 'mullion' });
   return out;
 }
 

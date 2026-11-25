@@ -2,6 +2,7 @@
 glintEven 0 exactly as before; the deeper lattice girder) through web/tests/kx-front-round32.test.ts only.
 Usage: python3 -I -u tools/mutation/kx-front-round32.py SOURCE WORKTREE_SCRATCH
 Anchors moved round F13 (the new pane, band and web figures), and round F13b.
+Anchors moved round F14 (the gr line's max, the cloud's lift).
 Source stays untouched; all baseline and mutation logs go to WORKTREE_SCRATCH.
 """
 from pathlib import Path
@@ -22,15 +23,15 @@ if out == src or out.is_relative_to(src) or src.is_relative_to(out):
 out.mkdir(parents=True, exist_ok=True)
 
 MUTATIONS = [
-    ('the old angle law (strong head-on)', 'web/src/materials.ts', 'float gr = ( ${glslFloat(GABLE_SHEET.f0)} + ${glslFloat(1 - GABLE_SHEET.f0)} * pow(', 'float gr = ( 0.45 + 0.4 * pow(', 'head-on'),
-    ('no Fresnel rise', 'web/src/materials.ts', '* pow( 1.0 - abs( dot( normal, normalize( vViewPosition ) ) ), 5.0 ) ) * gs;', '* 0.0 ) * gs;', 'head-on'),
+    ('the old angle law (strong head-on)', 'web/src/materials.ts', 'float gr = max( ${glslFloat(GABLE_SHEET.f0)} + ${glslFloat(1 - GABLE_SHEET.f0)} * pow(', 'float gr = max( 0.45 + 0.4 * pow(', 'head-on'),
+    ('no Fresnel rise', 'web/src/materials.ts', '* pow( 1.0 - abs( dot( normal, normalize( vViewPosition ) ) ), 5.0 ), ', '* 0.0, ', 'head-on'),
     ('a pale sheet', 'web/src/materials.ts', 'tone: [0x35 / 255, 0x42 / 255, 0x4e / 255]', 'tone: [0x70 / 255, 0x72 / 255, 0x74 / 255]', 'head-on'),
     ('a grey sheet', 'web/src/materials.ts', 'tone: [0x35 / 255, 0x42 / 255, 0x4e / 255]', 'tone: [0x42 / 255, 0x42 / 255, 0x42 / 255]', 'head-on'),
     ('a high F0', 'web/src/materials.ts', 'f0: 0.05,', 'f0: 0.2,', 'head-on'),
     ('the lit colour kept', 'web/src/materials.ts', '), gr ), uGlintEven );', '), gr ), 0.5 * uGlintEven );', 'head-on'),
     ('a loud pane offset', 'web/src/materials.ts', 'pane: 0.12,', 'pane: 0.3,', 'some life'),
-    ('a loud ramp', 'web/src/materials.ts', 'broad: 0.08,', 'broad: 0.2,', 'some life'),
-    ('dead panes', 'web/src/materials.ts', 'pane: 0.12, broad: 0.08,', 'pane: 0, broad: 0,', 'some life'),
+    ('a loud cloud', 'web/src/materials.ts', 'lift: 0.095,', 'lift: 0.3,', 'some life'),
+    ('dead panes', 'web/src/materials.ts', 'pane: 0.12, cloud: { lift: 0.095,', 'pane: 0, cloud: { lift: 0,', 'some life'),
     # 'a busy ramp' retired round F13b: round 32's grid samples one point a pane, so a cloud too busy aliases there; kx-front-round33's 'a sharp cloud' holds it
     ('the sheet everywhere', 'web/src/materials.ts', '), gr ), uGlintEven );', '), gr ), 1.0 );', 'exactly the old'),
     ('the alpha touched', 'web/src/materials.ts', 'gl_FragColor.rgb = mix( gl_FragColor.rgb, mix( gt,', 'gl_FragColor.a = mix( gl_FragColor.a, 1.0, 0.1 );\ngl_FragColor.rgb = mix( gl_FragColor.rgb, mix( gt,', 'exactly the old'),

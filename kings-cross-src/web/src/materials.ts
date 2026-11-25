@@ -1415,7 +1415,12 @@ export const glintEven = { value: 0 };
 // of the room, its transmission cut by up to that share as the view's cosine falls from `straight` to `aslant`, so 0.93 head-on reaches about 0.97 aslant
 // (gable-oblique's ribs to faint shadows) and stays 0.93 head-on.
 export const GABLE_THICKEN = { thicken: 0.57, straight: 0.98, aslant: 0.8 } as const;
-export const GABLE_SHEET = { tone: [0x35 / 255, 0x42 / 255, 0x4e / 255], pane: 0.12, broad: 0.08, band: [0.3, 0.12, -0.12, 0.3], f0: 0.05, haze: 0.3, bar: { width: 0.05, soft: 0.06, shade: 0.3 } } as const;
+// round F14 (front-round-13b score, A6: the cloud still faint, and read as shade): the cloud now only lightens, toward the sky's haze by up to `cloud.lift` (about
+// +22% on the tone at a patch's core), its patches where two soft waves (`cloud.waves`: x and y wavenumbers of each, per metre) agree, so elongated, about seven
+// panes across, with brighter cores (smoothstep of their product); the patches drift by `cloud.drift` radians a metre of the camera's x and z, so they move as it
+// moves. `tint`: aslant (GABLE_THICKEN's ramp) the colour takes up to this share of the sky's haze, so the oblique view lightens a little toward its edges;
+// head-on it is as before.
+export const GABLE_SHEET = { tone: [0x35 / 255, 0x42 / 255, 0x4e / 255], pane: 0.12, cloud: { lift: 0.095, waves: [0.28, 0.1, -0.05, 0.2], drift: 0.02 }, tint: 0.12, f0: 0.05, haze: 0.3, bar: { width: 0.05, soft: 0.06, shade: 0.3 } } as const;
 const SKY_GLINT_GLSL = /* glsl */`
 #if defined( USE_FOG ) && ! defined( FLIP_SIDED )
 vec2 gm = ( floor( vec2( ( vGlassPos.x - uPaneX ) / ${GLAZING.spacing}, ( vGlassPos.y - ${GLAZING.springing} ) / ${GLAZING.tier} ) ) + 0.5 ) * vec2( ${GLAZING.spacing}, ${GLAZING.tier} ) + vec2( uPaneX, ${GLAZING.springing} );
@@ -1426,10 +1431,10 @@ float gc = smoothstep( 0.04, 0.25, fogColor.b - fogColor.r );
 float gf = min( ( 0.45 + 0.4 * ( 1.0 - abs( dot( normal, normalize( vViewPosition ) ) ) ) ) * mix( 1.0, 0.075 + 0.875 * mix( smoothstep( -0.6, 0.9, gb ), ${GLINT_EVEN}, uGlintEven ), gc ), 0.8 ) * gs;
 gl_FragColor.rgb = mix( gl_FragColor.rgb * ( 1.0 - 0.45 * gs ), mix( fogColor, vec3( 1.0 ), 0.7 * gs ), gf );
 gl_FragColor.a = mix( gl_FragColor.a, 1.0, 0.8 * gf );
-vec3 gt = vec3( ${GABLE_SHEET.tone.map(glslFloat).join(', ')} ) * ( 1.0 + ${glslFloat(GABLE_SHEET.pane)} * ( 2.0 * fract( sin( dot( gm, vec2( 12.9898, 78.233 ) ) ) * 43758.5453 ) - 1.0 ) + ${glslFloat(GABLE_SHEET.broad)} * sin( ${glslFloat(GABLE_SHEET.band[0])} * ( vGlassPos.x - uPaneX ) + ${glslFloat(GABLE_SHEET.band[1])} * vGlassPos.y + 0.8 ) * sin( ${glslFloat(GABLE_SHEET.band[2])} * ( vGlassPos.x - uPaneX ) + ${glslFloat(GABLE_SHEET.band[3])} * vGlassPos.y + 1.7 ) );
+vec3 gt = mix( vec3( ${GABLE_SHEET.tone.map(glslFloat).join(', ')} ) * ( 1.0 + ${glslFloat(GABLE_SHEET.pane)} * ( 2.0 * fract( sin( dot( gm, vec2( 12.9898, 78.233 ) ) ) * 43758.5453 ) - 1.0 ) ), mix( fogColor, vec3( 1.0 ), ${glslFloat(GABLE_SHEET.haze)} ), ${glslFloat(GABLE_SHEET.cloud.lift)} * smoothstep( 0.05, 0.95, sin( ${glslFloat(GABLE_SHEET.cloud.waves[0])} * ( vGlassPos.x - uPaneX ) + ${glslFloat(GABLE_SHEET.cloud.waves[1])} * vGlassPos.y + 0.8 + ${glslFloat(GABLE_SHEET.cloud.drift)} * ( cameraPosition.x + cameraPosition.z ) ) * sin( ${glslFloat(GABLE_SHEET.cloud.waves[2])} * ( vGlassPos.x - uPaneX ) + ${glslFloat(GABLE_SHEET.cloud.waves[3])} * vGlassPos.y + 1.7 + ${glslFloat(GABLE_SHEET.cloud.drift)} * ( cameraPosition.x - cameraPosition.z ) ) ) );
 float gq = abs( fract( ( vGlassPos.x - uPaneX ) / ${glslFloat(GLAZING.spacing)} ) - 0.5 ) * ${glslFloat(GLAZING.spacing)};
 gt *= 1.0 - ${glslFloat(GABLE_SHEET.bar.shade)} * ( 1.0 - smoothstep( ${glslFloat(GABLE_SHEET.bar.width / 2)}, ${glslFloat(GABLE_SHEET.bar.width / 2 + GABLE_SHEET.bar.soft)}, gq ) );
-float gr = ( ${glslFloat(GABLE_SHEET.f0)} + ${glslFloat(1 - GABLE_SHEET.f0)} * pow( 1.0 - abs( dot( normal, normalize( vViewPosition ) ) ), 5.0 ) ) * gs;
+float gr = max( ${glslFloat(GABLE_SHEET.f0)} + ${glslFloat(1 - GABLE_SHEET.f0)} * pow( 1.0 - abs( dot( normal, normalize( vViewPosition ) ) ), 5.0 ), ${glslFloat(GABLE_SHEET.tint)} * ( 1.0 - smoothstep( ${glslFloat(GABLE_THICKEN.aslant)}, ${glslFloat(GABLE_THICKEN.straight)}, abs( dot( normal, normalize( vViewPosition ) ) ) ) ) ) * gs;
 gl_FragColor.rgb = mix( gl_FragColor.rgb, mix( gt, mix( fogColor, vec3( 1.0 ), ${glslFloat(GABLE_SHEET.haze)} ), gr ), uGlintEven );
 gl_FragColor.a = mix( gl_FragColor.a, gl_FragColor.a + ( 1.0 - gl_FragColor.a ) * ${glslFloat(GABLE_THICKEN.thicken)} * ( 1.0 - smoothstep( ${glslFloat(GABLE_THICKEN.aslant)}, ${glslFloat(GABLE_THICKEN.straight)}, abs( dot( normal, normalize( vViewPosition ) ) ) ) ), uGlintEven );
 #endif

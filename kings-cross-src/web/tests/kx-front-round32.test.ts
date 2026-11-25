@@ -43,17 +43,19 @@ test('A6 (F12): from outside by day head-on the gable glass sits at front-d\'s s
 // re-pinned round F13 (front-round-12 score, A6: at 4% the life was barely seen): the pane offset is 9% and the band 8%, so within 18% of the mean, and
 // neighbours within 16 levels (two panes at either end of 9% on the bluest channel, about 86); it was 8% and 7 levels
 // re-pinned round F13b: 12% panes and an 8% cloud, so within 21% and neighbours within 26 levels (kx-front-round33); were 18% and 16
-test('A6 (F12): some life in the panes, no mosaic: within 21% of the sheet\'s mean everywhere, neighbours within 26 levels, and not all the same', () => {
+test('A6 (F12): some life in the panes, no mosaic: within 42% over and 25% under the sheet\'s mean, neighbours within 32 levels, and not all the same', () => {
   for (const cos of [1, 0.5]) {
     const g = grid((x, y) => shade(1, x, y, cos)).flat();
     const mean = [0, 1, 2].map(c => g.reduce((a, p) => a + p[c]!, 0) / g.length);
-    for (const p of g) for (const c of [0, 1, 2]) assert.ok(Math.abs(p[c]! / mean[c]! - 1) <= 0.21, `within 21%: ${p[c]} against ${mean[c]}`);
+    // re-pinned round F14 (the cloud as sky, lightening only, up to about 27%; kx-front-round34): up to 42% over the mean, 25% under; was 21% each way
+    for (const p of g) for (const c of [0, 1, 2]) assert.ok(p[c]! / mean[c]! - 1 <= 0.42 && 1 - p[c]! / mean[c]! <= 0.25, `within 42% over, 25% under: ${p[c]} against ${mean[c]}`);
     const spread = Math.max(...g.map(p => p[1]!)) - Math.min(...g.map(p => p[1]!));
     assert.ok(spread >= 4, `some life: ${spread.toFixed(1)} levels`);
     const rows = grid((x, y) => shade(1, x, y, cos));
     let worst = 0;
     rows.forEach((col, i) => col.forEach((p, j) => { for (const q of [rows[i + 1]?.[j], col[j + 1]]) if (q) worst = Math.max(worst, ...p.map((v, c) => Math.abs(v - q[c]!))); }));
-    assert.ok(worst <= 26, `neighbours ${worst.toFixed(1)} levels apart at most`);
+    // re-pinned round F14: the cloud's cores add about 10 levels a pane: 32; was 26
+    assert.ok(worst <= 32, `neighbours ${worst.toFixed(1)} levels apart at most`);
   }
 });
 
