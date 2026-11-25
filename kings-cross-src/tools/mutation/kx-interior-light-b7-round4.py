@@ -1,6 +1,6 @@
 """Catch shed-interior B7 round 1's regressions (the shed's floor draws its lamps' pools: brighter under a lamp than midway and at the island's
 edge, warm white, after dark and inside the shed only; the shed heads' bounded decals off; by day the floor's sky light falls from the crown toward the
-vault walls, direct and indirect; round 1b: on-screen pool contrast 2.2-3.2:1) through web/tests/kx-interior-light-b7-round1.test.ts, -round2.test.ts and -round3.test.ts only. Round 4: the floor's day gain (SHED_DAY_FLOOR), with -round4.test.ts. Round 3b: gaps near
+vault walls, direct and indirect; round 1b: on-screen pool contrast 2.2-3.2:1) through web/tests/kx-interior-light-b7-round1.test.ts, -round2.test.ts and -round3.test.ts only. Round 4b (-round4.test.ts): no floor gain; the sun on the walls (lighting.ts SHED_WALL_SUN). Round 3b: gaps near
 0.3 of the pools and at least 45 near the camera, darker from 20 to 50 m off (SHED_POOL.far); round 2's day restored. Round 3: the gaps
 under a quarter of the pools along whole rows (spill 0.1), and the floor by the wall at about 0.35 from 0.8 of the radius out (0.5 on the screen). Round 2: distinct pools
 (midway at most 60% of the peak on the screen, not black) and the floor by a vault wall at about 0.6 of the crown's by day.
@@ -44,7 +44,7 @@ MUTATIONS = [
     ('no crown fall-off', 'web/src/kx-shed-pools.ts', 'SHED_CROWN_FLOOR = { flank: 0.6,', 'SHED_CROWN_FLOOR = { flank: 1,', ' day:'),
     ('a deeper crown fall-off (0.45)', 'web/src/kx-shed-pools.ts', 'SHED_CROWN_FLOOR = { flank: 0.6,', 'SHED_CROWN_FLOOR = { flank: 0.45,', ' day:'),
     ('the crown term inverted', 'web/src/kx-shed-pools.ts', 'return 1 - smoothstep(SHED_CROWN_FLOOR.from,', 'return smoothstep(SHED_CROWN_FLOOR.from,', ' day:'),
-    ('the crown term at night', 'web/src/kx-shed-pools.ts', '* shedFloorT.g * uShedFloorDay ) * ( 1.0 +', '* shedFloorT.g ) * ( 1.0 +', ' day:'),
+    ('the crown term at night', 'web/src/kx-shed-pools.ts', '* shedFloorT.g * uShedFloorDay );\n', '* shedFloorT.g );\n', ' day:'),
     ('the crown term on the sky only (round 1)', 'web/src/kx-shed-pools.ts', '    reflectedLight.directDiffuse *= shedFloorDayK;\n', '', ' day:'),
     ('the crown term on the sun only', 'web/src/kx-shed-pools.ts', '    reflectedLight.indirectDiffuse *= shedFloorDayK;\n', '', ' day:'),
     ('pools clipped (gain doubled)', 'web/src/kx-shed-pools.ts', 'gain: 0.85,', 'gain: 1.7,', ' night'),
@@ -69,12 +69,16 @@ MUTATIONS = [
     ('the shader\'s far term off', 'web/src/kx-shed-pools.ts', 'mix( 1.0, ${f(SHED_POOL.far.spill)},', 'mix( 1.0, 1.0,', 'B7 night'),
     ('the shader\'s spill dropped', 'web/src/kx-shed-pools.ts', ' + ${f(SHED_POOL.spill)} * mix(', ' + 0.0 * mix(', 'B7 night'),
     ('the spill baked into the map too', 'web/src/kx-shed-pools.ts', 'bytes[n] = Math.round(255 * shedPoolGauss(heads, x, z) / SHED_POOL.max);', 'bytes[n] = Math.round(255 * Math.min(1, shedPoolEnergy(heads, x, z) / SHED_POOL.max));', 'B7 night'),
-    ('no day gain', 'web/src/kx-shed-pools.ts', 'SHED_DAY_FLOOR = { gain: 1.6 }', 'SHED_DAY_FLOOR = { gain: 1 }', 'round 4'),
-    ('a clipping day gain', 'web/src/kx-shed-pools.ts', 'SHED_DAY_FLOOR = { gain: 1.6 }', 'SHED_DAY_FLOOR = { gain: 2.4 }', 'round 4'),
-    ('a faint day gain', 'web/src/kx-shed-pools.ts', 'SHED_DAY_FLOOR = { gain: 1.6 }', 'SHED_DAY_FLOOR = { gain: 1.3 }', 'round 4'),
-    ('the gain on the sun only', 'web/src/kx-shed-pools.ts', '    reflectedLight.indirectDiffuse *= shedFloorDayK;\n', '    reflectedLight.indirectDiffuse *= shedFloorDayK / ( 1.0 + ${f(SHED_DAY_FLOOR.gain - 1)} * shedFloorT.g * uShedFloorDay );\n', 'round 4'),
-    ('the gain at night', 'web/src/kx-shed-pools.ts', '( 1.0 + ${f(SHED_DAY_FLOOR.gain - 1)} * shedFloorT.g * uShedFloorDay )', '( 1.0 + ${f(SHED_DAY_FLOOR.gain - 1)} * shedFloorT.g )', 'round 4'),
-    ('the CPU gain outside the shed', 'web/src/kx-shed-pools.ts', 'dayGain: 1 + (SHED_DAY_FLOOR.gain - 1) * inside,', 'dayGain: SHED_DAY_FLOOR.gain,', 'round 4'),
+    ('the floor gain back (round 4)', 'web/src/kx-shed-pools.ts', '* shedFloorT.g * uShedFloorDay );\n', '* shedFloorT.g * uShedFloorDay ) * ( 1.0 + 0.6 * shedFloorT.g * uShedFloorDay );\n', 'round 4b'),
+    ('no wall sun', 'web/src/lighting.ts', 'SHED_WALL_SUN = { gain: 2.4,', 'SHED_WALL_SUN = { gain: 1,', 'round 4b'),
+    ('a faint wall sun', 'web/src/lighting.ts', 'SHED_WALL_SUN = { gain: 2.4,', 'SHED_WALL_SUN = { gain: 1.8,', 'round 4b'),
+    ('a clipping wall sun', 'web/src/lighting.ts', 'SHED_WALL_SUN = { gain: 2.4,', 'SHED_WALL_SUN = { gain: 3.4,', 'round 4b'),
+    ('no fade on tilted faces', 'web/src/lighting.ts', 'vertical: [0.5, 0.9] }', 'vertical: [0.0, 0.2] }', 'round 4b'),
+    ('the floor takes the wall sun', 'web/src/lighting.ts', '* ( 1.0 - smoothstep( ${SHED_WALL_SUN.vertical[0]', '* ( 1.0 - 0.0 * smoothstep( ${SHED_WALL_SUN.vertical[0]', 'round 4b'),
+    ('the wall sun at night', 'web/src/lighting.ts', '`if ( uShedDiffuse > 0.0 ) reflectedLight.directDiffuse *=', '`reflectedLight.directDiffuse *=', 'round 4b'),
+    ('the wall sun outside the shed', 'web/src/lighting.ts', '* shedInside( cameraPosition - vViewPosition * mat3( viewMatrix ) ) * ( 1.0 - smoothstep(', '* ( 1.0 - smoothstep(', 'round 4b'),
+    ('the wall sun on the shade light', 'web/src/lighting.ts', '`if ( uShedDiffuse > 0.0 ) reflectedLight.directDiffuse *=', '`if ( uShedDiffuse > 0.0 ) reflectedLight.indirectDiffuse *=', 'round 4b'),
+    ('the wall sun not in the programs', 'web/src/lighting.ts', '  ${SHED_WALL_SUN_GLSL}\n', '', 'round 4b'),
 ]
 
 
@@ -118,4 +122,4 @@ with tempfile.TemporaryDirectory(prefix='kx-interior-light-b7-round4-', dir=out)
             failures.append(label)
             print(f'[SURVIVED] {label}', flush=True)
     print(f'{caught}/{len(MUTATIONS)} mutations caught; baseline {len(passing)} tests passed; survivors: {failures}')
-    raise SystemExit(1 if failures or len(passing) != 10 else 0)
+    raise SystemExit(1 if failures or len(passing) != 11 else 0)

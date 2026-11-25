@@ -408,6 +408,19 @@ export function interiorFillFor(hemisphereIntensity: number, cloud: number, out 
  */
 export const SHED_GLASS = { fill: 0.25 } as const;
 
+/**
+ * THE SUN ON THE WALLS (B7 round 4b; the round-4 score: in R-a, shed-a-north-from-footbridge-2019, the platform floor reads about 95 and the sunlit
+ * brick arcade 177-189, where the model drew the floor about 130 over piers and arcade at 90-115). Inside the shed's two vaults (`shedInside`) by day in
+ * London's scene (`uShedDiffuse` on), on a face that stands up (its world normal's height under `vertical[0]`, fading out by `vertical[1]`: the walls,
+ * piers, arcade faces, the trains' sides; never a floor), the direct light is taken `gain` times. The direct term is the sun through the crown with
+ * the shadow map's rib and wall shadows across it (and SHED_GLASS's fill in them), so the band of light lands where the sun does. ASSUMED amount: with
+ * the sun about 0.8 of a sunlit wall's light, brick at 105 reads about 159 at the day exposure (+54) and pale stone at 200 about 236 (under 250).
+ * The night, the moon, the outside, the roof above the springing and every other scene are untouched (the factor is exactly 1).
+ */
+export const SHED_WALL_SUN = { gain: 2.4, vertical: [0.5, 0.9] } as const;
+/** GLSL (after the roof's shade in every roof-shaded Lambert program): SHED_WALL_SUN on the direct light. */
+export const SHED_WALL_SUN_GLSL = `if ( uShedDiffuse > 0.0 ) reflectedLight.directDiffuse *= 1.0 + ${(SHED_WALL_SUN.gain - 1).toFixed(4)} * shedInside( cameraPosition - vViewPosition * mat3( viewMatrix ) ) * ( 1.0 - smoothstep( ${SHED_WALL_SUN.vertical[0].toFixed(2)}, ${SHED_WALL_SUN.vertical[1].toFixed(2)}, abs( ( normal * mat3( viewMatrix ) ).y ) ) );`;
+
 /** GLSL: how far the world point `p` is in the shed's two vaults, 0 to 1 (1 from the inner faces of their walls in, up to 1.5 m under the springing, where the eaves' gutters hang; 0 outside the walls' line, above the springing, in the east aisle, or before a shed is set). */
 export const SHED_GLASS_GLSL = /* glsl */`
 float shedInside( vec3 p ) {
@@ -708,6 +721,7 @@ export function addRoofShade(material: THREE.MeshLambertMaterial): void {
   float looksDown = max( -dot( normal, viewMatrix[ 1 ].xyz ), 0.0 );
   reflectedLight.indirectDiffuse *= roofK.rgb;
   reflectedLight.directDiffuse *= roofK.a;
+  ${SHED_WALL_SUN_GLSL}
 #ifdef ${FOOT_SHADE}
   float h = max( vMapUv.y, 0.0 );
   float foot = 1.0 - ${FOOT_SHADE} * exp( -0.3 * h ) - 0.40 * exp( -2.5 * h );

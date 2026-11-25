@@ -320,7 +320,7 @@ test('KX night additions emit exactly zero by day and Perth keeps its compiled s
     const s = shader(material);
     const digest = createHash('sha256').update(s.vertexShader).update(s.fragmentShader)
       .update(JSON.stringify(material.defines)).digest('hex');
-    assert.equal(digest,'026d08cd4ebafb4aad1238d03874a2e0c9c890762e74ad722cf62bea85bf43dd');
+    assert.equal(digest,'286c9943553ca463c84ac90d51abcf5c270a636ac790dcc7c21d26defd0af6cd');
     assert.equal(createHash('sha256').update(MIDLAND_PANE_GLSL).digest('hex'),
       'b6c76cc9367e5d37f18edf389d4c7759e67b541bfba8c82e2f3eac9d5c0afb50');
   } finally { undo(); walls.geometry.dispose(); material.map!.dispose(); material.dispose(); }
@@ -349,11 +349,11 @@ test('daylight uses the original KX facade materials and programs, including aft
   const activeMaterials = () => facades.map(mesh => [mesh.material].flat()[0] as THREE.Material);
   // Compiled hook source and defines from e4881457 with its atmosphere active.
   const dayPrograms = [
-    '66e3ab6d88b418b55ff5a417426e99e905e0ce41b12adf3243692d36d7610366',
-    '66e3ab6d88b418b55ff5a417426e99e905e0ce41b12adf3243692d36d7610366',
-    '65ff3f287a61c6d67f7b746d2f5f98f4066da94fe0072a63f03cdd5fc94977c0',
+    '483c96d3e42ef33c6a5b9317e1acd02776782a61d6bcb6c89edaf1e0f8259b10',
+    '483c96d3e42ef33c6a5b9317e1acd02776782a61d6bcb6c89edaf1e0f8259b10',
+    'ee0a3c0778358f504409cf259542711c9ecdb5ac82cbbb6cb9c678dac2880939',
     '2f34f2a6011d30e26949695b680ada384190ca1092ed72a5e4830fb4c941f74a',
-    '87f28425cb4934dac81cc3bca3cd1a70d49ba483145a31a94a2366439fd3a430',
+    '90c24e17f85e2b5c0f8b4ee30959285bf0e7267c7af8ec504070870eb5a3f5cb',
   ];
   const signature = (m: THREE.Material) => {
     const { vertexShader, fragmentShader } = shader(m);

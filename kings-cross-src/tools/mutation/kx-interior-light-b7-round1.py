@@ -41,7 +41,7 @@ MUTATIONS = [
     ('no crown fall-off', 'web/src/kx-shed-pools.ts', 'SHED_CROWN_FLOOR = { flank: 0.6,', 'SHED_CROWN_FLOOR = { flank: 1,', 'B7 day'),
     ('a deeper crown fall-off (0.45)', 'web/src/kx-shed-pools.ts', 'SHED_CROWN_FLOOR = { flank: 0.6,', 'SHED_CROWN_FLOOR = { flank: 0.45,', 'B7 day'),
     ('the crown term inverted', 'web/src/kx-shed-pools.ts', 'return 1 - smoothstep(SHED_CROWN_FLOOR.from,', 'return smoothstep(SHED_CROWN_FLOOR.from,', 'B7 day'),
-    ('the crown term at night', 'web/src/kx-shed-pools.ts', '* shedFloorT.g * uShedFloorDay ) * ( 1.0 +', '* shedFloorT.g ) * ( 1.0 +', 'B7 day'),
+    ('the crown term at night', 'web/src/kx-shed-pools.ts', '* shedFloorT.g * uShedFloorDay );\n', '* shedFloorT.g );\n', 'B7 day'),
     ('the crown term on the sky only (round 1)', 'web/src/kx-shed-pools.ts', '    reflectedLight.directDiffuse *= shedFloorDayK;\n', '', 'B7 day'),
     ('the crown term on the sun only', 'web/src/kx-shed-pools.ts', '    reflectedLight.indirectDiffuse *= shedFloorDayK;\n', '', 'B7 day'),
     ('pools clipped (gain doubled)', 'web/src/kx-shed-pools.ts', 'gain: 0.85,', 'gain: 1.7,', 'B7 night'),

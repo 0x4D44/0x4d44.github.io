@@ -189,8 +189,8 @@ test('round 24 clock-stage shading is night-only and the day shaders and Perth w
     sample('12:00', 0);
     const day = [brick.material, stone.material];
     const dayHashes = [
-      '5f265814b5dfe62378e707aac3249e16c9175cb78a59df1597150d96f9eff432',
-      'fabbb5bf645c5541e2df709151a01ea1d9619c1b74d58c3d38c793d80f9eb781',
+      '71f2e54425e27eca32fc3feed37c35357661512615e9c1729185c16046c0cb59',
+      '24620bd60ba8710f37e35ccc900757f689560a0f5fe4e5f6e24d40e9560c99e0',
     ];
     assert.deepEqual(day.map(digest), dayHashes);
     assert.equal(digest(cityMaterial('glass')), 'd11b29ab8dd58ec0e307156043b198a425cc281a4c30100c3dc5649f9a9ddf99');
