@@ -80,3 +80,45 @@ test('A7 (F9): in x-ray the end glass (the front\'s lunettes, the gables) dims b
   assert.equal(before(m, c).opacity, base * f!('xray'), 'switched at run time');
   after(m, c);
 });
+
+test('A7/A6 (F9b): the glazings\' order is the view\'s, set before each frame\'s sort: over every station camera, where a ray meets two glazings the nearer draws after the farther', async () => {
+  const order = S.glassOrder as ((cam: [number, number, number], l: typeof layout) => { gable: number; roof: number; front: number }) | undefined;
+  assert.equal(typeof order, 'function', 'glassOrder exported');
+  const evidence: Record<string, any> = await import(new URL('../../tools/evidence.mjs', import.meta.url).href);
+  const g = build('auto'), scene = new THREE.Scene();
+  scene.add(g); g.updateMatrixWorld(true);
+  const names = { gable: 'shed-gable-glass', roof: 'shed-roof-glass', front: 'shed-front-glass' } as const;
+  const glass = Object.values(names).map(n => byName(g, n));
+  const ray = new THREE.Raycaster();
+  let checked = 0, cameras = 0;
+  const bad: string[] = [];
+  for (const [name, c] of Object.entries(evidence.stationCameras(data)) as [string, { pos?: number[]; target?: number[]; fov?: number }][]) {
+    if (!c?.pos || !c?.target) continue;
+    cameras++;
+    const cam = new THREE.PerspectiveCamera(c.fov ?? 50, 16 / 9, 0.5, 5000);
+    cam.position.set(c.pos[0]!, c.pos[1]!, c.pos[2]!); cam.lookAt(c.target[0]!, c.target[1]!, c.target[2]!); cam.updateMatrixWorld(true);
+    // the scene's own hook sets the order, as the renderer calls it before the sort
+    scene.onBeforeRender(undefined as never, scene, cam, undefined as never, undefined as never, undefined as never);
+    const local = g.worldToLocal(cam.position.clone());
+    const want = order!([local.x, local.y, local.z], layout);
+    assert.deepEqual([byName(g, names.gable).renderOrder, byName(g, names.roof).renderOrder, byName(g, names.front).renderOrder], [want.gable, want.roof, want.front], `${name}: the hook set the view's order`);
+    assert.equal(new Set(Object.values(want)).size, 3, `${name}: distinct`);
+    for (let i = 0; i < 32; i++) for (let j = 0; j < 20; j++) {
+      ray.setFromCamera(new THREE.Vector2(-1 + (2 * i + 1) / 32, -1 + (2 * j + 1) / 20), cam);
+      const hits = ray.intersectObjects(glass, false);
+      const seen: THREE.Mesh[] = [];
+      for (const h of hits) if (!seen.includes(h.object as THREE.Mesh)) seen.push(h.object as THREE.Mesh);
+      for (let k = 1; k < seen.length; k++) {
+        checked++;
+        if (seen[k - 1]!.renderOrder <= seen[k]!.renderOrder) bad.push(`${name}: ${seen[k - 1]!.name} (nearer) draws before ${seen[k]!.name}`);
+      }
+    }
+  }
+  assert.ok(cameras >= 40, `${cameras} station cameras`);
+  assert.ok(checked > 100, `${checked} rays through two glazings`);
+  assert.deepEqual([...new Set(bad)], [], 'the nearer glazing drawn after the farther');
+  const W = layout.length;
+  assert.deepEqual(order!([10, 20, 50], layout), { gable: 2.5, roof: 3, front: 3.5 }, 'south of the front');
+  assert.deepEqual(order!([10, 20, -W - 50], layout), { front: 2.5, roof: 3, gable: 3.5 }, 'north of the gables');
+  assert.equal(Math.max(...Object.values(order!([10, 60, -W / 3], layout))), order!([10, 60, -W / 3], layout).roof, 'between, the roof last');
+});

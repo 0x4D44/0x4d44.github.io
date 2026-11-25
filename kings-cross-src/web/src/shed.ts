@@ -853,12 +853,26 @@ export function crownOutside(cam: V3, layout: Pick<ShedLayout, 'width' | 'length
 /** Opacity of the roof glazing: a bright daylit panel inside and close up, the see-through tint it had before from far off. ASSUMED look. */
 export const GLASS_OPACITY = { near: 0.95, far: 0.36 } as const;
 /**
- * Round F9 (front-round-8 score, A7): the three transparent glazings' draw order, fixed. At one renderOrder three sorted them by their bounding spheres'
- * depth, so the order changed as the camera moved (17 of the 47 station cameras drew them otherwise than the rest). From the south and the overview (south-front,
- * front-oblique, overview and 27 more) the north gables' glass is farthest and the south front's lunettes nearest, so back to front: the gables, the roof's
- * glazing, the front. After the slate (renderOrder 2), before the outside's bars (4).
+ * Round F9 (front-round-8 score, A7): the three transparent glazings' draw order. At one renderOrder three sorted them by their bounding spheres' depth, which
+ * is not which is nearer (the roof glazing's centre is mid-shed). Round F9b (front-round-9 score, A6: one fixed order drew the far roof glazing over the
+ * nearer gable glass at gable-oblique): the order is the view's, set each frame before the sort (glassOrder), from GLASS_SLOTS, back to front, distinct, after
+ * the slate (renderOrder 2) and before the outside's bars (4). GLASS_ORDER is the order from the south, the one a shed outside a scene draws with.
  */
+export const GLASS_SLOTS = [2.5, 3, 3.5] as const;
 export const GLASS_ORDER = { gable: 2.5, roof: 3, front: 3.5 } as const;
+/**
+ * The glazings' renderOrders for a camera at `cam` (the shed's local frame, the front at z 0, the gables at z -length), farthest first. South of the front's
+ * plane the lunettes are nearest and the gables farthest; north of the gables' plane the reverse: a camera on one side of a plane meets what lies on it before
+ * anything beyond. Between the two planes (inside, over the roof, or off a flank) the roof's glazing is drawn last: from inside it and the end screens bound
+ * the same room, so no ray meets both (their order cannot show), and from over the roof or off a flank a ray reaching an end screen meets the roof's glazing
+ * first. There the nearer end screen goes after the farther one.
+ */
+export function glassOrder(cam: V3, layout: Pick<ShedLayout, 'length'>): { gable: number; roof: number; front: number } {
+  const z = cam[2], [a, b, c] = GLASS_SLOTS;
+  if (z > 0) return { gable: a, roof: b, front: c };
+  if (z < -layout.length) return { front: a, roof: b, gable: c };
+  return z < -layout.length / 2 ? { front: a, gable: b, roof: c } : { gable: a, front: b, roof: c };
+}
 
 /**
  * Round F9 (front-round-8 score, A7: in x-ray the roof's glass thinned and the end screens' did not, a hard step in tint where they meet): the share of its own
@@ -1776,6 +1790,21 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   const gableGlass = mesh(mergeGeometries(gableGeos, false), material('glass'), 'shed-gable-glass');
   gableGlass.renderOrder = GLASS_ORDER.gable;
   dimInXray(gableGlass, group);
+  // round F9b: the glazings' order set for each view before three sorts it, from the scene's onBeforeRender (the camera's, after the world matrices update)
+  const orderGlass = (camera: THREE.Camera): void => {
+    inverse.copy(group.matrixWorld).invert();
+    local.copy(camera.position).applyMatrix4(inverse);
+    const o = glassOrder([local.x, local.y, local.z], layout);
+    glassMesh.renderOrder = o.roof;
+    lunMesh.renderOrder = o.front;
+    gableGlass.renderOrder = o.gable;
+  };
+  group.addEventListener('added', () => {
+    const scene = group.parent as THREE.Scene | null;
+    if (!scene?.isScene) return;
+    const before = scene.onBeforeRender;
+    scene.onBeforeRender = function (this: THREE.Scene, ...args: Parameters<THREE.Object3D['onBeforeRender']>) { before.apply(this, args); orderGlass(args[2]); };
+  });
   group.add(gableGlass, mesh(gBars.build(), material('ribPaint'), 'shed-gable-bars'), mesh(mergeGeometries(rings, false), material('ribPaint'), 'shed-arch-rings')); // the gables' end ribs (ROOF_EXTERIOR.gableRib)
   disposables.push(...rings, ...lunGlass, ...gableGeos);
 

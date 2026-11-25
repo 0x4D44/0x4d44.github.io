@@ -33,6 +33,12 @@ MUTATIONS = [
     ('the end glass dims by the slate', 'web/src/shed.ts', "  return mode === 'xray' ? glazingOpacity(XRAY_OPACITY) / glazingOpacity(1) : 1;", "  return mode === 'xray' ? XRAY_OPACITY : 1;", 'the end glass'),
     ('the shared glass not put back', 'web/src/shed.ts', '  glass.onAfterRender = (_r, _s, _c, _g, mat) => { mat.opacity = was; };\n', '', 'the end glass'),
     ('the gables not dimmed', 'web/src/shed.ts', '  dimInXray(gableGlass, group);\n', '', 'the end glass'),
+    ('north of the gables, the south order', 'web/src/shed.ts', '  if (z < -layout.length) return { front: a, roof: b, gable: c };', '  if (z < -layout.length) return { gable: a, roof: b, front: c };', 'A7/A6 (F9b)'),
+    ('south of the front, the north order', 'web/src/shed.ts', '  if (z > 0) return { gable: a, roof: b, front: c };', '  if (z > 0) return { front: a, roof: b, gable: c };', 'A7/A6 (F9b)'),
+    ('between, the roof first', 'web/src/shed.ts', '  return z < -layout.length / 2 ? { front: a, gable: b, roof: c } : { gable: a, front: b, roof: c };', '  return { roof: a, gable: b, front: c };', 'A7/A6 (F9b)'),
+    ('the hook never orders', 'web/src/shed.ts', 'before.apply(this, args); orderGlass(args[2]); };', 'before.apply(this, args); };', 'A7/A6 (F9b)'),
+    ('the slots not distinct', 'web/src/shed.ts', 'GLASS_SLOTS = [2.5, 3, 3.5]', 'GLASS_SLOTS = [3, 3, 3.5]', 'A7/A6 (F9b)'),
+    ('the gables left out of the order', 'web/src/shed.ts', '    gableGlass.renderOrder = o.gable;\n', '', 'A7/A6 (F9b)'),
 ]
 
 def run(work: Path) -> subprocess.CompletedProcess[str]:
@@ -75,4 +81,4 @@ with tempfile.TemporaryDirectory(prefix='kx-front-round29-', dir=out) as tmp:
             failures.append(label)
             print(f'[SURVIVED] {label}', flush=True)
     print(f'{caught}/{len(MUTATIONS)} mutations caught; baseline {len(passing)} tests passed; survivors: {failures}')
-    raise SystemExit(1 if failures or len(passing) != 4 else 0)
+    raise SystemExit(1 if failures or len(passing) != 5 else 0)
