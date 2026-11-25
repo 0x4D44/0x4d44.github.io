@@ -208,8 +208,14 @@ export function gaitParams(B, v, cad = 1) {
   const Lh = B.Lh, ve = v * Math.sqrt(0.92 / Lh), kv = clamp(ve / 1.2, 0.3, 1.8);
   const fs = stepRate(ve) * Math.sqrt(0.92 / Lh) * cad;             // steps per second (cad: this person's own cadence, a few per cent either side of the average) (dynamic similarity: an adult's cadence at the same dimensionless speed, scaled by 1 / sqrt(leg length))
   const SL = v / fs;                                                  // step length
-  const S = clamp(0.61 - 0.05 * (ve - 1.2), 0.59, 0.64);            // stance share of the stride
-  const P = { v, ve, fs, SL, S, ff: 0.1, ho: Math.max(0.3, S - 0.25), thHS: clamp((8 + 10 * kv) * D2R, 8 * D2R, 24 * D2R), thTO: clamp((36 + 22 * kv) * D2R, 34 * D2R, 78 * D2R) };
+  // stance share of the stride. Less for a foot that is short for its leg, at a brisk pace: the trailing leg stays down by lifting its heel, and how high a heel-up foot lifts the ankle
+  // is its toe lever (toeFwd). A small foot (woman_midi: 0.21 of the leg, where most adults are 0.24 - 0.28) ran out of reach before its toe-off, so the pelvis was dragged down
+  // to the instant the toe left and sprang back up after it: a 13 - 19 m/s^2 jolt twice a stride at 1.6 - 1.7 m/s, with the loading knee at 30 - 32 deg (review 62 prep). Leaving the
+  // floor a little sooner, as such a walker does, keeps the double support inside its published band.
+  const S = clamp(0.61 - 0.05 * (ve - 1.2), 0.59, 0.64) - 0.8 * Math.max(0, 0.26 - B.toeFwd / B.legLen) * clamp(ve / 1.2 - 0.8, 0, 1);
+  // (ho: heel-off, which comes earlier the faster the walk - by 0.07 of the stride at a brisk pace. Held at S - 0.25 at every speed, the heel stayed down while the body ran over it
+  // and the ankle dorsiflexed to 25 - 30 deg in late stance at 1.6 - 1.9 m/s, against 10 - 20 in the textbooks.)
+  const P = { v, ve, fs, SL, S, ff: 0.1, ho: Math.max(0.25, S - (0.25 + 0.06 * clamp(kv - 0.7, 0, 1.1))), thHS: clamp((8 + 10 * kv) * D2R, 8 * D2R, 24 * D2R), thTO: clamp((36 + 22 * kv) * D2R, 34 * D2R, 78 * D2R) };
   P.bob0 = 0.036 * Math.pow(kv, 1.1) * (Lh / 0.92);                  // the bob the pelvis is asked for, slid down under the legs' reach (trackReach)
   P.bob = P.bob0;                                                     // (review 33: 39 % more above 1.2 m/s lifted mid-stance 19.0 -> 17.6 deg, but bounced 78 - 92 mm at 1.7 - 1.9 m/s, 1.6 times a real brisk walk: withdrawn)
   P.sway = 0.040 * Math.pow(1 / Math.max(kv, 0.5), 0.3) * (Lh / 0.92);
