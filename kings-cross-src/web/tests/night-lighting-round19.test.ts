@@ -379,9 +379,14 @@ test('daylight uses the original KX facade materials and programs, including aft
       'the tower brick must sort ahead of the dial in the opaque render list, as on main');
     // re-pinned 2026-11-24 (round 6, A4 brick: R-kx-front-c's darker tower stock): the tower's brick is a tinted clone of the front's, on
     // the same program (its cache key is the original's, and the program signatures below are unchanged); the stone is still shared
-    assert.ok(original[0] === brick && original[2] === stone && original[1] !== brick && original[1]!.customProgramCacheKey() === brick.customProgramCacheKey()
+    // re-pinned 2026-11-25 (tower round 3, A4: the cornice's pale cream by vertex colour): the tower's stone is a clone of the front's that takes
+    // vertex colour, its texture and cache key the original's (three's own USE_COLOR variant of the program; no new draw)
+    const towerStone = original[2] as THREE.MeshLambertMaterial;
+    assert.ok(towerStone !== stone && towerStone.vertexColors && towerStone.map === (stone as THREE.MeshLambertMaterial).map && towerStone.customProgramCacheKey() === stone.customProgramCacheKey(),
+      'the tower\'s stone is the front\'s, cloned to take the cornice\'s cream');
+    assert.ok(original[0] === brick && original[1] !== brick && original[1]!.customProgramCacheKey() === brick.customProgramCacheKey()
       && (original[1] as THREE.MeshLambertMaterial).map === (brick as THREE.MeshLambertMaterial).map,
-      'the front shares the original brick and the tower its program and texture; the stone is the original');
+      'the front shares the original brick and the tower its program and texture');
     assert.deepEqual(original.map(signature), dayPrograms,
       'daylight vertex and fragment source matches the ordinary materials including roof shade');
     at(dusk, 1000, fog);

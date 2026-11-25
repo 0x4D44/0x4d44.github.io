@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
 import { CLOCK_TOWER_HEIGHT } from '../../core/station.ts';
-import { buildTower, TOWER_SIZE } from '../src/shed.ts';
+import { buildTower, TOWER_SIZE, TOWER_TOP } from '../src/shed.ts';
 
 // Tower round 2 (rubric A4), the fresh scorer against R-kx-front-c: brick corner pilasters with the panel recessed between them, a low hipped
 // dark cap whose edge stands past the corona, a soffit and frieze that are not near-black, and a compass cross under the vane's banner.
@@ -70,10 +70,11 @@ const wash = (p: THREE.Vector3, n: THREE.Vector3): number => {
   return (shaft + 0.33 * stage * stageEdge + 0.36 * eaves) * (1 - Math.max(n.y, 0));
 };
 test('through every gap between the brackets a viewer meets an outward stone face the night wash lights, no sky; the frieze under them faces straight out', () => {
-  const cw = TOWER_SIZE - 1.8, by = eavesY + 0.3, top = by + 0.8, pitch = (cw - 0.5) / 6;
+  // re-pinned 2026-11-25 (tower round 3: eight modillions to a face, not seven): the gaps are read from TOWER_TOP.perFace, not counted as six
+  const cw = TOWER_SIZE - 1.8, by = eavesY + 0.3, top = by + 0.8, pitch = (cw - 0.5) / (TOWER_TOP.perFace - 1);
   const vertexNormal = (h: THREE.Intersection): THREE.Vector3 => new THREE.Vector3().fromBufferAttribute((h.object as THREE.Mesh).geometry.getAttribute('normal'), h.face!.a);
   let gaps = 0;
-  for (let k = 0; k < 6; k++) {
+  for (let k = 0; k < TOWER_TOP.perFace - 1; k++) {
     const u = -cw / 2 + 0.25 + pitch * (k + 0.5);
     for (let y = by + 0.05; y < top - 0.02; y += 0.1) for (const rise of [0, 0.25, 0.5]) {
       const dir = new THREE.Vector3(0, rise, -1).normalize(), o = new THREE.Vector3(u, y, cw / 2 + 0.3).addScaledVector(dir, -30);

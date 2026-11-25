@@ -25,11 +25,13 @@ MUTATIONS = [
     ('wide pilasters', 'web/src/shed.ts', 'pilaster: { width: 0.87, proud: 0.15 }', 'pilaster: { width: 1.3, proud: 0.15 }', 'corners are pilasters'),
     ('flat cap', 'web/src/shed.ts', 'edge: 0.25, rise: 0.6,', 'edge: 0.25, rise: 0.3,', 'low hipped dark metal roof'),
     ('thin edge', 'web/src/shed.ts', 'edge: 0.25, rise: 0.6,', 'edge: 0.15, rise: 0.6,', 'low hipped dark metal roof'),
-    ('edge flush with the corona', 'web/src/shed.ts', 'eave: 0.15,', 'eave: 0.05,', 'low hipped dark metal roof'),
-    ('no backing behind the brackets: sky through the lower tier', 'web/src/shed.ts', '[cw + 0.2, frieze + bracket.height, cw + 0.2], { skip: [\'+y\'] });', '[cw + 0.2, frieze, cw + 0.2], { skip: [\'+y\'] });', 'gap between the brackets'),
-    ('backing only half way up', 'web/src/shed.ts', '[cw + 0.2, frieze + bracket.height, cw + 0.2], { skip: [\'+y\'] });', '[cw + 0.2, frieze + bracket.height / 2, cw + 0.2], { skip: [\'+y\'] });', 'gap between the brackets'),
-    ('backing faces culled (no sides)', 'web/src/shed.ts', '[cw + 0.2, frieze + bracket.height, cw + 0.2], { skip: [\'+y\'] });', '[cw + 0.2, frieze + bracket.height, cw + 0.2], { skip: [\'+y\', \'+z\'] });', 'gap between the brackets'),
-    ('no corona soffit', 'web/src/shed.ts', 'ts.box([0, cy + corona / 2, 0], [span, corona, span]);', "ts.box([0, cy + corona / 2, 0], [span, corona, span], { skip: ['-y'] });", 'gap between the brackets'),
+    ('edge flush with the corona', 'web/src/shed.ts', 'eave: 0.18,', 'eave: 0.05,', 'low hipped dark metal roof'),
+    ('no backing behind the brackets: sky through the lower tier', 'web/src/shed.ts', '[cw + 0.2, frieze + bracket.height, cw + 0.2], { skip: [\'+y\'], color: cream });', '[cw + 0.2, frieze, cw + 0.2], { skip: [\'+y\'], color: cream });', 'gap between the brackets'),
+    ('backing only half way up', 'web/src/shed.ts', '[cw + 0.2, frieze + bracket.height, cw + 0.2], { skip: [\'+y\'], color: cream });', '[cw + 0.2, frieze + bracket.height / 2, cw + 0.2], { skip: [\'+y\'], color: cream });', 'gap between the brackets'),
+    ('backing faces culled (no sides)', 'web/src/shed.ts', '[cw + 0.2, frieze + bracket.height, cw + 0.2], { skip: [\'+y\'], color: cream });', '[cw + 0.2, frieze + bracket.height, cw + 0.2], { skip: [\'+y\', \'+z\'], color: cream });', 'gap between the brackets'),
+    # round 3: the cyma's underside also closes the corona from below, so the mutant drops both (either alone leaves no sky to see)
+    ('no corona soffit', 'web/src/shed.ts', "[span, corona, span], { skip: ['+y'], color: cream });", "[span, corona, span], { skip: ['+y', '-y'], color: cream });", 'gap between the brackets',
+     "[span + 2 * cyma.out, cyma.height, span + 2 * cyma.out], { skip: ['+y'], color: cream });", "[span + 2 * cyma.out, cyma.height, span + 2 * cyma.out], { skip: ['+y', '-y'], color: cream });"),
     ('cross at the banner', 'web/src/shed.ts', 'crossBelow: 1.0,', 'crossBelow: 0.63,', 'compass cross'),
     ('short arms', 'web/src/shed.ts', 'vane: { arm: 0.9,', 'vane: { arm: 0.5,', 'compass cross'),
     ('no letters', 'web/src/shed.ts', 'for (const [a0, b0, a1, b1] of bars) {', 'for (const [a0, b0, a1, b1] of bars.slice(9)) {', 'compass cross'),
@@ -51,12 +53,15 @@ with tempfile.TemporaryDirectory(prefix='kx-tower-round2-', dir=out) as tmp:
     passing = set(re.findall(r'^ok \d+ - (.+)$', baseline.stdout, re.M))
     caught = 0
     failures = []
-    for i, (label, rel, old, new, expected) in enumerate(MUTATIONS, 1):
+    for i, (label, rel, old, new, expected, *more) in enumerate(MUTATIONS, 1):
         file = work / rel
         original = file.read_text()
-        if old not in original:
-            raise SystemExit(f'missing mutation anchor: {label}')
-        file.write_text(original.replace(old, new, 1))
+        mutated = original
+        for o, n in [(old, new), *zip(more[::2], more[1::2])]:  # a mutant may make a second edit in the same file
+            if o not in mutated:
+                raise SystemExit(f'missing mutation anchor: {label}')
+            mutated = mutated.replace(o, n, 1)
+        file.write_text(mutated)
         try:
             result = run(work)
         except subprocess.TimeoutExpired as error:  # a hang, or a mutant that ate its memory cap: not a kill
