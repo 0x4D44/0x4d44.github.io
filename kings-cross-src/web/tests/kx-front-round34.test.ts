@@ -34,9 +34,10 @@ test('A6 (F14): the cloud only lightens: in every pane the darkest the cloud lea
     const floors = xs.flatMap(x => ys.map(yy => Math.min(...sweep.map(cam => G(x, yy, cam)))));
     assert.ok(Math.max(...floors) - Math.min(...floors) < 0.01, `pane ${k},${j}: the cloud's floor is the pane's own tone (${Math.min(...floors).toFixed(2)}-${Math.max(...floors).toFixed(2)})`);
     const base = Math.min(...floors);
-    for (const x of xs) for (const yy of ys) for (const cam of sweep) { const r = G(x, yy, cam) / base; most = Math.max(most, r); assert.ok(r <= 1.27, `at most 27%: ${r.toFixed(3)}`); }
+    for (const x of xs) for (const yy of ys) for (const cam of sweep) { const r = G(x, yy, cam) / base; most = Math.max(most, r); // re-pinned in round F15 (front-round-14 score: the cloud still too weak): cores 35-52% over the pane, was 18-27%
+    assert.ok(r <= 1.52, `at most 52%: ${r.toFixed(3)}`); }
   }
-  assert.ok(most >= 1.18, `bright cores: ${most.toFixed(3)}`);
+  assert.ok(most >= 1.35, `bright cores: ${most.toFixed(3)}`);
 });
 
 test('A6 (F14): the cloud patches are broad and elongated: along a pane row a patch spans 3-9 panes; and they drift as the camera moves, smoothly', () => {
@@ -68,8 +69,9 @@ test('A6 (F14): aslant the colour takes a little of the sky (8-30 levels at 37 d
   for (const cos of [1, 0.99, 0.985]) for (const x of [0.4, 7.3]) assert.deepEqual(run(body, glsl, 1, x, 15, cos), run(f13b, g13, 1, x, 15, cos), `head-on (${cos}) as F13b`);
   for (const x of [0.4, 7.3, -12.2]) {
     const now = run(body, glsl, 1, x, 15, 0.8), then = run(f13b, g13, 1, x, 15, 0.8);
-    assert.ok(now[1]! - then[1]! >= 8 && now[1]! - then[1]! <= 30, `aslant lighter by ${(now[1]! - then[1]!).toFixed(1)}`);
-    assert.ok(now[1]! < 120 && now[2]! > now[0]!, `still a dark blue-grey sheet: ${now.slice(0, 3).map(v => v.toFixed(0))}`);
+    assert.ok(now[1]! - then[1]! >= 8 && now[1]! - then[1]! <= 45, `aslant lighter by ${(now[1]! - then[1]!).toFixed(1)}`);
+    // re-pinned in round F15: tint 0.12 -> 0.18 takes more sky aslant (up to 45 levels, G under 135; was 30 and 120); the floor of 8 stays
+    assert.ok(now[1]! < 135 && now[2]! > now[0]!, `still a dark blue-grey sheet: ${now.slice(0, 3).map(v => v.toFixed(0))}`);
     assert.equal(now[3], then[3], 'the alpha untouched');
   }
   for (const cos of [1, 0.8, 0.4]) assert.deepEqual(run(body, glsl, 0, 3, 15, cos), run(f13b, g13, 0, 3, 15, cos), `glintEven 0 at ${cos}: as before`);

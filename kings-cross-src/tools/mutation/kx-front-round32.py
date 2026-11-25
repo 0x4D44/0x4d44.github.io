@@ -30,8 +30,8 @@ MUTATIONS = [
     ('a high F0', 'web/src/materials.ts', 'f0: 0.05,', 'f0: 0.2,', 'head-on'),
     ('the lit colour kept', 'web/src/materials.ts', '), gr ), uGlintEven );', '), gr ), 0.5 * uGlintEven );', 'head-on'),
     ('a loud pane offset', 'web/src/materials.ts', 'pane: 0.12,', 'pane: 0.3,', 'some life'),
-    ('a loud cloud', 'web/src/materials.ts', 'lift: 0.095,', 'lift: 0.3,', 'some life'),
-    ('dead panes', 'web/src/materials.ts', 'pane: 0.12, cloud: { lift: 0.095,', 'pane: 0, cloud: { lift: 0,', 'some life'),
+    ('a loud cloud', 'web/src/materials.ts', 'lift: 0.2,', 'lift: 0.5,', 'some life'),
+    ('dead panes', 'web/src/materials.ts', 'pane: 0.12, cloud: { lift: 0.2,', 'pane: 0, cloud: { lift: 0,', 'some life'),
     # 'a busy ramp' retired round F13b: round 32's grid samples one point a pane, so a cloud too busy aliases there; kx-front-round33's 'a sharp cloud' holds it
     ('the sheet everywhere', 'web/src/materials.ts', '), gr ), uGlintEven );', '), gr ), 1.0 );', 'exactly the old'),
     ('the alpha touched', 'web/src/materials.ts', 'gl_FragColor.rgb = mix( gl_FragColor.rgb, mix( gt,', 'gl_FragColor.a = mix( gl_FragColor.a, 1.0, 0.1 );\ngl_FragColor.rgb = mix( gl_FragColor.rgb, mix( gt,', 'exactly the old'),

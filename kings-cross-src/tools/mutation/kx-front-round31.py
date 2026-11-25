@@ -26,7 +26,7 @@ MUTATIONS = [
     ('the night ignored', 'web/src/shed.ts', '1 - Math.min(1, Math.max(0, night)) : 0;', '1 : 0;', 'at night'),
     ('the night unclamped', 'web/src/shed.ts', '1 - Math.min(1, Math.max(0, night)) : 0;', '1 - night : 0;', 'gableOutside is'),
     ('lighter outside glass', 'web/src/shed.ts', 'color: 0x35424e,', 'color: 0x86a9c4,', 'A6 (F11): by day'),
-    ('clear outside glass', 'web/src/shed.ts', 'opacity: 0.93,', 'opacity: 0.6,', 'A6 (F11): by day'),
+    ('clear outside glass', 'web/src/shed.ts', 'opacity: 0.955,', 'opacity: 0.6,', 'A6 (F11): by day'),
     ('no x-ray dim', 'web/src/shed.ts', '* endGlassFactor(group.userData.roofMode as RoofMode);\n    if (k > 0)', ';\n    if (k > 0)', 'in x-ray'),
     ('colour not put back', 'web/src/shed.ts', 'm.opacity = was; m.color.copy(colour); m.specular.copy(specular); glintEven', 'm.opacity = was; m.specular.copy(specular); glintEven', 'A6 (F11): by day'),
     ('specular not put back', 'web/src/shed.ts', 'm.opacity = was; m.color.copy(colour); m.specular.copy(specular); glintEven', 'm.opacity = was; m.color.copy(colour); glintEven', 'A6 (F11): by day'),

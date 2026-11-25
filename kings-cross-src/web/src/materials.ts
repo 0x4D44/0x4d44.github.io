@@ -1420,7 +1420,9 @@ export const GABLE_THICKEN = { thicken: 0.57, straight: 0.98, aslant: 0.8 } as c
 // panes across, with brighter cores (smoothstep of their product); the patches drift by `cloud.drift` radians a metre of the camera's x and z, so they move as it
 // moves. `tint`: aslant (GABLE_THICKEN's ramp) the colour takes up to this share of the sky's haze, so the oblique view lightens a little toward its edges;
 // head-on it is as before.
-export const GABLE_SHEET = { tone: [0x35 / 255, 0x42 / 255, 0x4e / 255], pane: 0.12, cloud: { lift: 0.095, waves: [0.28, 0.1, -0.05, 0.2], drift: 0.02 }, tint: 0.12, f0: 0.05, haze: 0.3, bar: { width: 0.05, soft: 0.06, shade: 0.3 } } as const;
+// round F15 (front-round-14 score, A6: the cloud read as haze, not sky shapes; the oblique edge still too dark): `cloud.lift` 0.095 -> 0.2, its cores about
+// 35-50% over the pane's tone, as front-d2's bright sky patches; `tint` 0.12 -> 0.18
+export const GABLE_SHEET = { tone: [0x35 / 255, 0x42 / 255, 0x4e / 255], pane: 0.12, cloud: { lift: 0.2, waves: [0.28, 0.1, -0.05, 0.2], drift: 0.02 }, tint: 0.18, f0: 0.05, haze: 0.3, bar: { width: 0.05, soft: 0.06, shade: 0.3 } } as const;
 const SKY_GLINT_GLSL = /* glsl */`
 #if defined( USE_FOG ) && ! defined( FLIP_SIDED )
 vec2 gm = ( floor( vec2( ( vGlassPos.x - uPaneX ) / ${GLAZING.spacing}, ( vGlassPos.y - ${GLAZING.springing} ) / ${GLAZING.tier} ) ) + 0.5 ) * vec2( ${GLAZING.spacing}, ${GLAZING.tier} ) + vec2( uPaneX, ${GLAZING.springing} );
