@@ -65,7 +65,14 @@ def main():
                "city": "Name a city. Reply with only the city name."},
                "story": "Write a short story of about 300 words. Reply with only the story, starting with its title on the first line."}}
     knobs_path = os.path.join(DATA, "stoch-knobs.json")
-    knobs = json.load(open(knobs_path)) if os.path.exists(knobs_path) else {}
+    knobs = {}
+    if os.path.exists(knobs_path):
+        for m, k in json.load(open(knobs_path)).get("models", {}).items():
+            knobs[m] = {"temperature": bool(k.get("temperature")), "effort": bool(k.get("effort")),
+                        "says": next((k[e] for e in ("temperature_error",) if k.get(e)), None)}
+            if knobs[m]["says"]:  # the provider's own words, without the JSON wrapping
+                mt = re.search(r'"message": "((?:[^"\\]|\\.)*)"', knobs[m]["says"])
+                knobs[m]["says"] = mt.group(1).replace('\\"', '"').replace("\\u2019", "'") if mt else None
 
     # 1. The dial: what each setting does to the spread.
     g = collections.defaultdict(list)
@@ -89,7 +96,14 @@ def main():
         d["knob"] = "temperature" if any(c.startswith("t") for c in d["conds"]) else "effort"
         knobs.setdefault(m, {"temperature": d["knob"] == "temperature", "effort": d["knob"] == "effort"})
     out["dial"] = D
-    out["knobs"] = knobs
+    out["knobs"] = {m: k for m, k in knobs.items() if m in ids}
+    # Mean spread (bits) at each setting, over the three short prompts and every model that has it.
+    mean = collections.defaultdict(list)
+    for m, d in D.items():
+        for p, by in d["short"].items():
+            for c, cnt in by.items():
+                mean[c].append(cnt["bits"])
+    out["mean_bits"] = {c: [round(sum(v) / len(v), 2), len(v) // 3] for c, v in mean.items()}
 
     # 2. Repeats: the same story prompt twenty times.
     g = collections.defaultdict(list)
@@ -130,6 +144,18 @@ def main():
                     "chains": [sorted(c, key=lambda x: x["turn"]) for _, c in sorted(chains.items())]}
     rep_ = sr.report()
     out["relay"]["overlap"] = rep_.get("relay_word_overlap_by_turn", {})
+    out["relay"]["cosine"] = rep_.get("relay_cosine_by_turn", {})
+    # A floor for "unrelated": sentences from different runs at different turns.
+    emb = sr.embeddings() if hasattr(sr, "embeddings") else {}
+    rv = [(k[3], k[4], v) for k, v in emb.items() if k[0] == "relay"]
+    cross = [sr.cos(a, b) for (ca, ta, a), (cb, tb, b) in itertools.combinations(rv, 2) if ca != cb and abs(ta - tb) > 2]
+    out["relay"]["unrelated"] = round(sum(cross) / len(cross), 3) if cross else None
+    for m, by in rep_.get("repeat", {}).items() if isinstance(rep_.get("repeat"), dict) else []:
+        pass
+    for key, v in rep_.get("repeat", {}).items():
+        m, _, c = key.rpartition(" ")
+        if m in out["repeat"] and c in out["repeat"][m] and v.get("cosine") is not None:
+            out["repeat"][m][c]["cosine"] = v["cosine"]
     out["answers"] = len(dial) + len(rep) + len(wd) + len(rl)
     out["spent"] = round(sum(r.get("cost", 0) for r in dial + rep + wd + rl), 2)
     p = os.path.join(SITE, "chance.json")

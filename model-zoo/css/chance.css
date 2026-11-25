@@ -31,3 +31,17 @@
 #chance .chain .sent.openai { border-bottom: 2px solid color-mix(in srgb, var(--openai) 45%, transparent); }
 #chance .chain .sent.anthropic { border-bottom: 2px solid color-mix(in srgb, var(--anthropic) 45%, transparent); }
 #chance details .card { margin-top: 10px; }
+#chance .says { font: 13px/1.5 var(--mono); color: var(--text-secondary); padding-left: 1.2em; max-width: 52em; overflow-wrap: anywhere; }
+#chance .knobgroup h4 { font: 600 13px var(--sans); margin: 12px 0 6px; color: var(--text-secondary); }
+#chance .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+#chance .chips .chip { font-size: 12.5px; padding: 3px 9px; }
+#chance .meanbits, #chance .rankcard { margin: 12px 0; max-width: 44em; }
+#chance .rankcard .odds { grid-template-columns: minmax(0, 13em) minmax(0, 1fr) 3.5em; }
+#chance .rankcard .lab { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#chance .meanbits .odds { grid-template-columns: minmax(0, 8.5em) minmax(0, 1fr) 6em; }
+#chance .odds i.full { top: 0; height: 100%; }
+#chance .odds i.e { background: var(--seq-3); }
+#chance .odds i.openai { background: var(--openai); } #chance .odds i.anthropic { background: var(--anthropic); }
+#chance .odds .floor { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--text-primary); }
+#chance .scrollbox { max-height: 28em; overflow-y: auto; }
+#chance table.data tr.hit td { background: color-mix(in srgb, var(--badge) 14%, transparent); }
