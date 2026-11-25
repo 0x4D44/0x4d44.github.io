@@ -1,0 +1,996 @@
+{
+ "generated": "2026-11-25T11:10Z",
+ "phase": "pilot",
+ "scoring_rule": "2026-11-19",
+ "weights": {
+  "judged": 20,
+  "machine": 30,
+  "programs": 50
+ },
+ "references": {
+  "envelopes": 20,
+  "data_bits": [
+   1,
+   4
+  ],
+  "word_bits": [
+   2,
+   6
+  ],
+  "score": 100
+ },
+ "runs": [
+  {
+   "run": "p1-sonnet-5.5-high",
+   "pilot": "p1",
+   "seat": "sonnet-5.5-high",
+   "model": "claude-sonnet-5-5",
+   "started": "2026-11-18T15:25:51Z",
+   "envelope": {
+    "name": "d13p17",
+    "data_bits": 13,
+    "word_bits": 17,
+    "two_ended": false
+   },
+   "overall": 100.0,
+   "judged": 100.0,
+   "machine": 100.0,
+   "programs": 100.0,
+   "nonconforming": false,
+   "programs_passed": {
+    "cases": 36,
+    "passed": 36
+   },
+   "judges": 1,
+   "cost_usd": 3.6695,
+   "questions": 10,
+   "caps_s": [
+    1200,
+    4500,
+    4500
+   ],
+   "wall_s": [
+    236.0,
+    749.9,
+    370.2
+   ],
+   "scoring": "2026-11-19"
+  },
+  {
+   "run": "p10-haiku-5.5-high",
+   "pilot": "p10",
+   "seat": "haiku-5.5-high",
+   "model": "claude-haiku-5-5",
+   "started": "2026-11-18T21:02:59Z",
+   "envelope": {
+    "name": "d01p02e",
+    "data_bits": 1,
+    "word_bits": 2,
+    "two_ended": true
+   },
+   "overall": 49.6,
+   "judged": 67.3,
+   "machine": 97.78,
+   "programs": 27.27,
+   "nonconforming": true,
+   "programs_passed": {
+    "cases": 36,
+    "passed": 13
+   },
+   "judges": 1,
+   "cost_usd": 0.8651,
+   "questions": 7,
+   "caps_s": [
+    1200,
+    2400,
+    3000
+   ],
+   "wall_s": [
+    247.1,
+    439.8,
+    463.1
+   ],
+   "scoring": "2026-11-19"
+  },
+  {
+   "run": "p10-opus-5.5-medium",
+   "pilot": "p10",
+   "seat": "opus-5.5-medium",
+   "model": "claude-opus-5-5",
+   "started": "2026-11-18T21:03:01Z",
+   "envelope": {
+    "name": "d01p02e",
+    "data_bits": 1,
+    "word_bits": 2,
+    "two_ended": true
+   },
+   "overall": 98.8,
+   "judged": 94.2,
+   "machine": 100.0,
+   "programs": 100.0,
+   "nonconforming": false,
+   "programs_passed": {
+    "cases": 36,
+    "passed": 36
+   },
+   "judges": 1,
+   "cost_usd": 10.0603,
+   "questions": 7,
+   "caps_s": [
+    1200,
+    2400,
+    3000
+   ],
+   "wall_s": [
+    284.0,
+    824.5,
+    1214.7
+   ],
+   "scoring": "2026-11-19"
+  },
+  {
+   "run": "p10-sonnet-5.5-high",
+   "pilot": "p10",
+   "seat": "sonnet-5.5-high",
+   "model": "claude-sonnet-5-5",
+   "started": "2026-11-18T21:03:00Z",
+   "envelope": {
+    "name": "d01p02e",
+    "data_bits": 1,
+    "word_bits": 2,
+    "two_ended": true
+   },
+   "overall": 84.8,
+   "judged": 92.3,
+   "machine": 100.0,
+   "programs": 72.73,
+   "nonconforming": false,
+   "programs_passed": {
+    "cases": 36,
+    "passed": 31
+   },
+   "judges": 1,
+   "cost_usd": 5.2904,
+   "questions": 10,
+   "caps_s": [
+    1200,
+    2400,
+    3000
+   ],
+   "wall_s": [
+    476.7,
+    935.3,
+    683.3
+   ],
+   "scoring": "2026-11-19"
+  },
+  {
+   "run": "p2-haiku-5.5-high",
+   "pilot": "p2",
+   "seat": "haiku-5.5-high",
+   "model": "claude-haiku-5-5",
+   "started": "2026-11-18T15:58:28Z",
+   "envelope": {
+    "name": "d13p17",
+    "data_bits": 13,
+    "word_bits": 17,
+    "two_ended": false
+   },
+   "overall": 85.2,
+   "judged": 94.2,
+   "machine": 100.0,
+   "programs": 72.73,
+   "nonconforming": false,
+   "programs_passed": {
+    "cases": 36,
+    "passed": 31
+   },
+   "judges": 1,
+   "cost_usd": 1.0083,
+   "questions": 5,
+   "caps_s": [
+    1200,
+    2700,
+    2700
+   ],
+   "wall_s": [
+    134.3,
+    459.8,
+    486.8
+   ],
+   "scoring": "2026-11-19"
+  },
+  {
+   "run": "p2-opus-5.5-medium",
+   "pilot": "p2",
+   "seat": "opus-5.5-medium",
+   "model": "claude-opus-5-5",
+   "started": "2026-11-18T15:58:28Z",
+   "envelope": {
+    "name": "d13p17",
+    "data_bits": 13,
+    "word_bits": 17,
+    "two_ended": false
+   },
+   "overall": 98.8,
+   "judged": 94.2,
+   "machine": 100.0,
+   "programs": 100.0,
+   "nonconforming": false,
+   "programs_passed": {
+    "cases": 36,
+    "passed": 36
+   },
+   "judges": 1,
+   "cost_usd": 6.7875,
+   "questions": 9,
+   "caps_s": [
+    1200,
+    2700,
+    2700
+   ],
+   "wall_s": [
+    276.4,
+    947.7,
+    157.9
+   ],
+   "scoring": "2026-11-19"
+  },
+  {
+   "run": "p3-haiku-5.5-high",
+   "pilot": "p3",
+   "seat": "haiku-5.5-high",
+   "model": "claude-haiku-5-5",
+   "started": "2026-11-18T16:15:12Z",
+   "envelope": {
+    "name": "d13p06",
+    "data_bits": 13,
+    "word_bits": 6,
+    "two_ended": false
+   },
+   "overall": 77.2,
+   "judged": 84.6,
+   "machine": 100.0,
+   "programs": 60.61,
+   "nonconforming": false,
+   "programs_passed": {
+    "cases": 36,
+    "passed": 27
+   },
+   "judges": 1,
+   "cost_usd": 2.3118,
+   "questions": 9,
+   "caps_s": [
+    1200,
+    4500,
+    4500
+   ],
+   "wall_s": [
+    214.3,
+    1091.9,
+    889.7
+   ],
+   "scoring": "2026-11-19"
+  },
+  {
+   "run": "p3-opus-5.5-medium",
+   "pilot": "p3",
+   "seat": "opus-5.5-medium",
+   "model": "claude-opus-5-5",
+   "started": "2026-11-18T16:15:13Z",
+   "envelope": {
+    "name": "d13p06",
+    "data_bits": 13,
+    "word_bits": 6,
+    "two_ended": false
+   },
+   "overall": 100.0,
+   "judged": 100.0,
+   "machine": 100.0,
+   "programs": 100.0,
+   "nonconforming": false,
+   "programs_passed": {
+    "cases": 36,
+    "passed": 36
+   },
+   "judges": 1,
+   "cost_usd": 7.0546,
+   "questions": 10,
+   "caps_s": [
+    1200,
+    4500,
+    4500
+   ],
+   "wall_s": [
+    304.3,
+    1165.8,
+    158.0
+   ],
+   "scoring": "2026-11-19"
+  },
+  {
+   "run": "p3-sonnet-5.5-high",
+   "pilot": "p3",
+   "seat": "sonnet-5.5-high",
+   "model": "claude-sonnet-5-5",
+   "started": "2026-11-18T16:15:12Z",
+   "envelope": {
+    "name": "d13p06",
+    "data_bits": 13,
+    "word_bits": 6,
+    "two_ended": false
+   },
+   "overall": 100.0,
+   "judged": 100.0,
+   "machine": 100.0,
+   "programs": 100.0,
+   "nonconforming": false,
+   "programs_passed": {
+    "cases": 36,
+    "passed": 36
+   },
+   "judges": 1,
+   "cost_usd": 4.2648,
+   "questions": 9,
+   "caps_s": [
+    1200,
+    4500,
+    4500
+   ],
+   "wall_s": [
+    299.7,
+    1141.6,
+    309.3
+   ],
+   "scoring": "2026-11-19"
+  },
+  {
+   "run": "p4-haiku-5.5-high",
+   "pilot": "p4",
+   "seat": "haiku-5.5-high",
+   "model": "claude-haiku-5-5",
+   "started": "2026-11-18T16:49:57Z",
+   "envelope": {
+    "name": "d01p17e",
+    "data_bits": 1,
+    "word_bits": 17,
+    "two_ended": true
+   },
+   "overall": 50.7,
+   "judged": 80.8,
+   "machine": 100.0,
+   "programs": 9.09,
+   "nonconforming": false,
+   "programs_passed": {
+    "cases": 36,
+    "passed": 1
+   },
+   "judges": 1,
+   "cost_usd": 1.0475,
+   "questions": 4,
+   "caps_s": [
+    1200,
+    4500,
+    4500
+   ],
+   "wall_s": [
+    234.9,
+    679.3,
+    147.4
+   ],
+   "scoring": "2026-11-19"
+  },
+  {
+   "run": "p4-opus-5.5-medium",
+   "pilot": "p4",
+   "seat": "opus-5.5-medium",
+   "model": "claude-opus-5-5",
+   "started": "2026-11-18T16:49:59Z",
+   "envelope": {
+    "name": "d01p17e",
+    "data_bits": 1,
+    "word_bits": 17,
+    "two_ended": true
+   },
+   "overall": 98.8,
+   "judged": 94.2,
+   "machine": 100.0,
+   "programs": 100.0,
+   "nonconforming": false,
+   "programs_passed": {
+    "cases": 36,
+    "passed": 36
+   },
+   "judges": 1,
+   "cost_usd": 7.4824,
+   "questions": 8,
+   "caps_s": [
+    1200,
+    4500,
+    4500
+   ],
+   "wall_s": [
+    301.9,
+    1021.1,
+    341.6
+   ],
+   "scoring": "2026-11-19"
+  },
+  {
+   "run": "p4-sonnet-5.5-high",
+   "pilot": "p4",
+   "seat": "sonnet-5.5-high",
+   "model": "claude-sonnet-5-5",
+   "started": "2026-11-18T16:49:58Z",
+   "envelope": {
+    "name": "d01p17e",
+    "data_bits": 1,
+    "word_bits": 17,
+    "two_ended": true
+   },
+   "overall": 70.8,
+   "judged": 78.8,
+   "machine": 100.0,
+   "programs": 100.0,
+   "nonconforming": true,
+   "programs_passed": {
+    "cases": 36,
+    "passed": 36
+   },
+   "judges": 1,
+   "cost_usd": 8.204,
+   "questions": 7,
+   "caps_s": [
+    1200,
+    4500,
+    4500
+   ],
+   "wall_s": [
+    257.8,
+    1924.1,
+    579.2
+   ],
+   "scoring": "2026-11-19"
+  },
+  {
+   "run": "p5-haiku-5.5-high",
+   "pilot": "p5",
+   "seat": "haiku-5.5-high",
+   "model": "claude-haiku-5-5",
+   "started": "2026-11-18T16:54:54Z",
+   "envelope": {
+    "name": "d04p12e",
+    "data_bits": 4,
+    "word_bits": 12,
+    "two_ended": true
+   },
+   "overall": 84.4,
+   "judged": 90.4,
+   "machine": 100.0,
+   "programs": 72.73,
+   "nonconforming": false,
+   "programs_passed": {
+    "cases": 36,
+    "passed": 31
+   },
+   "judges": 1,
+   "cost_usd": 1.6567,
+   "questions": 3,
+   "caps_s": [
+    1200,
+    4500,
+    4500
+   ],
+   "wall_s": [
+    285.4,
+    609.4,
+    1065.5
+   ],
+   "scoring": "2026-11-19"
+  },
+  {
+   "run": "p5-opus-5.5-medium",
+   "pilot": "p5",
+   "seat": "opus-5.5-medium",
+   "model": "claude-opus-5-5",
+   "started": "2026-11-18T16:54:56Z",
+   "envelope": {
+    "name": "d04p12e",
+    "data_bits": 4,
+    "word_bits": 12,
+    "two_ended": true
+   },
+   "overall": 100.0,
+   "judged": 100.0,
+   "machine": 100.0,
+   "programs": 100.0,
+   "nonconforming": false,
+   "programs_passed": {
+    "cases": 36,
+    "passed": 36
+   },
+   "judges": 1,
+   "cost_usd": 6.3962,
+   "questions": 9,
+   "caps_s": [
+    1200,
+    4500,
+    4500
+   ],
+   "wall_s": [
+    212.6,
+    868.2,
+    520.5
+   ],
+   "scoring": "2026-11-19"
+  },
+  {
+   "run": "p5-sonnet-5.5-high",
+   "pilot": "p5",
+   "seat": "sonnet-5.5-high",
+   "model": "claude-sonnet-5-5",
+   "started": "2026-11-18T16:54:55Z",
+   "envelope": {
+    "name": "d04p12e",
+    "data_bits": 4,
+    "word_bits": 12,
+    "two_ended": true
+   },
+   "overall": 98.0,
+   "judged": 100.0,
+   "machine": 93.33,
+   "programs": 100.0,
+   "nonconforming": false,
+   "programs_passed": {
+    "cases": 36,
+    "passed": 36
+   },
+   "judges": 1,
+   "cost_usd": 3.5256,
+   "questions": 10,
+   "caps_s": [
+    1200,
+    4500,
+    4500
+   ],
+   "wall_s": [
+    260.7,
+    589.3,
+    526.1
+   ],
+   "scoring": "2026-11-19"
+  },
+  {
+   "run": "p6-haiku-5.5-high",
+   "pilot": "p6",
+   "seat": "haiku-5.5-high",
+   "model": "claude-haiku-5-5",
+   "started": "2026-11-18T17:52:48Z",
+   "envelope": {
+    "name": "d01p04e",
+    "data_bits": 1,
+    "word_bits": 4,
+    "two_ended": true
+   },
+   "overall": 61.3,
+   "judged": 88.5,
+   "machine": 100.0,
+   "programs": 27.27,
+   "nonconforming": false,
+   "programs_passed": {
+    "cases": 36,
+    "passed": 13
+   },
+   "judges": 1,
+   "cost_usd": 1.2062,
+   "questions": 8,
+   "caps_s": [
+    1200,
+    3300,
+    3300
+   ],
+   "wall_s": [
+    246.4,
+    546.6,
+    467.8
+   ],
+   "scoring": "2026-11-19"
+  },
+  {
+   "run": "p6-opus-5.5-medium",
+   "pilot": "p6",
+   "seat": "opus-5.5-medium",
+   "model": "claude-opus-5-5",
+   "started": "2026-11-18T17:52:50Z",
+   "envelope": {
+    "name": "d01p04e",
+    "data_bits": 1,
+    "word_bits": 4,
+    "two_ended": true
+   },
+   "overall": 98.8,
+   "judged": 94.2,
+   "machine": 100.0,
+   "programs": 100.0,
+   "nonconforming": false,
+   "programs_passed": {
+    "cases": 36,
+    "passed": 36
+   },
+   "judges": 1,
+   "cost_usd": 7.7713,
+   "questions": 7,
+   "caps_s": [
+    1200,
+    3300,
+    3300
+   ],
+   "wall_s": [
+    267.9,
+    995.9,
+    552.4
+   ],
+   "scoring": "2026-11-19"
+  },
+  {
+   "run": "p6-sonnet-5.5-high",
+   "pilot": "p6",
+   "seat": "sonnet-5.5-high",
+   "model": "claude-sonnet-5-5",
+   "started": "2026-11-18T17:52:49Z",
+   "envelope": {
+    "name": "d01p04e",
+    "data_bits": 1,
+    "word_bits": 4,
+    "two_ended": true
+   },
+   "overall": 84.5,
+   "judged": 94.2,
+   "machine": 97.78,
+   "programs": 72.73,
+   "nonconforming": false,
+   "programs_passed": {
+    "cases": 36,
+    "passed": 31
+   },
+   "judges": 1,
+   "cost_usd": 3.8123,
+   "questions": 7,
+   "caps_s": [
+    1200,
+    3300,
+    3300
+   ],
+   "wall_s": [
+    254.7,
+    622.9,
+    662.2
+   ],
+   "scoring": "2026-11-19"
+  },
+  {
+   "run": "p7-haiku-5.5-high",
+   "pilot": "p7",
+   "seat": "haiku-5.5-high",
+   "model": "claude-haiku-5-5",
+   "started": "2026-11-18T18:55:59Z",
+   "envelope": {
+    "name": "d01p04e",
+    "data_bits": 1,
+    "word_bits": 4,
+    "two_ended": true
+   },
+   "overall": 52.6,
+   "judged": 78.8,
+   "machine": 100.0,
+   "programs": 27.27,
+   "nonconforming": true,
+   "programs_passed": {
+    "cases": 36,
+    "passed": 13
+   },
+   "judges": 1,
+   "cost_usd": 1.485,
+   "questions": 8,
+   "caps_s": [
+    1200,
+    3300,
+    3300
+   ],
+   "wall_s": [
+    235.1,
+    1054.8,
+    343.1
+   ],
+   "scoring": "2026-11-19"
+  },
+  {
+   "run": "p7-opus-5.5-medium",
+   "pilot": "p7",
+   "seat": "opus-5.5-medium",
+   "model": "claude-opus-5-5",
+   "started": "2026-11-18T18:56:01Z",
+   "envelope": {
+    "name": "d01p04e",
+    "data_bits": 1,
+    "word_bits": 4,
+    "two_ended": true
+   },
+   "overall": 98.8,
+   "judged": 94.2,
+   "machine": 100.0,
+   "programs": 100.0,
+   "nonconforming": false,
+   "programs_passed": {
+    "cases": 36,
+    "passed": 36
+   },
+   "judges": 1,
+   "cost_usd": 7.5,
+   "questions": 8,
+   "caps_s": [
+    1200,
+    3300,
+    3300
+   ],
+   "wall_s": [
+    335.9,
+    1024.5,
+    456.0
+   ],
+   "scoring": "2026-11-19"
+  },
+  {
+   "run": "p7-sonnet-5.5-high",
+   "pilot": "p7",
+   "seat": "sonnet-5.5-high",
+   "model": "claude-sonnet-5-5",
+   "started": "2026-11-18T18:56:00Z",
+   "envelope": {
+    "name": "d01p04e",
+    "data_bits": 1,
+    "word_bits": 4,
+    "two_ended": true
+   },
+   "overall": 85.2,
+   "judged": 94.2,
+   "machine": 100.0,
+   "programs": 72.73,
+   "nonconforming": false,
+   "programs_passed": {
+    "cases": 36,
+    "passed": 31
+   },
+   "judges": 1,
+   "cost_usd": 4.8756,
+   "questions": 7,
+   "caps_s": [
+    1200,
+    3300,
+    3300
+   ],
+   "wall_s": [
+    338.0,
+    813.5,
+    985.1
+   ],
+   "scoring": "2026-11-19"
+  },
+  {
+   "run": "p8-haiku-5.5-high",
+   "pilot": "p8",
+   "seat": "haiku-5.5-high",
+   "model": "claude-haiku-5-5",
+   "started": "2026-11-18T19:00:03Z",
+   "envelope": {
+    "name": "d04p06e",
+    "data_bits": 4,
+    "word_bits": 6,
+    "two_ended": true
+   },
+   "overall": 59.3,
+   "judged": 88.5,
+   "machine": 93.33,
+   "programs": 27.27,
+   "nonconforming": false,
+   "programs_passed": {
+    "cases": 36,
+    "passed": 13
+   },
+   "judges": 1,
+   "cost_usd": 1.5718,
+   "questions": 4,
+   "caps_s": [
+    1200,
+    3300,
+    3300
+   ],
+   "wall_s": [
+    412.3,
+    646.9,
+    366.7
+   ],
+   "scoring": "2026-11-19"
+  },
+  {
+   "run": "p8-opus-5.5-medium",
+   "pilot": "p8",
+   "seat": "opus-5.5-medium",
+   "model": "claude-opus-5-5",
+   "started": "2026-11-18T19:00:05Z",
+   "envelope": {
+    "name": "d04p06e",
+    "data_bits": 4,
+    "word_bits": 6,
+    "two_ended": true
+   },
+   "overall": 100.0,
+   "judged": 100.0,
+   "machine": 100.0,
+   "programs": 100.0,
+   "nonconforming": false,
+   "programs_passed": {
+    "cases": 36,
+    "passed": 36
+   },
+   "judges": 1,
+   "cost_usd": 8.1488,
+   "questions": 9,
+   "caps_s": [
+    1200,
+    3300,
+    3300
+   ],
+   "wall_s": [
+    336.3,
+    981.8,
+    629.1
+   ],
+   "scoring": "2026-11-19"
+  },
+  {
+   "run": "p8-sonnet-5.5-high",
+   "pilot": "p8",
+   "seat": "sonnet-5.5-high",
+   "model": "claude-sonnet-5-5",
+   "started": "2026-11-18T19:00:04Z",
+   "envelope": {
+    "name": "d04p06e",
+    "data_bits": 4,
+    "word_bits": 6,
+    "two_ended": true
+   },
+   "overall": 71.9,
+   "judged": 84.6,
+   "machine": 100.0,
+   "programs": 100.0,
+   "nonconforming": true,
+   "programs_passed": {
+    "cases": 36,
+    "passed": 36
+   },
+   "judges": 1,
+   "cost_usd": 3.454,
+   "questions": 8,
+   "caps_s": [
+    1200,
+    3300,
+    3300
+   ],
+   "wall_s": [
+    278.7,
+    818.1,
+    318.4
+   ],
+   "scoring": "2026-11-19"
+  },
+  {
+   "run": "p9-haiku-5.5-high",
+   "pilot": "p9",
+   "seat": "haiku-5.5-high",
+   "model": "claude-haiku-5-5",
+   "started": "2026-11-18T19:57:19Z",
+   "envelope": {
+    "name": "d01p03e",
+    "data_bits": 1,
+    "word_bits": 3,
+    "two_ended": true
+   },
+   "overall": 68.1,
+   "judged": 76.9,
+   "machine": 100.0,
+   "programs": 45.45,
+   "nonconforming": false,
+   "programs_passed": {
+    "cases": 36,
+    "passed": 19
+   },
+   "judges": 1,
+   "cost_usd": 1.1097,
+   "questions": 9,
+   "caps_s": [
+    900,
+    2000,
+    2100
+   ],
+   "wall_s": [
+    307.5,
+    439.5,
+    829.6
+   ],
+   "scoring": "2026-11-19"
+  },
+  {
+   "run": "p9-opus-5.5-medium",
+   "pilot": "p9",
+   "seat": "opus-5.5-medium",
+   "model": "claude-opus-5-5",
+   "started": "2026-11-18T19:57:21Z",
+   "envelope": {
+    "name": "d01p03e",
+    "data_bits": 1,
+    "word_bits": 3,
+    "two_ended": true
+   },
+   "overall": 98.8,
+   "judged": 94.2,
+   "machine": 100.0,
+   "programs": 100.0,
+   "nonconforming": false,
+   "programs_passed": {
+    "cases": 36,
+    "passed": 36
+   },
+   "judges": 1,
+   "cost_usd": 5.432,
+   "questions": 9,
+   "caps_s": [
+    900,
+    2000,
+    2100
+   ],
+   "wall_s": [
+    228.6,
+    583.2,
+    522.6
+   ],
+   "scoring": "2026-11-19"
+  },
+  {
+   "run": "p9-sonnet-5.5-high",
+   "pilot": "p9",
+   "seat": "sonnet-5.5-high",
+   "model": "claude-sonnet-5-5",
+   "started": "2026-11-18T19:57:20Z",
+   "envelope": {
+    "name": "d01p03e",
+    "data_bits": 1,
+    "word_bits": 3,
+    "two_ended": true
+   },
+   "overall": 99.3,
+   "judged": 100.0,
+   "machine": 97.78,
+   "programs": 100.0,
+   "nonconforming": false,
+   "programs_passed": {
+    "cases": 36,
+    "passed": 36
+   },
+   "judges": 1,
+   "cost_usd": 4.5841,
+   "questions": 8,
+   "caps_s": [
+    900,
+    2000,
+    2100
+   ],
+   "wall_s": [
+    355.0,
+    495.2,
+    1070.5
+   ],
+   "scoring": "2026-11-19"
+  }
+ ]
+}
