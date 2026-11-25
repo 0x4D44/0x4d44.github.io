@@ -1393,6 +1393,13 @@ export const GLAZING = { spacing: 1.6, tier: 5.334, springing: 5.6388 } as const
  * with it, so `gl_FrontFacing` is true there too), so that pass is left out, and `gl_FrontFacing` keeps a single-pass pane to its front face. The front's glass
  * looks out south as built; the gables' (shed.ts `facingNorth`) are turned to look out north. From inside a window shows what is outside it, and no mirror.
  */
+/**
+ * Round F11b (front A6): how far the glint's pane-to-pane streaks are flattened (`uGlintEven`, 0 as round six made them, 1 every pane the same): set for the
+ * north gables' own draw from outside by day (shed.ts gableGlassView), where dark glass turned the streaks into a mosaic of near-white and near-black
+ * panes. Flattened, each pane takes GLINT_EVEN of the streak term (about the field's mean), so only the view angle's soft gradient is left.
+ */
+export const GLINT_EVEN = 0.3;
+export const glintEven = { value: 0 };
 const SKY_GLINT_GLSL = /* glsl */`
 #if defined( USE_FOG ) && ! defined( FLIP_SIDED )
 vec2 gm = ( floor( vec2( ( vGlassPos.x - uPaneX ) / ${GLAZING.spacing}, ( vGlassPos.y - ${GLAZING.springing} ) / ${GLAZING.tier} ) ) + 0.5 ) * vec2( ${GLAZING.spacing}, ${GLAZING.tier} ) + vec2( uPaneX, ${GLAZING.springing} );
@@ -1400,7 +1407,7 @@ float gp = dot( gm, vec2( 0.9, 0.5 ) );
 float gb = sin( gp ) + 0.8 * sin( 0.37 * gp + 1.3 ) + 0.5 * sin( 2.3 * gp + 4.0 ) + 0.35 * sin( dot( gm, vec2( -0.45, 0.8 ) ) + 0.7 );
 float gs = gl_FrontFacing ? smoothstep( 0.55, 0.8, fogColor.g ) : 0.0;
 float gc = smoothstep( 0.04, 0.25, fogColor.b - fogColor.r );
-float gf = min( ( 0.45 + 0.4 * ( 1.0 - abs( dot( normal, normalize( vViewPosition ) ) ) ) ) * mix( 1.0, 0.075 + 0.875 * smoothstep( -0.6, 0.9, gb ), gc ), 0.8 ) * gs;
+float gf = min( ( 0.45 + 0.4 * ( 1.0 - abs( dot( normal, normalize( vViewPosition ) ) ) ) ) * mix( 1.0, 0.075 + 0.875 * mix( smoothstep( -0.6, 0.9, gb ), ${GLINT_EVEN}, uGlintEven ), gc ), 0.8 ) * gs;
 gl_FragColor.rgb = mix( gl_FragColor.rgb * ( 1.0 - 0.45 * gs ), mix( fogColor, vec3( 1.0 ), 0.7 * gs ), gf );
 gl_FragColor.a = mix( gl_FragColor.a, 1.0, 0.8 * gf );
 #endif
@@ -1417,11 +1424,12 @@ const paneX = { value: 0 };
 export function skyGlint<T extends THREE.MeshPhongMaterial>(m: T): T {
   m.onBeforeCompile = (shader) => {
     shader.uniforms.uPaneX = paneX;
+    shader.uniforms.uGlintEven = glintEven;
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', '#include <common>\nvarying vec2 vGlassPos;')
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvGlassPos = position.xy;');
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nvarying vec2 vGlassPos;\nuniform float uPaneX;')
+      .replace('#include <common>', '#include <common>\nvarying vec2 vGlassPos;\nuniform float uPaneX;\nuniform float uGlintEven;')
       .replace('#include <fog_fragment>', `${SKY_GLINT_GLSL}#include <fog_fragment>`);
   };
   m.onBeforeRender = (_renderer, _scene, _camera, geometry) => {

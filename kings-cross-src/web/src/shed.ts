@@ -17,7 +17,7 @@ import { CLOCK_TOWER_HEIGHT, SHED_SPAN_WIDTH } from '../../core/station.ts';
 import type { ClockDial } from './clocks.ts';
 import type { ShedLayout } from '../../core/station.ts';
 import { addCrownAbove, addCrownBelow, CROWN_ALPHA, setShedGlass } from './lighting.ts';
-import { Batch, material, paneUv, windowNight, withBuildingNightMaterial } from './materials.ts';
+import { Batch, glintEven, material, paneUv, windowNight, withBuildingNightMaterial } from './materials.ts';
 import type { V2, V3 } from './materials.ts';
 import { GROUND_Y } from './world.ts';
 
@@ -899,9 +899,9 @@ export const GABLE_OUTSIDE = { color: 0x35424e, opacity: 0.86, specular: 0xdce6f
 export function gableOutside(cam: V3, layout: Pick<ShedLayout, 'length'>, night: number): number {
   return cam[2] < -layout.length ? 1 - Math.min(1, Math.max(0, night)) : 0;
 }
-/** dimInXray for the gable glass, which also takes GABLE_OUTSIDE by gableOutside for the camera (set for its own draw and put back after). */
+/** dimInXray for the gable glass, which also takes GABLE_OUTSIDE, and the glint's even panes (materials.ts glintEven), by gableOutside for the camera (set for its own draw and put back after). */
 function gableGlassView(glass: THREE.Mesh, group: THREE.Group, layout: Pick<ShedLayout, 'length'>): void {
-  let was = 1;
+  let was = 1, even = 0;
   const colour = new THREE.Color(), specular = new THREE.Color(), tint = new THREE.Color(), cam = new THREE.Vector3(), inverse = new THREE.Matrix4();
   glass.onBeforeRender = (_r, _s, camera, _g, mat) => {
     const m = mat as THREE.MeshPhongMaterial;
@@ -910,8 +910,9 @@ function gableGlassView(glass: THREE.Mesh, group: THREE.Group, layout: Pick<Shed
     const k = gableOutside([cam.x, cam.y, cam.z], layout, windowNight.value);
     m.opacity = (was + (GABLE_OUTSIDE.opacity - was) * k) * endGlassFactor(group.userData.roofMode as RoofMode);
     if (k > 0) { m.color.lerp(tint.setHex(GABLE_OUTSIDE.color), k); m.specular.lerp(tint.setHex(GABLE_OUTSIDE.specular), k); }
+    even = glintEven.value; glintEven.value = k; // round F11b: one even sheen, not a mosaic of streaked and clear panes
   };
-  glass.onAfterRender = (_r, _s, _c, _g, mat) => { const m = mat as THREE.MeshPhongMaterial; m.opacity = was; m.color.copy(colour); m.specular.copy(specular); };
+  glass.onAfterRender = (_r, _s, _c, _g, mat) => { const m = mat as THREE.MeshPhongMaterial; m.opacity = was; m.color.copy(colour); m.specular.copy(specular); glintEven.value = even; };
 }
 
 /** The glazing's opacity for a roof opacity `roof` (from roofOpacity): `near` at 1 (solid roof), `far` at XRAY_OPACITY, linear between. */

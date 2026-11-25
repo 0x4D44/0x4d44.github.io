@@ -1,4 +1,4 @@
-"""Catch round F11 regressions (front A6: the north gable glass dark and glossy from outside by day, the library glass from inside, on the plane, at night; dimmed in x-ray) through web/tests/kx-front-round31.test.ts only.
+"""Catch round F11 regressions (front A6: the north gable glass dark and glossy from outside by day, the library glass from inside, on the plane, at night; dimmed in x-ray; F11b: one even glint on it, not a mosaic) through web/tests/kx-front-round31.test.ts only.
 Usage: python3 -I -u tools/mutation/kx-front-round31.py SOURCE WORKTREE_SCRATCH
 Source stays untouched; all baseline and mutation logs go to WORKTREE_SCRATCH.
 """
@@ -28,12 +28,19 @@ MUTATIONS = [
     ('lighter outside glass', 'web/src/shed.ts', 'color: 0x35424e,', 'color: 0x86a9c4,', 'A6 (F11): by day'),
     ('clear outside glass', 'web/src/shed.ts', 'opacity: 0.86,', 'opacity: 0.6,', 'A6 (F11): by day'),
     ('no x-ray dim', 'web/src/shed.ts', '* endGlassFactor(group.userData.roofMode as RoofMode);\n    if (k > 0)', ';\n    if (k > 0)', 'in x-ray'),
-    ('colour not put back', 'web/src/shed.ts', 'm.opacity = was; m.color.copy(colour); m.specular.copy(specular); };', 'm.opacity = was; m.specular.copy(specular); };', 'A6 (F11): by day'),
-    ('specular not put back', 'web/src/shed.ts', 'm.opacity = was; m.color.copy(colour); m.specular.copy(specular); };', 'm.opacity = was; m.color.copy(colour); };', 'A6 (F11): by day'),
+    ('colour not put back', 'web/src/shed.ts', 'm.opacity = was; m.color.copy(colour); m.specular.copy(specular); glintEven', 'm.opacity = was; m.specular.copy(specular); glintEven', 'A6 (F11): by day'),
+    ('specular not put back', 'web/src/shed.ts', 'm.opacity = was; m.color.copy(colour); m.specular.copy(specular); glintEven', 'm.opacity = was; m.color.copy(colour); glintEven', 'A6 (F11): by day'),
     ('no specular', 'web/src/shed.ts', 'm.specular.lerp(tint.setHex(GABLE_OUTSIDE.specular), k);', '', 'A6 (F11): by day'),
     ('the camera in world, not the shed', 'web/src/shed.ts', 'cam.copy(camera.position).applyMatrix4(inverse.copy(group.matrixWorld).invert());', 'cam.copy(camera.position);', 'A6'),
     ('dusk all or nothing', 'web/src/shed.ts', 'm.opacity = (was + (GABLE_OUTSIDE.opacity - was) * k)', 'm.opacity = (k > 0 ? GABLE_OUTSIDE.opacity : was)', 'from inside'),
     ('the front glass dark too', 'web/src/shed.ts', '  dimInXray(lunMesh, group);', '  gableGlassView(lunMesh, group, { length: -1e6 });', 'from inside'),
+    ('the gables keep the streaks', 'web/src/shed.ts', 'even = glintEven.value; glintEven.value = k;', 'even = glintEven.value;', 'A6 (F11b): the gable glass flattens'),
+    ('the flattening left on', 'web/src/shed.ts', 'glintEven.value = even; };', '};', 'A6 (F11b): the gable glass flattens'),
+    ('flattened always', 'web/src/shed.ts', 'even = glintEven.value; glintEven.value = k;', 'even = glintEven.value; glintEven.value = 1;', 'A6 (F11b): the gable glass flattens'),
+    ('the shader ignores it', 'web/src/materials.ts', 'mix( smoothstep( -0.6, 0.9, gb ), ${GLINT_EVEN}, uGlintEven )', 'smoothstep( -0.6, 0.9, gb )', 'A6 (F11b): with glintEven'),
+    ('half flattened', 'web/src/materials.ts', 'mix( smoothstep( -0.6, 0.9, gb ), ${GLINT_EVEN}, uGlintEven )', 'mix( smoothstep( -0.6, 0.9, gb ), ${GLINT_EVEN}, 0.5 * uGlintEven )', 'A6 (F11b): with glintEven'),
+    ('a bright even sheen', 'web/src/materials.ts', 'export const GLINT_EVEN = 0.3;', 'export const GLINT_EVEN = 2.5;', 'A6 (F11b): with glintEven'),
+    ('its own uniform object', 'web/src/materials.ts', '    shader.uniforms.uGlintEven = glintEven;\n', '    shader.uniforms.uGlintEven = { value: 0 };\n', 'A6 (F11b): with glintEven'),
 ]
 
 def run(work: Path) -> subprocess.CompletedProcess[str]:
@@ -76,4 +83,4 @@ with tempfile.TemporaryDirectory(prefix='kx-front-round31-', dir=out) as tmp:
             failures.append(label)
             print(f'[SURVIVED] {label}', flush=True)
     print(f'{caught}/{len(MUTATIONS)} mutations caught; baseline {len(passing)} tests passed; survivors: {failures}')
-    raise SystemExit(1 if failures or len(passing) != 4 else 0)
+    raise SystemExit(1 if failures or len(passing) != 6 else 0)

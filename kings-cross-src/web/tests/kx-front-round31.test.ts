@@ -6,7 +6,9 @@ import * as THREE from 'three';
 import type { KxData } from '../../core/osm.ts';
 import { readFileSync } from 'node:fs';
 import { shedLayout } from '../../core/station.ts';
+import * as materials from '../src/materials.ts';
 import { material, windowNight } from '../src/materials.ts';
+import { Glsl, Mat } from './glsl.ts';
 import * as shed from '../src/shed.ts';
 
 const data: KxData = JSON.parse(readFileSync(new URL('../src/data/kx-track.json', import.meta.url), 'utf8'));
@@ -71,4 +73,59 @@ test('A6 (F11): gableOutside is 1 - night north of the plane only', () => {
   assert.equal(fn([0, 0, -L - 5], layout, 0.25), 0.75);
   assert.equal(fn([0, 0, -L - 5], layout, 2), 0);
   assert.equal(fn([0, 0, -L - 5], layout, -1), 1);
+});
+
+// Round F11b (front A6): the dark outside glass came out a mosaic: the sky glint's pane-to-pane streaks (materials.ts SKY_GLINT_GLSL, `gb` per pane) took
+// some panes 0.4 of the way to a near-white sky and left their neighbours clear, which over a dark tint is near-white beside near-black.
+const M = materials as Record<string, unknown>;
+const even = (): { value: number } | undefined => M.glintEven as { value: number } | undefined;
+
+test('A6 (F11b): the gable glass flattens the glint\'s panes (glintEven) by the same share as GABLE_OUTSIDE: 1 outside by day, 0 inside, on the plane and at night, and puts it back', () => {
+  const e = even();
+  assert.ok(e, 'glintEven exported');
+  const g = build('auto'), glass = g.getObjectByName('shed-gable-glass') as THREE.Mesh, front = g.getObjectByName('shed-front-glass') as THREE.Mesh;
+  const during = (m: THREE.Mesh, at: [number, number, number]): number => {
+    const c = camera(g, at), mat = m.material as THREE.Material;
+    m.onBeforeRender(undefined as never, undefined as never, c, m.geometry, mat, null as never);
+    const v = e.value;
+    m.onAfterRender(undefined as never, undefined as never, c, m.geometry, mat, null as never);
+    return v;
+  };
+  windowNight.value = 0;
+  for (const [where, at] of outside) { assert.equal(during(glass, at), 1, where); assert.equal(e.value, 0, `${where}: put back`); }
+  for (const [where, at] of notOutside) assert.equal(during(glass, at), 0, where);
+  for (const [where, at] of [...outside, ...notOutside]) assert.equal(during(front, at), 0, `front from ${where}`);
+  windowNight.value = 0.5; assert.equal(during(glass, outside[0][1]), 0.5, 'dusk');
+  windowNight.value = 1; for (const [where, at] of outside) assert.equal(during(glass, at), 0, `${where} at night`);
+  windowNight.value = 0;
+});
+
+test('A6 (F11b): with glintEven at 1 the glint is one even sheen: over a 60 m by 30 m screen seen from a gable-oblique-like camera, no pane differs from its neighbour by more than a soft gradient (2 levels of 255), where the streaks differ by tens', () => {
+  const s = { uniforms: {} as Record<string, THREE.IUniform>, vertexShader: THREE.ShaderLib.phong.vertexShader, fragmentShader: THREE.ShaderLib.phong.fragmentShader };
+  const m = material('glass') as THREE.MeshPhongMaterial;
+  m.onBeforeCompile(s as unknown as THREE.WebGLProgramParametersWithUniforms, undefined as never);
+  assert.ok('uGlintEven' in s.uniforms && s.uniforms.uGlintEven === even(), 'the shared uniform');
+  const f = s.fragmentShader, at = f.indexOf('#if defined( USE_FOG ) && ! defined( FLIP_SIDED )\nvec2 gm');
+  const body = f.slice(at, f.indexOf('#endif', at)).split('\n').slice(1).join('\n');
+  const glsl = new Glsl(''), identity = new Mat(4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
+  const day = [0.6635, 0.8039, 0.9644], dark = [0.035, 0.054, 0.076, 0.86], eye = [-45, 12, 35];
+  const shade = (flat: number, x: number, y: number): number[] => {
+    const toCamera = eye.map((c, i) => c - [x, y, 0][i]!);
+    const env = { vars: { gl_FragColor: [...dark], gl_FrontFacing: true, fogColor: day, cameraPosition: eye, viewMatrix: identity, vViewPosition: toCamera, normal: [0, 0, 1], vGlassPos: [x, y], uPaneX: 0, uGlintEven: flat } };
+    glsl.run(body, env);
+    return (env.vars.gl_FragColor as number[]).slice(0, 3).map(c => c * 255);
+  };
+  const worst = (flat: number): number => {
+    let w = 0;
+    for (let x = 0; x < 60; x += 0.75) for (let y = 0; y < 30; y += 0.75) {
+      const a = shade(flat, x, y), b = shade(flat, x + 0.75, y), c = shade(flat, x, y + 0.75);
+      w = Math.max(w, ...a.map((v, i) => Math.abs(v - b[i]!)), ...a.map((v, i) => Math.abs(v - c[i]!)));
+    }
+    return w;
+  };
+  const streaked = worst(0), flat = worst(1);
+  assert.ok(streaked > 30, `the streaks as round six made them: ${streaked.toFixed(1)} levels between neighbours`);
+  assert.ok(flat <= 2, `even: ${flat.toFixed(2)} levels between neighbouring points`);
+  const mid = shade(1, 30, 15);
+  assert.ok(Math.max(...mid) < 140 && mid[2]! > mid[0]!, `still dark blue-grey with a sheen: ${mid.map(v => v.toFixed(0)).join(', ')}`);
 });
