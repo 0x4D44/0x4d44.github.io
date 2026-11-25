@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import type { KxData } from '../../core/osm.ts';
 import { readFileSync } from 'node:fs';
 import { SHED_SPAN_WIDTH, shedLayout } from '../../core/station.ts';
-import { buildShed, FRONT_CANOPY, FRONT_FASCIA_TEXT, FRONT_RELIEF, fasciaLevels, paintFascia } from '../src/shed.ts';
+import { buildShed, FRONT_CANOPY, FRONT_FASCIA_TEXT, FRONT_RELIEF, fasciaLevels, frontOrderZ, paintFascia } from '../src/shed.ts';
 import { HAND_OUTLINE, handGeometry, HANDS } from '../src/clocks.ts';
 import { GROUND_Y } from '../src/world.ts';
 
@@ -80,7 +80,8 @@ test('A2: the cornice has a dark soffit and shadow line, and the great arches\' 
   for (const xe of [X0 + 0.7, X0 + FW - 0.7]) {
     const h = first(new THREE.Vector3(xe, sp + FRONT_RELIEF.impost.height / 2, 5), new THREE.Vector3(0, 0, -1), [front, stone]);
     const z = h ? group.worldToLocal(h.point.clone()).z : -9;
-    assert.ok(h?.object === stone && z >= FRONT_RELIEF.orders * FRONT_RELIEF.orderStep + 0.05, `an impost at x=${xe.toFixed(1)} ${z.toFixed(2)} m proud, prouder than the outer order`);
+    assert.ok(h?.object === stone && z >= frontOrderZ(FRONT_RELIEF.orders - 1) + 0.05, // re-pinned round A2: the outer order's face at frontOrderZ
+      `an impost at x=${xe.toFixed(1)} ${z.toFixed(2)} m proud, prouder than the outer order`);
     const above = first(new THREE.Vector3(xe, sp + FRONT_RELIEF.impost.height + 0.3, 5), new THREE.Vector3(0, 0, -1), [front, stone]);
     const za = above ? group.worldToLocal(above.point.clone()).z : 9;
     assert.ok(above && za < z - 0.3, `and the end pier stands back on it above (${za.toFixed(2)} m)`);

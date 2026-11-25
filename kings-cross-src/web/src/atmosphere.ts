@@ -13,6 +13,7 @@ import { createPlatformLamps } from './station-lamps.ts';
 import { registerLights } from '../../core/light-sources.ts';
 import { kxStationLights } from './light-source-adapters.ts';
 import { createKxFogMaterials } from './kx-night-fog.ts';
+import { SHED_POOL } from './kx-shed-pools.ts';
 import type { Pt } from '../../core/geo.ts';
 import { PLATFORM_HEIGHT } from '../../core/scene.ts';
 import { cloudDeck, DAY_EXPOSURE, fogRange, lampLevelFor, skyRig, smoothstep } from '../../core/daylight.ts';
@@ -425,7 +426,8 @@ export function createAtmosphere({ scene, world, sites, location, haze, lampSunG
   scene.add(precip.group);
   const nightLights = sites ? createNightLights(sites) : null;
   if (nightLights) scene.add(nightLights.group);
-  const platformLamps = sites && platformLampFloor ? createPlatformLamps([...sites.platform,...sites.shed],platformLampFloor,PLATFORM_HEIGHT,'kx',litFogCloud&&!!cityFogTint,[],[...Array<undefined>(sites.platform.length/3).fill(undefined),...sites.shedReach??[]]) : null;
+  const platformLamps = sites && platformLampFloor ? createPlatformLamps([...sites.platform,...sites.shed],platformLampFloor,PLATFORM_HEIGHT,'kx',litFogCloud&&!!cityFogTint,[],[...Array<undefined>(sites.platform.length/3).fill(undefined),...sites.shedReach??[]],
+    [...Array<undefined>(sites.platform.length/3).fill(undefined),...Array<number>(sites.shed.length/3).fill(SHED_POOL.decal)]) : null; // B7 round 1: the shed's floor draws its own pools (kx-shed-pools.ts)
   if (platformLamps) {
     scene.add(platformLamps.group); nightLights?.attach(platformLamps);
     // Shared heads replace the old oversized halos on this opt-in path only.

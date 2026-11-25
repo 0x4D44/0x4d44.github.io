@@ -24,7 +24,7 @@ MUTATIONS = [
      "  proud(spine, GROUND_Y + FRONT_RELIEF.impostAboveGround, FW + toMass, FRONT_RELIEF.impostHeight, FRONT_RELIEF.impostOut); // string course over the arcade's crowns\n",
      '', 'proud stone string courses'),
     ('arch orders flattened to one depth', 'web/src/shed.ts',
-     'zBack = FRONT_THICK + i * st, zFace = FRONT_THICK + (i + 1) * st;', 'zBack = FRONT_THICK, zFace = FRONT_THICK + st;',  # round 26: the orders are stacked layers, each from zBack to zFace
+     'zBack = FRONT_THICK + Math.max(0, frontOrderZ(i - 1)), zFace = FRONT_THICK + frontOrderZ(i);', 'zBack = FRONT_THICK, zFace = FRONT_THICK + frontOrderZ(0);',  # round 26: the orders are stacked layers, each from zBack to zFace; re-anchored round A2 (frontOrderZ)
      'reveal steps back in three orders'),
     ('porch glass omitted (pushed 5 m back, out of the opening)', 'web/src/shed.ts',
      'g.translate(0, 0, -PORCH_DEPTH.glass); // round 20', 'g.translate(0, 0, -PORCH_DEPTH.glass - 5); // round 20',
@@ -33,14 +33,14 @@ MUTATIONS = [
      'for (let k = 1; k < PORCH_INFILL.bays; k++)', 'for (let k = 1; k < 1; k++)',
      'each of the six lower openings carries glazing'),
     ('canopy raised to the sill', 'web/src/shed.ts', 'top: 3.85,', 'top: 5.0,', 'the low canopy of the current front'),
-    ('orders back to the 0.15 m step', 'web/src/shed.ts', 'orderStep: 0.28,', 'orderStep: 0.15,', 'reveal steps back in three orders'),
+    ('orders back to the 0.15 m step', 'web/src/shed.ts', 'orderStep: 0.4,', 'orderStep: 0.15,', 'reveal steps back in three orders'),
     ('no fourth order', 'web/src/shed.ts', 'innerOrder: true,', 'innerOrder: false,', 'reveal steps back in three orders'),
     ('no bed mould under the cornice', 'web/src/shed.ts',
      "  proud(spine, frontTop - 0.9 - bh / 2, FW + toMass, bh, bo); // its bed mould: a step under the overhang, so its soffit reads\n", '',
      'parapet cornice overhangs'),
     ('canopy dropped from the porch mesh', 'web/src/shed.ts',
-     "mergeGeometries([entryRingGeo, canopyGeo], true), [material('stoneFoot'), canopySteel]",
-     "mergeGeometries([entryRingGeo], true), [material('stoneFoot')]", 'the low canopy of the current front'),
+     "mergeGeometries([entryRingGeo, canopyGeo], true), [material('brickFoot'), canopySteel]",  # re-anchored round A2: the porch rings in brick since arcade round 1
+     "mergeGeometries([entryRingGeo], true), [material('brickFoot')]", 'the low canopy of the current front'),
 ]
 
 def run(work: Path) -> subprocess.CompletedProcess[str]:

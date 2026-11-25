@@ -45,12 +45,27 @@ test("swe: 10 exercises, the six phase-1 seats on all of them, later seats on so
 });
 
 test("no sample data ships, and every data file is one the index lists", async () => {
-  const listed = new Set(["index.json", ...ix.suites.filter((x) => x.file).map((x) => x.file)]);
+  const listed = new Set(["index.json", ...ix.suites.filter((x) => x.file).map((x) => x.file), ...(ix.pages || []).map((x) => x.file)]);
   for (const f of await readdir(DATA)) {
     assert.ok(listed.has(f), `${f} is not listed in index.json`);
     if (f !== "index.json") assert.equal((await load(f)).sample, false, `${f} is sample data`);
   }
   assert.ok(ix.suites.every((s) => s.status !== "sample"));
+});
+
+test("code-mode: every run has an arm, a known task and the numbers the page reads", async () => {
+  const page = (ix.pages || []).find((p) => p.id === "code-mode");
+  if (!page) return;
+  const d = await load(page.file);
+  assert.equal(d.schema, "mdbench-site/1");
+  const tasks = new Set(d.tasks.map((t) => t.id));
+  assert.ok(d.runs.length > 0);
+  for (const r of d.runs) {
+    assert.ok(["plain", "code"].includes(r.arm), r.arm);
+    assert.ok(tasks.has(r.task), r.task);
+    for (const k of ["cost_usd", "wall_secs", "api_secs", "cache_read_tokens", "output_tokens"])
+      assert.equal(typeof r[k], "number", `${r.task} ${r.arm} ${k}`);
+  }
 });
 
 test("FIX-01 carries a task note about the all-gates column", async () => {

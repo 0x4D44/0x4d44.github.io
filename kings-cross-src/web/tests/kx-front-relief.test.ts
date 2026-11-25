@@ -51,7 +51,7 @@ test('A2: proud stone string courses at the lower arcade\'s impost and at the gr
   assert.ok(sill && sill.h >= 0.4, 'the sill course at the great windows\' springing');
 });
 
-test('A2: each great arch\'s reveal steps back in three orders toward the glass, each step 0.2 to 0.35 m, and a fourth inside the opening', () => {
+test('A2: each great arch\'s reveal steps back in three orders toward the glass, each step 0.33 to 0.48 m, and a fourth inside the opening', () => {
   const masonry = named('shed-front', 'shed-arch-rings');
   for (const uc of [layout.spine - R, layout.spine + R]) {
     for (const a of [Math.PI * 0.3, Math.PI * 0.5, Math.PI * 0.7]) {
@@ -75,12 +75,14 @@ test('A2: each great arch\'s reveal steps back in three orders toward the glass,
         const step = (orders[i] as number) - (orders[i - 1] as number);
         // re-pinned 2026-11-24 (round 5's relief pass, the tower-round-2b score: the orders should step 0.25 to 0.3 m; it was 0.1 to 0.25),
         // the same 0.15 band, about the new target
-        assert.ok(step >= 0.2 && step <= 0.35, `order ${i} stands 0.2 to 0.35 m in front of the one inside it (${step.toFixed(2)})`);
+        // re-pinned round A2 (gap scan 2, A2 8.5: the orders should step about 0.4 m), the same 0.15 band about the new target
+        assert.ok(step >= 0.33 && step <= 0.48, `order ${i} stands 0.33 to 0.48 m in front of the one inside it (${step.toFixed(2)})`);
       }
       assert.ok((orders[0] as number) > -0.1, 'the innermost order is still a reveal, in front of the glass');
       // the fourth order: inside the opening, a step back from the third, still in front of the glass
       const inner = hitZ(uc + (R - 0.2) * Math.cos(a), layout.springing + (R - 0.2) * Math.sin(a), masonry);
-      assert.ok(inner !== null && inner > -0.1 && (orders[0] as number) - inner >= 0.2, `a fourth order inside the opening, ${inner?.toFixed(2)} against the third's ${orders[0]}`);
+      // re-pinned round A2: the fourth order now stands back of the wall's face (frontOrderZ(-1), -0.22), still well in front of the glass (-0.7)
+      assert.ok(inner !== null && inner > -0.4 && (orders[0] as number) - inner >= 0.2, `a fourth order inside the opening, ${inner?.toFixed(2)} against the third's ${orders[0]}`);
     }
   }
 });
@@ -120,7 +122,7 @@ test('A3: the low canopy of the current front runs across the six openings at th
   const porch = group.getObjectByName('shed-front-porch-arches') as THREE.Mesh | undefined;
   assert.ok(porch && Array.isArray(porch.material), 'the canopy is the porch mesh\'s second material');
   // Re-pinned 2026-11-24 (round 5, second pass): the canopy is charcoal now (its own steel, FRONT_COLOURS), not the ribs' paint
-  const steel = (porch.material as THREE.Material[]).findIndex(m => m !== material('stone') && m !== material('stoneFoot')); // re-pinned round 24: the voussoirs are in the floodlit stoneFoot now
+  const steel = (porch.material as THREE.Material[]).findIndex(m => m !== material('stone') && m !== material('stoneFoot') && m !== material('brickFoot')); // re-pinned round 24: the voussoirs are in the floodlit stoneFoot now; re-pinned arcade round 1: the rings are the wall's brickFoot (PORCH_ORDERS)
   const span = porch.geometry.groups.find(g => g.materialIndex === steel);
   assert.ok(steel > 0 && span, 'dark steel, the second material');
   const pos = porch.geometry.getAttribute('position');

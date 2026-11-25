@@ -48,12 +48,12 @@ test('A3: behind the glass the concourse reads: a warm plane under the transom, 
   for (const x of centres) {
     const z = hit(x + 0.3 + 3.4 / D.barriers, foot + 1.9, infill, [k]); // between the barriers' tops and the transom
     assert.ok(z !== null, `the interior plane in the opening at x ${x.toFixed(1)}`);
-    // the barriers: dark (the frames' material) runs across the opening at their height, in front of the plane
+    // the barriers: their material (re-pinned arcade round 1: the figures' mid tone, the infill's eighth material, PORCH_TONES; was the frames') runs across the opening at their height, in front of the plane
     const xs: number[] = [];
     for (let dx = -3.3; dx <= 3.3; dx += 0.02) xs.push(x + dx);
     let runs = 0, prev = false;
     for (const px of xs) {
-      const f = hit(px, foot + 0.3 + D.barrier[1] * 0.4, infill, [1]);
+      const f = hit(px, foot + 0.3 + D.barrier[1] * 0.4, infill, [7]);
       const on = f !== null && f > z! + 1e-4 && f < z! + 0.02; // in front of the plane, on it
       if (on && !prev) runs++;
       prev = on;

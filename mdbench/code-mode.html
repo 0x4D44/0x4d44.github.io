@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>mdbench: Code Mode trial</title>
+<meta name="description" content="Does Claude Code's experimental Code Mode cut tokens? Opus 5.5 medium with and without it on the same mdbench exercises: tokens, cost, turns and time.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;600&family=JetBrains+Mono:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="mdbench.css">
+<style>
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.tile { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.tile .k { font: 600 0.72rem/1.2 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.tile .v { font: 700 1.6rem/1.1 var(--display); }
+.tile .s { font-size: 0.82rem; color: var(--fg2); }
+.better { color: var(--good); } .worse { color: var(--bad); }
+td.d { font-family: var(--mono); font-size: 0.86em; white-space: nowrap; }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="hero">
+  <nav class="top" id="nav" aria-label="mdbench"></nav>
+  <div class="eyebrow">mdbench · side study</div>
+  <h1>Code Mode trial</h1>
+  <p class="lede col">Claude Code has an experimental <b>Code Mode</b>: instead of calling each tool in its own turn, the model writes one script per turn that runs shell commands, reads and edits files, and returns only what it needs. Fewer round trips should mean less context re-read on every turn. Here is one seat, Opus 5.5 at medium effort, run with and without it on the same exercises.</p>
+</header>
+
+<section id="headline">
+  <div class="stack col"><div class="eyebrow">01 · Headline</div><h2>Code Mode against the plain seat</h2>
+  <p id="head-cap" class="note"></p></div>
+  <div class="tiles" id="tiles"></div>
+</section>
+
+<section id="per-task">
+  <div class="stack col"><div class="eyebrow">02 · Per exercise</div><h2>Mean per run, plain → Code Mode</h2>
+  <p class="note">Each cell is the mean over that arm's runs of the exercise; the change is Code Mode against plain. Green is better (lower cost, tokens or time; higher score).</p></div>
+  <div class="panel"><div class="tw" id="task-table"></div></div>
+</section>
+
+<section id="runs">
+  <div class="stack col"><div class="eyebrow">03 · Every run</div><h2>The runs</h2></div>
+  <div class="panel"><div class="tw" id="run-table"></div></div>
+</section>
+
+<section id="method">
+  <div class="stack col"><div class="eyebrow">04 · Method</div><h2>How it was run, and what to watch for</h2>
+  <ul class="plain">
+    <li>Same seat, same Claude Code version and clean agent setup, same prepared exercise trees; the only change is Code Mode on or off. Both arms of each exercise ran at the same time on the same Mac.</li>
+    <li>Tokens and cost are what Claude Code reports for the run. Cost is list price, not what was paid: the runs used a subscription.</li>
+    <li>Cache reads are the context re-read on every turn; that is where Code Mode should save. Model time is time spent waiting on the model; wall time adds the commands the seat ran.</li>
+    <li>Scores are the two-scorer rubric (one Claude, one GPT scorer), not the six-judge panels of the main suite, so they are not comparable with the suite's scores. They are here to show that a cheaper run did not do less.</li>
+    <li>Small sample: a few exercises, two runs per arm. Run-to-run spread for one seat is often as large as the effect, so read the per-exercise table before the headline.</li>
+    <li>Code Mode is experimental and may change between Claude Code releases.</li>
+  </ul></div>
+</section>
+
+<footer><p>Data generated <span id="generated">–</span>. <a href="./">Back to the mdbench overview</a>.</p></footer>
+</div>
+<script type="module">
+import { loadIndex, loadJSON, esc, showError } from "./ui.js";
+const main = document.querySelector(".wrap");
+const mean = (xs) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null);
+const sum = (xs) => xs.reduce((a, b) => a + b, 0);
+// [id, label, lower is better, formatter]
+const M = [
+  ["score", "Score", false, (v) => v.toFixed(1)],
+  ["cost_usd", "Cost", true, (v) => "$" + v.toFixed(2)],
+  ["cache_read_tokens", "Cache read", true, (v) => (v / 1e6).toFixed(2) + "M"],
+  ["output_tokens", "Output", true, (v) => (v / 1e3).toFixed(1) + "k"],
+  ["api_secs", "Model time", true, (v) => (v / 60).toFixed(1) + " min"],
+  ["wall_secs", "Wall time", true, (v) => (v / 60).toFixed(1) + " min"],
+];
+const pct = (p, c) => (p ? (100 * (c - p)) / p : null);
+const delta = (m, p, c) => {
+  if (p == null || c == null) return "–";
+  const d = m[0] === "score" ? c - p : pct(p, c);
+  const good = m[2] ? d < 0 : d > 0;
+  const txt = m[0] === "score" ? (d >= 0 ? "+" : "") + d.toFixed(1) : (d >= 0 ? "+" : "") + d.toFixed(0) + "%";
+  return Math.abs(d) < 0.5 ? `<span>${txt}</span>` : `<span class="${good ? "better" : "worse"}">${txt}</span>`;
+};
+try {
+  const ix = await loadIndex();
+  const live = ix.suites.filter((s) => s.file);
+  document.getElementById("nav").innerHTML = `<a href="./">Overview</a>` +
+    live.map((s) => `<a href="suite.html?s=${encodeURIComponent(s.id)}">${esc(s.title)}</a>`).join("") +
+    (ix.pages || []).map((p) => `<a href="${esc(p.id)}.html"${p.id === "code-mode" ? ' aria-current="page"' : ""}>${esc(p.title)}</a>`).join("");
+  const page = (ix.pages || []).find((p) => p.id === "code-mode");
+  if (!page) throw new Error("no Code Mode data yet");
+  const d = await loadJSON(`data/${page.file}`);
+  document.getElementById("generated").textContent = d.generated.slice(0, 10);
+  const by = (task, arm) => d.runs.filter((r) => r.task === task && r.arm === arm);
+  // Headline: pooled over every exercise that both arms ran, each arm's runs summed.
+  const paired = d.tasks.filter((t) => by(t.id, "plain").length && by(t.id, "code").length);
+  const pool = (arm) => paired.flatMap((t) => by(t.id, arm));
+  const P = pool("plain"), C = pool("code");
+  const scoreRuns = (rs) => rs.filter((r) => r.score != null).map((r) => r.score);
+  document.getElementById("head-cap").textContent =
+    `${paired.length} exercise${paired.length === 1 ? "" : "s"} run by both arms: ${P.length} plain run${P.length === 1 ? "" : "s"} and ${C.length} Code Mode run${C.length === 1 ? "" : "s"}. ` +
+    "Totals per run, pooled: each tile is the mean per run with Code Mode against the mean per run without it.";
+  const perRun = (rs, k) => sum(rs.map((r) => r[k] || 0)) / (rs.length || 1);
+  document.getElementById("tiles").innerHTML = M.map((m) => {
+    const p = m[0] === "score" ? mean(scoreRuns(P)) : perRun(P, m[0]);
+    const c = m[0] === "score" ? mean(scoreRuns(C)) : perRun(C, m[0]);
+    return `<div class="tile"><span class="k">${esc(m[1])}</span><span class="v">${p == null || c == null ? "–" : delta(m, p, c)}</span>
+      <span class="s">${p == null ? "–" : m[3](p)} → ${c == null ? "–" : m[3](c)}</span></div>`;
+  }).join("");
+  const cell = (m, rs) => { const xs = rs.map((r) => r[m[0]]).filter((v) => v != null); return xs.length ? mean(xs) : null; };
+  document.getElementById("task-table").innerHTML = `<table><thead><tr><th>Exercise</th><th class="num">Runs</th>${M.map((m) => `<th>${esc(m[1])}</th>`).join("")}</tr></thead><tbody>${
+    d.tasks.map((t) => { const p = by(t.id, "plain"), c = by(t.id, "code");
+      return `<tr><td>${esc(t.title)} <span class="note">${esc(t.id)}</span></td><td class="num">${p.length} · ${c.length}</td>${M.map((m) => {
+        const a = cell(m, p), b = cell(m, c);
+        return `<td class="d">${a == null ? "–" : m[3](a)} → ${b == null ? "–" : m[3](b)}<br>${delta(m, a, b)}</td>`; }).join("")}</tr>`; }).join("")
+  }</tbody></table>`;
+  document.getElementById("run-table").innerHTML = `<table><thead><tr><th>Exercise</th><th>Arm</th><th class="num">Run</th>${M.map((m) => `<th class="num">${esc(m[1])}</th>`).join("")}</tr></thead><tbody>${
+    d.runs.map((r) => `<tr><td>${esc(r.task)}</td><td>${r.arm === "code" ? "Code Mode" : "plain"}${r.resumed ? ' <span class="badge flag">resumed</span>' : ""}</td><td class="num">${r.run}</td>${M.map((m) => `<td class="num">${r[m[0]] == null ? "–" : m[3](r[m[0]])}</td>`).join("")}</tr>`).join("")
+  }</tbody></table>`;
+  document.body.dataset.ready = "1";
+} catch (e) { showError(main, e); document.body.dataset.ready = "error"; }
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

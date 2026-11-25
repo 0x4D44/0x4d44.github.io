@@ -135,8 +135,8 @@ if (uOpenPlatformNight > 0.003 && uOpenPlatformWet > 0.45 && uOpenPlatformSnow <
 
 /** Heads are the same positions used by the visible fittings/pendants, metres. `poolReach[i]`, where given, is head i's pool radius in place of
  * 0.6 x the spacing to its nearest neighbour: the KX shed's rows give their own (night.ts `shedReach`), as two rows over one island
- * (platforms 0 and 1) stand nearer each other than the lights along either. */
-export function createPlatformLamps(heads: readonly number[], rings: readonly (readonly Pt[])[], floorY: number, station:'kx'|'wv'='kx', fogAir=false, open: readonly OpenPlatformLamp[] = [], poolReach: readonly (number | undefined)[] = []): StreetLights & { radii: readonly number[]; sources: readonly LightSource[] } {
+ * (platforms 0 and 1) stand nearer each other than the lights along either. `poolGain[i]`, where given, is head i's pool decal's alpha gain (the shed's: kx-shed-pools.ts). */
+export function createPlatformLamps(heads: readonly number[], rings: readonly (readonly Pt[])[], floorY: number, station:'kx'|'wv'='kx', fogAir=false, open: readonly OpenPlatformLamp[] = [], poolReach: readonly (number | undefined)[] = [], poolGain: readonly (number | undefined)[] = []): StreetLights & { radii: readonly number[]; sources: readonly LightSource[] } {
   const spots: LampSpot[] = [];
   for (let i=0;i<heads.length;i+=3) spots.push({x:heads[i]!,y:floorY,z:heads[i+2]!,height:heads[i+1]!-floorY,yaw:0,kind:LAMP_KIND.cool,slope:[0,0]});
   const radii = spots.map((s,i) => {
@@ -150,7 +150,7 @@ export function createPlatformLamps(heads: readonly number[], rings: readonly (r
   const floor = poolFloorMap(rings, spots.length ? [Math.min(...reach.map(r=>r[0]!)),Math.min(...reach.map(r=>r[1]!)),Math.max(...reach.map(r=>r[2]!)),Math.max(...reach.map(r=>r[3]!))] : undefined);
   const layer = createStreetLights([...spots,...open], {posts:false,headAt:s=>[s.x,s.y+s.height,s.z],fog:true,
     sourceCores: station === 'kx' ? 'kx-platform' : 'wv-platform',
-    analyticPool:true,poolCeiling:.20,poolAt:(_s,i)=>i<spots.length,poolFloor:floor,poolLiftAt:()=>.004,poolRadiusAt:(_s,i)=>radii[i]!,
+    analyticPool:true,poolCeiling:.20,poolAt:(_s,i)=>i<spots.length,poolGainAt:poolGain.length?(_s,i)=>poolGain[i]??1:undefined,poolFloor:floor,poolLiftAt:()=>.004,poolRadiusAt:(_s,i)=>radii[i]!,
     poolWeather:true,weatherEffects:true,enhancedFog:true,softFog:fogAir,boundedFog:fogAir?station:undefined,lightFog:station==='kx',suppressSnow:true,fogHaloSpread:station==='wv'?9:undefined,haloSize:3.2,coreSize:1.5,reflectionReach:8,poolFocus:station==='kx'?1.4:undefined});
   layer.group.name='station-platform-lamps';
   const sources = station === 'wv' ? [

@@ -36,7 +36,8 @@ test('A2: the orders\' faces are a lighter brick than the front, by day and at n
     assert.ok(Math.abs(lum(o.color) / lum(f.color) - L) < 0.02, `${when}: the order faces ${(lum(o.color) / lum(f.color)).toFixed(2)} of the front`);
   for (const uc of [layout.spine - R, layout.spine + R]) for (const a of [Math.PI / 2, Math.PI / 4, (3 * Math.PI) / 4]) for (let i = 0; i < F.orders; i++) {
     const r0 = R + i * F.orderWidth, at = (r: number): [number, number, number] => [uc + r * Math.cos(a), sp + r * Math.sin(a), 5];
-    const face = ray(at(r0 + (F.splay + F.orderWidth) / 2), [front]), step = ray(at(r0 + F.splay / 2), [front]);
+    const sw = (F.splay * (shed.frontOrderZ(i) - Math.max(0, shed.frontOrderZ(i - 1)))) / F.orderStep; // re-pinned round A2: the inner order's splay in proportion to its depth
+    const face = ray(at(r0 + (F.splay + F.orderWidth) / 2), [front]), step = ray(at(r0 + sw / 2), [front]);
     assert.ok(face && face.mat === 2, `order ${i}'s face at ${(a * 180 / Math.PI).toFixed(0)} deg: ${face?.mat}`);
     assert.ok(step && step.mat === 1, `order ${i}'s step at ${(a * 180 / Math.PI).toFixed(0)} deg: ${step?.mat}`);
   }

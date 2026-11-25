@@ -60,7 +60,8 @@ try {
   const ix = await loadIndex();
   document.getElementById("generated").textContent = ix.generated.slice(0, 10);
   document.getElementById("nav").innerHTML = `<a href="./" aria-current="page">Overview</a>` +
-    ix.suites.filter((s) => s.file).map((s) => `<a href="suite.html?s=${encodeURIComponent(s.id)}">${esc(s.title)}</a>`).join("");
+    ix.suites.filter((s) => s.file).map((s) => `<a href="suite.html?s=${encodeURIComponent(s.id)}">${esc(s.title)}</a>`).join("") +
+    (ix.pages || []).map((p) => `<a href="${esc(p.id)}.html">${esc(p.title)}</a>`).join("");
   const loaded = {};
   for (const s of ix.suites.filter((s) => s.file)) loaded[s.id] = await loadSuite(ix, s.id);
   document.getElementById("suite-cards").innerHTML = ix.suites.map((s) => {

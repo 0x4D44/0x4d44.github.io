@@ -71,9 +71,10 @@ test('A2: at the front\'s ends each order of the great arch runs down onto the s
     for (let i = 0; i < F.orders; i++) {
       const x = end + sd * (i + 0.5) * F.orderWidth;
       const foot = zAt(x, sp + F.impost.height + 0.15);
-      assert.ok(foot && foot.name === 'shed-front' && Math.abs(foot.z - (i + 1) * F.orderStep) < 0.02, `order ${i}'s foot at x ${x.toFixed(2)}: ${foot?.name} ${foot?.z.toFixed(2)}`);
+      assert.ok(foot && foot.name === 'shed-front' && Math.abs(foot.z - shed.frontOrderZ(i)) < 0.02, // re-pinned round A2: the orders' faces set back by FRONT_RELIEF.set (frontOrderZ)
+        `order ${i}'s foot at x ${x.toFixed(2)}: ${foot?.name} ${foot?.z.toFixed(2)}`);
       const imp = zAt(x, sp + F.impost.height / 2);
-      assert.ok(imp && imp.name === 'shed-stone' && imp.z > (i + 1) * F.orderStep, 'on the impost');
+      assert.ok(imp && imp.name === 'shed-stone' && imp.z > shed.frontOrderZ(i), 'on the impost');
       const course = zAt(x, sp - F.springing.height / 2);
       assert.ok(course && Math.abs(course.z - F.springing.out) < 0.02, 'and the springing course under it');
     }

@@ -107,6 +107,12 @@ const PAGES = [
   { name: "zeta", url: "/mdbench/suite.html?s=zeta", expect: `({ title: document.getElementById("title").textContent, cell: [...document.querySelectorAll("table.heat td.heat")].map((t) => t.textContent), head: [...document.querySelectorAll("table.leaderboard th")].map((t) => t.textContent), nocost: document.getElementById("sc-cost").textContent, banner: document.querySelector(".banner")?.textContent || "", note: document.querySelector("#heat .tasknotes")?.textContent || "" })`,
     check: (r) => r.title === "Zeta probe sample data" && /Synthetic test data/.test(r.banner) && /Z-2: Zeta note/.test(r.note) && r.cell.some((c) => c.startsWith("11.50 MIPS")) && r.head.includes("Emulated MIPS") && r.head.includes("Boots pass") && /no cost/.test(r.nocost) },
 ];
+const CM = (realIndex.pages || []).find((p) => p.id === "code-mode");
+if (CM) {
+  const cm = JSON.parse(await readFile(join(ROOT, "mdbench/data", CM.file), "utf8"));
+  PAGES.push({ name: "code-mode", url: "/mdbench/code-mode.html", expect: `({ tiles: document.querySelectorAll("#tiles .tile").length, tasks: document.querySelectorAll("#task-table tbody tr").length, runs: document.querySelectorAll("#run-table tbody tr").length, current: document.querySelector("nav a[aria-current]")?.textContent })`,
+    check: (r) => r.tiles === 6 && r.tasks === cm.tasks.length && r.runs === cm.runs.length && r.current === CM.title });
+}
 
 const failures = [];
 if (SHOTS) await mkdir(SHOTS, { recursive: true });
