@@ -24,7 +24,7 @@ MUTATIONS = [
     ('no girder', 'web/src/shed.ts', '    addBars(gBars, gableGirder(uc, sp, GABLE_GLASS_FROM), 0, -L);', '', 'B3: a lattice girder'),
     ('the girder without diagonals', 'web/src/shed.ts', '  for (let i = 0; i < n; i++) {\n    const xa = uc - half + i * w', '  for (let i = 0; i < 0; i++) {\n    const xa = uc - half + i * w', 'B3: a lattice girder'),
     ('a shallow girder', 'web/src/shed.ts', 'GABLE_GIRDER = { depth: 1.5,', 'GABLE_GIRDER = { depth: 0.6,', 'B3: a lattice girder'),
-    ('no haunch rings', 'web/src/shed.ts', 'for (const [u, y] of ringCentres) haunch.setMatrixAt(k++, mat.makeTranslation(uc + u, y, -v));', 'for (const [u, y] of ringCentres.slice(0, 0)) haunch.setMatrixAt(k++, mat.makeTranslation(uc + u, y, -v));', 'B1: a ring in each'),
+    ('no haunch rings', 'web/src/shed.ts', 'for (const [u, y] of ringCentres) if (Math.sign(u)', 'for (const [u, y] of ringCentres.slice(0, 0)) if (Math.sign(u)', 'B1: a ring in each'),
     ('the rings casting', 'web/src/shed.ts', '  haunch.castShadow = false;\n', '  haunch.castShadow = true;\n', 'B1: a ring in each'),
     ('the rings off the wall', 'web/src/shed.ts', 'const cx = (xi + xo) / 2;', 'const cx = (xi + xo) / 2 + 3.0;', 'B1: a ring in each'),  # re-anchored round S2 (the code it mutated was reshaped)
     ('the rings into the boom', 'web/src/shed.ts', 'rise: 1.5 }', 'rise: 0.2 }', 'B1: a ring in each'),  # re-anchored round S2 (the code it mutated was reshaped)

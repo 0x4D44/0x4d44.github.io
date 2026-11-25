@@ -7,7 +7,7 @@ import { CLOCK_TOWER_HEIGHT, SHED_LENGTH, SHED_SPAN_WIDTH, shedLayout, shedToWor
 import { shedRoofY } from '../src/furniture.ts';
 import { createSunShadow, SHADOW_CASTERS } from '../src/lighting.ts';
 import { ARCADE_FRAME, ARCADE_GLASS, buildingNightMaterialsOf, material, PANE_UV, TEXTURES, windowNight } from '../src/materials.ts';
-import { FRONT_RELIEF, westArcadeOpenings, WEST_GLAZING } from '../src/shed.ts';
+import { FRONT_RELIEF, WEST_ARCADE, westArcadeOpenings, WEST_GLAZING } from '../src/shed.ts';
 import { buildShed, buildTower, EAST_ARCADE, eastArcadeOpenings, eastArcadeU, NORTH_PIER, RIB_FOOT, ribLanding, spineLowerOpenings, spineUpperOpenings, valleyTop, buildWesternRange, gableBars, GABLE_GLASS_FROM, glazedHalfAngle, GLAZED_STRIP_WIDTH, GLASS_OPACITY, glazingOpacity, lunetteBars, MEMBER_SIZE, RIB_SPACING, ribMembers, ribPositions, ROOF_SKIN, roofOpacity, SPINE_WALL, spineOpenings, TOWER_SIZE, TOWER_TOP, valleyCut, vaultBand, vaultPoint, WESTERN_RANGE, WESTERN_RANGE_DEPTH_BEFORE, westernArches, westernBays, westernBlock, westernWindows, XRAY_OPACITY } from '../src/shed.ts';
 
 const data: KxData = JSON.parse(readFileSync(new URL('../src/data/kx-track.json', import.meta.url), 'utf8'));
@@ -954,7 +954,10 @@ test('the west wall\'s inner face is an arcade: a round-headed arch in every rib
   const box = bbox(wall);
   close(box.min.x, 0, 1e-5);
   const depth = box.max.x;
-  close(depth, SPINE_WALL.thick / 2, 1e-5); // its face stands from the springing line as the spine's does
+  // re-pinned round S3 (shed-round-2b score, B3: R-b's arches are deep recesses): the face stands WEST_ARCADE.depth (0.72 m) from the springing line, deeper than
+  // the spine's (SPINE_WALL.thick / 2), as deep as keeps the ribs' feet on the corbels (checked below)
+  close(depth, WEST_ARCADE.depth, 1e-5);
+  assert.ok(depth >= SPINE_WALL.thick / 2 && depth <= RIB_FOOT - MEMBER_SIZE.boom[0] / 2 + 1e-9, `depth ${depth}`);
   const opens = eastArcadeOpenings(layout.length);
   assert.equal(opens.length, ribPositions(layout.length).length - 1, 'one arch a bay');
   const passage = (v: number): boolean => v > 8 && v < 48; // the Western Concourse's gateline (shed.ts westernCuts): piers hung from its head
@@ -1069,7 +1072,7 @@ test('the west arcade\'s arches are glazed: grey glass by day, lit after dark, i
     barAt(vc - r + frame / 2, 1.8, 'the frame'); barAt(vc + r - frame / 2, 1.8, 'the frame');
     barAt(vc - r / 4, jamb, 'the transom'); barAt(vc + r / 4, jamb, 'the transom');
     for (let i = 1; i < lights; i++) barAt(vc - r + (2 * r * i) / lights, 1.8, 'a mullion');
-    barAt(vc, jamb + r / 2, 'the fanlight\'s centre bar');
+    pane(vc, jamb + r / 2); // re-pinned round S3 (shed-round-2b score, B3: R-b shows no fanlight bars): glass where the fanlight's centre bar stood
     barAt(vc, jamb + r - frame / 2, 'the frame over the crown');
     for (let i = 0; i < lights; i++) pane(vc - r + (2 * r * (i + 0.5)) / lights, 1.8);
     pane(vc - r / 4, jamb + bar + 0.1); pane(vc + r / 4, jamb + bar + 0.1);

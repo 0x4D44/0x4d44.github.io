@@ -409,7 +409,10 @@ export const EAST_ARCADE = { opening: 3.6, crown: 4.5, ring: 0.225 } as const;
  * Since shed-arcade-round-5 (the scorer, B3: the dark panes read as holes) the arches are glazed (WEST_GLAZING), the glass materials.ts ARCADE_GLASS.
  * Since round 6, windows over a brick base (WEST_GLAZING.sill).
  */
-export const WEST_ARCADE = { depth: 0.5 } as const;
+// round S3 (shed-round-2b score, B3: R-b's deep, dark recessed arches; the glass stood 0.48 m back): 0.72 m, the glass (WEST_GLAZING.glass) 0.7 m back behind
+// the piers' and heads' brick reveals; as deep as the ribs' feet allow, the inner boom's foot (RIB_FOOT +- half a boom) still on the corbel's cap (the
+// score asked about 1.0 m, ASSUMED; deeper, the corbels would stand clear of the feet)
+export const WEST_ARCADE = { depth: 0.72 } as const;
 /**
  * The glazing of the west arcade's arches, after R-kx-shed-interior-c (shed-c-arcade-2013.jpg, 1600 px), whose lower arches (about 85 px across, x 1215-1300 and
  * 1380-1445 at y 485-555) are glazed: MEASURED in memory, rough: a transom on the springing line, under it the glass in four lights about a quarter of the span
@@ -421,7 +424,8 @@ export const WEST_ARCADE = { depth: 0.5 } as const;
  * 1380-1445 (an arch about 65-85 px across, 3.6 m) the glass runs from the crown at y about 485 down to a ledge at y about 550, 65 px, about 2.75 m: the sill
  * about 1.75 m up, 0.85 m over the platform's top (0.9; the platform's own edge there is hidden by the train, so +-0.3 m). `base` 0.25 m: ASSUMED.
  */
-export const WEST_GLAZING = { lights: 4, radial: [Math.PI / 4, Math.PI / 2, (3 * Math.PI) / 4], frame: 0.12, bar: 0.07, glass: 0.02, out: 0.05, sill: 1.75, base: 0.25 } as const;
+// round S3 (shed-round-2b score, B3): no fanlight bars (`radial` empty; R-b shows none), the transom, mullions and frame kept
+export const WEST_GLAZING = { lights: 4, radial: [] as readonly number[], frame: 0.12, bar: 0.07, glass: 0.02, out: 0.05, sill: 1.75, base: 0.25 } as const;
 /** v of the centre of each opening of the spine wall: the middle of every rib bay. */
 export function spineOpenings(length: number): number[] {
   const ribs = ribPositions(length);
@@ -577,7 +581,9 @@ export interface Member {
  * restored shed's ribs are slender latticed trusses; these are ASSUMED (the first build had 0.38 x 0.30
  * booms and 0.16 x 0.14 webs, which read as heavy girders).
  */
-export const MEMBER_SIZE = { boom: [0.26, 0.2], web: [0.1, 0.09] } as const;
+// round S3 (shed-round-2b score, B1: the coarse zigzag between the booms read as a modern truss in roof-underside): the web slimmed to 0.06 x 0.06 m (was
+// 0.1 x 0.09; ASSUMED, R-a and R-b's fine lacing), the same members and triangles
+export const MEMBER_SIZE = { boom: [0.26, 0.2], web: [0.06, 0.06] } as const;
 /**
  * How far in from the springing line the rib's inner boom lands, metres: on the corbel's cap (SPINE_WALL.corbel.out from the wall's face), its
  * underside on the cap. The truss is 1.4 m deep above its first panel point and tapers to its foot, as R-kx-shed-interior-c shows the ribs
