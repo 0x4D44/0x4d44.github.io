@@ -933,7 +933,16 @@ export class AnimCrowd {
   // ------------------------------------------------------------------ riders changing place (used by the game's boarding / alighting: index.js _exchange)
   /** hand a person over to another crowd: they are removed here and what makes them recognisable (who they are, their print and shirt colour) is returned, to be given to add() there */
   /** the pose a person has now (each bone's local rotation and position, by name), for whoever takes them over in another crowd to start from */
-  snapPose(q) { if (!q || !q.obj) return null; const m = new Map(); q.obj.traverse((o) => { if (o.isBone && !m.has(o.name)) m.set(o.name, [o.quaternion.x, o.quaternion.y, o.quaternion.z, o.quaternion.w, o.position.x, o.position.y, o.position.z]); }); return m; }
+  snapPose(q) { if (!q || !q.obj) return null; const m = new Map(); q.obj.traverse((o) => { if (o.isBone && !m.has(o.name)) m.set(o.name, [o.quaternion.x, o.quaternion.y, o.quaternion.z, o.quaternion.w, o.position.x, o.position.y, o.position.z]); });
+    q.obj.updateMatrixWorld(true); const V = this.THREE.Vector3, feet = []; for (const n of ['foot_l', 'foot_r']) { let b = null; q.obj.traverse((x) => { if (!b && x.isBone && x.name.endsWith(n)) b = x; }); if (b) feet.push(b.getWorldPosition(new V())); }
+    if (feet.length === 2) m.feet = feet;   // (the ankles where the old body DREW them, in the world: the new body's gait plants its feet there - see _plantFrom)
+    return m; }
+  /** the feet of a body handed over from another crowd, in the new parent's frame ([x, z] per ankle), while its pose is still being blended from the old one. Planted from the new clip's
+   *  ankles at the new root instead, the drawn feet were dragged 0.08 - 0.23 m across the floor to them over the 0.4 s blend as the person stepped off the train (review 61) */
+  _plantFrom(p) {
+    const f = p.poseFrom && p.poseFrom.feet, par = p.obj && p.obj.parent; if (!f || !par) return null;
+    par.updateMatrixWorld(true); return f.map((w) => { const v = par.worldToLocal(w.clone()); return [v.x, v.z]; });
+  }
   /** handed over from another crowd (getting on or off a train): the new body starts in the old one's pose and where it stood, and goes over to its own in POSE_FADE s.
    *  Made afresh in its own clip's pose, the whole body jumped in one frame at the door - feet 0.20 - 0.44 m, hands up to 0.53 m, 11 of 11 people (review 60) */
   _poseBlend(p, dt) {
@@ -1106,10 +1115,10 @@ export class AnimCrowd {
       if (upd && hold && hold.rig) hold.rig.restore();   // the layers come off in the reverse order they went on: the hold's (arms, phone), then the gait's, leaving the mixer's own pose on the bones before it advances (see gait_three.js)
       if (upd && p.gait && p.gait.rig) p.gait.rig.restore();
       if (p.manFade) this._manFade(p);
-      if (animate) { p.mixer.update(dt); p.dirty = false; if (this.gaitOn && !p.static) { this._carryStep(p, dt); this._gaitStep(p, dt); } else if (this.gaitOn && (p.state === 'stand' || p.state === 'pole' || p.gait) && !(p.tween && !p.settleGait && !p.gait)) this._gaitStep(p, dt);   /* (not while a rider is carried by a tween with no gait of their own - standing up out of a seat: made then, it skated a foot 24 - 39 cm as the body left the seat - review 50) */   /* (a standing rider too: the idle clips turn the pelvis but never move it, so the shoes slid 8 - 12 cm side to side together every few seconds - review 49; planted by the gait they stay, and step when the body has drifted off them) */ } else if (p.dirty) { if (p.manFade) this._manFade(p, true); p.mixer.update(this.crossfade + 0.05); p.dirty = false; }
+      if (animate) { p.mixer.update(dt); p.dirty = false; if (p.poseFrom) this._poseBlend(p, dt); if (this.gaitOn && !p.static) { this._carryStep(p, dt); this._gaitStep(p, dt); } else if (this.gaitOn && (p.state === 'stand' || p.state === 'pole' || p.gait) && !(p.tween && !p.settleGait && !p.gait)) this._gaitStep(p, dt);   /* (not while a rider is carried by a tween with no gait of their own - standing up out of a seat: made then, it skated a foot 24 - 39 cm as the body left the seat - review 50) */   /* (a standing rider too: the idle clips turn the pelvis but never move it, so the shoes slid 8 - 12 cm side to side together every few seconds - review 49; planted by the gait they stay, and step when the body has drifted off them) */ } else if (p.dirty) { if (p.manFade) this._manFade(p, true); p.mixer.update(this.crossfade + 0.05); p.dirty = false; }
       // (a far person is animated until the walk has wound down and the clip's fade is over, and for a second after any clip change, so the feet step to the new stance: frozen at the moment they slowed below
       // 0.2 m/s, then switched to the idle clip with the gait stripped off, the hand jumped 0.28 - 0.35 m in one frame - review 60's grip snap at a stop, caught 40 m out at Partick; the gait re-applied in no time over the new clip instead held a 0.28 m straddle; and anyone setting off: frozen until 0.2 m/s, the first step was caught up in one frame, a 0.12 - 0.15 m foot pop at half of all far starts - review 61)
-      if (p.poseFrom) { if (animate) this._poseBlend(p, dt); else { p.poseFrom = null; p.rootOff = null; } }
+      if (p.poseFrom && !animate) { p.poseFrom = null; p.rootOff = null; }   // (the blend itself goes on before the gait, above: done after it, it pulled the legs the gait had planted on the old body's feet back towards the old pose, and the feet slid 0.1 - 0.3 m - review 61)
       if (upd && p.fadeEnd && this._clock < p.fadeEnd && (p.state === 'sit' || p.wasSit)) this._floorFeet(p);
       if (hold && upd) this._holdStep(p, dt, !animate);
       if (upd) this._fingers(p, dt, !animate);
@@ -1182,22 +1191,25 @@ export class AnimCrowd {
     for (const n of ['foot_l', 'foot_r']) { let b = null; o.traverse((x) => { if (!b && x.isBone && x.name.endsWith(n)) b = x; }); if (!b) return null; b.getWorldPosition(v); par.worldToLocal(v); out.push([v.x, v.z]); }
     return out;
   }
+  _rootOffNow(p) { if (!(p.rootOff && p.poseFrom)) return [0, 0]; const u = Math.min(1, p.poseT / POSE_FADE), w = 1 - u * u * (3 - 2 * u); return [p.rootOff.x * w, p.rootOff.z * w]; }
   _gaitStep(p, dt) {
+    const ro = this._rootOffNow(p), X = p.x + ro[0], Z = p.z + ro[1];   // (where the body is DRAWN: handed over, it is drawn where the old body stood and eased across - told the gait it was already at its new spot, the planted feet jumped 0.12 m and glid back - review 61)
     const walking = (p.state === 'walk' || p.state === 'go') && !p.paused, standing = (p.state === 'stand' || p.state === 'pole' || !!p.paused || (p.settleGait && p.state !== 'sit')) && !p.gaitRelease; let gs = p.gait;   // (gaitRelease: turned to sit down, the legs go back to the clip before the sit starts)
     if (!gs) {
       if (!walking && !standing) return;   // (anyone standing has the gait on the legs: their feet stay planted while the clip sways the body)   // nobody who has neither walked nor is about to pivot needs it; one who pivots on the spot does (the idle clip's feet turn with the body)
       const gb = this._gaitBody(p.char, p.lod); if (!gb) return;
-      const opts = this._gaitOpts(p); gs = p.gait = { g: G.newGait(gb.body, { ...opts, plantAt: this._clipAnkles(p) }), opts, gb, wU: 0, wL: 0, hold: walking ? 0 : GAIT_TAIL, rig: null, phase: 0, t: this._clock, px: p.x, pz: p.z, py: p.yaw };
+      const opts = this._gaitOpts(p); gs = p.gait = { g: G.newGait(gb.body, { ...opts, plantAt: this._plantFrom(p) || this._clipAnkles(p) }),   // (handed over: the legs are the gait's from the first frame, on the feet the old body stood on; eased in from the clip, the clip's legs dragged them)
+      opts, gb, wU: 0, wL: p.poseFrom && p.poseFrom.feet ? 1 : 0, hold: walking ? 0 : GAIT_TAIL, rig: null, phase: 0, t: this._clock, px: X, pz: Z, py: p.yaw };
     }
-    if (this._clock - gs.t > 0.3 || Math.hypot(p.x - gs.px, p.z - gs.pz) > 0.6) { gs.opts.seed = (gs.opts.seed + 0x9e3779b1) >>> 0; gs.g = G.newGait(gs.gb.body, { ...gs.opts, plantAt: this._clipAnkles(p) }); gs.px = p.x; gs.pz = p.z; gs.py = p.yaw; }   // not seen for a while / moved bodily (not walked): plant afresh
+    if (this._clock - gs.t > 0.3 || Math.hypot(X - gs.px, Z - gs.pz) > 0.6) { gs.opts.seed = (gs.opts.seed + 0x9e3779b1) >>> 0; gs.g = G.newGait(gs.gb.body, { ...gs.opts, plantAt: this._clipAnkles(p) }); gs.px = X; gs.pz = Z; gs.py = p.yaw; }   // not seen for a while / moved bodily (not walked): plant afresh
     { const quiet = p.settleGait && p.state !== 'pole' ? (p.char.pools.idle || []).find((c) => /idle_a$/.test(c.name)) : standing && p.curClip && !/^walk/.test(p.curClip.name) ? p.curClip : null; gs.g.standAt = quiet ? this.measure(p.char, quiet).ankles2 : null; }   // (a stepped turn ends standing where the idle clip has its feet: the hand-back to the clip slid a foot 35 - 39 cm - review 47)
     if (walking) gs.hold = 0; else gs.hold += dt;
     gs.wU = walking || gs.hold < GAIT_TAIL ? Math.min(1, gs.wU + dt / GAIT_IN) : Math.max(0, gs.wU - dt / GAIT_OUT);
     gs.wL = walking || standing ? Math.min(1, gs.wL + dt / GAIT_IN) : Math.max(0, gs.wL - dt / GAIT_OUT); gs.t = this._clock;
-    if (gs.wU <= 0 && gs.wL <= 0) { gs.g.placed = false; gs.g.walking = false; gs.px = p.x; gs.pz = p.z; gs.py = p.yaw; return; }   // by clip again: the next walk plants its feet where the person stands then
+    if (gs.wU <= 0 && gs.wL <= 0) { gs.g.placed = false; gs.g.walking = false; gs.px = X; gs.pz = Z; gs.py = p.yaw; return; }   // by clip again: the next walk plants its feet where the person stands then
     const n = Math.min(4, Math.max(1, Math.ceil(dt * 30))), dy = angDiff(gs.py, p.yaw), stopD = p.stopHere && p.tx != null && walking ? Math.max(0, Math.hypot(p.tx - p.x, p.tz - p.z) - STEER.ARR) : null;   // metres to go to the place where it will stand (steer.js brakes to rest ARR short of it)
-    for (let i = 1; i <= n; i++) { const f = i / n; G.gaitUpdate(gs.g, dt / n, { x: gs.px + (p.x - gs.px) * f, z: gs.pz + (p.z - gs.pz) * f, yaw: gs.py + dy * f, v: p.v, walking, stopD }); }
-    gs.px = p.x; gs.pz = p.z; gs.py = p.yaw;
+    for (let i = 1; i <= n; i++) { const f = i / n; G.gaitUpdate(gs.g, dt / n, { x: gs.px + (X - gs.px) * f, z: gs.pz + (Z - gs.pz) * f, yaw: gs.py + dy * f, v: p.v, walking, stopD }); }
+    gs.px = X; gs.pz = Z; gs.py = p.yaw;
     if (!gs.rig) gs.rig = new GaitRig(this.THREE, p.obj, gs.gb);
     const T = G.gaitTargets(gs.g), sol = gs.wU > 0 ? G.gaitSolve(gs.g, T) : null; let legs = sol;
     if (!sol || gs.wU < 0.999) {   // the legs reach for their planted feet from the pelvis the person really has: the clip's, or the blend of the clip's and the gait's
