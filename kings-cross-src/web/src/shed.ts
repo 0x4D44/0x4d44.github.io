@@ -913,6 +913,16 @@ function dimInXray(glass: THREE.Mesh, group: THREE.Group): void {
 // taken by the sheet's own tone, so a rib or a dash behind shows at 0.4 of F15's contrast: opacity 0.955 -> 0.982. Over a blend, lerping the transmitted room
 // toward the glass's colour is exactly this raise of alpha; set here, on the draw, x-ray's endGlassFactor still thins it (a shader fade would not)
 export const GABLE_OUTSIDE = { color: 0x35424e, opacity: 0.982, specular: 0xdce6f0 } as const;
+/**
+ * Round F15c (front-round-15b capture: the room behind the outside gables no fainter at 0.93, 0.955 or 0.982): what showed through was the roof's outside
+ * bars (shed-roof-bars), transparent and drawn after every glazing (renderOrder 4) with depth, so where the cladding thins they drew over the gable glass,
+ * which writes none, and its alpha never reached them. From north of the gables' plane by day (gableOutside > 0, not in x-ray) they draw after the roof's
+ * glazing and before the gables' (between GLASS_SLOTS' last two), so the gable glass is blended over them; everywhere else, at night and in x-ray as before.
+ */
+export const ROOF_BARS_ORDER = { after: 4, beforeGable: (GLASS_SLOTS[1] + GLASS_SLOTS[2]) / 2 } as const;
+export function roofBarsOrder(cam: V3, layout: Pick<ShedLayout, 'length'>, night: number, mode: RoofMode): number {
+  return mode !== 'xray' && gableOutside(cam, layout, night) > 0 ? ROOF_BARS_ORDER.beforeGable : ROOF_BARS_ORDER.after;
+}
 /** The share of GABLE_OUTSIDE the gable glass takes for a camera at `cam` (the shed's frame): 1 - night north of the gables' plane, 0 elsewhere. */
 export function gableOutside(cam: V3, layout: Pick<ShedLayout, 'length'>, night: number): number {
   return cam[2] < -layout.length ? 1 - Math.min(1, Math.max(0, night)) : 0;
@@ -1369,7 +1379,7 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
     barsMat.depthWrite = o > 0;
   };
   // after the glass (3): drawn before it, the milky crown glass blended over the caps and bars and hid them from outside (the scorer's roof-exterior-1a)
-  roofBars.renderOrder = 4;
+  roofBars.renderOrder = ROOF_BARS_ORDER.after; // and before the gable glass from outside it by day: roofBarsOrder, set per view in orderGlass
   group.add(roofBars);
   cladding.renderOrder = 2;
   group.add(cladding);
@@ -1842,6 +1852,7 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
     glassMesh.renderOrder = o.roof;
     lunMesh.renderOrder = o.front;
     gableGlass.renderOrder = o.gable;
+    roofBars.renderOrder = roofBarsOrder([local.x, local.y, local.z], layout, windowNight.value, roofMode()); // round F15c
   };
   group.addEventListener('added', () => {
     const scene = group.parent as THREE.Scene | null;
