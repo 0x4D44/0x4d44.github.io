@@ -30,12 +30,12 @@ MUTATIONS = [
     ('a reach to 10 m', 'web/src/lighting.ts', 'reach: [2, 6]', 'reach: [2, 10]', 'round 6 near-wall'),
     ('the bounce to the springing', 'web/src/lighting.ts', 'height: [3, 6]', 'height: [8, 9]', 'round 6 near-wall'),
     ('the spine not a wall', 'web/src/lighting.ts', 'float shedOff = abs( abs( shedQ.x - 0.5 * ( uShedSize.x + uShedSize.y ) ) - shedR );', 'float shedOff = abs( shedQ.x - 0.5 * ( uShedSize.x + uShedSize.y ) );', 'round 6 near-wall'),
-    ('no crown band', 'web/src/lighting.ts', 'crown: 1.2,', 'crown: 0,', 'round 6 near-wall'),
-    ('a strong crown band', 'web/src/lighting.ts', 'crown: 1.2,', 'crown: 2.4,', 'round 6 near-wall'),
+    ('no crown band', 'web/src/lighting.ts', 'crown: 0.22,', 'crown: 0,', 'round 6 near-wall'),
+    ('a strong crown band', 'web/src/lighting.ts', 'crown: 0.22,', 'crown: 0.6,', 'round 6 near-wall'),
     ('a crown band wall to wall', 'web/src/lighting.ts', 'band: [0, 0.38]', 'band: [0.9, 1.0]', 'round 6 near-wall'),
     ('the crown band on standing faces', 'web/src/lighting.ts', 'shedOff / shedR ) ) * shedUp;', 'shedOff / shedR ) );', 'round 6 near-wall'),
-    ('the sky on the sun', 'web/src/lighting.ts', '    reflectedLight.indirectDiffuse *= 1.0 + shedUnder( shedP )', '    reflectedLight.directDiffuse *= 1.0 + shedUnder( shedP )', 'round 6 near-wall'),
-    ('the sky on the front', 'web/src/lighting.ts', '1.0 + shedUnder( shedP ) * (', '1.0 + shedInside( shedP ) * (', 'round 6 near-wall'),
+    ('the sky on the sun', 'web/src/lighting.ts', '    reflectedLight.indirectDiffuse *= 1.0 + shedK * mix(', '    reflectedLight.directDiffuse *= 1.0 + shedK * mix(', 'round 6 near-wall'),
+    ('the sky on the front', 'web/src/lighting.ts', 'float shedK = shedUnder( shedP );', 'float shedK = shedInside( shedP );', 'round 6 near-wall'),
     ('the sky at night', 'web/src/lighting.ts', 'export const SHED_SKY_GLSL = `if ( uShedDiffuse > 0.0 ) {', 'export const SHED_SKY_GLSL = `if ( true ) {', 'round 6 near-wall'),
     ('round 6 bounce', 'web/src/lighting.ts', 'SHED_SKY = { bounce: 1.6,', 'SHED_SKY = { bounce: 0.8,', 'round 7 near-wall'),
     ('a faint floor bounce', 'web/src/lighting.ts', 'SHED_SKY = { bounce: 1.6,', 'SHED_SKY = { bounce: 1.2,', 'round 7 near-wall'),
@@ -43,9 +43,9 @@ MUTATIONS = [
     ('no walls share', 'web/src/lighting.ts', 'wall: 0.8, reach', 'wall: 0, reach', 'round 7 near-wall'),
     ('the mix the wrong way', 'web/src/lighting.ts', 'mix( ${SHED_SKY.wall.toFixed(4)}, ${SHED_SKY.bounce.toFixed(4)}, shedUp )', 'mix( ${SHED_SKY.bounce.toFixed(4)}, ${SHED_SKY.wall.toFixed(4)}, shedUp )', 'round 7 near-wall'),
     ('round 6 band', 'web/src/lighting.ts', 'band: [0, 0.38]', 'band: [0.15, 0.6]', 'round 7 crown'),
-    ('round 6 crown', 'web/src/lighting.ts', 'crown: 1.2,', 'crown: 0.6,', 'round 7 crown'),
+    ('a faint crown', 'web/src/lighting.ts', 'crown: 0.22,', 'crown: 0.1,', 'round 7 crown'),
     ('a band too narrow', 'web/src/lighting.ts', 'band: [0, 0.38]', 'band: [0, 0.2]', 'round 7 crown'),
-    ('a strong crown', 'web/src/lighting.ts', 'crown: 1.2,', 'crown: 1.9,', 'round 7 crown'),
+    ('a strong crown', 'web/src/lighting.ts', 'crown: 0.22,', 'crown: 0.45,', 'round 7 crown'),
 ]
 
 

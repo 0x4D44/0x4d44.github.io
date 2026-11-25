@@ -87,18 +87,21 @@ test('B7 round 7 near-wall bounce: on the floor by the walls more than on the wa
   assert.equal(sky(at(WEST_WALL + 1, 100, PLATFORM_HEIGHT), UP).indirect, 1, 'under the moon');
 });
 
-test('B7 round 7 crown band: the islands under the crowns are brighter at their middle than at their edges by day, by 10-18 levels, under the sunlit brick', () => {
+test('B7 round 7 crown band: the islands under the crowns are brighter at their middle than at their edges by day, by 6-14 levels, under the sunlit brick', () => {
   const S = L.SHED_SKY as { crown: number; band: readonly number[] };
-  assert.ok(S.crown >= 1.0 && S.crown <= 1.4, `SHED_SKY.crown ${S.crown}`);
+  // re-pinned in round 8: the band on the floor's sun and sky alike (rib stripes kept), 1.2 on the sky -> 0.22 on both
+  assert.ok(S.crown >= 0.15 && S.crown <= 0.3, `SHED_SKY.crown ${S.crown}`);
   assert.ok(S.band[1]! >= 0.33 && S.band[1]! <= 0.42, `the band gone by ${S.band[1]} of the half-span`);
   lighting.grade(fakeRenderer(), true, 1, 1.02, 0);
-  const SKY_SHARE = 0.3; // the sky's share of a sunlit floor's light (ASSUMED, as in round 6)
-  const screen = (u: number, v: number) => screenDay(linearOf(119.5) * (1 + SKY_SHARE * (sky(at(u, v, PLATFORM_HEIGHT), UP).indirect - 1)));
+  // re-pinned in round 8: the band is on the direct light as on the sky's, so a sunlit floor takes the direct factor whole (was 0.3 of the sky's)
+  const screen = (u: number, v: number) => screenDay(linearOf(119.5) * sky(at(u, v, PLATFORM_HEIGHT), UP).direct);
   // the island's floor under its crown (2/3 stands a little west of the east crown, so its crown line is near its east edge) against its two edges
   for (const [ids, crownU, name] of [[['6', '7'], CENTRE, 'the west vault\'s island (6, 7)'], [['2', '3'], layout.spine + R, 'the east vault\'s island (2, 3)']] as const) {
     for (const v of [60, 120, 180]) {
       const [a, b] = island([...ids], v), mid = screen(Math.min(b - 0.3, Math.max(a + 0.3, crownU)), v), edges = (screen(a + 0.3, v) + screen(b - 0.3, v)) / 2;
-      assert.ok(mid - edges >= 10 && mid - edges <= 18, `${name} at ${v} m: under the crown ${mid.toFixed(1)}, edges ${edges.toFixed(1)}`);
+      // re-pinned in round 8 (10-18 -> 6-14, same 8-level width): the coordinator's round-8 spec measures the band from the crown line (+12-15) to 0.38 of the half-span
+      // (none, -round8.test.ts); an island's edges stand 0.17-0.3 of the half-span off, inside the fall, so they keep part of it
+      assert.ok(mid - edges >= 6 && mid - edges <= 14, `${name} at ${v} m: under the crown ${mid.toFixed(1)}, edges ${edges.toFixed(1)}`);
       assert.ok(mid < 185, 'under the sunlit brick');
     }
   }

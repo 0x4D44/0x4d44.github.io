@@ -63,7 +63,7 @@ export const AXES = [
 export const ELEMENT_VIEWS = {
   'lighting-materials': ['overview', 'south-front', 'front-oblique-solid-slate', 'platform-eye', 'concourse', 'great-northern-hotel', 'midland-grand-front', 'gasworks-portals', 'facade-brick-close'],
   'kx-front': ['south-front', 'front-oblique', 'front-oblique-solid-slate', 'roof-above-solid-slate', 'front-oblique-xray', 'roof-above-xray', 'north-gable', 'tower-close', 'front-southwest-pedestrian', 'shed-east-flank', 'gable-oblique', 'porch-close'],
-  'shed-interior': ['platform-eye', 'platform-eye-south', 'shed-interior', 'platform-eye-p1-north', 'platform-eye-p8-south', 'roof-underside', 'furniture-close', 'suburban-p9', 'platform-clock', 'platform-furniture'],
+  'shed-interior': ['platform-eye', 'platform-eye-south', 'shed-interior', 'platform-eye-p1-north', 'platform-eye-p8-south', 'roof-underside', 'furniture-close', 'suburban-p9', 'platform-clock', 'platform-furniture', 'platform-eye-crown-west'],
   'western-concourse': ['concourse', 'concourse-roof-detail', 'western-range', 'western-range-gateline', 'concourse-hotel-junction', 'concourse-exterior-square', 'concourse-funnel-up', 'western-range-full', 'concourse-exterior-west'],
   'historic-neighbours': ['great-northern-hotel', 'midland-grand-front', 'st-pancras-shed', 'st-pancras-shed-oblique', 'gnh-from-square', 'midland-euston-road', 'midland-clock-tower', 'barlow-interior'],
   'city-surroundings': ['overview', 'gasworks-portals', 'front-oblique', 'granary-square', 'gasholders', 'canal-lock', 'kings-boulevard', 'euston-road-east'],
@@ -584,6 +584,14 @@ const FROZEN_STATION_CAMERAS = {
     target: [24.3667, 2.4, -106.7900],
     source: 'R-kx-shed-interior-e (shed-e-footbridge-lift-2014.jpg): the furniture group on the platforms 6-7 island (its number blade, bin pair and trolley point), 10 m south of it along the platform and 1 m east, eye 1.6 m',
     fov: 50, near: 0.1,
+  },
+  // B7 round 8 (the round-7 GPU score: no capture shows island 6/7, so the crown band under the west vault's glazing was never seen): platform 7 on the
+  // 6-7 island, on the west crown's centre line (shed frame u = spine - SHED_SPAN_WIDTH / 2 = 16.0 m) at platform-eye's v (198.4 m), eye 1.6 m,
+  // looking north along the platform, so the floor runs from the crown line out to the island's edges
+  'platform-eye-crown-west': {
+    pos: [26.4331, 2.5, -210.6194],
+    target: [27.5544, 2.5, -250.6037],
+    source: 'R-kx-shed-interior-a (shed-a-north-from-footbridge-2019.jpg): platform 7 on the platforms 6-7 island, on the west vault\'s crown line (shed u 16.0 m) at platform-eye\'s v, eye 1.6 m, looking north along the platform under the crown',
   },
   // R-kx-shed-interior-a (shed-a-north-from-footbridge-2019.jpg): the roof underside, ribs and glazing. Platform 4 midpoint,
   // eye 1.6 m, pitched up 55 degrees and turned north-east so the sight line crosses the east vault.

@@ -485,7 +485,8 @@ const NEW_CAMERAS = {
   'kx-front': ['tower-close', 'front-southwest-pedestrian', 'shed-east-flank', 'gable-oblique', 'porch-close'],
   // platform-furniture added 2026-11-24 (round 17, platform-round-4 score section 5: no capture showed the new furniture near)
   // platform-clock added 2026-11-24 (round 14, platform-round-1 score section 5: no capture could verify the platform clock's arm, faces or scale)
-  'shed-interior': ['platform-eye-p1-north', 'platform-eye-p8-south', 'roof-underside', 'furniture-close', 'suburban-p9', 'platform-clock', 'platform-furniture'],
+  // platform-eye-crown-west added 2026-11-25 (B7 round 8, the round-7 GPU score: no capture showed island 6/7 under the west crown, so the crown band was never seen)
+  'shed-interior': ['platform-eye-p1-north', 'platform-eye-p8-south', 'roof-underside', 'furniture-close', 'suburban-p9', 'platform-clock', 'platform-furniture', 'platform-eye-crown-west'],
   'western-concourse': ['concourse-funnel-up', 'concourse-exterior-square', 'western-range-full'],
   'historic-neighbours': ['gnh-from-square', 'midland-euston-road', 'midland-clock-tower', 'barlow-interior'],
   'city-surroundings': ['granary-square', 'gasholders', 'canal-lock', 'kings-boulevard', 'euston-road-east'],
@@ -731,8 +732,8 @@ test('the twenty cameras that were there before wave 0 are all still there, and 
 
 test('every camera the six rubrics add exists, looks somewhere, and names the photograph it was framed from', () => {
   const cameras = stationCameras(trackData), added = Object.values(NEW_CAMERAS).flat();
-  assert.equal(added.length, 25); // re-pinned 2026-11-24 (round 10): 21 and gable-oblique; (round 14): and platform-clock; (round 17): and platform-furniture; (round 23b): and porch-close
-  assert.equal(new Set(added).size, 25, 'no view is added twice');
+  assert.equal(added.length, 26); // re-pinned 2026-11-24 (round 10): 21 and gable-oblique; (round 14): and platform-clock; (round 17): and platform-furniture; (round 23b): and porch-close; 2026-11-25 (B7 round 8): and platform-eye-crown-west
+  assert.equal(new Set(added).size, 26, 'no view is added twice');
   assert.deepEqual(Object.keys(cameras).slice(-1), ['kx-euston-road-lamp'], 'the night rubric view is appended after the six rubric sets');
   assert.equal(Object.keys(cameras).length, Object.keys(OLD_CAMERAS).length + added.length + EXTRA_CAMERAS.length + 1, 'only the night rubric view was appended');
   assert.deepEqual(EXTRA_CAMERAS.filter(name => added.includes(name)), [], 'an extra camera is not one a rubric names');
@@ -750,7 +751,7 @@ test('every camera the six rubrics add exists, looks somewhere, and names the ph
 
 test('the new cameras stand where their sources say: the platform eyes on the platform, the street cameras on the ground', () => {
   const cameras = stationCameras(trackData), { terrain } = stationWorld(), platformEye = cameras['platform-eye'].pos[1];
-  for (const name of ['platform-eye-p1-north', 'platform-eye-p8-south', 'roof-underside', 'furniture-close', 'suburban-p9']) assert.equal(cameras[name].pos[1], platformEye, `${name} is 1.6 m above its platform`);
+  for (const name of ['platform-eye-p1-north', 'platform-eye-p8-south', 'roof-underside', 'furniture-close', 'suburban-p9', 'platform-eye-crown-west']) assert.equal(cameras[name].pos[1], platformEye, `${name} is 1.6 m above its platform`);
   for (const name of ['facade-brick-close', 'front-southwest-pedestrian', 'concourse-exterior-square', 'concourse-exterior-west', 'gnh-from-square', 'midland-euston-road', 'granary-square', 'gasholders', 'canal-lock', 'kings-boulevard', 'euston-road-east']) {
     const [x, y, z] = cameras[name].pos;
     assert.ok(Math.abs(y - terrain.heightAt(x, z) - 1.7) < 1e-9, `${name}: the eye is 1.7 m above the terrain under it (${y} over ${terrain.heightAt(x, z)})`);

@@ -420,6 +420,19 @@
     "fov": 50,
     "near": 0.1
   },
+  "platform-eye-crown-west": {
+    "pos": [
+      26.4331,
+      2.5,
+      -210.6194
+    ],
+    "target": [
+      27.5544,
+      2.5,
+      -250.6037
+    ],
+    "source": "R-kx-shed-interior-a (shed-a-north-from-footbridge-2019.jpg): platform 7 on the platforms 6-7 island, on the west vault's crown line (shed u 16.0 m) at platform-eye's v, eye 1.6 m, looking north along the platform under the crown"
+  },
   "roof-underside": {
     "pos": [
       44.38716973020361,

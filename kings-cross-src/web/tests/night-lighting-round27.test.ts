@@ -255,10 +255,10 @@ test('round 27 night programs keep the main day-clear fingerprints, material ide
     const day = daylight(), keys = originals.map(m => m.customProgramCacheKey());
     const timberDay = fingerprint(kxOffices[1]!.material);
     assert.deepEqual(day, [
-      '7885d4083f1069c7b17b25cf6dd3bd2f79492e72b75e9428b678f43e0c4a1ed2',
-      '7785ec87a1c71d5c200526f75f770d53c1c552f254b0eb3f0288c2faed83c2c4',
-      'e8b4cedbcac1ba8810ac0663590e941c2ba4b157e54130045bef156305838e07',
-      '0ce6870928ab3bf9ce6a5f39137b827a8c91044372562a6798a3a56677ed234e',
+      'ce9617048e6593a1135f8c2609ddea972d5d2273b7444b97e2808dfafc5c3264',
+      '2bd4f424144463fab0e6f8fd6b505e2dbd161c1c8a8ac49444fd8dd23e70e412',
+      'b121e0ea8a670f6c1698ab0b109f4791f812b4a2eac124722dc4806ca1aa0465',
+      'ecbd9f430ede682cf630619400837ed00af1df1e12a791f4ba50565b8a4a381f',
       '88bfc7b244a2892a7870c19f817280831533a634374bb5e26674a3d6738bf9ef',
       '2f34f2a6011d30e26949695b680ada384190ca1092ed72a5e4830fb4c941f74a',
     ]);
