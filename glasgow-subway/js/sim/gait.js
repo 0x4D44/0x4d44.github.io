@@ -227,7 +227,7 @@ export function gaitParams(B, v, cad = 1) {
   // almost no back-swing - 'offering'. The shoulder swings about a point behind the vertical (more extension than flexion) and the elbow runs from nearly straight behind to ~30 deg in front.)
   P.elbow = (9 + 9 * Math.min(kv, 1.5)) * D2R; P.elbowAmp = (5 + 5 * Math.min(kv, 1.5)) * D2R;
   P.stepHalf = 0.5 * 0.10 * (Lh / 0.92);   // (step width, heel centre to heel centre: about 0.08 - 0.13 m in adults at an easy pace)                             // the heels land this far either side of the line of travel
-  P.clear = 0.032 * (Lh / 0.92);                                      // height of the swing foot's lowest point at its peak
+  P.clear = 0.032 * (Lh / 0.92) * (0.5 + 0.5 * kv);                                      // height of the swing foot's lowest point at its peak
   P.lean = (1.5 + 2.0 * Math.min(kv, 1.5)) * D2R;                     // forward lean of the thorax
   // no leg is ever asked to stretch further than a knee bent by `minKnee`; at mid-stance the pelvis is as high as that allows (a little less than the standing height)
   P.cL = B.legLen * Math.cos(0.5 * 9 * D2R);                          // the longest reach a leg is asked for
@@ -364,6 +364,7 @@ const WK_UP = 0.7, WK_DN = 0.5;   // s: the walking body language builds up over
  *  own size, which is what it was found to need at every speed (0.4 - 0.5 of the bob), and the hand-over to the measured fit is the same smooth following. */
 const CAP_VMIN = 0, CAP_FLOOR = 0.06;   // m/s: no reach is logged slower than this; m: nor any more than this below the bob's foot
 const CAP_NB = 96, CAP_REC = 0.003, CAP_RK = 0.3, CAP_RD = 0.03, CAP_MARG = 0.002, CAP_SPAN = 0.08, CAP_EVERY = 6, CAP_TAU = 0.3, CAP_SETTLE = 2.5, CAP_PRIOR = 0.42;
+const AMP_KMAX = 1.6, AMP_LAM = 0.5;
 const CAP_CS = new Float64Array(CAP_NB), CAP_SN = new Float64Array(CAP_NB);
 for (let b = 0; b < CAP_NB; b++) { CAP_CS[b] = Math.cos(4 * PI * (b + 0.5) / CAP_NB); CAP_SN[b] = Math.sin(4 * PI * (b + 0.5) / CAP_NB); }
 function trackReach(g, dt) {
@@ -381,18 +382,21 @@ function trackReach(g, dt) {
     }
     g.capB = b0;
     if (++g.capN % CAP_EVERY === 0 && G.every(Number.isFinite)) {                // (a fit to a log with gaps in it would be a fit to the stretch of the stride it has seen)
-      const amp = P.bob * g.var.bob; let bestM = -Infinity, bestBp = P.bobPh;
-      for (let bp = P.bobPh - CAP_SPAN; bp <= P.bobPh + CAP_SPAN + 1e-9; bp += 0.01) {   // the highest the bob's top can be, for each phase it could have
-        const c4 = Math.cos(4 * PI * bp), s4 = Math.sin(4 * PI * bp); let m = Infinity;
-        for (let b = 0; b < CAP_NB; b++) { const r = G[b] + amp * 0.5 * (1 - (CAP_CS[b] * c4 + CAP_SN[b] * s4)); if (r < m) m = r; }
-        if (m > bestM) { bestM = m; bestBp = bp; }
+      const amp0 = P.bob * g.var.bob; let bestU = -Infinity, bestM = 0, bestBp = P.bobPh, bestK = 1;
+      for (let k = 1; k <= AMP_KMAX + 1e-9; k += 0.1) { const amp = amp0 * k;
+        for (let bp = P.bobPh - CAP_SPAN; bp <= P.bobPh + CAP_SPAN + 1e-9; bp += 0.01) {   // the highest the bob's top can be, for each phase it could have
+          const c4 = Math.cos(4 * PI * bp), s4 = Math.sin(4 * PI * bp); let m = Infinity;
+          for (let b = 0; b < CAP_NB; b++) { const r = G[b] + amp * 0.5 * (1 - (CAP_CS[b] * c4 + CAP_SN[b] * s4)); if (r < m) m = r; }
+          const u = Math.min(P.hPeak, m) - AMP_LAM * (amp - amp0);
+          if (u > bestU) { bestU = u; bestM = m; bestBp = bp; bestK = k; }
+        }
       }
-      g.fitT = { hp: Math.min(P.hPeak, bestM - CAP_MARG), bp: bestBp };
+      g.fitT = { hp: Math.min(P.hPeak, bestM - CAP_MARG), bp: bestBp, k: bestK };
     }
   }
   if (g.fitT) {
-    if (!g.fit) g.fit = { hp: g.fitT.hp, bp: g.fitT.bp };
-    const a = 1 - Math.exp(-dt / CAP_TAU); g.fit.hp += (g.fitT.hp - g.fit.hp) * a; g.fit.bp += (g.fitT.bp - g.fit.bp) * a;   // (a step of the target every few frames would be a jolt: it is followed every frame)
+    if (!g.fit) g.fit = { hp: g.fitT.hp, bp: g.fitT.bp, k: g.fitT.k || 1 };
+    const a = 1 - Math.exp(-dt / CAP_TAU); g.fit.hp += (g.fitT.hp - g.fit.hp) * a; g.fit.bp += (g.fitT.bp - g.fit.bp) * a; g.fit.k += ((g.fitT.k || 1) - g.fit.k) * a;   // (a step of the target every few frames would be a jolt: it is followed every frame)
   }
 }
 
@@ -492,7 +496,7 @@ function footOut(g, f, pfNow) {
   const A1 = stanceAnkle(o, tgt.H, tgt.psi, sw.th1);
   // the foot comes up off its toes quickly (level by 0.45 of the swing, so the ankle is not carried high while the knee is bent) and tips up for heel strike; it is over its mark
   // by 97 % of the swing and then lowers straight down, so nothing drags along the floor
-  const e = swingE(s, sw.m0), th = sw.th0 * (1 - smoother(s / 0.45)) + sw.th1 * smoother((s - 0.65) / 0.35), thb = sw.thb0 + (th - sw.thb0) * smoother(s / 0.35);
+  const e = swingE(s, sw.m0), th = sw.th0 * (1 - smoother(s / 0.55)) + sw.th1 * smoother((s - 0.65) / 0.35), thb = sw.thb0 + (th - sw.thb0) * smoother(s / 0.35);
   const x = sw.A0[0] + (A1[0] - sw.A0[0]) * e, z = sw.A0[2] + (A1[2] - sw.A0[2]) * e;
   const c = sw.c0 ? Math.max(swingLift(sw.clear, s), sw.c0 * (1 - smoother(s / 0.85))) : swingLift(sw.clear, s);   // the lowest point of the foot
   const y = c - lowestRel(o, th, thb);
@@ -533,7 +537,7 @@ export function gaitTargets(g) {
   const V = g.var;
   // pelvis: height (2 / stride), lateral shift (1 / stride), rotation, drop on the swing side
   const fit = g.fit, sway = 0.5 * P.sway * V.sway * Math.cos(2 * PI * (ph - 0.3)), ramp = w;
-  const bobH = fit ? P.hAt(ph, ramp * V.bob, P.hPeak + (fit.hp - P.hPeak) * w, fit.bp) : P.hAt(ph, ramp * V.bob);   // (the bob as fitted under the legs' reach, as far as this person is a walker: see trackReach)
+  const bobH = fit ? P.hAt(ph, ramp * V.bob * (1 + ((fit.k || 1) - 1) * w), P.hPeak + (fit.hp - P.hPeak) * w, fit.bp) : P.hAt(ph, ramp * V.bob);   // (the bob as fitted under the legs' reach, as far as this person is a walker: see trackReach)
   const yawP = w * 0.5 * P.yaw * Math.sin(2 * PI * (ph - 0.25)), rollP = -w * 0.5 * P.obl * Math.cos(2 * PI * (ph - 0.3));   // (all of it grows with the walk: a standing pelvis is level, and setting off must not jump the phase's rotation in)
   T.pelvisD = qmul(qy(yawP), qz(rollP));
   T.pelvisPos = [-sway * w, bobH, B.P0[B.ix.pelvis][2]];
