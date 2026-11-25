@@ -23,7 +23,7 @@ MUTATIONS = [
     ('clock stage back to 0.92 of the shaft', 'web/src/shed.ts', 'setback: 0.9,', 'setback: 0.25,', 'clock stage is 0.6 to 0.8'),
     ('ten small brackets to a face', 'web/src/shed.ts', 'perFace: 7,', 'perFace: 10,', 'deep bracketed cornice'),
     ('shallow corona', 'web/src/shed.ts', 'overhang: 1.2,', 'overhang: 0.6,', 'deep bracketed cornice'),
-    ('pitched hip cap', 'web/src/shed.ts', 'rise: 0.3,', 'rise: 1.3,', 'the cap is near-flat'),
+    ('pitched hip cap', 'web/src/shed.ts', 'rise: 0.6,', 'rise: 1.3,', 'the cap is near-flat'),
     ('tower 1.5 m proud', 'web/src/shed.ts', 'export const TOWER_PROJECTION = TOWER_SIZE + 0.15;', 'export const TOWER_PROJECTION = 1.5;', 'about its own width proud'),
     ('one-step transition', 'web/src/shed.ts', 'upper: { height: 0.35, out: 0.35 }', 'upper: { height: 0.35, out: 0.15 }', 'heavy stepped stone cornice'),
     ('no weathered slope', 'web/src/shed.ts', 'weather: 0.45 }', 'weather: 0.0001 }', 'heavy stepped stone cornice'),

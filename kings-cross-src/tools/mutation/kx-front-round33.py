@@ -39,10 +39,9 @@ MUTATIONS = [
     ('a checkerboard', 'web/src/materials.ts', 'pane: 0.07,', 'pane: 0.25,', 'carry 10-12%'),
     ('the old opacity', 'web/src/shed.ts', 'opacity: 0.982,', 'opacity: 0.86,', 'lets through half'),
     ('the opacity outside unset', 'web/src/shed.ts', 'm.opacity = (was * (1 - k) + GABLE_OUTSIDE.opacity * k)', 'm.opacity = was', 'lets through half'),
-    ('no secondary bar', 'web/src/materials.ts', 'shade: 0.3 }', 'shade: 0.0 }', 'secondary bar'),
-    ('a wide bar', 'web/src/materials.ts', 'width: 0.05, soft: 0.06', 'width: 0.3, soft: 0.06', 'secondary bar'),
-    ('the bar on the mullion', 'web/src/materials.ts', '- 0.5 ) * ${glslFloat(GLAZING.spacing)};', '- 0.0 ) * ${glslFloat(GLAZING.spacing)};', 'secondary bar'),
-    ('two bars a pane', 'web/src/materials.ts', 'float gq = abs( fract( ( vGlassPos.x - uPaneX ) /', 'float gq = abs( fract( 2.0 * ( vGlassPos.x - uPaneX ) /', 'secondary bar'),
+    # retired round F18 (the mid-pane bar's shade is 0, GABLE_FINE's two fine bars carry the rhythm): 'a wide bar', 'the bar on the mullion' and 'two bars a
+    # pane' are equivalent now; 'no secondary bar' became the bar coming back
+    ('the mid-pane bar back', 'web/src/materials.ts', 'soft: 0.06, shade: 0 }', 'soft: 0.06, shade: 0.3 }', 'secondary bar'),
     ('the bar inside too', 'web/src/materials.ts', 'gl_FragColor.rgb = mix( gl_FragColor.rgb, mix( gt,', 'gl_FragColor.rgb = mix( gl_FragColor.rgb * ( 1.0 - 0.3 * ( 1.0 - smoothstep( 0.025, 0.085, gq ) ) ), mix( gt,', 'secondary bar'),
     ('no verticals', 'web/src/shed.ts', '  for (const x of points) out.push({ c: [x, y0 + depth / 2, 0]', '  for (const x of points.slice(0, 0)) out.push({ c: [x, y0 + depth / 2, 0]', 'the girder is a Warren'),
     ('short verticals', 'web/src/shed.ts', "s: [web[0], depth, web[1]], rotZ: 0, kind: 'mullion' });\n  return out;", "s: [web[0], depth / 2, web[1]], rotZ: 0, kind: 'mullion' });\n  return out;", 'the girder is a Warren'),

@@ -21,19 +21,19 @@ if out == src or out.is_relative_to(src) or src.is_relative_to(out):
 out.mkdir(parents=True, exist_ok=True)
 
 MUTATIONS = [
-    ('no heavy mullions', 'web/src/shed.ts', 'GABLE_MULLION = { every: 3, heavy: 1.75 }', 'GABLE_MULLION = { every: 3, heavy: 1 }', 'every third mullion'),
-    ('every other heavy', 'web/src/shed.ts', 'GABLE_MULLION = { every: 3, heavy: 1.75 }', 'GABLE_MULLION = { every: 2, heavy: 1.75 }', 'every third mullion'),
-    ('too heavy', 'web/src/shed.ts', 'GABLE_MULLION = { every: 3, heavy: 1.75 }', 'GABLE_MULLION = { every: 3, heavy: 2.5 }', 'every third mullion'),
-    ('one fine bar a bay', 'web/src/materials.ts', 'GABLE_FINE = { spacing: GLAZING.spacing / 4,', 'GABLE_FINE = { spacing: GLAZING.spacing / 2,', 'fine glazing bars'),
+    ('no heavy mullions', 'web/src/shed.ts', 'GABLE_MULLION = { every: 3, heavy: 1.75,', 'GABLE_MULLION = { every: 3, heavy: 0.6,', 'every third mullion'),
+    ('every other heavy', 'web/src/shed.ts', 'GABLE_MULLION = { every: 3, heavy: 1.75,', 'GABLE_MULLION = { every: 2, heavy: 1.75,', 'every third mullion'),
+    ('too heavy', 'web/src/shed.ts', 'GABLE_MULLION = { every: 3, heavy: 1.75,', 'GABLE_MULLION = { every: 3, heavy: 3.5,', 'every third mullion'),
+    ('one fine bar a bay', 'web/src/materials.ts', 'GABLE_FINE = { spacing: GLAZING.spacing / 3,', 'GABLE_FINE = { spacing: GLAZING.spacing / 2,', 'fine glazing bars'),
     ('thick fine bars', 'web/src/materials.ts', 'width: 0.02, shade: 0.55 }', 'width: 0.06, shade: 0.55 }', 'fine glazing bars'),
     ('no fade far off', 'web/src/materials.ts', 'smoothstep( ${glslFloat(GABLE_FINE.spacing / 8)}', '0.0 * smoothstep( ${glslFloat(GABLE_FINE.spacing / 8)}', 'fine glazing bars'),
     ('point sampled', 'web/src/materials.ts', 'min( gfd + 0.5 * gfw,', 'min( gfd + 0.0 * gfw,', 'fine glazing bars'),
     ('bars on every glass', 'web/src/materials.ts', '${glslFloat(GABLE_FINE.shade)} * uGableBars;', '${glslFloat(GABLE_FINE.shade)} * 1.0;', 'fine glazing bars'),
     ('never raised', 'web/src/shed.ts', 'drawn = gableDraw.value; gableDraw.value = 1;', 'drawn = gableDraw.value; gableDraw.value = 0;', 'fine glazing bars'),
     ('never put back', 'web/src/shed.ts', 'glintEven.value = even; gableDraw.value = drawn; };', 'glintEven.value = even; };', 'fine glazing bars'),
-    ('a loud reflection', 'web/src/materials.ts', 'GABLE_REFLECT = { amp: 0.15,', 'GABLE_REFLECT = { amp: 0.3,', 'reflection field'),
-    ('a faint reflection', 'web/src/materials.ts', 'GABLE_REFLECT = { amp: 0.15,', 'GABLE_REFLECT = { amp: 0.05,', 'reflection field'),
-    ('a busy reflection', 'web/src/materials.ts', 'waves: [0.22, 0.05, 0.06, 0.11] }', 'waves: [1.2, 0.05, 0.06, 0.11] }', 'reflection field'),
+    ('a loud reflection', 'web/src/materials.ts', 'GABLE_REFLECT = { amp: 0.28,', 'GABLE_REFLECT = { amp: 0.5,', 'reflection field'),
+    ('a faint reflection', 'web/src/materials.ts', 'GABLE_REFLECT = { amp: 0.28,', 'GABLE_REFLECT = { amp: 0.05,', 'reflection field'),
+    ('a busy reflection', 'web/src/materials.ts', 'waves: [0.22, 0.05, 0.06, 0.11], blotch', 'waves: [1.2, 0.05, 0.06, 0.11], blotch', 'reflection field'),
     ('the reflection inside', 'web/src/materials.ts', '* gz * uGlintEven;', '* gz;', 'reflection field'),
 ]
 

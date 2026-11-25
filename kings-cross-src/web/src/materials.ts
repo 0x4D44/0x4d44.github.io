@@ -1435,7 +1435,7 @@ export const GABLE_THICKEN = { thicken: 0.57, straight: 0.98, aslant: 0.8 } as c
 // 1.67 times as tall as the 1.6 m bay, between the gables' transoms, shed.ts GABLE_TRANSOM); `pane` 0.12 -> 0.07, about +-4-5 levels head-on (more aslant by
 // `graze`, as F16); and each pane's offset is its own hash less `apart` of its four neighbours' (a high-pass, so neighbours lean apart: far fewer 2 by 2 blocks
 // on one side of the mean than chance), halved back to about +-1. The cloud owns the broad light and dark.
-export const GABLE_SHEET = { tone: [0x35 / 255, 0x42 / 255, 0x4e / 255], pane: 0.07, apart: 0.25, graze: 0.25, row: GLAZING.tier / 2, cloud: { lift: 0.2, waves: [0.28, 0.1, -0.05, 0.2], drift: 0.02, core: [0.06, 0.8], phase: [0.8, 4.95] }, tint: 0.18, f0: 0.05, haze: 0.3, bar: { width: 0.05, soft: 0.06, shade: 0.3 } } as const;
+export const GABLE_SHEET = { tone: [0x35 / 255, 0x42 / 255, 0x4e / 255], pane: 0.07, apart: 0.25, graze: 0.25, row: GLAZING.tier / 2, cloud: { lift: 0.2, waves: [0.28, 0.1, -0.05, 0.2], drift: 0.02, core: [0.06, 0.8], phase: [0.8, 4.95] }, tint: 0.18, f0: 0.05, haze: 0.3, bar: { width: 0.05, soft: 0.06, shade: 0 } } as const;
 /** Round F16b: GLSL for the gable pane `gi`'s tone offset, about -1..1: its hash less GABLE_SHEET.apart of its four neighbours', halved. */
 function paneOffset(): string {
   const h = (c: string): string => `( 2.0 * fract( sin( dot( ${c}, vec2( 12.9898, 78.233 ) ) ) * 43758.5453 ) - 1.0 )`;
@@ -1448,13 +1448,17 @@ function paneOffset(): string {
  * glass by `shade` and making it as opaque, from either side. Box-filtered on the pixel's footprint (fwidth) and, as that footprint nears half the spacing,
  * faded to its mean cover, so it never aliases or moires at a distance.
  */
-export const GABLE_FINE = { spacing: GLAZING.spacing / 4, width: 0.02, shade: 0.55 } as const;
+// round F18 (front-round-17 score, A6: the lights 6.7:1, the photos' about 5:1): two fine bars a bay, not three, 0.53 m apart; the outside mid-pane bar
+// (GABLE_SHEET.bar) no longer lands on one, so it is retired (its shade 0)
+export const GABLE_FINE = { spacing: GLAZING.spacing / 3, width: 0.02, shade: 0.55 } as const;
 /**
  * Round F17 (front-round-16b score, A6: the dapple came from the panes; front-d's from the sky): from outside by day a low reflection field over each gable,
  * two soft waves' product (`waves`: x and y wavenumbers of each, per metre), 2-3 light and dark zones across a gable, lifting or dimming the sheet by up to
  * `amp` (about +-10-15 levels), drifting with the camera as the cloud does.
  */
-export const GABLE_REFLECT = { amp: 0.15, waves: [0.22, 0.05, 0.06, 0.11] } as const;
+// round F18 (front-round-17 score, A6: the reflection's spread 27-37 levels a gable, front-d's 47-56): `amp` 0.15 -> 0.28; and a second, finer pair of waves
+// (`blotch`: x and y wavenumbers, its `weight` of the first), so the zones are broad but blotchy, as reflected cloud, not smooth gradients
+export const GABLE_REFLECT = { amp: 0.28, waves: [0.22, 0.05, 0.06, 0.11], blotch: { waves: [0.61, 0.23, -0.37, 0.47], weight: 0.2 } } as const;
 const SKY_GLINT_GLSL = /* glsl */`
 #if defined( USE_FOG ) && ! defined( FLIP_SIDED )
 vec2 gm = ( floor( vec2( ( vGlassPos.x - uPaneX ) / ${GLAZING.spacing}, ( vGlassPos.y - ${GLAZING.springing} ) / ${GLAZING.tier} ) ) + 0.5 ) * vec2( ${GLAZING.spacing}, ${GLAZING.tier} ) + vec2( uPaneX, ${GLAZING.springing} );
@@ -1477,6 +1481,7 @@ gl_FragColor.a = mix( gl_FragColor.a, gl_FragColor.a + ( 1.0 - gl_FragColor.a ) 
 #if defined( USE_FOG ) && ! defined( FLIP_SIDED )
 // round F17: from outside by day the sky's reflection field (GABLE_REFLECT), then the gables' fine glazing bars (GABLE_FINE), either side
 float gz = sin( ${glslFloat(GABLE_REFLECT.waves[0])} * ( vGlassPos.x - uPaneX ) + ${glslFloat(GABLE_REFLECT.waves[1])} * vGlassPos.y + 0.3 + ${glslFloat(GABLE_SHEET.cloud.drift)} * ( cameraPosition.x + cameraPosition.z ) ) * sin( ${glslFloat(GABLE_REFLECT.waves[2])} * ( vGlassPos.x - uPaneX ) + ${glslFloat(GABLE_REFLECT.waves[3])} * vGlassPos.y + 2.1 + ${glslFloat(GABLE_SHEET.cloud.drift)} * ( cameraPosition.x - cameraPosition.z ) );
+gz += ${glslFloat(GABLE_REFLECT.blotch.weight)} * sin( ${glslFloat(GABLE_REFLECT.blotch.waves[0])} * ( vGlassPos.x - uPaneX ) + ${glslFloat(GABLE_REFLECT.blotch.waves[1])} * vGlassPos.y + 1.1 + ${glslFloat(GABLE_SHEET.cloud.drift)} * ( cameraPosition.x + cameraPosition.z ) ) * sin( ${glslFloat(GABLE_REFLECT.blotch.waves[2])} * ( vGlassPos.x - uPaneX ) + ${glslFloat(GABLE_REFLECT.blotch.waves[3])} * vGlassPos.y + 0.4 + ${glslFloat(GABLE_SHEET.cloud.drift)} * ( cameraPosition.x - cameraPosition.z ) );
 gl_FragColor.rgb *= 1.0 + ${glslFloat(GABLE_REFLECT.amp)} * gz * uGlintEven;
 float gfw = fwidth( vGlassPos.x );
 float gfd = abs( fract( ( vGlassPos.x - uPaneX ) / ${glslFloat(GABLE_FINE.spacing)} + 0.5 ) - 0.5 ) * ${glslFloat(GABLE_FINE.spacing)};
