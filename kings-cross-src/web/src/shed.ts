@@ -77,12 +77,15 @@ export const TOWER_TOP = {
  * to the frieze behind; the corona overhangs the upper step by 0.4 m. (Three tiers put the shadow pass over its 165,000 triangles.) The cornice's stone (frieze, bed mould, modillions, corona, cyma) is a pale cream, `cream` times the
  * stone's own colour by vertex colour (the tower stone's own clone: no new draw). Over the corona a moulded cyma (`cyma`), then a thin lead
  * edge (`lead`; cyma and lead make TOWER_TOP.edge, so the hip and the vane keep their heights) with a gutter lip standing up at its outer edge
- * (`lip`). At night the wash in the bracket row and on the corona's soffit is graded by how far out a face stands (`night`: `gap` of it at
- * `from` m past the stage's brick, all of it from `to` out), so the gaps sit darker than the modillions' faces. Sizes ASSUMED.
+ * (`lip`). Round 3b (the GPU capture): the modillions cast no sun shadow (castsOnly), so the shade in the gaps is painted: the frieze's face
+ * between the modillions, and the soffit along the wall, take `shade` of the cream (by vertex colour, so by day and under the night wash alike,
+ * the gaps about 0.6 to 0.65 of the faces on screen), the soffit grading out to the full cream at the corona's edge. And the cornice's faces
+ * have their v lifted by `uvLift` m: the contact shade at a wall's foot (lighting.ts FOOT_SHADE, by v) darkened every 0.35 m modillion face
+ * to a third of its light at its foot, the dull grid the capture showed. Sizes ASSUMED.
  */
 export const TOWER_ROUND3 = {
   tiers: [[0, 0.35, 0.45], [0.35, 0.8, 0.8]], cream: [1.6, 1.53, 1.33], bedMould: { height: 0.1, out: 0.22 },
-  cyma: { height: 0.11, out: 0.05 }, lead: 0.14, lip: { height: 0.07, thick: 0.04 }, night: { gap: 0.8, from: 0.15, to: 0.45 },
+  cyma: { height: 0.11, out: 0.05 }, lead: 0.14, lip: { height: 0.07, thick: 0.04 }, shade: 0.4, uvLift: 10,
   vane: { rod: [-0.75, 0.95], at: 0.32, head: 0.22, tail: { from: 0.4, half: 0.12 }, spike: 0.18 },
 } as const;
 export const TOWER_ROUND2 = { pilaster: { width: 0.87, proud: 0.15 }, vane: { arm: 0.9, crossBelow: 1.0, letter: [0.2, 0.26] } } as const;
@@ -1280,10 +1283,6 @@ function frontWash(source: 'brickFoot' | 'stoneFoot', kind: 'front' | 'tower', w
   float stageEdge = 0.62 + 0.38*smoothstep(0.8,2.3,faceU);
   float eaves = exp(-pow(abs(y-${(CLOCK_TOWER_HEIGHT-3.0).toFixed(4)})/0.65,2.0));
   float wash = (shaft + 0.33*stage*stageEdge + 0.36*eaves) * (1.0-max(vKxWashNormal.y,0.0));
-  // tower round 3: in the bracket row and on the corona's soffit the wash grades by how far out the face stands (TOWER_ROUND3.night)
-  float outPast = max(abs(vKxWashPos.x),abs(vKxWashPos.z)) - ${((TOWER_SIZE - 2 * TOWER_TOP.setback) / 2).toFixed(4)};
-  float row = step(${(CLOCK_TOWER_HEIGHT - 3.3 + TOWER_TOP.frieze + 0.001).toFixed(4)},y) * step(y,${(CLOCK_TOWER_HEIGHT - 3.3 + TOWER_TOP.frieze + TOWER_TOP.bracket.height + 0.01).toFixed(4)});
-  wash *= mix(1.0, mix(${TOWER_ROUND3.night.gap.toFixed(3)},1.0,smoothstep(${TOWER_ROUND3.night.from.toFixed(3)},${TOWER_ROUND3.night.to.toFixed(3)},outPast)), row);
 `;
   m.onBeforeCompile = (shader, renderer) => {
     shader.uniforms.uWinNight = windowNight;
@@ -2360,10 +2359,20 @@ export function buildTower(x: number): THREE.Group {
   // the frieze, carried up behind the brackets to the corona as a solid backing (tower round 2b): the gaps between the brackets show its
   // outward stone face, lit by the night wash as the frieze below is, and no sky shows through the lower tier
   const cream = TOWER_ROUND3.cream as unknown as [number, number, number];
-  ts.box([0, eavesY + (frieze + bracket.height) / 2, 0], [cw + 0.2, frieze + bracket.height, cw + 0.2], { skip: ['+y'], color: cream });
-  const by = eavesY + frieze;
+  ts.box([0, eavesY + frieze / 2, 0], [cw + 0.2, frieze, cw + 0.2], { skip: ['+y'], color: cream }); // the frieze
+  const by = eavesY + frieze, lifted = ts.count; // the cornice's faces from here to the cyma have their v lifted (TOWER_ROUND3.uvLift)
   { const { height, out } = TOWER_ROUND3.bedMould; ts.box([0, by - height / 2, 0], [cw + 2 * out, height, cw + 2 * out], { skip: ['+y'], color: cream }); } // a bed mould under the modillions
-  const fine = new Batch({ colored: true }); // the modillions: the tower stone's mesh, drawn after everything that casts (TOWER_SHADOW)
+  const fine = new Batch({ colored: true }); // the modillions: the tower stone's mesh, drawn after everything that casts (castsOnly)
+  const shaded = cream.map(c => c * TOWER_ROUND3.shade) as [number, number, number];
+  const cyRow = by + bracket.height, spanRow = cw + 2 * overhang;
+  for (const [nx, nz] of [[0, 1], [1, 0], [0, -1], [-1, 0]] as [number, number][]) {
+    // the frieze carried up behind the modillions to the corona (round 2b's backing, so no sky shows through), shaded; and the corona's
+    // soffit, shaded along the wall and grading out to the cream at its edge
+    const at = (u: number, d: number, y: number): V3 => (nx === 0 ? [u, y, nz * d] : [nx * d, y, -nx * u]);
+    const f = cw / 2 + 0.1, o = spanRow / 2;
+    fine.poly([at(-f, f, by), at(f, f, by), at(f, f, cyRow), at(-f, f, cyRow)], [[-f, 0], [f, 0], [f, bracket.height], [-f, bracket.height]], { facing: [nx, 0, nz], color: shaded });
+    fine.poly([at(-f, f, cyRow), at(f, f, cyRow), at(o, o, cyRow), at(-o, o, cyRow)], [[-f, 0], [f, 0], [o, o - f], [-o, o - f]], { facing: [0, -1, 0], colors: [shaded, shaded, cream, cream] });
+  }
   for (const [nx, nz] of [[0, 1], [1, 0], [0, -1], [-1, 0]] as [number, number][]) {
     for (let k = 0; k < perFace; k++) {
       const u = -cw / 2 + 0.25 + ((cw - 0.5) * k) / (perFace - 1);
@@ -2376,10 +2385,12 @@ export function buildTower(x: number): THREE.Group {
     }
   }
   const cy = by + bracket.height, span = cw + 2 * overhang;
-  ts.box([0, cy + corona / 2, 0], [span, corona, span], { skip: ['+y'], color: cream }); // the corona, its soffit straight down as BASE's (its top is under the cyma)
+  ts.box([0, cy + corona / 2, 0], [span, corona, span], { skip: ['+y', '-y'], color: cream }); // the corona (its soffit is drawn with the modillions; its top is under the cyma)
   const capBase = cy + corona, hb = span / 2 + eave, capTop = capBase + edge + rise;
   const { cyma, lead, lip } = TOWER_ROUND3;
   ts.box([0, capBase + cyma.height / 2, 0], [span + 2 * cyma.out, cyma.height, span + 2 * cyma.out], { skip: ['+y'], color: cream }); // the cyma over the corona
+  for (let i = lifted; i < ts.count; i++) ts.uvs[2 * i + 1] += TOWER_ROUND3.uvLift;
+  for (let i = 0; i < fine.count; i++) fine.uvs[2 * i + 1] += TOWER_ROUND3.uvLift;
   tslate.box([0, capBase + cyma.height + lead / 2, 0], [2 * hb, lead, 2 * hb], { skip: ['+y'] }); // the roof's thin lead edge
   for (const [nx, nz] of [[0, 1], [1, 0], [0, -1], [-1, 0]] as [number, number][]) { // its gutter lip, standing up at the outer edge
     const c = hb - lip.thick / 2, y = capBase + edge + lip.height / 2;

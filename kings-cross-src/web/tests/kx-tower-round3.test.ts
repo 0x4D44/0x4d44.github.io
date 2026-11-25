@@ -78,26 +78,41 @@ test('the vane is a slim gilded arrow and banner through the mast, which ends in
   assert.ok(r > b + 0x50 && g > b && r <= 0xd0, `an old gold, not a flat yellow: #${hex.toString(16)}`);
 });
 
-test('at night the wash in the bracket row and on the soffit is graded: the gaps 0.65 to 0.8 of the modillions\' faces, the frieze below untouched', () => {
-  const night = buildingNightMaterialsOf(named('tower-stone'))!.night as THREE.Material;
+// Round 3b (the GPU capture): by day the row was a dull grid, every modillion face darkened at its own foot by the contact shade (FOOT_SHADE, by
+// v), and the gaps no darker than the faces (the modillions cast no sun shadow); at night one even glowing band. The gaps' shade is painted
+// by vertex colour (so the night wash, which takes the surface's colour, sees it too) and the cornice's v is lifted clear of the foot shade.
+test('the gaps and the soffit along the wall are painted in shade, 0.35 to 0.45 of the modillions\' light by day and under the night wash; no foot shade on the cornice', () => {
+  const stone = named('tower-stone'), col = stone.geometry.getAttribute('color'), uv = stone.geometry.getAttribute('uv');
+  const night = buildingNightMaterialsOf(stone)!.night as THREE.Material;
   const lib = THREE.ShaderLib.lambert, s = { uniforms: {} as Record<string, THREE.IUniform>, vertexShader: lib.vertexShader, fragmentShader: lib.fragmentShader };
   night.onBeforeCompile(s as unknown as THREE.WebGLProgramParametersWithUniforms, undefined as never);
   const declarations = s.fragmentShader.split('#include <common>')[1]!.split('#include')[0]!;
   const run = new Glsl(declarations).snippet(s.fragmentShader.split('#include <emissivemap_fragment>')[1]!.split('#include')[0]!);
-  const at = (p: number[], n: number[]): number => {
-    const vars = { vKxWashPos: p, vKxWashNormal: n, uWinNight: 1, diffuseColor: [0.6, 0.55, 0.45, 1], totalEmissiveRadiance: [0, 0, 0] };
+  /** the night wash's light (luma) on the surface a ray meets, its albedo the stone's times the vertex colour there */
+  const lit = (o: number[], d: number[]): { day: number; night: number; v: number } => {
+    const h = first(o, d, stone)!, k = h.face!.a, pos = stone.geometry.getAttribute('position'), f = h.face!;
+    const P = [f.a, f.b, f.c].map(i => new THREE.Vector3().fromBufferAttribute(pos, i)), C = [f.a, f.b, f.c].map(i => new THREE.Vector3().fromBufferAttribute(col, i));
+    const c = THREE.Triangle.getInterpolation(h.point, P[0]!, P[1]!, P[2]!, C[0]!, C[1]!, C[2]!, new THREE.Vector3())!.toArray(); // the colour at the point
+    const n = new THREE.Vector3().fromBufferAttribute(stone.geometry.getAttribute('normal'), k);
+    const vars = { vKxWashPos: h.point.toArray(), vKxWashNormal: n.toArray(), uWinNight: 1, diffuseColor: [0.6 * c[0]!, 0.55 * c[1]!, 0.45 * c[2]!, 1], totalEmissiveRadiance: [0, 0, 0] };
     run({ vars });
-    return luma(vars.totalEmissiveRadiance);
+    return { day: luma(c), night: luma(vars.totalEmissiveRadiance), v: Math.min(uv.getY(h.face!.a), uv.getY(h.face!.b), uv.getY(h.face!.c)) };
   };
-  const u = -cw / 2 + 0.25, pitch = (cw - 0.5) / 7;
+  const u = -cw / 2 + 0.25, pitch = (cw - 0.5) / 7, foot = (v: number): number => 1 - 0.32 * Math.exp(-0.3 * v / 0.6) - 0.4 * Math.exp(-2.5 * v / 0.6);
   for (const y of [by + 0.15, by + 0.42, by + 0.68]) {
-    const gap = at([u + pitch / 2, y, stage + 0.1], [0, 0, 1]), face = at([u, y, stage + 0.8], [0, 0, 1]);
-    assert.ok(gap / face >= 0.65 && gap / face <= 0.8, `the gap ${(gap / face).toFixed(2)} of a modillion's face ${(y - by).toFixed(2)} m up`);
+    const gap = lit([u + pitch / 2, y, 30], [0, 0, -1]), face = lit([u, y, 30], [0, 0, -1]);
+    for (const [what, r] of [['by day', gap.day / face.day], ['at night', gap.night / face.night]] as const) {
+      assert.ok(r >= 0.35 && r <= 0.45, `the gap ${r.toFixed(2)} of a modillion's face ${what}, ${(y - by).toFixed(2)} m up`);
+    }
+    assert.ok(foot(face.v) >= 0.95, `a modillion's face keeps ${foot(face.v).toFixed(2)} of its light at its foot`);
   }
-  const soffitIn = at([0, cy, stage + 0.2], [0, -1, 0]), soffitOut = at([0, cy, stage + 1.1], [0, -1, 0]);
-  assert.ok(soffitIn < 0.9 * soffitOut, `the soffit graded out to the corona's edge: ${(soffitIn / soffitOut).toFixed(2)}`);
-  const frieze = at([0, eavesY + 0.15, stage + 0.1], [0, 0, 1]), friezeOut = at([0, eavesY + 0.15, stage + 0.8], [0, 0, 1]);
-  assert.ok(Math.abs(frieze - friezeOut) < 1e-9, 'the frieze below the row keeps its whole wash');
+  for (const [o, what] of [[[0.05, cy + TOWER_TOP.corona / 2, 30], 'the corona'], [[0.05, cy + TOWER_TOP.corona + 0.05, 30], 'the cyma']] as const) {
+    assert.ok(foot(lit([...o], [0, 0, -1]).v) >= 0.95, `${what} is clear of the foot shade`);
+  }
+  const wall = lit([u + pitch / 2, by + 0.05, stage + 0.12], [0, 1, 0]), edge = lit([0, by + 0.05, stage + 1.15], [0, 1, 0]);
+  assert.ok(wall.day / edge.day <= 0.6 && edge.day >= 1.3, `the soffit shaded along the wall (${(wall.day / edge.day).toFixed(2)} of its edge), cream at its edge`);
+  const frieze = lit([0, eavesY + 0.15, 30], [0, 0, -1]);
+  assert.ok(frieze.day >= 1.3, 'the frieze below the row keeps the cream');
 });
 
 test('the shadow pass draws at most 330 of the tower\'s triangles (68283613 drew 732): the modillions are drawn by the eye pass only, no new draw', async () => {
