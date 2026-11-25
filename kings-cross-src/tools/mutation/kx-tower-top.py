@@ -21,13 +21,14 @@ out.mkdir(parents=True, exist_ok=True)
 
 MUTATIONS = [
     ('clock stage back to 0.92 of the shaft', 'web/src/shed.ts', 'setback: 0.9,', 'setback: 0.25,', 'clock stage is 0.6 to 0.8'),
-    ('ten small brackets to a face', 'web/src/shed.ts', 'perFace: 7,', 'perFace: 10,', 'deep bracketed cornice'),
+    # round 3: at 0.44 m wide, ten to a face leaves 1.6 cm gaps, a solid row the run count (5 to 8) cannot tell apart; four to a face is the sparse row it guards against
+    ('four brackets to a face', 'web/src/shed.ts', 'perFace: 8,', 'perFace: 4,', 'deep bracketed cornice'),
     ('shallow corona', 'web/src/shed.ts', 'overhang: 1.2,', 'overhang: 0.6,', 'deep bracketed cornice'),
     ('pitched hip cap', 'web/src/shed.ts', 'rise: 0.6,', 'rise: 1.3,', 'the cap is near-flat'),
     ('tower 1.5 m proud', 'web/src/shed.ts', 'export const TOWER_PROJECTION = TOWER_SIZE + 0.15;', 'export const TOWER_PROJECTION = 1.5;', 'about its own width proud'),
     ('one-step transition', 'web/src/shed.ts', 'upper: { height: 0.35, out: 0.35 }', 'upper: { height: 0.35, out: 0.15 }', 'heavy stepped stone cornice'),
     ('no weathered slope', 'web/src/shed.ts', 'weather: 0.45 }', 'weather: 0.0001 }', 'heavy stepped stone cornice'),
-    ('black vane', 'web/src/shed.ts', 'gilt.color.set(0xc8a24a);', 'gilt.color.set(0x3d4650);', 'heavy stepped stone cornice'),
+    ('black vane', 'web/src/shed.ts', 'gilt.color.set(0xd0a54a);', 'gilt.color.set(0x3d4650);', 'heavy stepped stone cornice'),
     ('lamps white by day', 'web/src/shed.ts', 'downlight: 0xb0aca4', 'downlight: 0xf2eee4', 'cheap ones'),
     ('no door stiles', 'web/src/shed.ts', 'for (const dx of [-dw / 2 + 0.06, 0, dw / 2 - 0.06]) frames.box(', 'for (const dx of [] as number[]) frames.box(', 'cheap ones'),
     ('dials back to the small 1.2 m', 'web/src/shed.ts', 'export const TOWER_DIAL = { dial: 1.52 }', 'export const TOWER_DIAL = { dial: 1.2 }', 'dials are about 0.67'),

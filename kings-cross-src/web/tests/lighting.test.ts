@@ -539,7 +539,8 @@ test('createSunShadow.update: the lattice and columns cast while the camera is i
   shadow.tag();
   scene.updateMatrixWorld(true);
   const centre = (name: string): THREE.Vector3 => new THREE.Box3().setFromObject(meshes.find((m) => m.name === name) as THREE.Mesh).getCenter(new THREE.Vector3());
-  const triangles = (m: THREE.Mesh): number => (m.geometry.index ? m.geometry.index.count : m.geometry.getAttribute('position').count) / 3 * ((m as THREE.InstancedMesh).isInstancedMesh ? (m as THREE.InstancedMesh).count : 1);
+  // tower round 3: a mesh may draw only the head of its index in the shadow pass (shed.ts castsOnly, its draw range set for the pass); count what the pass draws
+  const triangles = (m: THREE.Mesh): number => ((m.userData.shadowTriangles as number | undefined) ?? (m.geometry.index ? m.geometry.index.count : m.geometry.getAttribute('position').count) / 3) * ((m as THREE.InstancedMesh).isInstancedMesh ? (m as THREE.InstancedMesh).count : 1);
   const cast = (name: string): boolean => shadow.casters().filter((m) => m.name === name).every((m) => m.castShadow);
   const camera = new THREE.PerspectiveCamera();
   const target = new THREE.Vector3();

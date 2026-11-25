@@ -60,7 +60,7 @@ export const TOWER_PROJECTION = TOWER_SIZE + 0.15;
  * stepped cornice at the shaft's top with a weathered slope in to the stage, and a gilded banner vane. The total height (CLOCK_TOWER_HEIGHT, to the vane's top) is published.
  */
 export const TOWER_TOP = {
-  setback: 0.9, clockBelowFrieze: 2.0, frieze: 0.3, bracket: { width: 0.45, height: 0.8, lower: 0.6 }, perFace: 7, corona: 0.2, overhang: 1.2, edge: 0.25, rise: 0.6, eave: 0.15,
+  setback: 0.9, clockBelowFrieze: 2.0, frieze: 0.3, bracket: { width: 0.44, height: 0.8 }, perFace: 8, corona: 0.2, overhang: 1.2, edge: 0.25, rise: 0.6, eave: 0.18,
   transition: { lower: { height: 0.3, out: 0.15 }, upper: { height: 0.35, out: 0.35 }, weather: 0.45 },
 } as const;
 /**
@@ -71,6 +71,23 @@ export const TOWER_TOP = {
  * the corona, so the gaps show its outward stone face (round 2's turned normals darkened them: reverted). The vane carries a compass cross, arms `arm` long from the mast at
  * `crossBelow` under the vane's top, with a letter at each arm's end; the banner rides above it. Sizes ASSUMED.
  */
+/**
+ * Tower round 3 (rubric A4, two scorers against R-kx-front-c). The bracket row is eight modillions to a face, each stepped out in two tiers
+ * (`tiers`: [from, to] up the 0.8 m row, then how far its face stands past the stage's brick), each step 0.35 m deep, with shadowed gaps
+ * to the frieze behind; the corona overhangs the upper step by 0.4 m. (Three tiers put the shadow pass over its 165,000 triangles.) The cornice's stone (frieze, bed mould, modillions, corona, cyma) is a pale cream, `cream` times the
+ * stone's own colour by vertex colour (the tower stone's own clone: no new draw). Over the corona a moulded cyma (`cyma`), then a thin lead
+ * edge (`lead`; cyma and lead make TOWER_TOP.edge, so the hip and the vane keep their heights) with a gutter lip standing up at its outer edge
+ * (`lip`). Round 3b (the GPU capture): the modillions cast no sun shadow (castsOnly), so the shade in the gaps is painted: the frieze's face
+ * between the modillions, and the soffit along the wall, take `shade` of the cream (by vertex colour, so by day and under the night wash alike,
+ * the gaps about 0.6 to 0.65 of the faces on screen), the soffit grading out to the full cream at the corona's edge. And the cornice's faces
+ * have their v lifted by `uvLift` m: the contact shade at a wall's foot (lighting.ts FOOT_SHADE, by v) darkened every 0.35 m modillion face
+ * to a third of its light at its foot, the dull grid the capture showed. Sizes ASSUMED.
+ */
+export const TOWER_ROUND3 = {
+  tiers: [[0, 0.35, 0.45], [0.35, 0.8, 0.8]], cream: [1.6, 1.53, 1.33], bedMould: { height: 0.1, out: 0.22 },
+  cyma: { height: 0.11, out: 0.05 }, lead: 0.14, lip: { height: 0.07, thick: 0.04 }, leadColour: [0.42, 0.34, 0.27], shade: 0.4, uvLift: 10,
+  vane: { rod: [-0.75, 0.95], at: 0.32, head: 0.22, tail: { from: 0.3, half: 0.14 }, spike: 0.18 },
+} as const;
 export const TOWER_ROUND2 = { pilaster: { width: 0.87, proud: 0.15 }, vane: { arm: 0.9, crossBelow: 1.0, letter: [0.2, 0.26] } } as const;
 /**
  * The clock dials (round 5, tower passes 2 and 2a): the gilt bezel sits straight on the stage's brick, no stone surround (R-kx-front-a, -c).
@@ -1205,6 +1222,17 @@ function towerBrick(): THREE.MeshLambertMaterial {
   towerBrickMaterial = m;
   return m;
 }
+/** Tower round 3: the tower's stone by day, a clone of the front's stone that takes vertex colour (the cornice's cream); hooks as towerBrick's. */
+let towerStoneMaterial: THREE.MeshLambertMaterial | undefined;
+function towerStone(): THREE.MeshLambertMaterial {
+  if (towerStoneMaterial) return towerStoneMaterial;
+  const original = material('stoneFoot') as THREE.MeshLambertMaterial;
+  const m = original.clone();
+  m.defines = { ...original.defines };
+  m.vertexColors = true;
+  towerStoneMaterial = m;
+  return m;
+}
 /** Round 25: the front's returns (the extruded parts' side walls) in the brick at FRONT_RETURN of its tone, by day; its shader hooks are the scene's, as towerBrick's. */
 let frontReturnMaterial: THREE.MeshLambertMaterial | undefined;
 function frontReturn(): THREE.MeshLambertMaterial {
@@ -2259,12 +2287,24 @@ export function buildPlatformClock(length: number): THREE.Group {
   return g;
 }
 
+/**
+ * Tower round 3's shadow budget: the shadow pass draws only the first `triangles` of a mesh's index (its draw range, set for the pass and put
+ * back after it; no new draw), so detail finer than the shadow map can resolve (the tower's modillions, 0.44 m blocks in 0.15 m gaps, under the
+ * corona's own shadow) is drawn by the eye pass and not by the sun's. `userData.shadowTriangles` says how many the pass draws (tests/lighting.test.ts counts it).
+ */
+export function castsOnly(m: THREE.Mesh, triangles: number): void {
+  m.userData.shadowTriangles = triangles;
+  m.onBeforeShadow = (_r, _o, _c, _s, geometry) => { geometry.setDrawRange(0, triangles * 3); };
+  m.onAfterShadow = (_r, _o, _c, _s, geometry) => { geometry.setDrawRange(0, Infinity); };
+}
+
 export function buildTower(x: number): THREE.Group {
   const tower = new THREE.Group();
   tower.name = 'clock-tower';
   const towerBrickDay = towerBrick(); // made before the dial's material, so it sorts ahead of it in the opaque list (night-lighting-round19)
+  const towerStoneDay = towerStone(); // the same way
   const tb = new Batch();
-  const ts = new Batch();
+  const ts = new Batch({ colored: true }); // the cornice's cream by vertex colour (TOWER_ROUND3); the shaft's stone is white, its colour as it was
   const tslate = new Batch({ colored: true }); // the slits darken the slate by vertex colour (the cap is white: the slate as it was)
   const tw = TOWER_SIZE;
   const shaftTop = CLOCK_TOWER_HEIGHT - 8.2; // ASSUMED stage proportions, metres
@@ -2312,29 +2352,56 @@ export function buildTower(x: number): THREE.Group {
       ts.box(sill, nx === 0 ? [2 * R1, 0.12, 0.12] : [0.12, 0.12, 2 * R1], { skip: [nx === 0 ? (nz > 0 ? '-z' : '+z') : (nx > 0 ? '-x' : '+x')] });
     }
   }
-  tb.box([0, (shaftTop + eavesY) / 2, 0], [cw, eavesY - shaftTop, cw]); // the clock stage
+  tb.box([0, (shaftTop + eavesY) / 2, 0], [cw, eavesY - shaftTop, cw], { skip: ['+y'] }); // the clock stage (its top is under the frieze)
   // the bracketed cornice (TOWER_TOP, R-kx-front-c): a stone frieze, a row of two-tier stone brackets on every face, the corona they carry,
   // then the dark metal roof's edge and its near-flat hipped top
   const { frieze, bracket, perFace, corona, overhang, edge, rise, eave } = TOWER_TOP;
   // the frieze, carried up behind the brackets to the corona as a solid backing (tower round 2b): the gaps between the brackets show its
   // outward stone face, lit by the night wash as the frieze below is, and no sky shows through the lower tier
-  ts.box([0, eavesY + (frieze + bracket.height) / 2, 0], [cw + 0.2, frieze + bracket.height, cw + 0.2], { skip: ['+y'] });
-  const by = eavesY + frieze;
+  const cream = TOWER_ROUND3.cream as unknown as [number, number, number];
+  ts.box([0, eavesY + frieze / 2, 0], [cw + 0.2, frieze, cw + 0.2], { skip: ['+y'], color: cream }); // the frieze
+  const by = eavesY + frieze, lifted = ts.count; // the cornice's faces from here to the cyma have their v lifted (TOWER_ROUND3.uvLift)
+  { const { height, out } = TOWER_ROUND3.bedMould; ts.box([0, by - height / 2, 0], [cw + 2 * out, height, cw + 2 * out], { skip: ['+y'], color: cream }); } // a bed mould under the modillions
+  const fine = new Batch({ colored: true }); // the modillions: the tower stone's mesh, drawn after everything that casts (castsOnly)
+  const shaded = cream.map(c => c * TOWER_ROUND3.shade) as [number, number, number];
+  const cyRow = by + bracket.height, spanRow = cw + 2 * overhang;
+  for (const [nx, nz] of [[0, 1], [1, 0], [0, -1], [-1, 0]] as [number, number][]) {
+    // the frieze carried up behind the modillions to the corona (round 2b's backing, so no sky shows through), shaded; and the corona's
+    // soffit, shaded along the wall and grading out to the cream at its edge
+    const at = (u: number, d: number, y: number): V3 => (nx === 0 ? [u, y, nz * d] : [nx * d, y, -nx * u]);
+    // round 3c: the shade stops at the end modillions (`e`); past them, at the corner, the backing and the soffit are cream, so no dark sliver shows there
+    const f = cw / 2 + 0.1, o = spanRow / 2, e = cw / 2 - 0.25 + bracket.width / 2;
+    fine.poly([at(-e, f, by), at(e, f, by), at(e, f, cyRow), at(-e, f, cyRow)], [[-e, 0], [e, 0], [e, bracket.height], [-e, bracket.height]], { facing: [nx, 0, nz], color: shaded });
+    fine.poly([at(-e, f, cyRow), at(e, f, cyRow), at(e, o, cyRow), at(-e, o, cyRow)], [[-e, 0], [e, 0], [e, o - f], [-e, o - f]], { facing: [0, -1, 0], colors: [shaded, shaded, cream, cream] });
+    for (const sgn of [-1, 1]) {
+      fine.poly([at(sgn * e, f, by), at(sgn * f, f, by), at(sgn * f, f, cyRow), at(sgn * e, f, cyRow)], [[sgn * e, 0], [sgn * f, 0], [sgn * f, bracket.height], [sgn * e, bracket.height]], { facing: [nx, 0, nz], color: cream });
+      fine.poly([at(sgn * e, f, cyRow), at(sgn * f, f, cyRow), at(sgn * o, o, cyRow), at(sgn * e, o, cyRow)], [[sgn * e, 0], [sgn * f, 0], [sgn * o, o - f], [sgn * e, o - f]], { facing: [0, -1, 0], color: cream });
+    }
+  }
   for (const [nx, nz] of [[0, 1], [1, 0], [0, -1], [-1, 0]] as [number, number][]) {
     for (let k = 0; k < perFace; k++) {
       const u = -cw / 2 + 0.25 + ((cw - 0.5) * k) / (perFace - 1);
-      for (const [h0, h1, out] of [[0, bracket.height * 0.45, bracket.lower], [bracket.height * 0.45, bracket.height, overhang - 0.1]] as const) {
+      for (const [h0, h1, out] of TOWER_ROUND3.tiers) {
         const d = out, c = cw / 2 + d / 2;
         const at: V3 = nx === 0 ? [u, by + (h0 + h1) / 2, nz * c] : [nx * c, by + (h0 + h1) / 2, u];
         // no top (the tier or the corona over it covers it) and no back (it is against the frieze): the shadow pass is at its budget
-        ts.box(at, nx === 0 ? [bracket.width, h1 - h0, d] : [d, h1 - h0, bracket.width], { skip: ['+y', nx === 0 ? (nz > 0 ? '-z' : '+z') : (nx > 0 ? '-x' : '+x')] });
+        fine.box(at, nx === 0 ? [bracket.width, h1 - h0, d] : [d, h1 - h0, bracket.width], { skip: ['+y', nx === 0 ? (nz > 0 ? '-z' : '+z') : (nx > 0 ? '-x' : '+x')], color: cream });
       }
     }
   }
   const cy = by + bracket.height, span = cw + 2 * overhang;
-  ts.box([0, cy + corona / 2, 0], [span, corona, span]); // the corona, its soffit straight down as BASE's
+  ts.box([0, cy + corona / 2, 0], [span, corona, span], { skip: ['+y', '-y'], color: cream }); // the corona (its soffit is drawn with the modillions; its top is under the cyma)
   const capBase = cy + corona, hb = span / 2 + eave, capTop = capBase + edge + rise;
-  tslate.box([0, capBase + edge / 2, 0], [2 * hb, edge, 2 * hb], { skip: ['+y'] }); // the roof's dark edge, over the corona
+  const { cyma, lead, lip } = TOWER_ROUND3;
+  ts.box([0, capBase + cyma.height / 2, 0], [span + 2 * cyma.out, cyma.height, span + 2 * cyma.out], { skip: ['+y'], color: cream }); // the cyma over the corona
+  for (let i = lifted; i < ts.count; i++) ts.uvs[2 * i + 1] += TOWER_ROUND3.uvLift;
+  for (let i = 0; i < fine.count; i++) fine.uvs[2 * i + 1] += TOWER_ROUND3.uvLift;
+  const leadColour = TOWER_ROUND3.leadColour as unknown as [number, number, number]; // round 3c: the slate darkened to a near-black brown
+  tslate.box([0, capBase + cyma.height + lead / 2, 0], [2 * hb, lead, 2 * hb], { skip: ['+y'], color: leadColour }); // the roof's thin lead edge
+  for (const [nx, nz] of [[0, 1], [1, 0], [0, -1], [-1, 0]] as [number, number][]) { // its gutter lip, standing up at the outer edge
+    const c = hb - lip.thick / 2, y = capBase + edge + lip.height / 2;
+    tslate.box(nx === 0 ? [0, y, nz * c] : [nx * c, y, 0], nx === 0 ? [2 * hb, lip.height, lip.thick] : [lip.thick, lip.height, 2 * hb], { skip: ['-y', ...(nx === 0 ? ['+x', '-x'] : ['+z', '-z'])], color: leadColour }); // its ends meet the next side's
+  }
   const apex: V3 = [0, capTop, 0];
   const corners: V3[] = [[-hb, capBase + edge, hb], [hb, capBase + edge, hb], [hb, capBase + edge, -hb], [-hb, capBase + edge, -hb]];
   const slant = Math.hypot(hb, rise);
@@ -2353,10 +2420,15 @@ export function buildTower(x: number): THREE.Group {
   }
   tower.userData.clockDials = dirs.map(([nx, nz]): ClockDial => ({ centre: [nx * (cw / 2 + 0.06), clockY, nz * (cw / 2 + 0.06)], normal: [nx, 0, nz], up: [0, 1, 0], radius: dial })); // clocks.ts
   // ASSUMED simplified vane: mast, cardinal cross and arrow; its precise metalwork is not surveyed.
-  const vane = new Batch(), { arm, crossBelow, letter } = TOWER_ROUND2.vane, crossY = CLOCK_TOWER_HEIGHT - crossBelow, vaneY = CLOCK_TOWER_HEIGHT - 0.63;
+  const vane = new Batch(), { arm, crossBelow, letter } = TOWER_ROUND2.vane, crossY = CLOCK_TOWER_HEIGHT - crossBelow;
   const gilt = (material('steel') as THREE.MeshLambertMaterial).clone();
-  gilt.color.set(0xc8a24a); // gilded (the vane's own mesh: no new draw)
-  vane.box([0, (capTop - 0.15 + CLOCK_TOWER_HEIGHT) / 2, 0], [0.045, CLOCK_TOWER_HEIGHT - capTop + 0.15, 0.045]);
+  gilt.color.set(0xd0a54a); // gilded, an old gold (the vane's own mesh: no new draw)
+  const { rod, at: vaneAt, head, tail, spike } = TOWER_ROUND3.vane, spikeFoot = CLOCK_TOWER_HEIGHT - spike, yv = CLOCK_TOWER_HEIGHT - vaneAt;
+  vane.box([0, (capTop - 0.15 + spikeFoot) / 2, 0], [0.045, spikeFoot - capTop + 0.15, 0.045]);
+  { // the mast ends in a spike, a four-sided point
+    const s = 0.035, base: V3[] = [[-s, spikeFoot, s], [s, spikeFoot, s], [s, spikeFoot, -s], [-s, spikeFoot, -s]], tip: V3 = [0, CLOCK_TOWER_HEIGHT, 0];
+    for (let i = 0; i < 4; i++) vane.poly([base[i]!, base[(i + 1) % 4]!, tip]);
+  }
   vane.box([0, crossY, 0], [2 * arm, 0.04, 0.04]);
   vane.box([0, crossY, 0], [0.04, 0.04, 2 * arm]);
   // a letter over each arm's end, in thin bars: E and W read from the south, N and S from the east (their strokes in a unit cell)
@@ -2373,11 +2445,20 @@ export function buildTower(x: number): THREE.Group {
       vane.box([dx * r + h[0] * mu, crossY + (v0 + v1) / 2, dz * r + h[2] * mu], [Math.hypot(u1 - u0, v1 - v0) + 0.03, 0.03, 0.03], { rotZ: Math.atan2(v1 - v0, u1 - u0), rotY });
     }
   }
-  // a banner on the mast, swallow-tailed (R-kx-front-a, R-kx-front-c show a gilded vane; its outline is ASSUMED)
-  const banner: V3[] = [[0.05, vaneY + 0.08, 0], [1.2, vaneY + 0.08, 0], [0.95, vaneY + 0.34, 0], [1.2, vaneY + 0.6, 0], [0.05, vaneY + 0.6, 0]];
-  vane.poly(banner, undefined, { facing: [0, 0, 1] }); vane.poly(banner, undefined, { facing: [0, 0, -1] });
+  // a slim vane through the mast under its spike (tower round 3): a rod, an arrowhead at one end and a narrow swallow-tailed banner at the
+  // other (R-kx-front-a, R-kx-front-c show a gilded vane; its outline is ASSUMED)
+  vane.box([(rod[0] + rod[1]) / 2, yv, 0], [rod[1] - rod[0], 0.03, 0.03]);
+  const arrow: V3[] = [[rod[0] - head, yv, 0], [rod[0], yv - 0.1, 0], [rod[0], yv + 0.1, 0]];
+  const banner: V3[] = [[tail.from, yv - tail.half, 0], [rod[1], yv - tail.half, 0], [rod[1] - 0.13, yv, 0], [rod[1], yv + tail.half, 0], [tail.from, yv + tail.half, 0]];
+  for (const f of [1, -1]) for (const shape of [arrow, banner]) vane.poly(shape, undefined, { facing: [0, 0, f] });
   const brick = withBuildingNightMaterial(mesh(tb.build(), towerBrickDay, 'tower-brick'), frontWash('brickFoot', 'tower', tw));
-  const stone = withBuildingNightMaterial(mesh(ts.build(), material('stoneFoot'), 'tower-stone'), frontWash('stoneFoot', 'tower', tw));
+  const shadowTriangles = ts.triangles, base = ts.count;
+  ts.positions.push(...fine.positions); ts.normals.push(...fine.normals); ts.uvs.push(...fine.uvs); ts.colors.push(...fine.colors);
+  ts.indices.push(...fine.indices.map(i => i + base));
+  const stoneNight = frontWash('stoneFoot', 'tower', tw);
+  stoneNight.vertexColors = true; // the tower's own wash (keyed 'tower'): the cornice's cream
+  const stone = withBuildingNightMaterial(mesh(ts.build(), towerStoneDay, 'tower-stone'), stoneNight);
+  castsOnly(stone, shadowTriangles);
   const slateTinted = (material('slate') as THREE.MeshLambertMaterial).clone();
   slateTinted.vertexColors = true; // the slits' near-black (the vane's own clone, the same way: no new draw)
   tower.add(brick, stone, mesh(tslate.build(), slateTinted, 'tower-cap'), faces, mesh(vane.build(), gilt, 'tower-vane'));
