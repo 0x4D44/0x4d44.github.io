@@ -347,7 +347,7 @@ export function gaitUpdate(g, dt, inp) {
   }
   if (g.walking) { P.fs *= g.rate; walkStep(g, dt, P); } else standStep(g, dt);   // (g.rate: how much faster or slower than its average this step is being taken)
   for (let s = 0; s < 2; s++) { const f = F[s], was = f.cur, now = footOut(g, f); f.vA = was && dt > 0 ? [(now.A[0] - was.A[0]) / dt, (now.A[2] - was.A[2]) / dt] : [0, 0]; f.cur = now; }
-  if (g.walking) trackReach(g, dt); else { g.capB = null; g.fitT = null; if (g.capG) g.capG.fill(Infinity); }   // (the reach log starts afresh with each walk; the fit it made is kept for the next)
+  if (g.walking) { trackReach(g, dt); earlyToeOff(g, P); } else { g.capB = null; g.fitT = null; if (g.capG) g.capG.fill(Infinity); }   // (the reach log starts afresh with each walk; the fit it made is kept for the next)
 }
 const WK_UP = 0.7, WK_DN = 0.5;   // s: the walking body language builds up over the first strides and is let go over half a second after the last
 
@@ -409,7 +409,7 @@ function walkStep(g, dt, P) {
   for (let s = 0; s < 2; s++) {
     const f = F[s]; let pf = wrap1(g.phase - (s ? 0.5 : 0));
     if (f.mode === 'stance') {
-      if (pf >= P.S && pf < 0.97) {
+      if ((pf >= P.S || (f.early && F[1 - s].mode === 'stance')) && pf < 0.97) {   // (f.early: its leg ran out of reach before the clock's toe-off - see earlyToeOff)
         // found late in its stance (a closing step that ran into the start of a walk landed by the clock, past this foot's toe-off): with the other foot on the floor, the
         // stride's clock is set back so that this foot leaves now, at its own toe-off, and takes a whole swing - given only the rest of the stride, the step took 3 - 4 frames (review 36)
         const late = pf - P.S > 1.5 * dt * P.fs * 0.5;   // (a foot that landed by the clock - a closing step that ran into the start of a walk - and finds itself past its toe-off; judged BEFORE the clock is set back below: judged after, it was never late, and a foot that had just landed flat took the toe-off pitch, 43 deg heel-up, in one frame - a 0.10 - 0.16 m pop at half of all starts, review 61)
@@ -424,11 +424,13 @@ function walkStep(g, dt, P) {
         // first move - tens of degrees at the speed of the pelvis - lands on the NEXT frame: a one-frame pop at every toe-off (peak joint rate 776 -> 518 deg/s on the fixtures).
         // Only when the crossing really is within this frame (a foot found late in its stance after a restart starts its swing from the beginning).
         const eps = pf - P.S; if (eps <= 1.5 * dt * P.fs * 0.5) f.sw.s = clamp(eps / (1 - P.S), 0, 1);
-        else f.sw.pf0 = pf;   // ...swings from here: its progress is counted from the phase it left at, not from S - counted from S it started half its arc on, and the foot was drawn 50 - 70 cm on in one frame (review 35), its heel first flipped to the toe-off pitch
+        else f.sw.pf0 = pf;
+        if (pf < P.S) { f.sw.s = 0; f.sw.pf0 = pf; }   // (left early: its swing is counted from where it left)
+        f.early = false;   // ...swings from here: its progress is counted from the phase it left at, not from S - counted from S it started half its arc on, and the foot was drawn 50 - 70 cm on in one frame (review 35), its heel first flipped to the toe-off pitch
       } else { f.th = stanceTh(P, pf); f.fresh = false; }
     } else if (f.mode === 'swing') {
       if (f.sw.T) { f.sw.t += dt; f.sw.s = clamp(f.sw.t / f.sw.T, 0, 1); if (f.sw.s >= 1) { const th1 = f.sw.th1; land(g, f, P); if (th1 != null) f.th = th1; } }   // (a timed step - one taken standing, still in the air as the walk began - lands at the pitch it swung to: given the walk's heel-strike pitch, the foot snapped 17 deg toes-up on landing and popped 0.10 - 0.12 m at its toe-off the next frame, at half of all starts - review 61)
-      else if (pf < P.S) { f.sw.s = 1; land(g, f, P); }                        // the phase has come round to heel strike
+      else if (pf < Math.min(P.S, f.sw.pf0 != null ? f.sw.pf0 : 1)) { f.sw.s = 1; land(g, f, P); }   // (an early toe-off is still short of S for a frame or two after it left)                        // the phase has come round to heel strike
       else { const p0 = f.sw.pf0 != null && f.sw.pf0 < 0.999 ? f.sw.pf0 : P.S; f.sw.s = clamp((pf - p0) / (1 - p0), 0, 1); }
     }
   }
@@ -544,7 +546,9 @@ export function gaitTargets(g) {
   T.pelvisD = qmul(qy(yawP), qz(rollP));
   T.pelvisPos = [-sway * w, bobH, B.P0[B.ix.pelvis][2]];
   T.feet = g.feet.map((f) => f.cur);
-  { const h0 = T.pelvisPos[1]; T.pelvisPos[1] = Math.max(lowerForReach(g, T, P), h0 - REACH_DROP); }   // (lowered no more than REACH_DROP for a foot out of reach: a foot planted 0.55 - 0.73 m ahead of a body stopped at a car door brought the pelvis down 0.35 - 0.65 m, a kneel or the splits - review 59; the foot that cannot reach lifts and is stepped in instead)
+  T.bobH = T.pelvisPos[1];   // (the bob before the reach: earlyToeOff)
+  { const h0 = T.pelvisPos[1]; T.pelvisPos[1] = Math.max(lowerForReach(g, T, P), h0 - REACH_DROP); }
+  if (g.walking) liftSwing(g, T, P);   // (lowered no more than REACH_DROP for a foot out of reach: a foot planted 0.55 - 0.73 m ahead of a body stopped at a car door brought the pelvis down 0.35 - 0.65 m, a kneel or the splits - review 59; the foot that cannot reach lifts and is stepped in instead)
   // trunk: counter-rotates against the pelvis, leans a little forward; the head stays level and straight ahead
   const yawT = -P.thorax * yawP, lean = -(P.lean + (V.stoop || 0) * D2R), rollT = 0.3 * rollP;   // (V.stoop: older walkers carry the trunk a few degrees further forward)
   const mix = (a, b, t) => a + (b - a) * t;
@@ -571,16 +575,43 @@ const softMin = (a, b, k) => { const h = Math.max(k - Math.abs(a - b), 0) / k; r
  *  the trailing leg leaves the floor (the knee starts to flex in the second half of stance; a leg that is dead straight until toe-off has to snap into its swing, and the knee
  *  angle of a nearly straight leg changes very fast for a small move of the ankle). Once the foot is in the air the reach relaxes over the first half of the swing. */
 const KNEE_MIN = 9, KNEE_TOE = 14;
-function lowerForReach(g, T, P, h = T.pelvisPos[1]) {     // (h: the height to be lowered; a pelvis far out of the way gives the cap alone - the `reach` that trackReach logs)
-  const B = g.body, pz = T.pelvisPos[2];
+/** The trailing leg's reach falls steeply into its toe-off - the hip moves on at the walk's speed over a foot rolling on its toes - and how deep it falls depends on how long this
+ *  stride is: over one teen at 1.9 m/s the cap at toe-off ranged 775 - 814 mm from stride to stride. The bob is fitted to the reach of the strides before (trackReach), so a stride
+ *  longer than those held the pelvis down by up to 17 mm for a frame and let it go the next: the vertical jolt of 14 - 20 m/s^2 (p99) at 1.6 - 1.9 m/s across the roster (pmall1).
+ *  Two remedies, as a walker has them: the foot leaves EARLY when its leg will not reach the next frame (earlyToeOff: the margin to the bob, carried on at its current rate, falls
+ *  below TO_LOOK within the last TO_EARLY of the stance; at a brisk walk only, see TO_V0), and a foot that has just left LIFTS rather than pull the pelvis down (liftSwing: by up to SW_LIFT in the first SW_FADE of its
+ *  swing, the heel already up and the knee flexing - a swing foot raised a few cm is not seen; a pelvis dropped 1.7 cm in a frame is). */
+const TO_EARLY = 0.1, TO_LOOK = 0.008, TO_V0 = 1.25, TO_V1 = 1.6, SW_LIFT = 0.03, SW_FADE = 0.4;   // (off up to TO_V0 m/s, and TO_LOOK reached from 0 by TO_V1: below that the jolt was small and a foot sent off at the fit's own 2 mm margin left before it had pushed off - plantarflexion at toe-off 2 - 6 deg toes-UP in five people at 0.8 - 1.2 m/s, pmall2)
+function earlyToeOff(g, P) {
+  const T = gaitTargets(g), hb = T.bobH;
   for (let s = 0; s < 2; s++) {
-    const hv = qrot(T.pelvisD, B.hipOff[s]), f = T.feet[s], l = toLocal(g, f.A[0], f.A[2]), fs = g.feet[s];
-    const dx = l[0] - T.pelvisPos[0] - hv[0], dz = l[1] - pz - hv[2];
-    let kb = 0;
-    if (g.walking) { if (fs.mode === 'stance') kb = smoother((wrap1(g.phase - (s ? 0.5 : 0)) - 0.35) / Math.max(0.05, P.S - 0.35)); else if (fs.sw && !fs.sw.T) kb = 1 - smoother(fs.sw.s / 0.5); }
-    const cL = kb > 0 ? B.legLen * Math.cos(0.5 * (KNEE_MIN + KNEE_TOE * kb) * D2R) : P.cL;
-    h = softMin(h, f.A[1] - hv[1] + Math.sqrt(Math.max(1e-3, cL * cL - dx * dx - dz * dz)), 0.008);
+    const f = g.feet[s], pf = wrap1(g.phase - (s ? 0.5 : 0)), m = f.mode === 'stance' ? legCap(g, T, P, s) - hb : null, m0 = f.mTO;
+    f.mTO = m;
+    f.early = g.v > TO_V0 && m != null && m0 != null && g.feet[1 - s].mode === 'stance' && pf > P.S - TO_EARLY && pf < P.S && m + (m - m0) < TO_LOOK * smoother((g.v - TO_V0) / (TO_V1 - TO_V0));
   }
+}
+function legGeom(g, T, P, s) {   // the foot against its hip, and the reach of the leg (the hip-to-ankle distance its knee allows at this point of the stride)
+  const B = g.body, hv = qrot(T.pelvisD, B.hipOff[s]), f = T.feet[s], l = toLocal(g, f.A[0], f.A[2]), fs = g.feet[s];
+  const dx = l[0] - T.pelvisPos[0] - hv[0], dz = l[1] - T.pelvisPos[2] - hv[2];
+  let kb = 0;
+  if (g.walking) { if (fs.mode === 'stance') kb = smoother((wrap1(g.phase - (s ? 0.5 : 0)) - 0.35) / Math.max(0.05, P.S - 0.35)); else if (fs.sw && !fs.sw.T) kb = 1 - smoother(fs.sw.s / 0.5); }
+  const cL = kb > 0 ? B.legLen * Math.cos(0.5 * (KNEE_MIN + KNEE_TOE * kb) * D2R) : P.cL;
+  return { hv, f, fs, r: Math.sqrt(Math.max(1e-3, cL * cL - dx * dx - dz * dz)) };
+}
+const liftable = (g, fs) => g.walking && fs.mode === 'swing' && fs.sw && !fs.sw.T && fs.sw.s < SW_FADE;
+function legCap(g, T, P, s) {   // the highest the pelvis can be for leg s to reach its foot (a swing foot that may still lift: as high as that lift allows)
+  const { hv, f, fs, r } = legGeom(g, T, P, s);
+  return f.A[1] - hv[1] + r + (liftable(g, fs) ? SW_LIFT * (1 - smoother(fs.sw.s / SW_FADE)) : 0);
+}
+function liftSwing(g, T, P) {   // a foot just off the floor that the pelvis is out of reach of is raised (softly) to where it can be reached
+  for (let s = 0; s < 2; s++) {
+    if (!liftable(g, g.feet[s])) continue;
+    const { hv, f, r } = legGeom(g, T, P, s), need = T.pelvisPos[1] + hv[1] - r, y = -softMin(-f.A[1], -need, 0.006);
+    if (y > f.A[1] + 1e-5) T.feet[s] = Object.assign({}, f, { A: [f.A[0], Math.min(y, f.A[1] + SW_LIFT), f.A[2]] });   // (a copy: f is the foot's own state)
+  }
+}
+function lowerForReach(g, T, P, h = T.pelvisPos[1]) {     // (h: the height to be lowered; a pelvis far out of the way gives the cap alone - the `reach` that trackReach logs)
+  for (let s = 0; s < 2; s++) h = softMin(h, legCap(g, T, P, s), 0.008);
   return h;
 }
 
