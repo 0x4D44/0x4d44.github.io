@@ -33,14 +33,20 @@ MUTATIONS = [
     ('thick lead edge', 'web/src/shed.ts', "tslate.box([0, capBase + cyma.height + lead / 2, 0], [2 * hb, lead, 2 * hb]", "tslate.box([0, capBase + lead / 2, 0], [2 * hb, lead + 2 * cyma.height, 2 * hb]", 'moulded cyma'),
     ('no spike', 'web/src/shed.ts', 'const s = 0.035, base: V3[]', 'const s = 0.035 * 0, base: V3[]', 'slim gilded arrow'),
     ('blunt mast to the top', 'web/src/shed.ts', 'vane.box([0, (capTop - 0.15 + spikeFoot) / 2, 0], [0.045, spikeFoot - capTop + 0.15, 0.045]);', 'vane.box([0, (capTop - 0.15 + CLOCK_TOWER_HEIGHT) / 2, 0], [0.045, CLOCK_TOWER_HEIGHT - capTop + 0.15, 0.045]);', 'slim gilded arrow'),
-    ('tall flag again', 'web/src/shed.ts', 'tail: { from: 0.4, half: 0.12 }', 'tail: { from: 0.4, half: 0.26 }', 'slim gilded arrow'),
+    ('tall flag again', 'web/src/shed.ts', 'tail: { from: 0.3, half: 0.14 }', 'tail: { from: 0.3, half: 0.26 }', 'slim gilded arrow'),
     ('no arrowhead', 'web/src/shed.ts', 'for (const shape of [arrow, banner])', 'for (const shape of [banner])', 'slim gilded arrow'),
-    ('flat yellow', 'web/src/shed.ts', 'gilt.color.set(0xb8923f);', 'gilt.color.set(0xf0d040);', 'slim gilded arrow'),
+    ('flat yellow', 'web/src/shed.ts', 'gilt.color.set(0xd0a54a);', 'gilt.color.set(0xf0d040);', 'slim gilded arrow'),
     ('gaps unshaded', 'web/src/shed.ts', 'shade: 0.4, uvLift: 10,', 'shade: 1, uvLift: 10,', 'painted in shade'),
     ('gaps black', 'web/src/shed.ts', 'shade: 0.4, uvLift: 10,', 'shade: 0.15, uvLift: 10,', 'painted in shade'),
     ('foot shade back on the cornice', 'web/src/shed.ts', 'shade: 0.4, uvLift: 10,', 'shade: 0.4, uvLift: 0,', 'painted in shade'),
     ('foot shade back on the modillions', 'web/src/shed.ts', 'for (let i = 0; i < fine.count; i++) fine.uvs[2 * i + 1] += TOWER_ROUND3.uvLift;', '', 'painted in shade'),
     ('soffit flat', 'web/src/shed.ts', "colors: [shaded, shaded, cream, cream]", "colors: [cream, cream, cream, cream]", 'painted in shade'),
+    ('corner backing shaded', 'web/src/shed.ts', "{ facing: [nx, 0, nz], color: cream });", "{ facing: [nx, 0, nz], color: shaded });", 'seen across the corner'),
+    ('corner soffit shaded', 'web/src/shed.ts', "{ facing: [0, -1, 0], color: cream });", "{ facing: [0, -1, 0], color: shaded });", 'seen across the corner'),
+    ('shade runs to the corner', 'web/src/shed.ts', 'e = cw / 2 - 0.25 + bracket.width / 2;', 'e = cw / 2 + 0.1;', 'seen across the corner'),
+    ('lead edge blue-grey slate', 'web/src/shed.ts', 'leadColour: [0.42, 0.34, 0.27]', 'leadColour: [1, 1, 1]', 'seen across the corner'),
+    ('lead edge grey, not brown', 'web/src/shed.ts', 'leadColour: [0.42, 0.34, 0.27]', 'leadColour: [0.35, 0.35, 0.35]', 'seen across the corner'),
+    ('a lip left slate', 'web/src/shed.ts', "{ skip: ['-y', ...(nx === 0 ? ['+x', '-x'] : ['+z', '-z'])], color: leadColour });", "{ skip: ['-y', ...(nx === 0 ? ['+x', '-x'] : ['+z', '-z'])] });", 'seen across the corner'),
     ('modillions cast again', 'web/src/shed.ts', 'castsOnly(stone, shadowTriangles);', 'castsOnly(stone, ts.triangles);', 'shadow pass draws at most'),
     ('modillions at the head of the index', 'web/src/shed.ts', 'fine.box(at, nx === 0', 'ts.box(at, nx === 0', 'shadow pass draws at most'),
     ('the eye pass keeps the short range', 'web/src/shed.ts', 'geometry.setDrawRange(0, Infinity);', 'geometry.setDrawRange(0, triangles * 3);', 'shadow pass draws at most'),
@@ -86,4 +92,4 @@ with tempfile.TemporaryDirectory(prefix='kx-tower-round3-', dir=out) as tmp:
             failures.append(label)
             print(f'[SURVIVED] {label}', flush=True)
     print(f'{caught}/{len(MUTATIONS)} mutations caught; baseline {len(passing)} tests passed; survivors: {failures}')
-    raise SystemExit(1 if failures or len(passing) != 5 else 0)
+    raise SystemExit(1 if failures or len(passing) != 6 else 0)

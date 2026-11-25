@@ -134,3 +134,30 @@ test('the shadow pass draws at most 330 of the tower\'s triangles (68283613 drew
   for (let i = n * 3; i < idx.count; i++) { const y = pos.getY(idx.getX(i)); assert.ok(y >= by - 1e-6 && y <= cy + 1e-6, `a triangle outside the row left out of the pass at y ${y.toFixed(2)}`); }
   for (let i = 0; i < n * 3; i++) { const p = new THREE.Vector3().fromBufferAttribute(pos, idx.getX(i)); if (p.y > by + 0.01 && p.y < cy - 0.01) assert.ok(Math.max(Math.abs(p.x), Math.abs(p.z)) < stage + 0.2, 'no modillion is drawn in the pass'); }
 });
+
+// Round 3c (the night captures front-oblique and front-southwest-pedestrian): a dark vertical tick at the cornice's corner, where the shaded
+// backing and soffit ran on past the end modillions to meet the next face's.
+test('seen across the corner, the bracket row\'s corner column and the soffit over it are cream, with no shaded face; the lead edge is a near-black brown', () => {
+  const stone = named('tower-stone'), col = stone.geometry.getAttribute('color'), pos = stone.geometry.getAttribute('position');
+  const creamLuma = luma([1.6, 1.53, 1.33]);
+  let rays = 0;
+  for (let y = by + 0.03; y < cy; y += 0.05) for (const rise of [0, 0.3]) for (const t of [0, 0.3, 0.6, 0.9, 1.2]) {
+    const target = new THREE.Vector3(stage + 0.1 + t, y, stage + 0.1 + t), dir = new THREE.Vector3(-1, rise, -1).normalize();
+    const h = new THREE.Raycaster(target.clone().addScaledVector(dir, -40), dir, 0, 80).intersectObject(tower, true)[0];
+    if (!h || (h.object as THREE.Mesh).name !== 'tower-stone') continue;
+    const f = h.face!, P = [f.a, f.b, f.c].map(i => new THREE.Vector3().fromBufferAttribute(pos, i)), C = [f.a, f.b, f.c].map(i => new THREE.Vector3().fromBufferAttribute(col, i));
+    const c = THREE.Triangle.getInterpolation(h.point, P[0]!, P[1]!, P[2]!, C[0]!, C[1]!, C[2]!, new THREE.Vector3())!.toArray();
+    assert.ok(luma(c) >= 0.9 * creamLuma, `a shaded face (${(luma(c) / creamLuma).toFixed(2)} of the cream) at the corner, ${(h.point.y - by).toFixed(2)} m up the row, looking up ${rise}`);
+    rays++;
+  }
+  assert.ok(rays >= 100, `${rays} rays meet the corner`);
+  const cap = named('tower-cap'), cpos = cap.geometry.getAttribute('position'), ccol = cap.geometry.getAttribute('color');
+  const outer = Math.max(...Array.from({ length: cpos.count }, (_, i) => cpos.getZ(i)));
+  let edge = 0;
+  for (let i = 0; i < cpos.count; i++) if (cpos.getZ(i) > outer - 1e-6 && Math.abs(cpos.getY(i) - (cy + TOWER_TOP.corona + TOWER_TOP.edge)) > 1e-6) { // the edge's face and its lip's top, not the hip's corners
+    const [r, g, b] = [ccol.getX(i), ccol.getY(i), ccol.getZ(i)];
+    assert.ok(r > g && g > b && r <= 0.5, `the lead edge's colour (${[r, g, b].map(v => v.toFixed(2))}) darkens the slate to a brown`);
+    edge++;
+  }
+  assert.ok(edge >= 4, 'the edge is drawn');
+});

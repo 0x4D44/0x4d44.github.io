@@ -26,9 +26,9 @@ MUTATIONS = [
     ('flat cap', 'web/src/shed.ts', 'edge: 0.25, rise: 0.6,', 'edge: 0.25, rise: 0.3,', 'low hipped dark metal roof'),
     ('thin edge', 'web/src/shed.ts', 'edge: 0.25, rise: 0.6,', 'edge: 0.15, rise: 0.6,', 'low hipped dark metal roof'),
     ('edge flush with the corona', 'web/src/shed.ts', 'eave: 0.18,', 'eave: 0.05,', 'low hipped dark metal roof'),
-    ('no backing behind the brackets: sky through the lower tier', 'web/src/shed.ts', "fine.poly([at(-f, f, by), at(f, f, by), at(f, f, cyRow), at(-f, f, cyRow)]", "if (0) fine.poly([at(-f, f, by), at(f, f, by), at(f, f, cyRow), at(-f, f, cyRow)]", 'gap between the brackets'),
-    ('backing only half way up', 'web/src/shed.ts', "fine.poly([at(-f, f, by), at(f, f, by), at(f, f, cyRow), at(-f, f, cyRow)]", "fine.poly([at(-f, f, by), at(f, f, by), at(f, f, by + 0.4), at(-f, f, by + 0.4)]", 'gap between the brackets'),
-    ('the south backing turned in (culled)', 'web/src/shed.ts', "{ facing: [nx, 0, nz], color: shaded }", "{ facing: (nz > 0 ? [0, 0, -1] : [nx, 0, nz]) as V3, color: shaded }", 'gap between the brackets'),
+    ('no backing behind the brackets: sky through the lower tier', 'web/src/shed.ts', "fine.poly([at(-e, f, by), at(e, f, by), at(e, f, cyRow), at(-e, f, cyRow)]", "if (0) fine.poly([at(-e, f, by), at(e, f, by), at(e, f, cyRow), at(-e, f, cyRow)]", 'gap between the brackets'),
+    ('backing only half way up', 'web/src/shed.ts', "fine.poly([at(-e, f, by), at(e, f, by), at(e, f, cyRow), at(-e, f, cyRow)]", "fine.poly([at(-e, f, by), at(e, f, by), at(e, f, by + 0.4), at(-e, f, by + 0.4)]", 'gap between the brackets'),
+    ('the south backing turned in (culled)', 'web/src/shed.ts', "{ facing: [nx, 0, nz], color: shaded });", "{ facing: (nz > 0 ? [0, 0, -1] : [nx, 0, nz]) as V3, color: shaded });", 'gap between the brackets'),
     # round 3: the cyma's underside also closes the corona from below, so the mutant drops both (either alone leaves no sky to see)
     ('no corona soffit', 'web/src/shed.ts', "{ facing: [0, -1, 0], colors: [shaded, shaded, cream, cream] }", "{ facing: [0, 1, 0], colors: [shaded, shaded, cream, cream] }", 'gap between the brackets',
      "[span + 2 * cyma.out, cyma.height, span + 2 * cyma.out], { skip: ['+y'], color: cream });", "[span + 2 * cyma.out, cyma.height, span + 2 * cyma.out], { skip: ['+y', '-y'], color: cream });"),

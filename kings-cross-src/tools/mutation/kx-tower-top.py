@@ -28,7 +28,7 @@ MUTATIONS = [
     ('tower 1.5 m proud', 'web/src/shed.ts', 'export const TOWER_PROJECTION = TOWER_SIZE + 0.15;', 'export const TOWER_PROJECTION = 1.5;', 'about its own width proud'),
     ('one-step transition', 'web/src/shed.ts', 'upper: { height: 0.35, out: 0.35 }', 'upper: { height: 0.35, out: 0.15 }', 'heavy stepped stone cornice'),
     ('no weathered slope', 'web/src/shed.ts', 'weather: 0.45 }', 'weather: 0.0001 }', 'heavy stepped stone cornice'),
-    ('black vane', 'web/src/shed.ts', 'gilt.color.set(0xb8923f);', 'gilt.color.set(0x3d4650);', 'heavy stepped stone cornice'),
+    ('black vane', 'web/src/shed.ts', 'gilt.color.set(0xd0a54a);', 'gilt.color.set(0x3d4650);', 'heavy stepped stone cornice'),
     ('lamps white by day', 'web/src/shed.ts', 'downlight: 0xb0aca4', 'downlight: 0xf2eee4', 'cheap ones'),
     ('no door stiles', 'web/src/shed.ts', 'for (const dx of [-dw / 2 + 0.06, 0, dw / 2 - 0.06]) frames.box(', 'for (const dx of [] as number[]) frames.box(', 'cheap ones'),
     ('dials back to the small 1.2 m', 'web/src/shed.ts', 'export const TOWER_DIAL = { dial: 1.52 }', 'export const TOWER_DIAL = { dial: 1.2 }', 'dials are about 0.67'),

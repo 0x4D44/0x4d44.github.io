@@ -85,8 +85,8 @@ export const TOWER_TOP = {
  */
 export const TOWER_ROUND3 = {
   tiers: [[0, 0.35, 0.45], [0.35, 0.8, 0.8]], cream: [1.6, 1.53, 1.33], bedMould: { height: 0.1, out: 0.22 },
-  cyma: { height: 0.11, out: 0.05 }, lead: 0.14, lip: { height: 0.07, thick: 0.04 }, shade: 0.4, uvLift: 10,
-  vane: { rod: [-0.75, 0.95], at: 0.32, head: 0.22, tail: { from: 0.4, half: 0.12 }, spike: 0.18 },
+  cyma: { height: 0.11, out: 0.05 }, lead: 0.14, lip: { height: 0.07, thick: 0.04 }, leadColour: [0.42, 0.34, 0.27], shade: 0.4, uvLift: 10,
+  vane: { rod: [-0.75, 0.95], at: 0.32, head: 0.22, tail: { from: 0.3, half: 0.14 }, spike: 0.18 },
 } as const;
 export const TOWER_ROUND2 = { pilaster: { width: 0.87, proud: 0.15 }, vane: { arm: 0.9, crossBelow: 1.0, letter: [0.2, 0.26] } } as const;
 /**
@@ -2369,9 +2369,14 @@ export function buildTower(x: number): THREE.Group {
     // the frieze carried up behind the modillions to the corona (round 2b's backing, so no sky shows through), shaded; and the corona's
     // soffit, shaded along the wall and grading out to the cream at its edge
     const at = (u: number, d: number, y: number): V3 => (nx === 0 ? [u, y, nz * d] : [nx * d, y, -nx * u]);
-    const f = cw / 2 + 0.1, o = spanRow / 2;
-    fine.poly([at(-f, f, by), at(f, f, by), at(f, f, cyRow), at(-f, f, cyRow)], [[-f, 0], [f, 0], [f, bracket.height], [-f, bracket.height]], { facing: [nx, 0, nz], color: shaded });
-    fine.poly([at(-f, f, cyRow), at(f, f, cyRow), at(o, o, cyRow), at(-o, o, cyRow)], [[-f, 0], [f, 0], [o, o - f], [-o, o - f]], { facing: [0, -1, 0], colors: [shaded, shaded, cream, cream] });
+    // round 3c: the shade stops at the end modillions (`e`); past them, at the corner, the backing and the soffit are cream, so no dark sliver shows there
+    const f = cw / 2 + 0.1, o = spanRow / 2, e = cw / 2 - 0.25 + bracket.width / 2;
+    fine.poly([at(-e, f, by), at(e, f, by), at(e, f, cyRow), at(-e, f, cyRow)], [[-e, 0], [e, 0], [e, bracket.height], [-e, bracket.height]], { facing: [nx, 0, nz], color: shaded });
+    fine.poly([at(-e, f, cyRow), at(e, f, cyRow), at(e, o, cyRow), at(-e, o, cyRow)], [[-e, 0], [e, 0], [e, o - f], [-e, o - f]], { facing: [0, -1, 0], colors: [shaded, shaded, cream, cream] });
+    for (const sgn of [-1, 1]) {
+      fine.poly([at(sgn * e, f, by), at(sgn * f, f, by), at(sgn * f, f, cyRow), at(sgn * e, f, cyRow)], [[sgn * e, 0], [sgn * f, 0], [sgn * f, bracket.height], [sgn * e, bracket.height]], { facing: [nx, 0, nz], color: cream });
+      fine.poly([at(sgn * e, f, cyRow), at(sgn * f, f, cyRow), at(sgn * o, o, cyRow), at(sgn * e, o, cyRow)], [[sgn * e, 0], [sgn * f, 0], [sgn * o, o - f], [sgn * e, o - f]], { facing: [0, -1, 0], color: cream });
+    }
   }
   for (const [nx, nz] of [[0, 1], [1, 0], [0, -1], [-1, 0]] as [number, number][]) {
     for (let k = 0; k < perFace; k++) {
@@ -2391,10 +2396,11 @@ export function buildTower(x: number): THREE.Group {
   ts.box([0, capBase + cyma.height / 2, 0], [span + 2 * cyma.out, cyma.height, span + 2 * cyma.out], { skip: ['+y'], color: cream }); // the cyma over the corona
   for (let i = lifted; i < ts.count; i++) ts.uvs[2 * i + 1] += TOWER_ROUND3.uvLift;
   for (let i = 0; i < fine.count; i++) fine.uvs[2 * i + 1] += TOWER_ROUND3.uvLift;
-  tslate.box([0, capBase + cyma.height + lead / 2, 0], [2 * hb, lead, 2 * hb], { skip: ['+y'] }); // the roof's thin lead edge
+  const leadColour = TOWER_ROUND3.leadColour as unknown as [number, number, number]; // round 3c: the slate darkened to a near-black brown
+  tslate.box([0, capBase + cyma.height + lead / 2, 0], [2 * hb, lead, 2 * hb], { skip: ['+y'], color: leadColour }); // the roof's thin lead edge
   for (const [nx, nz] of [[0, 1], [1, 0], [0, -1], [-1, 0]] as [number, number][]) { // its gutter lip, standing up at the outer edge
     const c = hb - lip.thick / 2, y = capBase + edge + lip.height / 2;
-    tslate.box(nx === 0 ? [0, y, nz * c] : [nx * c, y, 0], nx === 0 ? [2 * hb, lip.height, lip.thick] : [lip.thick, lip.height, 2 * hb], { skip: ['-y', ...(nx === 0 ? ['+x', '-x'] : ['+z', '-z'])] }); // its ends meet the next side's
+    tslate.box(nx === 0 ? [0, y, nz * c] : [nx * c, y, 0], nx === 0 ? [2 * hb, lip.height, lip.thick] : [lip.thick, lip.height, 2 * hb], { skip: ['-y', ...(nx === 0 ? ['+x', '-x'] : ['+z', '-z'])], color: leadColour }); // its ends meet the next side's
   }
   const apex: V3 = [0, capTop, 0];
   const corners: V3[] = [[-hb, capBase + edge, hb], [hb, capBase + edge, hb], [hb, capBase + edge, -hb], [-hb, capBase + edge, -hb]];
@@ -2416,7 +2422,7 @@ export function buildTower(x: number): THREE.Group {
   // ASSUMED simplified vane: mast, cardinal cross and arrow; its precise metalwork is not surveyed.
   const vane = new Batch(), { arm, crossBelow, letter } = TOWER_ROUND2.vane, crossY = CLOCK_TOWER_HEIGHT - crossBelow;
   const gilt = (material('steel') as THREE.MeshLambertMaterial).clone();
-  gilt.color.set(0xb8923f); // gilded, an old gold (the vane's own mesh: no new draw)
+  gilt.color.set(0xd0a54a); // gilded, an old gold (the vane's own mesh: no new draw)
   const { rod, at: vaneAt, head, tail, spike } = TOWER_ROUND3.vane, spikeFoot = CLOCK_TOWER_HEIGHT - spike, yv = CLOCK_TOWER_HEIGHT - vaneAt;
   vane.box([0, (capTop - 0.15 + spikeFoot) / 2, 0], [0.045, spikeFoot - capTop + 0.15, 0.045]);
   { // the mast ends in a spike, a four-sided point
