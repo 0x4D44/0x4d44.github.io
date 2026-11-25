@@ -1,6 +1,6 @@
 /* Chapter: Stories. Ten free stories per model against ten-story human groups:
    a 2-D map of every story, two sameness measures, and per-model habits. */
-Zoo.chapter("stories", ["stories", "detect"], function (el, data) {
+Zoo.chapter("stories", ["stories", "detect", "books"], function (el, data) {
   var h = Zoo.h, S = data.stories, G = S.groups || {}, NS = "http://www.w3.org/2000/svg";
 
   Zoo.head(el, "Chapter 7", "Stories",
@@ -268,10 +268,13 @@ Zoo.chapter("stories", ["stories", "detect"], function (el, data) {
     if (!M) return;
     el.appendChild(h("h4", { class: "sub", text: "Is it the writer, or the subject?" }));
     var nWpP = (M.humans_new && M.humans_new.reddit.n_human) || 0, nM = (D.models_matched || []).length;
+    var nWk = (M.humans_new && M.humans_new.wiki && M.humans_new.wiki.n_human) || 0;
     el.appendChild(h("p", { class: "note", text: "That test is easy in a way that has nothing to do with authorship. Every model answered the same one-line request, " +
       "while each Reddit writer answered a different prompt and the classic authors and this site’s author wrote about other things entirely. " +
       "So we built a topic-matched set. " + nM + " models, old and new from both families, each wrote a story of about 300 words for the actual prompts of " +
       nWpP + " of the Reddit stories, and three 300-word essay passages for each title of this site’s author’s ten sampled essays (they saw only the titles). " +
+      (nWk ? "Later we added non-fiction, which the first sets lacked: " + nWk + " passages of about 300 words from random English Wikipedia articles (the November 2023 copy), " +
+        "and from each model an encyclopedia passage on each of the same titles. " : "") +
       "No prompt or title was on both sides of a split: each one went into one of " + D.k_topic + " folds, and a detector being tested on a fold never trained on any text from it." }));
     function aucF(x) { return x == null ? "–" : x > 0.9995 && x < 1 ? x.toFixed(4) : x.toFixed(3); }
     function cellR(r, f) { return r && r[f] != null ? rate(r, f) + " (" + frac(r, f) + "/" + (f === "fpr" ? r.n_human : r.n_model) + ")" : "–"; }
@@ -279,7 +282,8 @@ Zoo.chapter("stories", ["stories", "detect"], function (el, data) {
     el.appendChild(h("div", { class: "table-wrap" }, [h("table", { class: "data detect" }, [
       h("thead", null, [h("tr", null, hdr.map(function (t, i) { return h("th", { class: i ? "num wrap" : "", text: t }); }))]),
       h("tbody", null, M.rows.map(function (r) {
-        var who = (r.family === "gpt" ? "GPT" : "Claude") + (r.genre === "stories" ? " stories on the Reddit prompts" : " essays on the author’s titles");
+        var who = (r.family === "gpt" ? "GPT" : "Claude") + (r.genre === "stories" ? " stories on the Reddit prompts" :
+          r.genre === "nonfiction" ? " encyclopedia passages on the Wikipedia titles" : " essays on the author’s titles");
         return h("tr", null, [h("td", null, [h("span", { class: "who" }, [h("span", { class: "dot " + (r.family === "gpt" ? "openai" : "anthropic") }), who])]),
           h("td", { class: "num", text: cellR(r.unmatched, "fnr") }), h("td", { class: "num", text: cellR(r.matched_old, "fnr") }),
           h("td", { class: "num", text: cellR(r.matched_new, "fnr") }), h("td", { class: "num", text: cellR(r.matched_new, "fpr") }),
@@ -288,11 +292,11 @@ Zoo.chapter("stories", ["stories", "detect"], function (el, data) {
     el.appendChild(h("p", { class: "note", text: "“Same detector” is the one from the table above, trained only on the free stories and the human texts. " +
       "“Retrained” also learns from the matched texts of the other models and the other folds. " +
       "AUC is the chance that a random model text scores above a random human one: 1.000 is a perfect ranking, 0.5 a coin toss. " +
-      "Human rates in each row are for the Reddit stories whose prompts were used, or for this site’s ten passages." }));
+      "Human rates in each row are for the Reddit stories whose prompts were used, this site’s ten passages, or the Wikipedia passages." }));
 
     var mh = (M.models || []).map(function (m) {
       var n = 0, newMiss = 0, oldMiss = 0;
-      ["stories", "essays"].forEach(function (g) { n += m[g].new.n_model; newMiss += frac(m[g].new, "fnr"); oldMiss += frac(m[g].old, "fnr"); });
+      ["stories", "essays", "nonfiction"].forEach(function (g) { if (!m[g]) return; n += m[g].new.n_model; newMiss += frac(m[g].new, "fnr"); oldMiss += frac(m[g].old, "fnr"); });
       return { model: m.model, n: n, newMiss: newMiss, oldMiss: oldMiss };
     }).sort(function (a, b) { return b.newMiss - a.newMiss || b.oldMiss - a.oldMiss; });
     if (mh.length) el.appendChild(h("p", { class: "note" }, ["Hardest to catch on the matched texts: "].concat(mh.slice(0, 3).map(function (m, i) {
@@ -355,7 +359,8 @@ Zoo.chapter("stories", ["stories", "detect"], function (el, data) {
 
   // The closing paragraph's numbers come from the data, so it stays true if the data is rebuilt.
   function HONEST(D) {
-    var R = D.matched.rows, Ds = D.distances || {};
+    var R = D.matched.rows.filter(function (r) { return r.genre !== "nonfiction"; }), Ds = D.distances || {};
+    var NF = D.matched.rows.filter(function (r) { return r.genre === "nonfiction" && r.matched_new.n_human; });
     function span(f) {
       var v = R.map(f).filter(function (x) { return x != null; });
       return [Math.min.apply(null, v), Math.max.apply(null, v)];
@@ -372,9 +377,18 @@ Zoo.chapter("stories", ["stories", "detect"], function (el, data) {
       " of the matched model texts. It still ranked most model texts above the humans (AUC " + f3(auOld[0]) + " to " + f3(auOld[1]) +
       "), so what broke was where its 50% line sat: the line had been placed partly by subject. Retrained with matched texts, it again ranked model above human almost every time (AUC " +
       f3(au[0]) + " to " + f3(au[1]) + ") and put its line back in the gap.";
+    if (NF.length && Ds.nonfiction) {
+      var nfAu = NF.map(function (r) { return r.matched_new.auc; }), nfMiss = NF.map(function (r) { return r.matched_new.fnr; });
+      shows += " Non-fiction is the exception. An encyclopedia passage by a model sits " + Ds.nonfiction.matched.toFixed(2) + " from the Wikipedia passage on its title, while two Wikipedia passages sit " +
+        Ds.nonfiction.human_human.toFixed(2) + " apart: on a set subject, models and people write nearly the same thing. Even retrained, the detector called " +
+        p100(D.matched.humans_new.wiki.fpr) + " of the Wikipedia passages AI and missed " + p100(Math.min.apply(null, nfMiss)) + " to " + p100(Math.max.apply(null, nfMiss)) +
+        " of the model ones (AUC " + f3(Math.min.apply(null, nfAu)) + " to " + f3(Math.max.apply(null, nfAu)) + ").";
+    }
     return [
       ["What it shows.", shows],
-      ["What it does not show.", "This is not a usable detector. The humans are few: 50 Reddit stories and ten passages by one author on the matched side, against " +
+      ["What it does not show.", "This is not a usable detector. The humans are few: " + D.matched.humans_new.reddit.n_human + " Reddit stories, " +
+        (D.matched.humans_new.wiki && D.matched.humans_new.wiki.n_human ? D.matched.humans_new.wiki.n_human + " Wikipedia passages " : "") +
+        "and ten passages by one author on the matched side, against " +
         D.map.length + " model texts. The models wrote at their default settings, with no attempt to sound human, and every text is about 300 words. " +
         (axWrong ? "After retraining, " + axWrong + " of this site’s author’s ten passages was called AI. One in ten, from ten, is not a rate to rely on either way. " : "") +
         "A different group of human writers, a model told to write like a person, edited or mixed text, or a different embedding model could each move these numbers."],
@@ -383,7 +397,95 @@ Zoo.chapter("stories", ["stories", "detect"], function (el, data) {
         "We make no claim about any product’s accuracy."]];
   }
 
-  // ---- 5. Method ---------------------------------------------------------------------
+  // ---- 5. A library of model writing -----------------------------------------------
+  var BK = data.books;
+  if (BK && BK.detector && D && D.matched) library(BK);
+
+  function library(BK) {
+    function nm(m) {
+      if (m === "unknown") return "Unlabelled";
+      if (m === "gemini") return "Gemini";
+      return m.replace(/^claude-(\w+)-(.*)$/, function (_, f, v) { return "Claude " + f.charAt(0).toUpperCase() + f.slice(1) + " " + v; })
+        .replace(/^o(\d)-pro$/, "o$1 pro");
+    }
+    var FORM = { "short-stories": "stories", novels: "novels", "scripts-and-tv": "scripts", "non-fiction": "non-fiction" };
+    function pc(x) { return x == null ? "–" : Math.round(x * 100) + "%"; }
+    el.appendChild(h("h3", { class: "part", text: "A library of model writing" }));
+    el.appendChild(h("p", { class: "note", text: "The author keeps a private library of writing made with models since early 2025: short stories, novels, TV scripts and non-fiction, " +
+      "each collection filed under the model that wrote it. We took " + BK.n_passages + " passages of about 300 words from " + BK.n_files + " of its files, " +
+      "at most 160 per model, and put them to the detectors above. None of this writing was made for the test, and none of it is shown here: only the scores." }));
+    var rows = BK.detector.filter(function (r) { return r.form; });
+    var order = ["claude-sonnet-3.5", "claude-opus-3", "claude-opus-4", "claude-opus-4.1", "claude-sonnet-4.5", "claude-opus-4.5", "claude-fable-5.2",
+      "o1-pro", "o1", "o3-mini", "o3", "gemini", "unknown"];
+    var rank = function (m) { var i = order.indexOf(m); return i < 0 ? 99 : i; };
+    rows.sort(function (a, b) { return rank(a.model) - rank(b.model) || a.form.localeCompare(b.form); });
+    var cols = [["plain", "First detector"], ["matched", "Retrained, stories and essays"], ["with_nonfiction", "Retrained, with non-fiction"]];
+    el.appendChild(h("div", { class: "table-wrap" }, [h("table", { class: "data detect" }, [
+      h("thead", null, [h("tr", null, [h("th", { text: "Writer" }), h("th", { text: "Form" }), h("th", { class: "num", text: "Passages" })]
+        .concat(cols.map(function (c) { return h("th", { class: "num wrap", text: c[1] + ": called AI" }); })))]),
+      h("tbody", null, rows.map(function (r) {
+        return h("tr", null, [h("td", { text: nm(r.model) }), h("td", { text: FORM[r.form] || r.form }), h("td", { class: "num", text: String(r.n) })]
+          .concat(cols.map(function (c) { return h("td", { class: "num", text: pc(r[c[0]]) }); })));
+      }))])]));
+    el.appendChild(h("p", { class: "note", text: "Each detector is trained on every text of the sections above (the first on the free stories and the human texts only) and scores every passage here; " +
+      "there are no human texts in the library, so this counts only what each one misses. “Unlabelled” is writing whose model nobody recorded." }));
+    var nfr = rows.filter(function (r) { return r.form === "non-fiction"; });
+    if (nfr.length) el.appendChild(h("p", { class: "note", text: "Fiction is easy for it once it has seen matched texts. Non-fiction is not. Before it learned from the Wikipedia set it called almost all of the library’s non-fiction human; after, " +
+      nfr.map(function (r) { return pc(r.with_nonfiction) + " of " + nm(r.model) + "’s"; }).join(", ") + " is called AI, and that same detector calls " +
+      pc(D.matched.humans_new.wiki && D.matched.humans_new.wiki.fpr) + " of the human Wikipedia passages AI. It has learned a little about non-fiction, and is wrong about it often in both directions." }));
+
+    var W = BK.who || {};
+    if (W.models && W.families) {
+      var mm = W.models, conf = mm.confusion, lines = mm.classes.map(function (c) {
+        var others = Object.keys(conf[c]).filter(function (d) { return d !== c && conf[c][d]; }).sort(function (a, b) { return conf[c][b] - conf[c][a]; });
+        return h("li", null, [h("b", { text: nm(c) }), " " + pc(mm.per_class[c]) + " of " + mm.n[c] +
+          (others.length ? "; otherwise mostly " + nm(others[0]) + " (" + conf[c][others[0]] + ")" : "")]);
+      });
+      el.appendChild(h("h4", { class: "sub", text: "Can it tell which model?" }));
+      el.appendChild(h("p", { class: "note", text: "The same 1,536 numbers, now asked a different question: which model wrote this? " +
+        "A passage is guessed by a model that never saw its file. The family (Claude, OpenAI or Gemini) comes out right for " + pc(W.families.correct) +
+        " of passages; the exact model, out of " + mm.classes.length + ", for " + pc(mm.correct) + ", where guessing would manage " + pc(1 / mm.classes.length) + ". By model:" }));
+      el.appendChild(h("ul", { class: "note" }, lines));
+      el.appendChild(h("p", { class: "note", text: "Read this with care. Each model here mostly wrote different things, on prompts of its own, so a guess can lean on subject as much as style. " +
+        (mm.shared_prompts && mm.shared_prompts.n ? "The fairest test in the library is a collection where " + mm.shared_prompts.models.map(nm).join(", ").replace(/, ([^,]*)$/, " and $1") +
+          " all wrote to the same story titles: there the exact model comes out right for " + pc(mm.shared_prompts.correct) + " of " + mm.shared_prompts.n + " passages. " : "") +
+        "The Claude models blur into one another most." }));
+      var U = (BK.unknown || []).filter(function (u) { return u.n >= 20; });
+      if (U.length) {
+        var cl = U.filter(function (u) { return u.claude_share >= 0.5; }).length;
+        el.appendChild(h("p", { class: "note", text: "Of the " + U.length + " unlabelled collections, the test calls " + cl + " mostly Claude. " +
+          "It names models with confidence it has not earned: one collection dated " + (U.filter(function (u) { return u.top === "claude-opus-4.5" && u.date < "2025.11.24"; })
+            .map(function (u) { return u.date.replace(/\./g, "-") + " is put down to Claude Opus 4.5 in " + pc(u.top_share) + " of its passages, though that model came out on 24 November 2025. " +
+              "It shares its subject with a later Opus 4.5 collection, and subject is what the guess followed."; })[0] || "") }));
+      }
+    }
+
+    var ST = BK.style || {};
+    var sm = Object.keys(ST).sort(function (a, b) { return rank(a) - rank(b); });
+    if (sm.length) {
+      var feats = Object.keys(ST[sm[0]]).filter(function (k) { return k !== "files" && k !== "words"; });
+      el.appendChild(h("h4", { class: "sub", text: "Habits you can count" }));
+      el.appendChild(h("p", { class: "note", text: "Counts per 1,000 words of each model’s fiction, its stories and novels pooled. The highest in each column is in bold. " +
+        "Some of this is the prompt, not the model: each collection was written to its own instructions, which we did not control." }));
+      var mx = {};
+      feats.forEach(function (f) { mx[f] = Math.max.apply(null, sm.map(function (m) { return ST[m][f]; })); });
+      el.appendChild(h("div", { class: "table-wrap" }, [h("table", { class: "data habits-t" }, [
+        h("thead", null, [h("tr", null, [h("th", { text: "Model" }), h("th", { class: "num", text: "Words" })].concat(feats.map(function (f) { return h("th", { class: "num wrap", text: f }); })))]),
+        h("tbody", null, sm.map(function (m) {
+          return h("tr", null, [h("td", { text: nm(m) }), h("td", { class: "num", text: Math.round(ST[m].words / 1000) + "k" })].concat(feats.map(function (f) {
+            var v = ST[m][f];
+            return h("td", { class: "num" }, [v === mx[f] ? h("b", { text: String(v) }) : String(v)]);
+          })));
+        }))])]));
+      el.appendChild(h("p", { class: "note", text: "What stands out: OpenAI’s models and Gemini use semicolons, and Claude’s almost never do. They prefer “perhaps” to “maybe”, and they reach for “murmured” and “retorted”, as only the early Claude Sonnet 3.5 does as often. " +
+        "Sonnet 4.5 and Opus 4.1 write in the first person to “you”, in short sentences and one-line paragraphs, and with exact numbers. " +
+        "Gemini uses the most ellipses and the most “not X, but Y”. o3-mini writes long sentences and leads on “testament” and “tapestry”. " +
+        "Claude Opus 3 and Fable 5.2 use almost no em dashes, where the Claudes in between use seven to eleven per 1,000 words. " +
+        "A model with one or two files here (Opus 3, Sonnet 3.5) is one or two pieces of writing, not a model’s habit." }));
+    }
+  }
+
+  // ---- 6. Method ---------------------------------------------------------------------
   var m = S.method || {};
   var terms = [["self_overlap", "Self-overlap"], ["distinct_2", "Distinct-2"], ["distinct_1", "Distinct-1"], ["distinct_3", "Distinct-3"],
     ["mattr", "MATTR"], ["mtld", "MTLD"], ["yule_k", "Yule’s K"], ["openers", "Openings"], ["names", "Names"], ["title_repeat", "Titles"],

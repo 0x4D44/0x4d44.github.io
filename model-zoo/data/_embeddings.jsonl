@@ -21,3 +21,10 @@
 {"n": 100, "tokens": 39001, "cost": 0.00078002, "for": "detect"}
 {"n": 100, "tokens": 36420, "cost": 0.0007283999999999999, "for": "detect"}
 {"n": 40, "tokens": 15400, "cost": 0.000308, "for": "detect"}
+{"n": 100, "tokens": 36920, "cost": 0.0007384, "for": "detect"}
+{"n": 100, "tokens": 39807, "cost": 0.00079614, "for": "detect"}
+{"n": 100, "tokens": 36023, "cost": 0.00072046, "for": "detect"}
+{"n": 99, "tokens": 39809, "cost": 0.0007961800000000001, "for": "detect"}
+{"n": 100, "tokens": 37151, "cost": 0.0007430199999999999, "for": "books"}
+{"n": 24, "tokens": 8332, "cost": 0.00016664000000000002, "for": "books"}
+{"n": 50, "tokens": 20846, "cost": 0.00041692000000000004}
