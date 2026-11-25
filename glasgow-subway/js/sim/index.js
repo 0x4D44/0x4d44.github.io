@@ -309,6 +309,7 @@ class Sim {
         const car = tv.cars[L.ci], c = this._carToCrowd(car, p.x, p.z, p.yaw), d = this._carToCrowd(car, 0, L.dz), ex = exits.reduce((b, q) => (Math.abs(q.z - d.z) < Math.abs(b.z - d.z) ? q : b), exits[0]), end = this.crowd._toFloor(ex.x, ex.z, 0.3);
         const look = sc.take(p); if (!look) continue;
         const st = this._stairRoute(v, ex), out = this.crowd.walkOn(look, c, c.yaw, [{ x: X.cx, z: d.z, rail: true }, { x: inf.xe + inf.S * 0.9, z: d.z, rail: true }, st ? st.out : end].concat(st ? st.up : []), inf.PY, null); this._saloonObs(tv);
+        if (out && look.bagOld) this.crowd.bagCarry(out, look.bagOld);   // (the case gets off as it was, too: made afresh it went from standing to towed in one frame - review 61)
         if (out && st) out.yAt = st.yAt;   // off the train, across the platform and up the stairs
       }
     }
@@ -366,7 +367,7 @@ class Sim {
       if (!seat && !sc._fitsStandAt(p.char, here)) return free('too tall here');
       p.print = null; const np = sc.add({ ...look, ...here, yaw: c.yaw, static: true, state: 'stand' }, car); if (!np.obj) return free('not added');
       np.rootOff = { x: c.x - np.x, z: c.z - np.z }; sc._place(np, true);   // (drawn first where they really are)
-      sc.bagCarry(np, p.bagRig);   // (the case comes aboard as it was, in tow, and is stood up in the car: made afresh standing, it jumped 1.0 m at the door - reviews 58, 59)
+      sc.bagCarry(np, sc.bagSnap(p.bagRig));   // (the case comes aboard as it was, in tow, and is stood up in the car: made afresh standing, it jumped 1.0 m at the door - reviews 58, 59)
       unpend(); seat ? T.sat++ : T.stood++; if (seat) { seat.p = np; np.seatRef = seat; sc.settle(np, seat, 1.0, () => this._saloonObs(tv)); } else { np.yawT = np.yaw; if (at && spot.clip) { np.poleClip = spot.clip; np.poleAt = spot.pole; np.poleHand = spot.hand; } const crowded = !at && sc.people.some((o) => o !== np && o.parent === car && o.obj && o.state !== 'sit' && Math.hypot(o.x - here.x, o.z - here.z) < 0.5), to = crowded ? { x: spot.x, z: spot.z } : here;   /* (one who did not reach their place and would stand inside someone where they are steps on to the place they were given: review 36, two pelvises 0.30 m apart for 70 s) */ sc.rise(np, { x: to.x, z: to.z, yaw: spot.yaw != null ? spot.yaw : here.yaw, mode: at && spot.clip ? 'pole' : 'stand' }, crowded ? 0.9 : 0.6); }   // (a pole only where there is one under the hand)
       this._saloonObs(tv);
     };

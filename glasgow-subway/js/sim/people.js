@@ -525,7 +525,7 @@ export class AnimCrowd {
     if (p.bagRig) stepBag(p.bagRig, p.state === 'sit', p.state === 'pole', true, this._bagHow(p));
     // the same bag on the other model (a near/far swap): it carries on as it was - placed afresh from the new skeleton, which the gait has not posed yet this frame, a towed
     // case flickered 0.2 - 0.5 m for a frame (review 58)
-    if (p.bagRig && old && old.kind === p.bagRig.kind && old.mesh && p.bagRig.mesh) { p.bagRig.tow = old.tow; p.bagRig.park = old.park; p.bagRig.lw = old.lw; if (old.where === p.bagRig.where) { p.bagRig.mesh.position.copy(old.mesh.position); p.bagRig.mesh.rotation.copy(old.mesh.rotation); if (old.handle && p.bagRig.handle) p.bagRig.handle.position.copy(old.handle.position); } }
+    if (p.bagRig && old && old.kind === p.bagRig.kind && old.mesh && p.bagRig.mesh) { p.bagRig.tow = old.tow; p.bagRig.park = old.park; p.bagRig.lw = old.lw; p.bagRig.carry = old.carry; if (old.where === p.bagRig.where) { p.bagRig.mesh.position.copy(old.mesh.position); p.bagRig.mesh.rotation.copy(old.mesh.rotation); if (old.handle && p.bagRig.handle) p.bagRig.handle.position.copy(old.handle.position); } }
   }
   /** Seated, a skirt or dress hung straight down from the hips as a ring round the knees, the bare thighs inside it (review 9: ya_smile_dress, elder_woman_dress,
    *  teen_skirt). A seated wearer's garment meshes take a second set of skin weights, made once per character and model: below the hips each vertex is
@@ -598,7 +598,20 @@ export class AnimCrowd {
   }
   /** test hook: give a person a bag by hand ({ kind, colour, hand } or null) */
   /** a person handed over from another crowd (on to a train) keeps their case's tow and lift, and it is placed from there now rather than stood up afresh */
-  bagCarry(p, old) { const r = p.bagRig; if (!r || !old || old.kind !== r.kind || r.kind !== 'trolley') return; r.tow = old.tow || 0; r.lw = old.lw || 0; r.park = null; p.obj.updateMatrixWorld(true); stepBag(r, p.state === 'sit', p.state === 'pole', false, this._bagHow(p)); }
+  /** what a case was doing, and where it was in the world, as its owner is handed between the platform's crowd and a car's (old: the rig; the snapshot is taken before the old body is dropped) */
+  bagSnap(r) { if (!r || !r.mesh) return null; const T = this.THREE, wp = new T.Vector3(), d = new T.Vector3(0, 0, 1); r.mesh.updateWorldMatrix(true, false); r.mesh.getWorldPosition(wp); d.transformDirection(r.mesh.matrixWorld); return { kind: r.kind, tow: r.tow, lw: r.lw, wp, wy: Math.atan2(d.x, d.z), rx: r.mesh.rotation.x }; }
+  bagCarry(p, old) {
+    const r = p.bagRig; if (!r || !old || old.kind !== r.kind || r.kind !== 'trolley') return; r.tow = old.tow || 0; r.lw = old.lw || 0; r.park = null; p.obj.updateMatrixWorld(true);
+    const T = this.THREE, par = r.mesh && r.mesh.parent;
+    // a pole rider stands the case where it is: parked at its place beside the leg, it was dragged by the hand as the pose blended, then glided 0.85 m over the floor (review 61)
+    if (old.wp && par && p.state === 'pole') { const l = par.worldToLocal(old.wp.clone()); r.park = [l.x, l.z]; r.tow = 0; }   // (and lets go of it: left in tow, it followed the hand to the pole, 0.22 m a frame)
+    stepBag(r, p.state === 'sit', p.state === 'pole', false, this._bagHow(p));
+    // and whatever is left between where the case was and where the new body draws it is eased out over the pose blend (getting off, the case went from standing to towed in one
+    // frame and jumped 0.20 - 0.27 m - review 61)
+    if (old.wp && par) { r.mesh.updateWorldMatrix(true, false); const now = new T.Vector3(); r.mesh.getWorldPosition(now); const a = par.worldToLocal(old.wp.clone()), b = par.worldToLocal(now.clone()), d = new T.Vector3(0, 0, 1).transformDirection(r.mesh.matrixWorld);
+      r.carry = { x: a.x - b.x, y: a.y - b.y, z: a.z - b.z, ry: angDiff(Math.atan2(d.x, d.z), old.wy), rx: (old.rx || 0) - r.mesh.rotation.x, t: 0 }; this._bagEase(r, 0); }
+  }
+  _bagEase(r, dt) { const c = r.carry; if (!c) return; c.t += dt; const u = Math.min(1, c.t / POSE_FADE), w = 1 - u * u * (3 - 2 * u); if (w <= 0.001) { r.carry = null; return; } r.mesh.position.x += c.x * w; r.mesh.position.y += c.y * w; r.mesh.position.z += c.z * w; r.mesh.rotation.y += c.ry * w; r.mesh.rotation.x += (c.rx || 0) * w; }
   _bagSet(p, bag) { dropBag(p.bagRig); p.bag = bag; if (p.gait) { if (p.gait.rig) p.gait.rig.restore(); p.gait = null; } this._bagOn(p); return !!p.bagRig; }
   /** how a wheeled case is handled this frame: towed as far as the person is walking, carried on the stairs */
   _bagHow(p) { if (!p.bagRig || p.bagRig.kind !== 'trolley') return null; const w = p.settleTurn || p.settleGait ? 1 : p.gait ? p.gait.wU : (p.cur && /^walk/.test(p.cur.getClip().name) ? 1 : 0);   /* (stepping round or to a new spot, the case is taken by the handle: left standing, it swept round its owner on the floor untouched - review 52) */ this._bh = this._bh || {}; this._bh.walk = w; this._bh.lift = !!p.stair; this._bh.turn = !!(p.settleTurn || p.settleGait); this._bh.settle = !p.walking && p.state !== 'walk' && p.state !== 'go'; return this._bh; }
@@ -921,7 +934,7 @@ export class AnimCrowd {
     const Q = this._pq || (this._pq = new this.THREE.Quaternion()), V = this._pv || (this._pv = new this.THREE.Vector3());
     p.obj.traverse((o) => { if (!o.isBone || (tr && !tr.has(o.name))) return; const a = p.poseFrom.get(o.name); if (!a) return; o.quaternion.slerp(Q.set(a[0], a[1], a[2], a[3]), w); o.position.lerp(V.set(a[4], a[5], a[6]), w); });   // (only bones the clip sets afresh every frame: any other would keep the blend)
   }
-  take(q) { const i = this.people.indexOf(q); if (i < 0) return null; const look = { char: q.char, print: q.print, teeColour: q.teeColour, bag: q.bag, force: true, pose: this.snapPose(q) }; q.print = null; this._drop(q); this.people.splice(i, 1); return look; }
+  take(q) { const i = this.people.indexOf(q); if (i < 0) return null; const look = { char: q.char, print: q.print, teeColour: q.teeColour, bag: q.bag, force: true, pose: this.snapPose(q), bagOld: this.bagSnap(q.bagRig) }; q.print = null; this._drop(q); this.people.splice(i, 1); return look; }
   /** a walking passenger who is visible from the first frame and follows a route (points in the crowd's frame); onArrive(p, reached) is called at the end, then they are removed */
   walkOn(look, from, yaw, path, y, onArrive, speed) {
     const p = this.add({ ...look, x: from.x, z: from.z, y, yaw, yawT: yaw, mode: 'go', tx: path[0].x, tz: path[0].z, rail: !!path[0].rail, ty: y, speed: speed || 1.0 + this.rng() * 0.25, delay: 0, path: path.slice(1), onArrive, routed: true });
@@ -1016,7 +1029,7 @@ export class AnimCrowd {
       if (p.pet) this._petStep(p, dt);
       if (((p.state === 'sit') !== !!p.skirtSit || (p.skirtSit && p.skirtObj !== p.obj)) && this._skirted(p.char)) this._skirtSit(p, p.state === 'sit');
       if (this._skirted(p.char) && this._seatDraped(p.char)) this._seatMorph(p, dt);   // (and again on a new model: swapped between the near and far model, a seated skirt kept its standing weights - review 37's dresses)
-      if (p.bagRig && p.obj.visible && (p.bagRig.kind !== 'ruck' || p.state === 'sit' || p.bagRig.where !== 'back')) stepBag(p.bagRig, p.state === 'sit', p.state === 'pole', !!(p.lod && p.state === 'sit'), this._bagHow(p));   // (a far-model rider is not animated every frame: its bones' world matrices can still be the standing bind pose's, which put the lap bag at the chin - review 8. fresh = read them after an update)
+      if (p.bagRig && p.obj.visible && (p.bagRig.kind !== 'ruck' || p.state === 'sit' || p.bagRig.where !== 'back')) { stepBag(p.bagRig, p.state === 'sit', p.state === 'pole', !!(p.lod && p.state === 'sit'), this._bagHow(p)); if (p.bagRig.carry) this._bagEase(p.bagRig, dt); }   // (a far-model rider is not animated every frame: its bones' world matrices can still be the standing bind pose's, which put the lap bag at the chin - review 8. fresh = read them after an update)
       if (p.face) { let w = 0; if (cam && !p.hidden && p.att && p.att.sm > 0.004) { p.obj.getWorldPosition(v); if (v.distanceTo(cam) < BLINK.range) w = p.att.sm; } if (Math.abs(w - p.face.morphTargetInfluences[0]) > 0.002 || (!w && p.face.morphTargetInfluences[0])) p.face.morphTargetInfluences[0] = w; }
       if (p.eyes && cam && !p.hidden) { p.obj.getWorldPosition(v); if (v.distanceTo(cam) < BLINK.range) { const a = p.att, g = gazeStep(p.gaze, dt, this.rng, { phone: !!p.hold, want: a && a.tgt && a.tgt !== 'about' ? (a.wy || 0) - (a.yaw || 0) : 0 }); if (Math.abs(g.y - p.eyes.y) + Math.abs(g.p - p.eyes.p) > 0.002) p.eyes.set(g.y, g.p); } }
       if (p.lids) { let c = 0; if (cam && !p.hidden) { p.obj.getWorldPosition(v); if (v.distanceTo(cam) < BLINK.range) c = blinkStep(p.blink, dt, this.rng, { sit: p.state === 'sit', phone: !!p.hold }); } if (p.face) c = Math.max(c, 0.2 * p.face.morphTargetInfluences[0]); if (c !== p.lids.c) p.lids.set(c); }   // a real smile narrows the eyes (the cheeks push the lower lids up): without it review 6 read the smiles as faint smirks
