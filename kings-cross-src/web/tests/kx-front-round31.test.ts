@@ -1,0 +1,74 @@
+// Round F11 (front A6): from outside, north of the gables' plane, by day the north screens are dark, glossy blue-grey glass; from inside, on the plane
+// and at night they are the library glass as before, and the front's glass is never touched.
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import * as THREE from 'three';
+import type { KxData } from '../../core/osm.ts';
+import { readFileSync } from 'node:fs';
+import { shedLayout } from '../../core/station.ts';
+import { material, windowNight } from '../src/materials.ts';
+import * as shed from '../src/shed.ts';
+
+const data: KxData = JSON.parse(readFileSync(new URL('../src/data/kx-track.json', import.meta.url), 'utf8'));
+const layout = shedLayout(data);
+const S = shed as Record<string, unknown>;
+const O = S.GABLE_OUTSIDE as { color: number; opacity: number; specular: number } | undefined;
+const build = (roof: 'auto' | 'xray'): THREE.Group => { const g = shed.buildShed(layout, { range: false, roof }); g.updateMatrixWorld(true); return g; };
+const camera = (g: THREE.Group, at: [number, number, number]): THREE.PerspectiveCamera => { const c = new THREE.PerspectiveCamera(); c.position.copy(g.localToWorld(new THREE.Vector3(...at))); return c; };
+const L = layout.length, W = layout.width;
+// gable-oblique and north-gable sit north of the plane; the rest are inside, on the plane, south of the front or over the roof
+const outside: [string, [number, number, number]][] = [['throat', [W / 2, 18, -L - 90]], ['gable-oblique', [W + 8, 16, -L - 35]], ['just out', [10, 8, -L - 0.5]]];
+const notOutside: [string, [number, number, number]][] = [['inside', [layout.spine, 8, -L / 2]], ['inside by the gable', [W / 4, 6, -L + 2]], ['on the plane', [W / 2, 12, -L + 0.001]], ['south', [-20, 25, 30]], ['above', [W / 2, layout.crown + 60, -L / 2]]];
+const draw = (m: THREE.Mesh, c: THREE.Camera): { opacity: number; color: number; specular: number } => {
+  const mat = m.material as THREE.MeshPhongMaterial;
+  m.onBeforeRender(undefined as never, undefined as never, c, m.geometry, mat, null as never);
+  const seen = { opacity: mat.opacity, color: mat.color.getHex(), specular: mat.specular.getHex() };
+  m.onAfterRender(undefined as never, undefined as never, c, m.geometry, mat, null as never);
+  return seen;
+};
+const lib = (): { opacity: number; color: number; specular: number } => { const m = material('glass') as THREE.MeshPhongMaterial; return { opacity: m.opacity, color: m.color.getHex(), specular: m.specular.getHex() }; };
+
+test('A6 (F11): by day from north of the gables\' plane the gable glass is GABLE_OUTSIDE, darker and more opaque than the library glass, and is put back after', () => {
+  assert.ok(O, 'GABLE_OUTSIDE exported');
+  const base = lib(), g = build('auto'), glass = g.getObjectByName('shed-gable-glass') as THREE.Mesh;
+  assert.ok(new THREE.Color(O.color).getHSL({ h: 0, s: 0, l: 0 }).l < new THREE.Color(base.color).getHSL({ h: 0, s: 0, l: 0 }).l - 0.2, 'darker');
+  assert.ok(O.opacity > base.opacity + 0.3 && O.opacity < 1, 'more opaque, still glass');
+  const b = new THREE.Color(O.color); assert.ok(b.b > b.r, 'blue-grey');
+  windowNight.value = 0;
+  for (const [where, at] of outside) {
+    assert.deepEqual(draw(glass, camera(g, at)), { opacity: O.opacity, color: O.color, specular: O.specular }, where);
+    assert.deepEqual(lib(), base, `${where}: the shared glass put back`);
+  }
+});
+
+test('A6 (F11): from inside, on the plane, south or above, and outside at night, the gable glass is the library glass, as before; the front glass never changes', () => {
+  const base = lib(), g = build('auto'), glass = g.getObjectByName('shed-gable-glass') as THREE.Mesh, front = g.getObjectByName('shed-front-glass') as THREE.Mesh;
+  windowNight.value = 0;
+  for (const [where, at] of notOutside) assert.deepEqual(draw(glass, camera(g, at)), base, where);
+  for (const [where, at] of [...outside, ...notOutside]) assert.deepEqual(draw(front, camera(g, at)), base, `front from ${where}`);
+  windowNight.value = 1;
+  for (const [where, at] of outside) assert.deepEqual(draw(glass, camera(g, at)), base, `${where} at night`);
+  windowNight.value = 0.5;
+  const half = draw(glass, camera(g, outside[0][1]));
+  assert.ok(Math.abs(half.opacity - (base.opacity + O!.opacity) / 2) < 1e-9, 'dusk: half way');
+  windowNight.value = 0;
+});
+
+test('A6 (F11): in x-ray the outside glass dims by endGlassFactor like the front\'s, and inside x-ray is as before', () => {
+  const base = lib(), g = build('xray'), glass = g.getObjectByName('shed-gable-glass') as THREE.Mesh, f = shed.endGlassFactor('xray');
+  windowNight.value = 0;
+  assert.ok(Math.abs(draw(glass, camera(g, outside[0][1])).opacity - O!.opacity * f) < 1e-9);
+  assert.ok(Math.abs(draw(glass, camera(g, notOutside[0][1])).opacity - base.opacity * f) < 1e-9);
+  assert.deepEqual(lib(), base);
+});
+
+test('A6 (F11): gableOutside is 1 - night north of the plane only', () => {
+  const fn = S.gableOutside as ((c: [number, number, number], l: { length: number }, n: number) => number) | undefined;
+  assert.ok(fn);
+  assert.equal(fn([0, 0, -L - 0.01], layout, 0), 1);
+  assert.equal(fn([0, 0, -L], layout, 0), 0);
+  assert.equal(fn([0, 0, -L + 1], layout, 0), 0);
+  assert.equal(fn([0, 0, -L - 5], layout, 0.25), 0.75);
+  assert.equal(fn([0, 0, -L - 5], layout, 2), 0);
+  assert.equal(fn([0, 0, -L - 5], layout, -1), 1);
+});

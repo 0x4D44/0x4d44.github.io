@@ -889,6 +889,31 @@ function dimInXray(glass: THREE.Mesh, group: THREE.Group): void {
   glass.onAfterRender = (_r, _s, _c, _g, mat) => { mat.opacity = was; };
 }
 
+/**
+ * Round F11 (front A6: from the throat by day the north screens read as dark, slightly glossy blue-grey glass, ref front-d, not clear glass onto the
+ * shed): the gable glass seen from outside, north of the gables' plane, by day: its colour, opacity and specular (ASSUMED from front-d). From inside, on the
+ * plane, or at night it is the library glass as before (the screens from inside are shed B3's, and lit at night they should show the room).
+ */
+export const GABLE_OUTSIDE = { color: 0x35424e, opacity: 0.86, specular: 0xdce6f0 } as const;
+/** The share of GABLE_OUTSIDE the gable glass takes for a camera at `cam` (the shed's frame): 1 - night north of the gables' plane, 0 elsewhere. */
+export function gableOutside(cam: V3, layout: Pick<ShedLayout, 'length'>, night: number): number {
+  return cam[2] < -layout.length ? 1 - Math.min(1, Math.max(0, night)) : 0;
+}
+/** dimInXray for the gable glass, which also takes GABLE_OUTSIDE by gableOutside for the camera (set for its own draw and put back after). */
+function gableGlassView(glass: THREE.Mesh, group: THREE.Group, layout: Pick<ShedLayout, 'length'>): void {
+  let was = 1;
+  const colour = new THREE.Color(), specular = new THREE.Color(), tint = new THREE.Color(), cam = new THREE.Vector3(), inverse = new THREE.Matrix4();
+  glass.onBeforeRender = (_r, _s, camera, _g, mat) => {
+    const m = mat as THREE.MeshPhongMaterial;
+    was = m.opacity; colour.copy(m.color); specular.copy(m.specular);
+    cam.copy(camera.position).applyMatrix4(inverse.copy(group.matrixWorld).invert());
+    const k = gableOutside([cam.x, cam.y, cam.z], layout, windowNight.value);
+    m.opacity = (was + (GABLE_OUTSIDE.opacity - was) * k) * endGlassFactor(group.userData.roofMode as RoofMode);
+    if (k > 0) { m.color.lerp(tint.setHex(GABLE_OUTSIDE.color), k); m.specular.lerp(tint.setHex(GABLE_OUTSIDE.specular), k); }
+  };
+  glass.onAfterRender = (_r, _s, _c, _g, mat) => { const m = mat as THREE.MeshPhongMaterial; m.opacity = was; m.color.copy(colour); m.specular.copy(specular); };
+}
+
 /** The glazing's opacity for a roof opacity `roof` (from roofOpacity): `near` at 1 (solid roof), `far` at XRAY_OPACITY, linear between. */
 export function glazingOpacity(roof: number): number {
   const k = Math.min(1, Math.max(0, (roof - XRAY_OPACITY) / (1 - XRAY_OPACITY)));
@@ -1789,7 +1814,7 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   }
   const gableGlass = mesh(mergeGeometries(gableGeos, false), material('glass'), 'shed-gable-glass');
   gableGlass.renderOrder = GLASS_ORDER.gable;
-  dimInXray(gableGlass, group);
+  gableGlassView(gableGlass, group, layout); // round F11: dark from outside by day (GABLE_OUTSIDE), dimmed in x-ray as the front's
   // round F9b: the glazings' order set for each view before three sorts it, from the scene's onBeforeRender (the camera's, after the world matrices update)
   const orderGlass = (camera: THREE.Camera): void => {
     inverse.copy(group.matrixWorld).invert();
