@@ -60,9 +60,19 @@ export const TOWER_PROJECTION = TOWER_SIZE + 0.15;
  * stepped cornice at the shaft's top with a weathered slope in to the stage, and a gilded banner vane. The total height (CLOCK_TOWER_HEIGHT, to the vane's top) is published.
  */
 export const TOWER_TOP = {
-  setback: 0.9, clockBelowFrieze: 2.0, frieze: 0.3, bracket: { width: 0.45, height: 0.8, lower: 0.6 }, perFace: 7, corona: 0.2, overhang: 1.2, edge: 0.15, rise: 0.3,
+  setback: 0.9, clockBelowFrieze: 2.0, frieze: 0.3, bracket: { width: 0.45, height: 0.8, lower: 0.6 }, perFace: 7, corona: 0.2, overhang: 1.2, edge: 0.25, rise: 0.6, eave: 0.15,
   transition: { lower: { height: 0.3, out: 0.15 }, upper: { height: 0.35, out: 0.35 }, weather: 0.45 },
 } as const;
+/**
+ * Tower round 2 (rubric A4, the fresh scorer against R-kx-front-c). The shaft's corners are pilasters in the panel's own brick, `width` square
+ * (0.13 of the shaft's 6.7 m), standing `proud` in front of the panel between them, so only a shadow line tells them from it (they were pale
+ * stone quoins). The cap is a low hipped dark metal roof (TOWER_TOP.rise 0.6 m) whose dark edge, `edge` 0.25 m deep, stands `eave` 0.15 m past
+ * the corona. The soffit under the corona and the frieze between the brackets read pale and mid-shadow in the photograph, near-black in the
+ * model: their normals are turned out (`soffitTilt`, `friezeTilt`, the y of the turned normal) so the sky's half of the hemisphere light reaches
+ * them, an ambient lift in place of a bounce the model has no pass for. The vane carries a compass cross, arms `arm` long from the mast at
+ * `crossBelow` under the vane's top, with a letter at each arm's end; the banner rides above it. Sizes ASSUMED.
+ */
+export const TOWER_ROUND2 = { pilaster: { width: 0.87, proud: 0.15 }, soffitTilt: -0.3, friezeTilt: 0.45, vane: { arm: 0.9, crossBelow: 1.0, letter: [0.2, 0.26] } } as const;
 /**
  * The clock dials (round 5, tower passes 2 and 2a): the gilt bezel sits straight on the stage's brick, no stone surround (R-kx-front-a, -c).
  * The scorer measured the dial at about 0.65 of the stage's face in front-a, 0.63 to 0.72 in front-c: a 1.52 m radius is 0.66 of the
@@ -2232,9 +2242,13 @@ export function buildTower(x: number): THREE.Group {
   const clockY = eavesY - TOWER_TOP.clockBelowFrieze;
   tb.box([0, (shaftTop + GROUND_Y) / 2, 0], [tw, shaftTop - GROUND_Y, tw]);
   ts.box([0, GROUND_Y + 0.9, 0], [tw + 0.7, 1.8, tw + 0.7]); // plinth
-  for (const sx of [-1, 1]) for (const sz of [-1, 1]) ts.box([sx * (tw / 2 + 0.05), (shaftTop + GROUND_Y) / 2 + 0.9, sz * (tw / 2 + 0.05)], [0.9, shaftTop - GROUND_Y - 1.8, 0.9]); // quoins
   // the shaft's cornice under the clock stage (R-kx-front-c): two stepped stone courses, then a weathered top sloping in to the stage
   const { lower, upper, weather } = TOWER_TOP.transition;
+  {
+    // the corner pilasters (TOWER_ROUND2), brick, from the plinth up to the cornice's lower course, their tops and feet buried in stone
+    const { width: pw, proud } = TOWER_ROUND2.pilaster, c = tw / 2 + proud - pw / 2, y0 = GROUND_Y + 1.8, y1 = shaftTop - upper.height - lower.height;
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) tb.box([sx * c, (y0 + y1) / 2, sz * c], [pw, y1 - y0, pw], { skip: ['+y', '-y'] });
+  }
   ts.box([0, shaftTop - upper.height - lower.height / 2, 0], [tw + 2 * lower.out, lower.height, tw + 2 * lower.out], { skip: ['+y'] });
   ts.box([0, shaftTop - upper.height / 2, 0], [tw + 2 * upper.out, upper.height, tw + 2 * upper.out]);
   {
@@ -2270,8 +2284,8 @@ export function buildTower(x: number): THREE.Group {
   tb.box([0, (shaftTop + eavesY) / 2, 0], [cw, eavesY - shaftTop, cw]); // the clock stage
   // the bracketed cornice (TOWER_TOP, R-kx-front-c): a stone frieze, a row of two-tier stone brackets on every face, the corona they carry,
   // then the dark metal roof's edge and its near-flat hipped top
-  const { frieze, bracket, perFace, corona, overhang, edge, rise } = TOWER_TOP;
-  ts.box([0, eavesY + frieze / 2, 0], [cw + 0.2, frieze, cw + 0.2]);
+  const { frieze, bracket, perFace, corona, overhang, edge, rise, eave } = TOWER_TOP;
+  ts.box([0, eavesY + frieze / 2, 0], [cw + 0.2, frieze, cw + 0.2], { skip: ['+x', '-x', '+z', '-z'] }); // its faces are drawn under the corona's soffit
   const by = eavesY + frieze;
   for (const [nx, nz] of [[0, 1], [1, 0], [0, -1], [-1, 0]] as [number, number][]) {
     for (let k = 0; k < perFace; k++) {
@@ -2285,8 +2299,17 @@ export function buildTower(x: number): THREE.Group {
     }
   }
   const cy = by + bracket.height, span = cw + 2 * overhang;
-  ts.box([0, cy + corona / 2, 0], [span, corona, span]); // the corona
-  const capBase = cy + corona, hb = span / 2 + 0.05, capTop = capBase + edge + rise;
+  ts.box([0, cy + corona / 2, 0], [span, corona, span], { skip: ['-y'] }); // the corona
+  // its soffit, a strip on each face from the brackets' heads out, and the frieze's faces between the brackets, their normals turned out (TOWER_ROUND2)
+  for (const [nx, nz] of [[0, 1], [1, 0], [0, -1], [-1, 0]] as [number, number][]) {
+    const at = (u: number, d: number, y: number): V3 => (nx === 0 ? [u, y, nz * d] : [nx * d, y, -nx * u]);
+    const out = (ny: number): V3 => { const h = Math.sqrt(1 - ny * ny); return [nx * h, ny, nz * h]; };
+    const i = cw / 2, o = span / 2;
+    ts.poly([at(-i, i, cy), at(i, i, cy), at(o, o, cy), at(-o, o, cy)], [[-i, i], [i, i], [o, o], [-o, o]], { normal: out(TOWER_ROUND2.soffitTilt) });
+    const f = cw / 2 + 0.1;
+    ts.poly([at(-f, f, eavesY), at(f, f, eavesY), at(f, f, by), at(-f, f, by)], [[-f, 0], [f, 0], [f, frieze], [-f, frieze]], { normal: out(TOWER_ROUND2.friezeTilt) });
+  }
+  const capBase = cy + corona, hb = span / 2 + eave, capTop = capBase + edge + rise;
   tslate.box([0, capBase + edge / 2, 0], [2 * hb, edge, 2 * hb], { skip: ['+y'] }); // the roof's dark edge, over the corona
   const apex: V3 = [0, capTop, 0];
   const corners: V3[] = [[-hb, capBase + edge, hb], [hb, capBase + edge, hb], [hb, capBase + edge, -hb], [-hb, capBase + edge, -hb]];
@@ -2306,12 +2329,26 @@ export function buildTower(x: number): THREE.Group {
   }
   tower.userData.clockDials = dirs.map(([nx, nz]): ClockDial => ({ centre: [nx * (cw / 2 + 0.06), clockY, nz * (cw / 2 + 0.06)], normal: [nx, 0, nz], up: [0, 1, 0], radius: dial })); // clocks.ts
   // ASSUMED simplified vane: mast, cardinal cross and arrow; its precise metalwork is not surveyed.
-  const vane = new Batch(), vaneY = CLOCK_TOWER_HEIGHT - 0.65;
+  const vane = new Batch(), { arm, crossBelow, letter } = TOWER_ROUND2.vane, crossY = CLOCK_TOWER_HEIGHT - crossBelow, vaneY = CLOCK_TOWER_HEIGHT - 0.63;
   const gilt = (material('steel') as THREE.MeshLambertMaterial).clone();
   gilt.color.set(0xc8a24a); // gilded (the vane's own mesh: no new draw)
   vane.box([0, (capTop - 0.15 + CLOCK_TOWER_HEIGHT) / 2, 0], [0.045, CLOCK_TOWER_HEIGHT - capTop + 0.15, 0.045]);
-  vane.box([0, vaneY, 0], [1.8, 0.04, 0.04]);
-  vane.box([0, vaneY, 0], [0.04, 0.04, 1.8]);
+  vane.box([0, crossY, 0], [2 * arm, 0.04, 0.04]);
+  vane.box([0, crossY, 0], [0.04, 0.04, 2 * arm]);
+  // a letter over each arm's end, in thin bars: E and W read from the south, N and S from the east (their strokes in a unit cell)
+  const strokes: [string, [number, number], V3, [number, number, number, number][]][] = [
+    ['N', [0, -1], [0, 0, -1], [[0, 0, 0, 1], [0, 1, 1, 0], [1, 0, 1, 1]]],
+    ['S', [0, 1], [0, 0, -1], [[1, 1, 0, 1], [0, 1, 0, 0.5], [0, 0.5, 1, 0.5], [1, 0.5, 1, 0], [1, 0, 0, 0]]],
+    ['E', [1, 0], [1, 0, 0], [[0, 0, 0, 1], [0, 1, 1, 1], [0, 0.5, 0.8, 0.5], [0, 0, 1, 0]]],
+    ['W', [-1, 0], [1, 0, 0], [[0, 1, 0.25, 0], [0.25, 0, 0.5, 0.6], [0.5, 0.6, 0.75, 0], [0.75, 0, 1, 1]]],
+  ];
+  for (const [, [dx, dz], h, bars] of strokes) {
+    const [lw, lh] = letter, r = arm - lw / 2 - 0.03, rotY = Math.atan2(-h[2], h[0]);
+    for (const [a0, b0, a1, b1] of bars) {
+      const u0 = (a0 - 0.5) * lw, u1 = (a1 - 0.5) * lw, v0 = 0.05 + b0 * lh, v1 = 0.05 + b1 * lh, mu = (u0 + u1) / 2;
+      vane.box([dx * r + h[0] * mu, crossY + (v0 + v1) / 2, dz * r + h[2] * mu], [Math.hypot(u1 - u0, v1 - v0) + 0.03, 0.03, 0.03], { rotZ: Math.atan2(v1 - v0, u1 - u0), rotY });
+    }
+  }
   // a banner on the mast, swallow-tailed (R-kx-front-a, R-kx-front-c show a gilded vane; its outline is ASSUMED)
   const banner: V3[] = [[0.05, vaneY + 0.08, 0], [1.2, vaneY + 0.08, 0], [0.95, vaneY + 0.34, 0], [1.2, vaneY + 0.6, 0], [0.05, vaneY + 0.6, 0]];
   vane.poly(banner, undefined, { facing: [0, 0, 1] }); vane.poly(banner, undefined, { facing: [0, 0, -1] });

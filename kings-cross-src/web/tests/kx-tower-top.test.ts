@@ -61,7 +61,8 @@ test('the cap is near-flat, its dark edge overhanging the stage, under the vane 
   for (let i = 0; i < pos.count; i++) if (pos.getY(i) > clockY) cap.expandByPoint(new THREE.Vector3().fromBufferAttribute(pos, i));
   const brick = named('tower-brick');
   const stage = hitZ(0, clockY - 2.35, brick)!;
-  assert.ok(cap.max.y - cap.min.y <= 0.6, `a near-flat top, not a pitched hip: ${(cap.max.y - cap.min.y).toFixed(2)} m from edge to apex`);
+  // re-pinned 2026-11-25 (tower round 2): the cap is a low hip rising 0.6 m over a 0.25 m dark edge (R-kx-front-c), not a 0.3 m slab; still no steep pitch
+  assert.ok(cap.max.y - cap.min.y <= 1.0, `a low hipped top, not a pitched hip: ${(cap.max.y - cap.min.y).toFixed(2)} m from edge to apex`);
   assert.ok(cap.max.z - stage >= 1.0, 'its edge overhangs the stage by a metre or more');
   const top = Math.max(...(tower.getObjectsByProperty('type', 'Mesh') as THREE.Mesh[]).map(m => box(m).max.y));
   assert.ok(Math.abs(top - CLOCK_TOWER_HEIGHT) < 0.5, `the vane's top at ${top.toFixed(2)} m, published ${CLOCK_TOWER_HEIGHT.toFixed(2)}`);
