@@ -150,6 +150,8 @@ export interface StreetLightOptions {
   poolFocus?: number;
   /** Keep distant head cores without allocating unseen pools on distant roads. */
   poolAt?: (spot:LampSpot,index:number)=>boolean;
+  /** A head's pool decal's alpha gain (1 as before); the King's Cross shed's heads take 0, the floor drawing their pools itself (kx-shed-pools.ts). */
+  poolGainAt?: (spot:LampSpot,index:number)=>number;
   /** Pools drawn by the receiving shader when that night variant is active. */
   receiverPoolAt?: (spot: LampSpot) => boolean;
   /** Drape urban pools onto the same physical paving as their reflections. */
@@ -378,6 +380,7 @@ export function createStreetLights(spots: readonly LampSpot[], options: StreetLi
   const poolSegments = options.poolSegments ?? (options.poolSurface ? 2 : 1);
   const poolGeometry = new THREE.PlaneGeometry(1, 1, poolSegments, poolSegments).rotateX(-Math.PI / 2);
   if (options.poolFloor || options.weatherEffects) poolGeometry.setAttribute('poolFloorWeight', new THREE.InstancedBufferAttribute(new Float32Array(poolEntries.map(({spot:s,index:i})=>Number(options.poolFloor ? options.poolFloor.appliesAt?.(s,i) ?? true : false))),1));
+  if (options.poolGainAt) poolGeometry.setAttribute('poolGain', new THREE.InstancedBufferAttribute(new Float32Array(poolEntries.map(({spot:s,index:i})=>options.poolGainAt!(s,i))),1));
   if (options.poolLineAt) poolGeometry.setAttribute('poolLine', new THREE.InstancedBufferAttribute(new Float32Array(poolEntries.map(({spot:s,index:i})=>Number(options.poolLineAt!(s,i)))),1));
   const roadPoolShape=!!options.kxOptics&&options.poolRoadShape!==false;
   if (roadPoolShape) poolGeometry.setAttribute('poolRoadDirection',new THREE.InstancedBufferAttribute(new Float32Array(poolEntries.flatMap(({spot})=>[Math.sin(spot.yaw),-Math.cos(spot.yaw)])),2));
@@ -394,7 +397,7 @@ export function createStreetLights(spots: readonly LampSpot[], options: StreetLi
   const pools = new THREE.InstancedMesh(poolGeometry, poolMaterial, poolEntries.length);
   pools.raycast = (): void => {};
   if (options.fog) fadeLightInFog(poolMaterial, bounded);
-  if (options.poolFloor || options.poolWeather || options.analyticPool) {
+  if (options.poolFloor || options.poolWeather || options.analyticPool || options.poolGainAt) {
     const before = poolMaterial.onBeforeCompile;
     poolMaterial.onBeforeCompile = (shader, renderer) => {
       before.call(poolMaterial, shader, renderer);
@@ -507,6 +510,12 @@ if (vPoolLocalScale > 0.0) {
         declarations += '\nvarying float vPoolFloorWeight;\nuniform sampler2D uPoolFloorMap;\nuniform vec4 uPoolFloorRect;';
         body += `\ngl_FragColor.a *= mix( 1.0, ${poolFloorClip('texture2D( uPoolFloorMap, ( vPoolWorld.xz - uPoolFloorRect.xy ) * uPoolFloorRect.zw ).r')}, vPoolFloorWeight );`;
       }
+      if (options.poolGainAt) {
+        shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nattribute float poolGain;\nvarying float vPoolGain;')
+          .replace('#include <project_vertex>','#include <project_vertex>\nvPoolGain = poolGain;');
+        declarations += '\nvarying float vPoolGain;';
+        body += '\n// pool-gain-begin\ngl_FragColor.a *= vPoolGain;\n// pool-gain-end';
+      }
       if (options.poolWeather) {
         shader.uniforms.uPoolWet = surfaceUniforms.wet;
         shader.uniforms.uPoolFog = surfaceUniforms.fog;
@@ -521,7 +530,7 @@ gl_FragColor.a *= ( 1.0 - 0.38 * uPoolWet * poolOpen ) * ( 1.0 - 0.55 * uPoolFog
       shader.fragmentShader = shader.fragmentShader.replace('#include <common>', `#include <common>\n${declarations}`)
         .replace('#include <opaque_fragment>', `#include <opaque_fragment>\n${body}`);
     };
-    poolMaterial.customProgramCacheKey = () => `street-pool-${bounded}-${!!options.fog}-${!!options.poolFloor}-${!!options.poolWeather}-${!!options.analyticPool}${options.poolLineAt ? '-line' : ''}${options.poolSurface?'-receiver':''}${options.poolFocus===undefined?'':`-focus${options.poolFocus}`}${options.kxOptics?'-kx':''}${roadPoolShape?'-road':''}${options.luminairePools?'-luminaire':''}${options.roadPoolBalance?'-balanced':''}${localSodium?'-local-sodium':''}`;
+    poolMaterial.customProgramCacheKey = () => `street-pool-${bounded}-${!!options.fog}-${!!options.poolFloor}-${!!options.poolWeather}-${!!options.analyticPool}${options.poolLineAt ? '-line' : ''}${options.poolSurface?'-receiver':''}${options.poolFocus===undefined?'':`-focus${options.poolFocus}`}${options.kxOptics?'-kx':''}${roadPoolShape?'-road':''}${options.luminairePools?'-luminaire':''}${options.roadPoolBalance?'-balanced':''}${localSodium?'-local-sodium':''}${options.poolGainAt?'-gain':''}`;
   }
   pools.name = 'street-lamp-pools';
   poolEntries.forEach(({spot,index}, i) => {

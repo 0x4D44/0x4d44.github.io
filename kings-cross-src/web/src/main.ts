@@ -42,6 +42,8 @@ import type { GroundAt } from './camera-ground.ts';
 import { createPerthWeather, createSceneWeather, createWaverleyWeather, sceneWeatherOptions } from './station-weather.ts';
 import { createAdditionsWatch, createSunShadow, createUngradedScan, grade } from './lighting.ts';
 import { nightLightSites } from './night.ts';
+import { bakeShedFloor, lightShedFloor } from './kx-shed-pools.ts';
+import { material } from './materials.ts';
 import { lightSourcesFor } from '../../core/light-sources.ts';
 import { LIGHT_GRID_DESKTOP, LIGHT_GRID_MOBILE } from '../../core/light-field.ts';
 import { createNightLightLayer } from './night-light-layer.ts';
@@ -226,8 +228,11 @@ function start(): void {
   const replayDay = `${settings.date.slice(0, 4)}-${settings.date.slice(4, 6)}-${settings.date.slice(6, 8)}`;
   const weatherOptions = sceneWeatherOptions(forcedWeather, settings.mode === 'replay' ? replayDay : null);
   const lampPlan = furniture.userData.plan as FurniturePlan;
+  const kxSites = nightLightSites({ lamps: lampPlan.lamps, layout, data, canopy, footprint: station?.pts ?? [] });
+  // B7 round 1: the shed's platforms draw their lamps' pools and the crown's daylight themselves (kx-shed-pools.ts)
+  lightShedFloor([material('platformTop'), material('platformEdgeStripShed')], bakeShedFloor(layout, kxSites.shed));
   const londonClimate = fixedSky ? null : createSceneWeather({ scene, world,
-    sites: nightLightSites({ lamps: lampPlan.lamps, layout, data, canopy, footprint: station?.pts ?? [] }), platformLampFloor: surfacePlatforms(data).map(p=>p.pts), lampLayerSunGate:[0,6], kingsCrossNightFog:true, cityFogTint:[.320,.266,.237], litFogCloud:true, nightLightingPilot, nightLightingLayer, weather: weatherOptions });
+    sites: kxSites, platformLampFloor: surfacePlatforms(data).map(p=>p.pts), lampLayerSunGate:[0,6], kingsCrossNightFog:true, cityFogTint:[.320,.266,.237], litFogCloud:true, nightLightingPilot, nightLightingLayer, weather: weatherOptions });
   const atmosphere = londonClimate?.atmosphere ?? null, weatherFeed = londonClimate?.feed ?? null;
   // The sun's shadow (lighting.ts) is London's; ?shadows=0 leaves it out. Every scene with a climate is drawn through the filmic grade (see the frame loop).
   const sunShadow = atmosphere && params.get('shadows') !== '0' ? createSunShadow(scene, world.lights.sun) : null;
