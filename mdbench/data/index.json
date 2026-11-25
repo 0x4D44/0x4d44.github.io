@@ -1,6 +1,6 @@
 {
  "schema": "mdbench-site/1",
- "generated": "2026-11-25T18:30:38Z",
+ "generated": "2026-11-25T19:16:44Z",
  "families": [
   {
    "id": "claude",
@@ -488,6 +488,14 @@
    "cost_note": "list price reported by Claude Code",
    "released": "2025-09-29",
    "baseline": true
+  }
+ ],
+ "pages": [
+  {
+   "id": "code-mode",
+   "title": "Code Mode trial",
+   "file": "code-mode.json",
+   "description": "Opus 5.5 medium with and without Claude Code's experimental Code Mode: tokens, cost and time on the same exercises."
   }
  ]
 }
