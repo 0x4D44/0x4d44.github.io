@@ -130,7 +130,7 @@ export const PORCH_FANLIGHT = { bar: 0.08, headSegments: 12 } as const;
  * lamps are linear strips (FRONT_CANOPY.lamp). The porch interiors' figures and barriers take `figure`, a mid tone, by day and a warm glow after
  * dark (`figureNight`, below the interior's FRONT_NIGHT.glass) in place of the frames' charcoal (they read as flat black slabs at night). ASSUMED.
  */
-export const PORCH_TONES = { soffit: 0x3a3f45, figure: 0x4a4540, figureNight: [0xffc98a, 0.22] as const, soffitFill: 0.85, figureLift: 0.22, figureDay: 0.65, pool: { colour: 0xffe2b8, gain: 0.05, radius: 0.7 } as const } as const;
+export const PORCH_TONES = { soffit: 0x3a3f45, figure: 0x4a4540, figureNight: [0xffc98a, 0.22] as const, soffitFill: 0.85, figureLift: 0.22, figureDay: 0.75, pool: { colour: 0xffe2b8, gain: 0.05, radius: 0.7 } as const } as const;
 // round 1b (the GPU captures: the soffit still 5/5/6 by day in porch-close, the figures near black, the lamps white boxes on a dark soffit at night): by day
 // the soffit's faces turned down take a paving bounce, `soffitFill` times their own colour as light (gone at night: there it is as before), about 45-58
 // sRGB at the clear day's exposure (ACES); at night each strip lamp throws a warm pool on the soffit round it (`pool`: its colour times `gain`, falling
@@ -139,7 +139,7 @@ export const PORCH_TONES = { soffit: 0x3a3f45, figure: 0x4a4540, figureNight: [0
 // about 19/16/13 by day, some 10 levels under the interior) (ASSUMED, all three tuned on three's ACES curve, tests/aces.ts, not measured on the GPU)
 // Arcade round 2 (the GPU: a figure 41/35/28 against the interior's 24/16/7 beside it; the interior runs 5-37 across its gradient and vignette, so no
 // constant sits under it everywhere): by day the figures and barriers are the interior's own material at their spot (its colour, day darkening, map at the
-// same UV, emissive) times `figureDay` (linear; on three's ACES curve at the day exposure, tests/aces.ts, 0.53-0.66 of the interior's level in display sRGB over its 15-37 range, ASSUMED), so they read darker than the hall round them
+// same UV, emissive) times `figureDay` (linear; round 2b: 0.75, was 0.65, so the silhouettes hold; on three's ACES curve at the day exposure, tests/aces.ts, 0.67-0.76 of the interior's level in display sRGB over its 15-37 range, ASSUMED), so they read darker than the hall round them
 // wherever they stand; at night their colour, `figureLift` and glow as before
 /**
  * The front's relief (rubric A2). R-kx-front-a (2026) and R-kx-front-b (2016) show each great arch's reveal in three brick orders stepping
@@ -195,8 +195,12 @@ export const FRONT_ORDER_FACE = 1.25;
 export const FRONT_ORDER_SHADE = 0.5;
 /** Arcade round 2 (the A2 round's score, A3: by day the lower arcade's returns read paler than the great arches'): the same day-only contact shade on
  * the porch openings' brick reveals in the front (FRONT_ORDER_SHADE on the return tone) and on the porch rings' returns and soffits, which are in the
- * wall's own brick, so they take the return tone too: FRONT_RETURN x FRONT_ORDER_SHADE, the great arches' returns' tone. */
-export const PORCH_RETURN_SHADE = FRONT_RETURN * FRONT_ORDER_SHADE;
+ * wall's own brick, so they take the return tone too: FRONT_RETURN x FRONT_ORDER_SHADE, the great arches' returns' tone.
+ * Round 2b (the GPU, porch-close by day: at 0.275 the rings' outer return read 3-9 sRGB on brick at 33-36, a hard ink line about 5 px wide, and the
+ * soffit 13 -> 5 with its texture lost; unshaded, round 1 read 21-26 and 13): the rings' returns and soffits graded across their depth, `back` where
+ * they meet the wall (the inner corner) to `face` at the ring's face. On three's ACES curve at the day exposure (tests/aces.ts) that is about 16-21
+ * at the inner corner rising to 21-26 at the face (0.55-0.7 of the brick beside it), and the soffit about 10-13, its brick still showing (ASSUMED). */
+export const PORCH_RETURN_SHADE = { back: 0.8, face: 1 } as const;
 /** Round 27 (A2: the spandrel's head showed no shadow square-on): the panel's top `height` m, under the frame's band, in the return tone. */
 export const FRONT_PANEL_HEAD = { height: 0.4 } as const;
 export const FRONT_TYMPANUM = { out: 0.5, band: 0.45, strip: 0.5, recess: 0.6 } as const; // round 22 (A2: 0.15 m read about 1 px square-on): 0.3; round 23b (the painted line was black at night): 0.5, the band's own soffit casting the shadow line
@@ -1854,9 +1858,10 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   // arcade round 1 (A3): each arch turned in PORCH_ORDERS brick orders, the outer prouder by `step`, down the jambs to the paving
   const entryRings = entryCentres.flatMap(x => Array.from({ length: PORCH_ORDERS.orders }, (_, i) => {
     const g = new THREE.ExtrudeGeometry(porchOrder(x, entryFoot + SOUTH_FRONT_ARCADES.jambHeight, entryR + i * PORCH_ORDERS.depth, SOUTH_FRONT_ARCADES.archRise + i * PORCH_ORDERS.depth, PORCH_ORDERS.depth, PORCH_ORDERS.toGround ? GROUND_Y : entryFoot + SOUTH_FRONT_ARCADES.jambHeight), { depth: (i + 1) * PORCH_ORDERS.step, bevelEnabled: false, curveSegments: PORCH_ORDERS.segments });
-    // arcade round 2: the ring's side walls (its returns and its soffit, the extrusion's group 1) in PORCH_RETURN_SHADE by day, its face 1
-    const col = new Float32Array(g.getAttribute('position').count * 3).fill(1);
-    for (const grp of g.groups) if (grp.materialIndex === 1) col.fill(PORCH_RETURN_SHADE, 3 * grp.start, 3 * (grp.start + grp.count));
+    // arcade round 2: the ring's side walls (its returns and its soffit, the extrusion's group 1) shaded by day, its face 1; round 2b: graded by
+    // depth, PORCH_RETURN_SHADE.back at the wall (z 0) to .face at the ring's face
+    const pos = g.getAttribute('position'), col = new Float32Array(pos.count * 3).fill(1), depth = (i + 1) * PORCH_ORDERS.step, { back, face } = PORCH_RETURN_SHADE;
+    for (const grp of g.groups) if (grp.materialIndex === 1) for (let k = grp.start; k < grp.start + grp.count; k++) col.fill(back + ((face - back) * pos.getZ(k)) / depth, 3 * k, 3 * k + 3);
     g.setAttribute('color', new THREE.BufferAttribute(col, 3));
     return g;
   }));

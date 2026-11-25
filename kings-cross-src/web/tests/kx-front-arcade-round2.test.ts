@@ -19,7 +19,7 @@ const R = SHED_SPAN_WIDTH / 2;
 const group = shed.buildShed(layout, { range: false });
 group.updateMatrixWorld(true);
 const A = shed.SOUTH_FRONT_ARCADES, O = shed.PORCH_ORDERS, T = shed.PORCH_TONES, D = shed.PORCH_DEPTH;
-const S = shed as unknown as { PORCH_RETURN_SHADE: number; FRONT_ORDER_SHADE: number; FRONT_RETURN: number };
+const S = shed as unknown as { PORCH_RETURN_SHADE: { back: number; face: number }; FRONT_ORDER_SHADE: number; FRONT_RETURN: number };
 const entryFoot = GROUND_Y + A.footAboveGround, entryR = A.openingWidth / 2, spring = entryFoot + A.jambHeight, crown = spring + A.archRise;
 const centres = shed.southFrontArcadeCentres(4 * R, shed.TOWER_SIZE).map(x => x + layout.spine - 2 * R).filter(c => Math.abs(c - layout.spine) > shed.TOWER_SIZE);
 const named = (n: string): THREE.Mesh => group.getObjectByName(n) as THREE.Mesh;
@@ -27,19 +27,36 @@ const porch = named('shed-front-porch-arches'), front = named('shed-front'), inf
 const hits = (o: [number, number, number], d: [number, number, number], targets: THREE.Object3D[], far = 10): THREE.Intersection[] =>
   new THREE.Raycaster(group.localToWorld(new THREE.Vector3(...o)), new THREE.Vector3(...d).transformDirection(group.matrixWorld), 0, far).intersectObjects(targets, false);
 const shadeAt = (h: THREE.Intersection): number => ((h.object as THREE.Mesh).geometry.getAttribute('color') as THREE.BufferAttribute).getX(h.face!.a);
+/** round 2b: the vertex colour interpolated at the hit (the rings' returns are graded across their depth) */
+const shadeIn = (h: THREE.Intersection): number => {
+  const m = h.object as THREE.Mesh, pos = m.geometry.getAttribute('position') as THREE.BufferAttribute, col = m.geometry.getAttribute('color') as THREE.BufferAttribute, f = h.face!;
+  const v = [f.a, f.b, f.c].map(i => new THREE.Vector3().fromBufferAttribute(pos, i)), p = m.worldToLocal(h.point.clone());
+  const bc = new THREE.Triangle(v[0], v[1], v[2]).getBarycoord(p, new THREE.Vector3())!;
+  return bc.x * col.getX(f.a) + bc.y * col.getX(f.b) + bc.z * col.getX(f.c);
+};
+const show = (l: number): number => 255 * toSrgb(acesFilmic([l, l, l], DAY_EXPOSURE))[1];
+const inv = (t: number): number => { let l = 1e-6; while (show(l) < t) l *= 1.002; return l; };
 
-test('A3 round 2: the porch rings\' returns and soffits carry the great arches\' return tone by day, their faces the brick; at night the brick as before', () => {
-  assert.ok(Math.abs(S.PORCH_RETURN_SHADE - S.FRONT_RETURN * S.FRONT_ORDER_SHADE) < 1e-9, `PORCH_RETURN_SHADE ${S.PORCH_RETURN_SHADE}`);
+test('A3 round 2b: the porch rings\' returns and soffits are graded shadowed brick by day, darker at the wall than at the face, their faces the brick; at night the brick as before', () => {
+  // re-pinned round 2b (the GPU: at the great arches' 0.275 the rings' returns read 3-9 on brick at 33-36, an ink line): graded `back` to `face`, which
+  // on the ACES curve puts a return that reads 21-26 unshaded at 15-22 at the wall and 20 or more at the face, 0.55-0.7 of the brick beside it
+  const P = S.PORCH_RETURN_SHADE;
+  assert.ok(P.back >= 0.7 && P.back <= 0.9 && P.face > P.back && P.face <= 1, `PORCH_RETURN_SHADE ${JSON.stringify(P)}`);
+  for (const b of [21, 26]) {
+    const at = show(P.back * inv(b)), out = show(P.face * inv(b));
+    assert.ok(at >= 15 && at <= 22 && out >= 20, `a return ${b} unshaded: ${at.toFixed(1)} at the wall, ${out.toFixed(1)} at the face`);
+  }
   const day = porch.material as THREE.MeshLambertMaterial[], night = [buildingNightMaterialsOf(porch)!.night].flat() as THREE.MeshLambertMaterial[];
   assert.ok(day[0]!.vertexColors && !night[0]!.vertexColors && night[0] === material('brickFoot'), 'the day rings take the vertex colour, the night ones are the brick');
-  const frontReturn = (front.material as THREE.MeshLambertMaterial[])[1]!;
-  assert.ok(Math.abs(day[0]!.color.r * S.PORCH_RETURN_SHADE - frontReturn.color.r * S.FRONT_ORDER_SHADE) < 1e-4, 'the rings\' returns the great arches\' returns\' tone');
   for (const c of centres) {
     // the inner ring's soffit over the crown, met from under the head; its outer order's return over the crown, met from just above the inner one's face
     const soffit = hits([c, entryFoot + 1.0, O.step / 2], [-1, 0, 0], [porch], entryR + 0.2)[0]; // the inner order's soffit down the west jamb, under the canopy
-    assert.ok(soffit && soffit.face!.materialIndex === 0 && Math.abs(shadeAt(soffit) - S.PORCH_RETURN_SHADE) < 1e-6, `the soffit at x ${c.toFixed(1)}: ${soffit && shadeAt(soffit)} mat ${soffit?.face?.materialIndex} n ${soffit?.face?.normal.toArray()} at ${soffit && group.worldToLocal(soffit.point.clone()).toArray().map(v => v.toFixed(2))}`);
-    const ret = hits([c, crown + O.depth / 2, O.step * 1.5], [0, 1, 0], [porch], 2)[0];
-    assert.ok(ret && Math.abs(shadeAt(ret) - S.PORCH_RETURN_SHADE) < 1e-6, `the outer order's return at x ${c.toFixed(1)}: ${ret && shadeAt(ret)}`);
+    const grade = (z: number, depth: number): number => P.back + ((P.face - P.back) * z) / depth;
+    assert.ok(soffit && soffit.face!.materialIndex === 0 && Math.abs(shadeIn(soffit) - grade(O.step / 2, O.step)) < 1e-4, `the soffit at x ${c.toFixed(1)}: ${soffit && shadeAt(soffit)} mat ${soffit?.face?.materialIndex} n ${soffit?.face?.normal.toArray()} at ${soffit && group.worldToLocal(soffit.point.clone()).toArray().map(v => v.toFixed(2))}`);
+    for (const z of [O.step * 1.15, O.step * 1.85]) {
+      const ret = hits([c, crown + O.depth / 2, z], [0, 1, 0], [porch], 2)[0];
+      assert.ok(ret && Math.abs(shadeIn(ret) - grade(z, 2 * O.step)) < 1e-4, `the outer order's return at x ${c.toFixed(1)}, z ${z.toFixed(2)}: ${ret && shadeIn(ret)}`);
+    }
     for (const k of [0.5, 1.5]) {
       const face = hits([c, crown + O.depth * k, 5], [0, 0, -1], [porch])[0];
       assert.ok(face && face.face!.materialIndex === 0 && shadeAt(face) === 1, `order ${k - 0.5}'s face at x ${c.toFixed(1)} unshaded: ${face && shadeAt(face)}`);
@@ -84,10 +101,10 @@ test('A3 round 2: by day each figure and barrier is the interior\'s tone at its 
   }
   assert.ok(seen >= 9);
   // in display: across the interior's measured range (5-37 sRGB) the figures read about 0.6 of it, never lighter
-  const show = (l: number): number => 255 * toSrgb(acesFilmic([l, l, l], DAY_EXPOSURE))[1];
   for (let l = 0.0005; l < 0.2; l *= 1.15) {
     const i = show(l), f = show(k * l);
     if (i < 5 || i > 37) continue;
-    assert.ok(f < i && (i < 15 || (f >= 0.45 * i && f <= 0.72 * i)), `interior ${i.toFixed(1)}: figure ${f.toFixed(1)}`); // in the toe a darker share, but darker
+    // re-pinned round 2b (figureDay 0.65 -> 0.75, so the silhouettes hold): the same 0.27 band, moved up with it
+    assert.ok(f < i && (i < 15 || (f >= 0.55 * i && f <= 0.82 * i)), `interior ${i.toFixed(1)}: figure ${f.toFixed(1)}`); // in the toe a darker share, but darker
   }
 });

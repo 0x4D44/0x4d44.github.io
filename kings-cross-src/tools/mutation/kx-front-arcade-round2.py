@@ -21,14 +21,18 @@ if out == src or out.is_relative_to(src) or src.is_relative_to(out):
 out.mkdir(parents=True, exist_ok=True)
 
 MUTATIONS = [
-    ('no ring shade', 'web/src/shed.ts', 'export const PORCH_RETURN_SHADE = FRONT_RETURN * FRONT_ORDER_SHADE;', 'export const PORCH_RETURN_SHADE = 1;', "porch rings' returns"),
-    ("the rings' faces shaded, not their returns", 'web/src/shed.ts', 'if (grp.materialIndex === 1) col.fill(PORCH_RETURN_SHADE', 'if (grp.materialIndex === 0) col.fill(PORCH_RETURN_SHADE', "porch rings' returns"),
+    ('round 2\'s ink line', 'web/src/shed.ts', 'export const PORCH_RETURN_SHADE = { back: 0.8, face: 1 } as const;', 'export const PORCH_RETURN_SHADE = { back: 0.275, face: 0.275 } as const;', "porch rings' returns"),
+    ('no ring shade', 'web/src/shed.ts', 'export const PORCH_RETURN_SHADE = { back: 0.8, face: 1 } as const;', 'export const PORCH_RETURN_SHADE = { back: 1, face: 1 } as const;', "porch rings' returns"),
+    ('the grade reversed', 'web/src/shed.ts', 'col.fill(back + ((face - back) * pos.getZ(k)) / depth,', 'col.fill(face - ((face - back) * pos.getZ(k)) / depth,', "porch rings' returns"),
+    ('a constant mid shade, no grade', 'web/src/shed.ts', 'col.fill(back + ((face - back) * pos.getZ(k)) / depth,', 'col.fill((back + face) / 2,', "porch rings' returns"),
+    ("the rings' faces shaded, not their returns", 'web/src/shed.ts', 'if (grp.materialIndex === 1) for (let k = grp.start;', 'if (grp.materialIndex === 0) for (let k = grp.start;', "porch rings' returns"),
     ('the day rings ignore the shade', 'web/src/shed.ts', '  ringDay.vertexColors = true;', '  ringDay.vertexColors = false;', "porch rings' returns"),
     ('the shade at night too', 'web/src/shed.ts', "[ringDay, canopySteel]), [material('brickFoot'), canopySteel]);", '[ringDay, canopySteel]), [ringDay, canopySteel]);', "porch rings' returns"),
     ("the openings' reveals unshaded", 'web/src/shed.ts', 'if (porchReveal || centres.some(', 'if (centres.some(', 'brick reveals in the front'),
     ("the reveals' shade stops at the springing", 'web/src/shed.ts', 'y + sp < entryFoot + SOUTH_FRONT_ARCADES.jambHeight + SOUTH_FRONT_ARCADES.archRise + 0.01', 'y + sp < entryFoot + SOUTH_FRONT_ARCADES.jambHeight', 'brick reveals in the front'),
-    ('figures as light as the hall', 'web/src/shed.ts', 'figureLift: 0.22, figureDay: 0.65,', 'figureLift: 0.22, figureDay: 1,', 'each figure and barrier'),
-    ('figures near black', 'web/src/shed.ts', 'figureLift: 0.22, figureDay: 0.65,', 'figureLift: 0.22, figureDay: 0.35,', 'each figure and barrier'),
+    ('figures as light as the hall', 'web/src/shed.ts', 'figureLift: 0.22, figureDay: 0.75,', 'figureLift: 0.22, figureDay: 1,', 'each figure and barrier'),
+    ('figures near black', 'web/src/shed.ts', 'figureLift: 0.22, figureDay: 0.75,', 'figureLift: 0.22, figureDay: 0.35,', 'each figure and barrier'),
+    ('round 2\'s figureDay', 'web/src/shed.ts', 'figureLift: 0.22, figureDay: 0.75,', 'figureLift: 0.22, figureDay: 0.65,', 'each figure and barrier'),
     ('figures ignore the day darkening', 'web/src/shed.ts', 'multiplyScalar(PORCH_DEPTH.dayDark * k)', 'multiplyScalar(k)', 'each figure and barrier'),
     ('figures sample one row of the map', 'web/src/shed.ts', '(py - entryFoot - 0.3) / (t0 - 0.3)] as V2)', '0.5] as V2)', 'each figure and barrier'),
     ('figures without the map', 'web/src/shed.ts', 'multiplyScalar(PORCH_TONES.figureLift), map: interiorMap })', 'multiplyScalar(PORCH_TONES.figureLift) })', 'each figure and barrier'),
