@@ -192,7 +192,14 @@ export function analyseSteady(rec, win) {
   { let s2 = 0, d2 = 0, s3 = 0, d3 = 0; for (let i = 0; i < n; i++) { s2 += (ct.c.l[i] ? 1 : 0) + (ct.c.r[i] ? 1 : 0); if (ct.c.l[i] && ct.c.r[i]) d2++; s3 += (ct.ld.l[i] ? 1 : 0) + (ct.ld.r[i] ? 1 : 0); if (ct.ld.l[i] && ct.ld.r[i]) d3++; }
     a.stanceC = 100 * s2 / (2 * n); a.dsC = 100 * d2 / n; a.stance = 100 * s3 / (2 * n); a.ds = 100 * d3 / n; }
   { const sh = (s) => mean(ev[s].hs.map((h, i) => { const nx = ev[s].hs[i + 1]; return nx ? (ev[s].to[i] - h) / (nx - h) : NaN; })); a.stanceSym = 100 * Math.abs(sh('l') - sh('r')); }
-  const clearOf = (c) => { const cl = []; for (const s of ['l', 'r']) for (let i = 0; i < ev[s].to.length; i++) { const to = ev[s].to[i], nx = ev[s].hs[i + 1]; if (!nx) continue; let lo = Infinity; for (let k = to + Math.round(0.35 * (nx - to)); k <= to + Math.round(0.8 * (nx - to)); k++) lo = Math.min(lo, c.sole[s][k]); cl.push(lo); } return cl.length ? mean(cl) * 1000 : NaN; };
+  // (revision 13: the swing is the shoe's own time off the floor - from its last frame within CONTACT_M to its next - not Zeni's toe-off to the next heel strike. Zeni marks toe-off where the
+  // ankle is furthest behind the pelvis; on a foot whose ankle stands high over its toe (a heeled boot: 24 cm) the ankle sweeps forward as soon as the heel rises, so the event came 19 - 20
+  // frames (0.33 s) before the boot left the floor at 0.4 m/s and the "mid-swing" window read the boot still standing on its toe: 1 mm where it cleared the floor by 24 - 29 mm in every swing)
+  // A foot that never lands (a shoe hovering over the floor the whole window) has no such swing, and falls back to Zeni's events.
+  const clearOf = (c) => { const cl = []; const low = (s, to, nx) => { let lo = Infinity; for (let j = to + Math.round(0.35 * (nx - to)); j <= to + Math.round(0.8 * (nx - to)); j++) lo = Math.min(lo, c.sole[s][j]); return lo; };
+    for (const s of ['l', 'r']) { const on = c.c[s], n0 = cl.length; for (let k = 1; k < on.length; k++) { if (!(on[k - 1] && !on[k])) continue; let e = k; while (e < on.length && !on[e]) e++; if (e >= on.length) break; cl.push(low(s, k - 1, e)); k = e; }
+      if (cl.length === n0) for (let i = 0; i < ev[s].to.length; i++) { const nx = ev[s].hs[i + 1]; if (nx) cl.push(low(s, ev[s].to[i], nx)); } }
+    return cl.length ? mean(cl) * 1000 : NaN; };
   a.clearMm = clearOf(ct); if (rec.shoe) a.clearLm = clearOf(contactOf(rec, k0, k1, 'landmarks'));
   // ---- joint angles in the sagittal plane of the direction of travel
   const seg = (A, B) => { const a1 = P(A), b1 = P(B); return { f: Float64Array.from(b1.f, (x, i) => x - a1.f[i]), u: Float64Array.from(b1.y, (y, i) => y - a1.y[i]) }; };

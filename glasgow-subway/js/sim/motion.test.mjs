@@ -341,8 +341,9 @@ test('slip is the speed of the part of the rendered shoe that is on the floor: a
   assert.ok(catsOf(skating).GRD <= catsOf(base).GRD - 1, `grounding ${catsOf(base).GRD.toFixed(1)} -> ${catsOf(skating).GRD.toFixed(1)}`);
 });
 test('swing clearance follows the rendered shoe, and the landmark clearance is still reported beside it', () => {
-  const lm = FLOOR(RAW), up = FLOOR(withMesh(RAW, (y) => y + 0.010, () => 0));
-  near(up.clearMm, lm.clearMm + 10, 1e-6, 'a shoe 10 mm higher than the landmarks clears 10 mm more'); near(up.clearLm, lm.clearMm, 1e-6, 'the landmarks have not moved');
+  // (raised only while it is in the air - over 8 mm, CONTACT_M - so it lands and leaves at the same frames: since revision 13 the swing it is judged over is its own time off the floor)
+  const lm = FLOOR(RAW), up = FLOOR(withMesh(RAW, (y) => (y < 0.008 ? y : y + 0.010), () => 0));
+  near(up.clearMm, lm.clearMm + 10, 1e-6, 'a shoe 10 mm higher in the air than the landmarks clears 10 mm more'); near(up.clearLm, lm.clearMm, 1e-6, 'the landmarks have not moved');
 });
 test('with no rendered shoe in the recording the landmarks are the witness, as before', () => {
   const a = FLOOR(RAW); assert.equal(a.contactFrom, 'landmarks'); assert.equal(a.slipLm, undefined); assert.equal(a.clearLm, undefined); assert.ok(Number.isFinite(a.slip) && Number.isFinite(a.clearMm));
