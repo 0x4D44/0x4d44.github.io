@@ -317,20 +317,22 @@ function frontNightGlow(m: THREE.MeshLambertMaterial, [colour, gain]: readonly [
         // vec3 KX_LIFT_COLOUR) light over the lower hall, and KX_REFLECT (vec3 forecourt, KX_REFLECT_SKY, KX_REFLECT_DOOR, vec2 KX_REFLECT_DOORS) the glass
         + `\n#if defined( KX_BAND ) && defined( USE_MAP )\n`
         + `totalEmissiveRadiance += uWinNight * KX_BAND_COLOUR * texture2D( map, vMapUv ).g * step( KX_BAND.x, vMapUv.y ) * step( vMapUv.y, KX_BAND.y );\n#endif`
-        + `\n#if defined( KX_DAYBAND ) && defined( USE_MAP )\n`
-        + `float kxPool = max( max( exp( -pow( ( vMapUv.x - KX_DAYBAND_POOLS.x ) / KX_DAYBAND_W, 2.0 ) ), exp( -pow( ( vMapUv.x - KX_DAYBAND_POOLS.y ) / KX_DAYBAND_W, 2.0 ) ) ),\n`
-        + `  exp( -pow( ( vMapUv.x - KX_DAYBAND_POOLS.z ) / KX_DAYBAND_W, 2.0 ) ) );\n`
+        // round 3c (the night porch-close moved by up to 9 levels in a strip of the band): each day term runs only while uWinNight < 1, so at night
+        // it adds nothing at all, not 0 times whatever it computes; and the pools square their distance (pow of a negative base is undefined in GLSL)
+        + `\n#if defined( KX_DAYBAND ) && defined( USE_MAP )\nif ( uWinNight < 1.0 ) {\n`
+        + `vec3 kxPd = ( vec3( vMapUv.x ) - KX_DAYBAND_POOLS ) / KX_DAYBAND_W;\n`
+        + `float kxPool = max( max( exp( -kxPd.x * kxPd.x ), exp( -kxPd.y * kxPd.y ) ), exp( -kxPd.z * kxPd.z ) );\n`
         + `totalEmissiveRadiance += ( 1.0 - uWinNight ) * KX_DAYBAND_COLOUR * texture2D( map, vMapUv ).g * mix( KX_DAYBAND.w, 1.0, kxPool )\n`
-        + `  * smoothstep( KX_DAYBAND.x, KX_DAYBAND.x + KX_DAYBAND.z, vMapUv.y ) * ( 1.0 - smoothstep( KX_DAYBAND.y - KX_DAYBAND.z, KX_DAYBAND.y, vMapUv.y ) );\n#endif`
-        + `\n#if defined( KX_SIGN0 ) && defined( USE_MAP )\n`
+        + `  * smoothstep( KX_DAYBAND.x, KX_DAYBAND.x + KX_DAYBAND.z, vMapUv.y ) * ( 1.0 - smoothstep( KX_DAYBAND.y - KX_DAYBAND.z, KX_DAYBAND.y, vMapUv.y ) );\n}\n#endif`
+        + `\n#if defined( KX_SIGN0 ) && defined( USE_MAP )\nif ( uWinNight < 1.0 ) {\n`
         + `totalEmissiveRadiance += ( 1.0 - uWinNight ) * KX_SIGN_COLOUR * min( 1.0,\n`
         + `  step( KX_SIGN0.x, vMapUv.x ) * step( vMapUv.x, KX_SIGN0.y ) * step( KX_SIGN0.z, vMapUv.y ) * step( vMapUv.y, KX_SIGN0.w )\n`
-        + `  + step( KX_SIGN1.x, vMapUv.x ) * step( vMapUv.x, KX_SIGN1.y ) * step( KX_SIGN1.z, vMapUv.y ) * step( vMapUv.y, KX_SIGN1.w ) );\n#endif`
-        + `\n#if defined( KX_LIFT ) && defined( USE_MAP )\n`
-        + `totalEmissiveRadiance += ( 1.0 - uWinNight ) * KX_LIFT_COLOUR * ( 1.0 - smoothstep( KX_LIFT.x, KX_LIFT.y, vMapUv.y ) );\n#endif`
-        + `\n#if defined( KX_REFLECT ) && defined( USE_MAP )\n`
+        + `  + step( KX_SIGN1.x, vMapUv.x ) * step( vMapUv.x, KX_SIGN1.y ) * step( KX_SIGN1.z, vMapUv.y ) * step( vMapUv.y, KX_SIGN1.w ) );\n}\n#endif`
+        + `\n#if defined( KX_LIFT ) && defined( USE_MAP )\nif ( uWinNight < 1.0 ) {\n`
+        + `totalEmissiveRadiance += ( 1.0 - uWinNight ) * KX_LIFT_COLOUR * ( 1.0 - smoothstep( KX_LIFT.x, KX_LIFT.y, vMapUv.y ) );\n}\n#endif`
+        + `\n#if defined( KX_REFLECT ) && defined( USE_MAP )\nif ( uWinNight < 1.0 ) {\n`
         + `totalEmissiveRadiance += ( 1.0 - uWinNight ) * mix( KX_REFLECT, KX_REFLECT_SKY, clamp( vMapUv.y, 0.0, 1.0 ) )\n`
-        + `  * mix( 1.0, KX_REFLECT_DOOR, step( KX_REFLECT_DOORS.x, vMapUv.x ) * step( vMapUv.x, KX_REFLECT_DOORS.y ) );\n#endif`
+        + `  * mix( 1.0, KX_REFLECT_DOOR, step( KX_REFLECT_DOORS.x, vMapUv.x ) * step( vMapUv.x, KX_REFLECT_DOORS.y ) );\n}\n#endif`
         // arcade round 1: a material defining KX_SOFFIT (a linear vec3) takes that diffuse on its faces turned down (the canopy's soffit, PORCH_TONES);
         // round 1b: by day KX_SOFFIT_FILL times it as a paving bounce, and with KX_POOL (lamps' first x, pitch, the two rows' z) a warm pool round each strip lamp at night
         + `\n#ifdef KX_SOFFIT\nfloat kxDown = step( 0.5, -vFrontNy );\ndiffuseColor.rgb = mix( diffuseColor.rgb, KX_SOFFIT, kxDown );\n`

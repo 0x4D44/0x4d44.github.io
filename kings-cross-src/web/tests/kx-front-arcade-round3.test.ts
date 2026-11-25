@@ -6,7 +6,8 @@ import { readFileSync } from 'node:fs';
 import { SHED_SPAN_WIDTH, shedLayout } from '../../core/station.ts';
 import * as shed from '../src/shed.ts';
 import { GROUND_Y } from '../src/world.ts';
-import { DAY_EXPOSURE } from '../../core/daylight.ts';
+import { DAY_EXPOSURE, lampLevelFor } from '../../core/daylight.ts';
+import { solarPosition } from '../../core/solar.ts';
 import { acesFilmic, toSrgb } from './aces.ts';
 
 // Arcade round 3 (A3, the 2c score): the figures a contrast floor about 12 levels under the hall, never under about 7, in two tones; a lit back-wall band
@@ -89,7 +90,7 @@ test('A3 round 3b: by day the back-wall band feathered top and bottom, in two or
   assert.ok(Number(defs.KX_DAYBAND_W) === d.width && nums(defs.KX_DAYBAND_COLOUR).join() === d.colour.join(), 'the pools\' width and the colour');
   assert.ok(src.includes('totalEmissiveRadiance += ( 1.0 - uWinNight ) * KX_DAYBAND_COLOUR * texture2D( map, vMapUv ).g * mix( KX_DAYBAND.w, 1.0, kxPool )')
     && src.includes('* smoothstep( KX_DAYBAND.x, KX_DAYBAND.x + KX_DAYBAND.z, vMapUv.y ) * ( 1.0 - smoothstep( KX_DAYBAND.y - KX_DAYBAND.z, KX_DAYBAND.y, vMapUv.y ) );')
-    && src.includes('exp( -pow( ( vMapUv.x - KX_DAYBAND_POOLS.z ) / KX_DAYBAND_W, 2.0 ) )'), 'the feathered, pooled band, day only, in the shader');
+    && src.includes('exp( -kxPd.z * kxPd.z )'), 'the feathered, pooled band, day only, in the shader');
   assert.ok(d.feather >= 0.08 && d.feather <= 0.1 && d.v[0]! >= 0.3 && d.v[1]! <= 0.85 && d.v[1]! - d.v[0]! >= 2.5 * d.feather, `feathered over ${d.feather} of the hall`);
   assert.ok(d.pools.length === 3 && d.pools.every((p, i) => p > 0.1 && p < 0.9 && (i === 0 || p - d.pools[i - 1]! >= 2 * d.width)) && d.width >= 0.08 && d.width <= 0.16 && d.base >= 0.25 && d.base <= 0.5, 'three pools along it');
   const out: string[] = [];
@@ -102,7 +103,7 @@ test('A3 round 3b: by day the back-wall band feathered top and bottom, in two or
     assert.ok(edge - h < (pool - h) / 2, `a third into the feather ${edge.toFixed(1)}, under half the lift`);
   }
   console.log('hall: pool/between/feather', out.join(' '));
-  for (const k of ['KX_SIGN0', 'KX_LIFT', 'KX_REFLECT']) assert.ok(src.includes(`#if defined( ${k} ) && defined( USE_MAP )\ntotalEmissiveRadiance += ( 1.0 - uWinNight )`), `${k} by day only`);
+  for (const k of ['KX_SIGN0', 'KX_LIFT', 'KX_REFLECT']) assert.ok(src.includes(`#if defined( ${k} ) && defined( USE_MAP )\nif ( uWinNight < 1.0 ) {\ntotalEmissiveRadiance += ( 1.0 - uWinNight )`), `${k} by day only`); // re-pinned round 3c: inside the night gate
 });
 
 test('A3 round 3b: two small blue signs in the band, by day', () => {
@@ -142,6 +143,24 @@ test('A3 round 3b: the glass reflects by day, forecourt at the foot to sky under
     }
   }
   console.log('hall@v: pane/door', out.join(' '));
+});
+
+test('A3 round 3c: at the capture\'s night (2026-11-23T22:00Z) every day term adds exactly nothing: gated off, not multiplied by zero', () => {
+  // the GPU (3c score): night porch-close moved by up to 9 levels in a strip of the band. The windows' level there is exactly 1 (atmosphere.ts sets
+  // windowNight to the rig's lampLevel, max(lampLevelFor(sun), 0.55 gloom)), so a day term must not run at all: 0 times an undefined value (pow of a
+  // negative base, GLSL) is not 0
+  const sun = solarPosition(Date.parse('2026-11-23T22:00:00Z')).elevationDeg;
+  assert.ok(sun < -40 && lampLevelFor(sun) === 1, `the sun at ${sun.toFixed(1)} deg, the windows' level ${lampLevelFor(sun)}`);
+  const src = frag(interior);
+  for (const k of ['KX_DAYBAND', 'KX_SIGN0', 'KX_LIFT', 'KX_REFLECT']) {
+    const at = src.indexOf(`#if defined( ${k} ) && defined( USE_MAP )\n`);
+    assert.ok(at >= 0, `${k} in the shader`);
+    const block = src.slice(at, src.indexOf('#endif', at)), body = block.slice(block.indexOf('\n') + 1);
+    assert.ok(body.startsWith('if ( uWinNight < 1.0 ) {\n') && body.trimEnd().endsWith('}'), `${k} gated: runs only while uWinNight < 1`);
+    assert.ok(!/\bpow\s*\(/.test(body), `${k}: no pow (undefined for a negative base)`);
+    assert.equal((body.match(/totalEmissiveRadiance/g) ?? []).length, (body.match(/totalEmissiveRadiance \+= \( 1\.0 - uWinNight \)/g) ?? []).length, `${k}: each add carries (1 - uWinNight)`);
+  }
+  assert.equal((src.match(/if \( uWinNight < 1\.0 \) \{/g) ?? []).length, 4, 'four gates, one per day term');
 });
 
 test('A3 round 3: no new draw or triangle: the infill keeps its eight materials and its triangle count', () => {

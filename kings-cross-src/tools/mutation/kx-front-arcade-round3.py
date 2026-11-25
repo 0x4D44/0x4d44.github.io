@@ -52,6 +52,11 @@ MUTATIONS = [
     ('one gpu factor for all (3b)', 'web/src/shed.ts', 'gpu: { band: 1.2, lift: 1, reflect: 0.5 }', 'gpu: { band: 0.1, lift: 0.1, reflect: 0.1 }', 'back-wall band feathered'),
     ('the doors as the panes', 'web/src/shed.ts', 'door: 0.5, doors: [0.3, 0.7]', 'door: 1, doors: [0.3, 0.7]', 'glass reflects'),
     ('the doors in the shader dropped', 'web/src/shed.ts', '* mix( 1.0, KX_REFLECT_DOOR, step(', '* mix( 1.0, 1.0, step(', 'glass reflects'),
+    ('the band ungated at night', 'web/src/shed.ts', '#if defined( KX_DAYBAND ) && defined( USE_MAP )\\nif ( uWinNight < 1.0 ) {\\n', '#if defined( KX_DAYBAND ) && defined( USE_MAP )\\nif ( true ) {\\n', "capture\'s night"),
+    ('the signs ungated at night', 'web/src/shed.ts', '#if defined( KX_SIGN0 ) && defined( USE_MAP )\\nif ( uWinNight < 1.0 ) {\\n', '#if defined( KX_SIGN0 ) && defined( USE_MAP )\\nif ( uWinNight <= 1.0 ) {\\n', "capture\'s night"),
+    ('the lift ungated at night', 'web/src/shed.ts', '#if defined( KX_LIFT ) && defined( USE_MAP )\\nif ( uWinNight < 1.0 ) {\\n', '#if defined( KX_LIFT ) && defined( USE_MAP )\\n{\\n', "capture\'s night"),
+    ('the reflection ungated at night', 'web/src/shed.ts', '#if defined( KX_REFLECT ) && defined( USE_MAP )\\nif ( uWinNight < 1.0 ) {\\n', '#if defined( KX_REFLECT ) && defined( USE_MAP )\\nif ( uWinNight < 1.5 ) {\\n', "capture\'s night"),
+    ('the pools by pow again', 'web/src/shed.ts', 'exp( -kxPd.z * kxPd.z )', 'exp( -pow( kxPd.z, 2.0 ) )', "capture\'s night"),
     ('a third figure', 'web/src/shed.ts', 'barrier: [0.22, 1.0] as const, figures: 2,', 'barrier: [0.22, 1.0] as const, figures: 3,', 'no new draw or triangle'),
 ]
 
@@ -95,4 +100,4 @@ with tempfile.TemporaryDirectory(prefix='kx-front-arcade-round3-', dir=out) as t
             failures.append(label)
             print(f'[SURVIVED] {label}', flush=True)
     print(f'{caught}/{len(MUTATIONS)} mutations caught; baseline {len(passing)} tests passed; survivors: {failures}')
-    raise SystemExit(1 if failures or len(passing) != 5 else 0)
+    raise SystemExit(1 if failures or len(passing) != 6 else 0)
