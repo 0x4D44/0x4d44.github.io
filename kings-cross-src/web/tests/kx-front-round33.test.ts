@@ -72,13 +72,13 @@ test('A6 (F13): the panes carry 10-12% of life each and a cloud of up to 8% span
   blocks.slice(1).forEach((b, i) => assert.ok(Math.abs(b - blocks[i]!) <= 12, `soft: ${Math.abs(b - blocks[i]!).toFixed(1)}`));
 });
 
-test('A6 (F13): from outside a light secondary bar runs down the middle of each pane (twice the panes), darker by a fifth or more over about 0.1 m; none from inside', () => {
+// re-pinned round F18 (front-round-17 score, A6: lights 6.7:1 where the photos' are about 5:1): the gables' fine bars (materials.ts GABLE_FINE, kx-front-round41)
+// are two a bay now, 0.53 m apart, and F13's mid-pane bar no longer lands on one, so it is retired: no bar mid-pane, the pane the same across its middle; it
+// was darker by a fifth or more over about 0.1 m
+test('A6 (F13, retired F18): from outside no secondary bar down the middle of each pane now (the fine bars carry the rhythm); none from inside', () => {
   for (const k of [-6, 0, 5]) for (const y of [11, 17, 24]) {
-    const mid = run(1, (k + 0.5) * P, y)[2]!, side = run(1, (k + 0.3) * P, y)[2]!, other = run(1, (k + 0.7) * P, y)[2]!;
-    assert.ok(mid < 0.8 * side && mid < 0.8 * other, `a bar mid-pane at ${k}: ${mid.toFixed(1)} against ${side.toFixed(1)}, ${other.toFixed(1)}`);
-    assert.ok(Math.abs(run(1, (k + 0.5) * P + 0.15, y)[2]! - side) < 0.1 * side, `about 0.1 m wide: clear by 0.15 m off its line`);
-    const quarter = run(1, (k + 0.25) * P, y)[2]!;
-    assert.ok(Math.abs(quarter - side) < 0.05 * side, 'one bar a pane, not two');
+    const mid = run(1, (k + 0.5) * P, y)[2]!, side = run(1, (k + 0.45) * P, y)[2]!;
+    assert.ok(Math.abs(mid - side) < 0.02 * side, `no bar mid-pane at ${k}: ${mid.toFixed(1)} against ${side.toFixed(1)}`);
   }
   // inside (glintEven 0) the middle of a pane is the same colour as a point beside it in the same pane, and at night likewise
   const a = run(0, 0.5 * P, 15), b = run(0, 0.5 * P + 0.2, 15);

@@ -677,7 +677,9 @@ export function lunetteBars(uc: number, springing: number, r = R, spacing = 1.6)
 // tier split in 2, not 3, so 5 rows over the crown and panes 1.67 times as tall as wide, and the new transoms 0.045 m deep, about half the mullions' 0.09
 // round F17 (front-round-16b score, A6/B3: the photos' verticals are a hierarchy): every `every`th mullion from the screen's middle (the 0th, +-3rd, +-6th,
 // +-9th: symmetric on each arch) `heavy` times as wide and deep; with GABLE_FINE's fine bars in the glass between them
-export const GABLE_MULLION = { every: 3, heavy: 1.75 } as const;
+// round F18 (front-round-17 score, A6/B3: from outside every 1.6 m mullion read strong; front-d shows only the main ones): the rest `light` times as wide and
+// deep, so two weights, and from inside square main panels with faint bars between
+export const GABLE_MULLION = { every: 3, heavy: 1.75, light: 0.6 } as const;
 export const GABLE_TRANSOM = { split: 2, width: 0.045 } as const;
 /** The bars of one north gable: the window bars above `from`, mullions trimmed to start there, and GABLE_TRANSOM's transoms between the lunette's. */
 export function gableBars(uc: number, springing: number, from: number, r = R): BarSpec[] {
@@ -690,7 +692,7 @@ export function gableBars(uc: number, springing: number, from: number, r = R): B
   for (const b of lunetteBars(uc, springing, r)) {
     if (b.kind === 'mullion') {
       const top = b.c[1] + b.s[1] / 2;
-      const h = top - from, heavy = Math.round((b.c[0] - uc) / GLAZING.spacing) % GABLE_MULLION.every === 0 ? GABLE_MULLION.heavy : 1;
+      const h = top - from, heavy = Math.round((b.c[0] - uc) / GLAZING.spacing) % GABLE_MULLION.every === 0 ? GABLE_MULLION.heavy : GABLE_MULLION.light;
       if (h > 0.3) out.push({ ...b, c: [b.c[0], from + h / 2, b.c[2]], s: [b.s[0] * heavy, h, b.s[2] * heavy] });
     } else if (b.kind !== 'ring' && b.c[1] > from + 0.2) out.push(b); // round S1 (shed-gap-scan-1, B3): R-a's north screen is a mullion and transom grid only, no ring
   }
