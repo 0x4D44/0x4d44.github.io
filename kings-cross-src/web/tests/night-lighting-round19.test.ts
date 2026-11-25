@@ -226,7 +226,7 @@ function buildTexturedFront() {
 
 const front = buildTexturedFront();
 const nightWash = (name: string) =>
-  frontWash(buildingNightMaterialsOf(front.getObjectByName(name) as THREE.Mesh)!.night);
+  frontWash([buildingNightMaterialsOf(front.getObjectByName(name) as THREE.Mesh)!.night].flat()[0]!); // round 25: shed-front's night is [faces, returns]; its faces' wash
 
 test('front washes and office variants share every texture with their day material', () => {
   const assertTextures = (label: string, day: THREE.Material, night: THREE.Material) => {
@@ -237,8 +237,12 @@ test('front washes and office variants share every texture with their day materi
   };
   for (const name of ['shed-front', 'tower-brick', 'tower-stone']) {
     const { day, night } = buildingNightMaterialsOf(front.getObjectByName(name) as THREE.Mesh)!;
-    assert.ok((day as THREE.MeshLambertMaterial).map instanceof THREE.Texture, `${name} has a real map to compare`);
-    assertTextures(name, day, night);
+    const days = [day].flat(), nights = [night].flat(); // round 25: shed-front carries one per group (faces, returns)
+    assert.equal(days.length, nights.length, `${name}: a night material for each day one`);
+    days.forEach((d, i) => {
+      assert.ok((d as THREE.MeshLambertMaterial).map instanceof THREE.Texture, `${name} has a real map to compare`);
+      assertTextures(name, d, nights[i]!);
+    });
   }
   const map = new THREE.Texture(), aoMap = new THREE.Texture();
   const curtain = new THREE.MeshPhongMaterial({ map, aoMap });
@@ -316,7 +320,7 @@ test('KX night additions emit exactly zero by day and Perth keeps its compiled s
     const s = shader(material);
     const digest = createHash('sha256').update(s.vertexShader).update(s.fragmentShader)
       .update(JSON.stringify(material.defines)).digest('hex');
-    assert.equal(digest,'4b8ae371289c9462a3b5e26b238120b13080ac0783b8eff941871b9c8cb8246b');
+    assert.equal(digest,'026d08cd4ebafb4aad1238d03874a2e0c9c890762e74ad722cf62bea85bf43dd');
     assert.equal(createHash('sha256').update(MIDLAND_PANE_GLSL).digest('hex'),
       'b6c76cc9367e5d37f18edf389d4c7759e67b541bfba8c82e2f3eac9d5c0afb50');
   } finally { undo(); walls.geometry.dispose(); material.map!.dispose(); material.dispose(); }
@@ -341,14 +345,15 @@ test('daylight uses the original KX facade materials and programs, including aft
   const centralNames = ['kxcentral-curtain', 'kxcentral-timber'];
   const brick = material('brickFoot'), stone = material('stoneFoot');
   const facades = [...mast.map(name => shed.getObjectByName(name)), ...centralNames.map(name => central.group.getObjectByName(name))] as THREE.Mesh[];
-  const activeMaterials = () => facades.map(mesh => mesh.material as THREE.Material);
+  // re-pinned round 25: shed-front carries [faces, returns] (its returns a darker clone of the same brick, on the same program); its faces' material is the one pinned here
+  const activeMaterials = () => facades.map(mesh => [mesh.material].flat()[0] as THREE.Material);
   // Compiled hook source and defines from e4881457 with its atmosphere active.
   const dayPrograms = [
-    'b3da21edd89c15cbbab49f6b0a048c18bf89231a5cf2809dc735303805a06b81',
-    'b3da21edd89c15cbbab49f6b0a048c18bf89231a5cf2809dc735303805a06b81',
-    'db0652d41f016c7822e036c74bf38190f6a056c0f714766c0098bff495978164',
+    '66e3ab6d88b418b55ff5a417426e99e905e0ce41b12adf3243692d36d7610366',
+    '66e3ab6d88b418b55ff5a417426e99e905e0ce41b12adf3243692d36d7610366',
+    '65ff3f287a61c6d67f7b746d2f5f98f4066da94fe0072a63f03cdd5fc94977c0',
     '2f34f2a6011d30e26949695b680ada384190ca1092ed72a5e4830fb4c941f74a',
-    '31339d94f79780676cd88109588d4c6688a9ce9df412f3e14899096cec91e135',
+    '87f28425cb4934dac81cc3bca3cd1a70d49ba483145a31a94a2366439fd3a430',
   ];
   const signature = (m: THREE.Material) => {
     const { vertexShader, fragmentShader } = shader(m);
@@ -372,8 +377,11 @@ test('daylight uses the original KX facade materials and programs, including aft
       (o as THREE.Mesh).geometry?.type === 'CircleGeometry') as THREE.Mesh;
     assert.ok(original[1]!.id < (dial.material as THREE.Material).id,
       'the tower brick must sort ahead of the dial in the opaque render list, as on main');
-    assert.ok(original[0] === brick && original[1] === brick && original[2] === stone,
-      'the front and tower still share the original brick/stone materials');
+    // re-pinned 2026-11-24 (round 6, A4 brick: R-kx-front-c's darker tower stock): the tower's brick is a tinted clone of the front's, on
+    // the same program (its cache key is the original's, and the program signatures below are unchanged); the stone is still shared
+    assert.ok(original[0] === brick && original[2] === stone && original[1] !== brick && original[1]!.customProgramCacheKey() === brick.customProgramCacheKey()
+      && (original[1] as THREE.MeshLambertMaterial).map === (brick as THREE.MeshLambertMaterial).map,
+      'the front shares the original brick and the tower its program and texture; the stone is the original');
     assert.deepEqual(original.map(signature), dayPrograms,
       'daylight vertex and fragment source matches the ordinary materials including roof shade');
     at(dusk, 1000, fog);

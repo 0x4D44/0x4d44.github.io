@@ -218,6 +218,7 @@ export const MAST_HEIGHT = 12;
  * clock tower between two of them (night-a-kx-square-2015-skinner.jpg: tall steel masts with a strip of white LEDs near the top stand across the square, a few tens of metres in front of the
  * front; night-e-kx-elevated-2016-itsnogame.jpg shows them as white dots in the square). ASSUMED: the places, placed by eye (no photograph gives them). `forecourtMasts` keeps the places that
  * are in the clear of the mapped buildings (`mastIsClear`), so a place the buildings have taken is dropped, not moved; that they are clear of the street lamps is the real-data test's.
+ * u is measured from the shed's west wall as it stood before the 2026-11-24 realignment (`layout.westShift` east of today's), so moving the wall left the masts where they were.
  */
 export const FORECOURT_MASTS: readonly (readonly [number, number])[] = [[-30, -28], [-10, -28], [10, -28], [30, -30], [50, -28], [68, -28]];
 
@@ -266,7 +267,7 @@ export function forecourtMasts(data: Pick<KxData, 'platforms' | 'buildings'>, he
     return [];
   }
   return FORECOURT_MASTS.flatMap(([u, v]): LampSpot[] => {
-    const [x, z] = shedToWorld(layout, u, v);
+    const [x, z] = shedToWorld(layout, u + layout.westShift, v);
     if (!mastIsClear([x, z], data.buildings)) return [];
     const gx = (heightAt(x + SLOPE_STEP, z) - heightAt(x - SLOPE_STEP, z)) / (2 * SLOPE_STEP);
     const gz = (heightAt(x, z + SLOPE_STEP) - heightAt(x, z - SLOPE_STEP)) / (2 * SLOPE_STEP);

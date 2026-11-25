@@ -1,15 +1,17 @@
 /// <reference types="vite/client" />
 // The Perth station view: the lazy Perth model and its geometry, loaded as Waverley's are (waverley.ts), into the same view shape the
-// station switcher hops to. No live trains yet: the Perth train-describer area is not in the relay (see station-config.ts).
+// station switcher hops to. The page attaches the TRUST and timetable layer in live preview modes.
 import * as THREE from 'three';
 import type { NightLayer } from './night.ts';
+import { registerLights } from '../../core/light-sources.ts';
+import type { LightSource } from '../../core/light-sources.ts';
 import { decodeWaverleyAnchorScene } from '../../core/waverley-anchors.ts';
 import { createWaverleyPlaceholderScene, waverleyView } from './waverley.ts';
 import type { WaverleyView } from './waverley.ts';
 
 export interface PerthModelModule {
   buildPerthScene(): { group: THREE.Group; dispose(): void; groundAttribution?: string; terrain?: unknown; parts?: Record<string, THREE.Group>;
-    night?: NightLayer;
+    night?: NightLayer & { sources?: readonly LightSource[] };
     /** The drawn ground's height wherever it is drawn (beyond `terrain` too), for the camera clamp (camera-ground.ts). */
     groundAt?(x: number, z: number): number };
 }
@@ -36,11 +38,12 @@ export async function loadPerthScene(options: {
     const geometry = decodeWaverleyAnchorScene(data.default);
     model = module.buildPerthScene();
     const scene = new THREE.Scene(); scene.background = new THREE.Color(0x334458); scene.add(model.group);
+    const unregister = registerLights(scene, model.night?.sources ?? []);
     let disposed = false;
     const loaded: PerthView = { scene, model, geometry, groundAttribution: model.groundAttribution, placeholder: false, message: PERTH_MESSAGE,
       view: aspect => waverleyView(geometry, aspect),
       // The model owns its local geometry/materials; the shared palette it draws with stays London's.
-      dispose: () => { if (disposed) return; disposed = true; loaded.climate?.dispose(); loaded.live?.dispose(); model!.dispose(); scene.clear(); } };
+      dispose: () => { if (disposed) return; disposed = true; loaded.climate?.dispose(); loaded.live?.dispose(); unregister(); model!.dispose(); scene.clear(); } };
     return loaded;
   } catch (error) {
     model?.dispose();

@@ -5,6 +5,7 @@ import type { LampWetSurface } from './lamp-wet-surface.ts';
 import { lampSurfaceAt, LAMP_MIRROR_PROJECT_GLSL, LAMP_RECEIVER_GLSL } from './lamp-wet-surface.ts';
 import { surfaceUniforms } from './atmosphere.ts';
 import { COVER_GLSL, coverUniforms } from './cover.ts';
+import { poolFloorClip } from './pool-floor.ts';
 import { headlampNight } from './train-headlamp-light.ts';
 
 /** Fade light away rather than blending in a fog-coloured rectangle. */
@@ -242,7 +243,7 @@ ${COVER_GLSL}
 ${floor?'uniform sampler2D uReflectionFloor;\nuniform vec4 uReflectionRect;':''}`)
       .replace('#include <opaque_fragment>',`#include <opaque_fragment>
 float reflectionOpen = 1.0 - coverGroundAt( vReflectionWorld );
-${floor?'reflectionOpen *= mix( 1.0, texture2D( uReflectionFloor, ( vReflectionWorld.xz - uReflectionRect.xy ) * uReflectionRect.zw ).r, vReflectionFloor );':''}
+${floor?`reflectionOpen *= mix( 1.0, ${poolFloorClip('texture2D( uReflectionFloor, ( vReflectionWorld.xz - uReflectionRect.xy ) * uReflectionRect.zw ).r')}, vReflectionFloor );`:''}
 gl_FragColor.a *= vReflectionValid;
 ${reach!==undefined?`// reflection-footprint-begin
 float sourceDistance = length(vReflectionWorld.xz-vReflectionAnchor.xz);

@@ -17,6 +17,7 @@ import { buildWaverleyScene } from '../src/waverley-scene.ts';
 import { buildPerthScene } from '../src/perth-scene.ts';
 import { forcedObservation, weatherState } from '../src/weather.ts';
 import type { CoverMap } from '../src/cover.ts';
+// Re-pinned 2026-11-24 (shed realignment, signed off): the vault centres are the spine -/+ R (aisle + R and aisle + 3R before, the same points while the aisles were even), the valley is the spine, and there is no west aisle, so a probe of 'the aisle' stands in the east aisle.
 
 const data: KxData = JSON.parse(readFileSync(new URL('../src/data/kx-track.json', import.meta.url), 'utf8'));
 const layout = shedLayout(data);
@@ -56,7 +57,8 @@ const sceneOf = (...meshes: THREE.Object3D[]): THREE.Scene => { const s = new TH
 
 test('the roofs the cover is drawn from are the real builders\' meshes, by name: a renamed roof would let the rain through', () => {
   const found = findRoofs(scene).map((m) => m.name).sort();
-  assert.deepEqual(found, ['canopy-glass', 'concourse-glass', 'concourse-panels', 'shed-aisle-roofs', 'shed-roof-cladding', 'shed-roof-glass'], 'the shed, the concourse and the canopies');
+  // Re-pinned 2026-11-24 (B6): the canopies' opaque sheet is the second material of canopy-steel (it casts the sun's shadow), so that mesh is a roof too.
+  assert.deepEqual(found, ['canopy-glass', 'canopy-steel', 'concourse-glass', 'concourse-panels', 'shed-aisle-roofs', 'shed-roof-cladding', 'shed-roof-glass'], 'the shed, the concourse and the canopies');
   const landmarks = new THREE.Scene();
   addLandmarks(landmarks, data, {});
   assert.deepEqual(findRoofs(landmarks).map((m) => m.name).sort(), ['landmarks-roofGlass', 'landmarks-slate'], 'and the Barlow shed (the hotels\' slate comes with it)');
@@ -95,7 +97,7 @@ test('the shed: every point of its floor is under a roof, at every height below 
 
 test('the shed\'s roof is the drawn one: the arch of each vault, the valley between them, the flat aisle roofs', () => {
   const crown = layout.crown + ROOF_SKIN;
-  for (const uc of [layout.aisle + R, layout.aisle + 3 * R]) {
+  for (const uc of [layout.spine - R, layout.spine + R]) {
     assert.ok(Math.abs(roofAt(at(uc, 100, 0)) - crown) < 0.3, `the crown of the vault at ${uc.toFixed(1)}: ${roofAt(at(uc, 100, 0))} against ${crown}`);
     for (const d of [3, 6, 9, 12]) {
       for (const side of [-1, 1]) {
@@ -104,10 +106,10 @@ test('the shed\'s roof is the drawn one: the arch of each vault, the valley betw
       }
     }
   }
-  for (const aisle of [layout.aisle / 2, layout.width - layout.aisle / 2]) {
+  for (const aisle of [layout.width - layout.aisleEast / 2]) {
     assert.ok(Math.abs(roofAt(at(aisle, 100, 0)) - layout.springing) < 0.3, `an aisle roof at the springing: ${roofAt(at(aisle, 100, 0))}`);
   }
-  const valley = roofAt(at(layout.aisle + 2 * R, 100, 0));
+  const valley = roofAt(at(layout.spine, 100, 0));
   assert.ok(valley > layout.springing + 1 && valley < crown - 6, `where the vaults meet the roof is low: ${valley}`);
 });
 
@@ -194,15 +196,15 @@ test('the platform canopies: the strip between a canopy\'s edge beams is covered
 test('the weather\'s share: none of the rain, the snow or the wet under a roof; all of it in the open and on top of a roof', () => {
   const rain = weatherState(forcedObservation('rain')), snow = weatherState(forcedObservation('snow'));
   assert.ok(rain.wet > 0.5 && snow.snowCover > 0.5, 'the weather has something to keep off');
-  const shed = at(layout.aisle + R, 100, PLATFORM_HEIGHT);
+  const shed = at(layout.spine - R, 100, PLATFORM_HEIGHT);
   const open = at(layout.width + 15, 100, PLATFORM_HEIGHT);
-  const onTheRoof = at(layout.aisle + R, 100, layout.crown + 2);
+  const onTheRoof = at(layout.spine - R, 100, layout.crown + 2);
   const [concourse] = [[canopy.centre[0] - canopy.radius * 0.3, 1.5, canopy.centre[1]] as [number, number, number]];
   // what each shader multiplies by: drops by the share that reaches them, the ground's wet and snow by the share that reaches it (with a soft edge)
   const dropsAt = (p: [number, number, number]): number => openShare(map, ...p);
   const wetAt = (p: [number, number, number]): number => rain.wet * groundOpenShare(map, ...p);
   const whiteAt = (p: [number, number, number]): number => snow.snowCover * groundOpenShare(map, ...p);
-  for (const under of [shed, at(layout.aisle / 2, 60, PLATFORM_HEIGHT), at(layout.aisle + 3 * R, 180, 2), concourse]) {
+  for (const under of [shed, at(layout.width - layout.aisleEast / 2, 60, PLATFORM_HEIGHT), at(layout.spine + R, 180, 2), concourse]) {
     assert.equal(dropsAt(under), 0, `no drops under a roof at ${under}`);
     assert.equal(wetAt(under), 0, 'no wetness');
     assert.equal(whiteAt(under), 0, 'no snow');
@@ -217,7 +219,7 @@ test('the weather\'s share: none of the rain, the snow or the wet under a roof; 
 test('a drop comes out from under a roof over its last stretch, not in one step: wholly under at 0.6 m below, gone from the roof itself', () => {
   assert.equal(COVER_DEEP, 0.6);
   assert.equal(COVER_SHALLOW, 0.05);
-  const p = at(layout.aisle + R, 100, 0);
+  const p = at(layout.spine - R, 100, 0);
   const roofY = roofAt(p);
   const share = (below: number): number => coverAt(map, p[0], roofY - below, p[2]);
   assert.equal(share(COVER_DEEP), 1);
@@ -373,7 +375,7 @@ test('the shaders\' maps: the bytes the CPU reads are the bytes the GPU is given
   assert.equal(coverUniforms.uCoverScale.value, map.step);
   // a texel read the way the shader does it: uv = (p - lowest) / extent, texel = floor(uv * size), is the cell coverHeightAt reads
   const [rx, rz, sx, sz] = coverUniforms.uCoverRect.value.toArray() as [number, number, number, number];
-  for (const [x, z] of [[canopy.centre[0], canopy.centre[1]], ...[10, 60, 140, 200].map((v) => shedToWorld(layout, layout.aisle + R + 3, v))] as [number, number][]) {
+  for (const [x, z] of [[canopy.centre[0], canopy.centre[1]], ...[10, 60, 140, 200].map((v) => shedToWorld(layout, layout.spine - R + 3, v))] as [number, number][]) {
     const i = Math.floor((x - rx) * sx * map.nx), j = Math.floor((z - rz) * sz * map.nz);
     assert.equal((map.heights[j * map.nx + i] as number) * coverUniforms.uCoverScale.value, coverHeightAt(map, x, z), `the texel at ${x.toFixed(1)}, ${z.toFixed(1)}`);
   }
@@ -426,7 +428,7 @@ test('the rooms in the real station: the concourse floor is a room, and so is th
     const [x, z] = shedToWorld(layout, -12 - 0.6, v); // the Range's concourse face is at u = -12 (cover.ts ROOM_ROOFS, lighting.ts INTERIOR)
     assert.equal(room(x, z), 255, `0.6 m in front of the Range's face at v ${v}`);
   }
-  for (const v of [20, 100]) { const [x, z] = shedToWorld(layout, layout.aisle + R, v); assert.equal(room(x, z), 0, `a platform under the shed at v ${v}`); }
+  for (const v of [20, 100]) { const [x, z] = shedToWorld(layout, layout.spine - R, v); assert.equal(room(x, z), 0, `a platform under the shed at v ${v}`); }
   assert.ok(map.rooms.reduce((n, r) => n + (r ? 1 : 0), 0) > 10000, 'and the dome is a good few cells');
 });
 

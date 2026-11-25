@@ -16,7 +16,7 @@ import {EDINBURGH_CAPTURE_PAIRS,EDINBURGH_FLEET,capturePairFormation} from '../w
 import {shedLayout,shedBufferStops,standingTrainPose,stationPlatforms,platformFormationLimits,platformSouthEnd,pointInPolygon,worldToShed} from '../core/station.ts';
 import {PLATFORM_HEIGHT} from '../core/scene.ts';
 import {readPng} from './axis01-pixels.mjs';
-import {ALTERNATE_RULE,ASKABLE_VIEW_IDS,CATALOGUE,CURVE,CURVE_NORMAL,CURVE_NORMAL_VIEWS,CURVE_RULE,CURVE_STAGE,CURVE_VIEWS,MOTION,MOTION_RULE,MOTION_STAGE,MOTION_STATION_NOTE,STAGE_VIEWS,STATION_ORIENTATIONS,VIEW_IDS,cumulative,curvePoseOf,curveRouteFor,curveVerdict,failureSummary,frameTransform,frozenEntryOf,judgeCurvePage,judgeMotionClip,judgeMotionFrame,localPose,motionPoseOf,alternatePlacementsFor,alternateViewsFromSearch,findPlacement,planCatalogueViews,planCurve,planMotion,planStation,poseOf,poseDifference,pointAlong,reseatBlockedStationViews,segmentAt,stationFrozenDrift,stationViewsFromFrozen,stationViewsFromSearch,typicalRadius,viewForExposure} from './train-framing.mjs';
+import {ALTERNATE_RULE,ASKABLE_VIEW_IDS,CATALOGUE,CURVE,CURVE_NORMAL,CURVE_NORMAL_VIEWS,CURVE_RULE,CURVE_STAGE,CURVE_VIEWS,MOTION,MOTION_RULE,MOTION_STAGE,MOTION_STATION_NOTE,STAGE_VIEWS,STATION_ORIENTATIONS,TELE,VIEW_IDS,cumulative,curvePoseOf,curveRouteFor,curveVerdict,failureSummary,frameTransform,frozenEntryOf,judgeCurvePage,judgeMotionClip,judgeMotionFrame,localPose,motionPoseOf,alternatePlacementsFor,alternateViewsFromSearch,findPlacement,planCatalogueViews,planCurve,planMotion,planStation,planTeleViews,poseOf,poseDifference,pointAlong,reseatBlockedStationViews,segmentAt,stationFrozenDrift,stationViewsFromFrozen,stationViewsFromSearch,typicalRadius,viewForExposure} from './train-framing.mjs';
 import {tunnelMouths} from '../core/landmarks.ts';
 import {buildGraph,edgePoint} from '../core/graph.ts';
 import {shapeFrom} from '../core/curves.ts';
@@ -387,6 +387,7 @@ const CATALOGUE_FLAGS=['--mode','--dist','--out','--kinds','--views','--chrome',
 /**
  * `--mode catalogue --dist <dist> --out <dir> [--kinds a,b] [--views V01,V04] [--chrome none|path] [--poses <manifest>] [--exposure day|noon|dusk] [--timeout-seconds N]`.
  * Without `--views` a run takes V01-V10; `M01` (the motion clip), `C01` (the tightest curve) and `C02` (the curve of the radius that is typical of the page's track) are opt-in, `--views M01`, `--views C01,C02` or with others, and are taken at day only.
+ * `T01` (`nose-tele-*`, the long-lens nose view of two AT300 reference photographs) is opt-in and day only too, `--views T01`, and is NON-SCORING: not one of the rubric's scoring views V01-V10 and never part of a score.
  * A `noon` run (the page's clock pinned to midsummer noon, see EXPOSURES) takes V10 only, which is its default, and no other view.
  */
 export function parseCatalogueArgs(args) {
@@ -418,6 +419,7 @@ export function parseCatalogueArgs(args) {
   if(views.includes(MOTION.id)&&exposure!=='day')throw new Error(`--views ${MOTION.id}: the motion clip is taken at day only, not ${exposure}`);
   if(views.includes(CURVE.id)&&exposure!=='day')throw new Error(`--views ${CURVE.id}: the curve is taken at day only, not ${exposure}`);
   if(views.includes(CURVE_NORMAL.id)&&exposure!=='day')throw new Error(`--views ${CURVE_NORMAL.id}: the curve is taken at day only, not ${exposure}`);
+  if(views.includes(TELE.id)&&exposure!=='day')throw new Error(`--views ${TELE.id}: the non-scoring nose-tele view is taken at day only (its reference photographs are daylight), not ${exposure}`);
   // M01 poses a Waverley kind by its own layout (motionLayout) on the neutral straight stage; the curves stand on the King's Cross track by a core/train.ts layout
   const waverley=list('--kinds',[...ALL_KINDS,...EDINBURGH_CAPTURE_KINDS],ALL_KINDS).filter(kind=>EDINBURGH_CAPTURE_KINDS.includes(kind)),trackViews=[CURVE.id,CURVE_NORMAL.id].filter(id=>views.includes(id));
   if(waverley.length&&trackViews.length)throw new Error(`--views ${trackViews.join(',')}: the curve views place a train on the King's Cross track by its core/train.ts layout, which the Waverley kinds (${waverley.join(',')}) do not have`);
@@ -527,7 +529,8 @@ export function frozenPoseDrift(frozen,plans,{tol=1e-6}={}) {
     if(!held){drifts.push({kind,reason:'kind missing from the frozen poses'});continue;}
     for(const view of plan.views) {
       const entry=frozenEntryOf(held,view);
-      if(!entry?.plan){drifts.push({kind,view:view.suffix,reason:'view missing from the frozen poses'});continue;}
+      // T01 is a fixed pose, not searched for: a held manifest from before it existed (or a pass not asked for it) leaves nothing to drift from
+      if(!entry?.plan){if(view.id!==TELE.id)drifts.push({kind,view:view.suffix,reason:'view missing from the frozen poses'});continue;}
       const at=poseDifference(poseOf(view),entry.plan,tol);
       if(at!==null)drifts.push({kind,view:view.suffix,reason:'pose differs from the frozen pose',at});
     }
@@ -641,6 +644,8 @@ export function catalogueDriver() {
       if(typeof k.setTrainLampState!=='function')throw new Error('the page lost setTrainLampState during the run');
       lampState={...view.capability.state};k.setTrainLampState(s.group,{...lampState});
     }
+    // T01: the lamps a fresh specimen has (V01's), put back because the V09 views before it leave the trailing state on the specimen; no other view is touched
+    else if(view.lamps&&typeof k.setTrainLampState==='function'){lampState={...view.lamps};k.setTrainLampState(s.group,{...lampState});}
     return {...settle(view,text,pose),lampState};
   };
   /** V10: a camera given in world metres, the specimen stood where the placement says; the sidecar also gets the pose in the train's own frame. */
@@ -790,7 +795,7 @@ export function trainNightOf(exposure,atmosphere,read=null) {
 export function catalogueSidecar({kind,view,file,formation,session,host,build,state,result,timings,exposure=exposureRecord('day')}) {
   const live=result.live;
   return {rubric:CATALOGUE.rubric,schema:'kx-catalogue-sidecar/1',kind,file,
-    view:{id:view.id,suffix:view.suffix,frame:view.frame,notes:view.notes,car:view.car??null,
+    view:{id:view.id,suffix:view.suffix,frame:view.frame,notes:view.notes,car:view.car??null,...(view.scoring===false?{scoring:false}:{}),
       capability:view.capability?{function:view.capability.function,state:view.capability.state}:null,...(view.poseSuffix?{poseFrom:view.poseSuffix}:{})},
     renderer:session.renderer,host:host.os,macModel:host.macModel,git:host.git,build,
     viewport:{width:CATALOGUE.viewport.width,height:CATALOGUE.viewport.height,deviceScaleFactor:CATALOGUE.viewport.deviceScaleFactor,
@@ -815,13 +820,16 @@ export function catalogueSidecar({kind,view,file,formation,session,host,build,st
 }
 
 /** The head of the run's manifest: what the run was (rubric, viewport, the sun rule, the exposure, the station, the machine and build, the poses it reused) before any kind is photographed. */
-export function catalogueManifest({exposure,stationScene,host,build,poses,motion=false,curve=null,curveNormal=null,generated=new Date().toISOString()}) {
+export function catalogueManifest({exposure,stationScene,host,build,poses,motion=false,curve=null,curveNormal=null,tele=false,generated=new Date().toISOString()}) {
   return {rubric:CATALOGUE.rubric,schema:'kx-catalogue-manifest/1',generated,viewport:CATALOGUE.viewport,
     sunRule:{id:'sun-bearing-v1',sunPosition:CATALOGUE.sunPosition,offsetDeg:CATALOGUE.sunOffsetDeg,
       text:"Each view's specimen is turned about the vertical axis so the camera's bearing from the focus point is within 15 degrees of the page sun's azimuth, the sun nudged toward the specimen's nearest lateral axis (plan view: the upper-left diagonal). A pure function of the view's train-local pose. It always uses the day rig's sun, in every exposure, so a dusk pass turns each specimen exactly as the day pass did."},
-    station:stationScene?stationManifest(stationScene):null,exposure:exposureRecord(exposure),...(motion?{motion:motionManifest()}:{}),...(curve?{curve:curveManifest(curve)}:{}),...(curveNormal?{curveNormal:curveManifest(curveNormal,CURVE_NORMAL)}:{}),
+    station:stationScene?stationManifest(stationScene):null,exposure:exposureRecord(exposure),...(motion?{motion:motionManifest()}:{}),...(curve?{curve:curveManifest(curve)}:{}),...(curveNormal?{curveNormal:curveManifest(curveNormal,CURVE_NORMAL)}:{}),...(tele?{tele:teleManifest()}:{}),
     host:host.os,macModel:host.macModel,git:host.git,build,posesFrom:poses,kinds:{}};
 }
+/** What the manifest says once of T01, written when a run is asked for it: that it does not score, its frozen numbers and the photographs it was measured from. */
+export const teleManifest=()=>({id:TELE.id,scoring:false,note:TELE.note,suffixes:['nose-tele-left','nose-tele-right','rear-nose-tele-left','rear-nose-tele-right'],
+  pose:{eye:[...TELE.eye],target:[0,TELE.eye[1],TELE.targetZ],fov:TELE.fov,frame:'right side of the front cab; the left mirrors x, the rear reverses the train frame'},references:TELE.references.map(r=>({...r}))});
 /** The page address of a run: the local server's port and the query its exposure pins. */
 export const cataloguePageUrl=(port,exposure)=>`http://127.0.0.1:${port}/kings-cross/?${catalogueUrlQuery(exposure)}`;
 /**
@@ -1324,7 +1332,7 @@ export async function catalogueMain(args) {
   const stageIds=opts.views.filter(id=>id!=='V10'),stationScene=opts.views.includes('V10')?await loadStationScene():null,withMotion=opts.views.includes(MOTION.id);
   const curve=opts.views.includes(CURVE.id)?await loadCurveRoute():null,curveNormal=opts.views.includes(CURVE_NORMAL.id)?await loadCurveRoute(undefined,{typical:true}):null;
   const plans=new Map(opts.kinds.map(kind=>{const formation=describeFormation(kind);
-    return [kind,{kind,formation,views:planCatalogueViews(formation).filter(v=>stageIds.includes(v.id)).map(v=>viewForExposure(v,opts.exposure)),station:stationScene?planStation(formation,stationScene):null,motion:withMotion?planMotion(formation):null,
+    return [kind,{kind,formation,views:[...planCatalogueViews(formation),...planTeleViews(formation)].filter(v=>stageIds.includes(v.id)).map(v=>viewForExposure(v,opts.exposure)),station:stationScene?planStation(formation,stationScene):null,motion:withMotion?planMotion(formation):null,
       curve:curve?planCurveFor(formation,curve):null,curveNormal:curveNormal?planCurveFor(formation,curveNormal,carPoses,CURVE_NORMAL):null}];}));
   let frozen=null,frozenSha=null;
   if(opts.poses) {
@@ -1343,7 +1351,7 @@ export async function catalogueMain(args) {
   const host=hostInfo(),build=await buildHash(dist),started=performance.now();
   let chrome,cdp,profile,server,cleanup,fatal,session;
   const lifetime=createCaptureLifetime({timeoutMs:opts.timeoutMs,onStop:()=>cdp?.close()});
-  const manifest=catalogueManifest({exposure:opts.exposure,stationScene,host,build,poses:frozen?{file:path.resolve(opts.poses),sha256:frozenSha}:null,motion:withMotion,curve,curveNormal});
+  const manifest=catalogueManifest({exposure:opts.exposure,stationScene,host,build,poses:frozen?{file:path.resolve(opts.poses),sha256:frozenSha}:null,motion:withMotion,curve,curveNormal,tele:opts.views.includes(TELE.id)});
   const summary={kinds:{},timingsMs:{},...(curve?{curveChecks:{}}:{}),...(curveNormal?{curveNormalChecks:{}}:{})};
   try {
     server=catalogueServer(root,dist);
@@ -1380,7 +1388,7 @@ export async function catalogueMain(args) {
     const publish=async(file,bytes,sidecar)=>{await writeFile(path.join(out,file),bytes,{flag:'wx',mode:0o600});await writeFile(path.join(out,file+'.json'),JSON.stringify(sidecar,null,2)+'\n',{flag:'wx',mode:0o600});return file;};
     // the views of one specimen already on stage: check, photograph (with the empty-stage baseline), verify the pixels, write the picture and its sidecar
     const captureViews=(kind,plan,views,state)=>runCatalogueViews(views,catalogueViewSteps({kind,formation:plan.formation,evaluate,screenshot:shoot,publish,session,host,build,state,exposure:manifest.exposure,check:()=>lifetime.check(),
-      label:view=>`${kind} catalogue specimen ${view.id==='V10'?"at King's Cross, station scenery kept":'on neutral stage'} - ${view.id} ${view.suffix}`}));
+      label:view=>`${kind} catalogue specimen ${view.id==='V10'?"at King's Cross, station scenery kept":'on neutral stage'} - ${view.id} ${view.suffix}${view.scoring===false?' (NON-SCORING)':''}`}));
     const write=(file,bytes)=>writeFile(path.join(out,file),bytes,{flag:'wx',mode:0o600});
     for(const [kind,plan] of plans) {
       lifetime.check();const kindStart=performance.now();
@@ -1449,7 +1457,7 @@ export async function catalogueMain(args) {
 /** One view's line in the manifest: the frozen pose that was derived, and what became of it. */
 export function manifestEntry(result) {
   const {view}=result;
-  return {id:view.id,suffix:view.suffix,plan:poseOf(view),...(view.poseSuffix?{poseFrom:view.poseSuffix}:{}),rotation:view.rotation??null,notes:view.notes??null,car:view.car??null,
+  return {id:view.id,suffix:view.suffix,...(view.scoring===false?{scoring:false}:{}),plan:poseOf(view),...(view.poseSuffix?{poseFrom:view.poseSuffix}:{}),rotation:view.rotation??null,notes:view.notes??null,car:view.car??null,
     // the reason is what a missing page function is reported as: it belongs to the GAP that says so, not to a picture the page could take
     capability:view.capability?(result.functional?view.capability:{function:view.capability.function,state:view.capability.state}):null,
     outcome:{status:result.status,reason:result.reason??null,file:result.file??null,blocker:result.blocker??view.blocker??null,

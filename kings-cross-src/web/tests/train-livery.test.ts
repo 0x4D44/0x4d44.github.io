@@ -154,7 +154,9 @@ test('LNER: the cheek\'s back edge is one smooth curve through the photographs\'
   const atTop = back[back.length - 1] as number;
   assert.ok(atFoot < widest - 0.3 && atTop < widest - 0.05, `the edge swells to ${widest.toFixed(2)} m back from ${atFoot.toFixed(2)} at the foot and ${atTop.toFixed(2)} at the top`);
   assert.equal(at('lner5', LNER_NOSE, 0.3, 1.49), LNER_RED, 'the cheek reaches 1.5 m up beside the face');
-  assert.notEqual(at('lner5', LNER_NOSE, 0.3, 1.52), LNER_RED, 'and no higher');
+  // RE-PINNED (round B9b; was not red at 1.52 m): the cheek now runs on up under the lamp unit, whose foot rose to 1.55 m in round B9, to 1.57 m (LNER_CHEEK_TOP), so no white shows
+  // between them: lner-801-214-2025 shows the near unit's lower corner (about x 1395, y 785 of the 1920-wide frame) meeting red, with no pale tab. The same 2 cm over the top.
+  assert.notEqual(at('lner5', LNER_NOSE, 0.3, 1.59), LNER_RED, 'and no higher');
 });
 
 test('the nose\'s dark cap starts where the windscreen ends: the LNER\'s and Lumo\'s `noseTopFrom` is the glass\'s top edge (glass.screen.s1), whatever the screen\'s size', () => {
@@ -435,7 +437,8 @@ test('liveryFor: each kind wears its scheme, and kinds without one of their own 
     // cap over the windscreen on the 803, from the glass's top edge back; every other part of the row is still livery.ts's
     assert.equal(l.noseTop, 0x2a2d33);
     // CHANGED round 5 (2.0 -> 2.5): the windscreen is taller now (its top edge is 2.5 m from the tip, glass.screen.s1 in train.ts), and the cap starts at the glass's top edge
-    assert.equal(l.noseTopFrom, 2.5);
+    // CHANGED AT300 round (2.5 -> 2.6): the blunt nose's glass tops out 2.6 m from the tip
+    assert.equal(l.noseTopFrom, 2.6);
     for (const key of Object.keys(row) as (keyof typeof row)[]) assert.equal(l[key], row[key], `${kind}.${key}`);
   }
   // CHANGED (the LNER dome began 3.2 m back, on a 5.4 m nose): the nose is 3.9 m long now and the black cap starts at the windscreen's top edge, 2.0 m from the tip
@@ -443,7 +446,8 @@ test('liveryFor: each kind wears its scheme, and kinds without one of their own 
   // CHANGED round 5 (2.0 -> 2.5): the glass's top edge moved back to 2.5 m (the screen is taller, clear above the beak), and the cap follows it
   // the LNER nose is a black dome over the glass; the 717's the whole nose; the others have no special top
   assert.equal(liveryFor('lner5').noseTop, 0x1a1c21);
-  assert.equal(liveryFor('lner5').noseTopFrom, 2.5);
+  // CHANGED AT300 round (2.5 -> 2.6): the blunt nose's glass tops out 2.6 m from the tip
+  assert.equal(liveryFor('lner5').noseTopFrom, 2.6);
   // CHANGED (the 717's dome was written out here, and the 700 had none): both Desiro Citys' domes are the black of their flat faces' masks, from the tip (train-face.ts), the 700's a blue-black
   assert.equal(liveryFor('gn717x6').noseTop, 0x1a1c21);
   assert.equal(liveryFor('gn717x6').noseTop, MASK_717);
@@ -569,9 +573,10 @@ test('the Hull Trains front: a grey beak between two blue cheeks on the face, it
   const mask = frontOf('hull5').mask;
   assert.ok(mask, 'the Hull Trains front has a colour mask');
   assert.equal(mask.colour, HULL_BEAK);
-  // the lines' numbers, written out (the checks below read them from the spec): 0.4 m out at the face's foot, 0.46 at its top, 0.72 at the windscreen's foot. The face is 0.94 m across at its
+  // the lines' numbers, written out (the checks below read them from the spec): 0.5 m out at the face's foot, 0.62 at its top, 0.8 at the windscreen's foot. The face is 1.23 m across at its
   // widest, so the lines cross its outline (the mask needs that: where they never do, the band over the nose's top has no width to start from)
-  assert.deepEqual(mask, { colour: HULL_BEAK, hwFoot: 0.4, hwTop: 0.46, hwSill: 0.72 });
+  // CHANGED (AT300 round: 0.4, 0.46 and 0.72, the LNER's own, on the old beak's 0.94 m face): hull-802-doncaster-2024 shows the grey wider than the LNER's yellow, filling the face between the lamp housings
+  assert.deepEqual(mask, { colour: HULL_BEAK, hwFoot: 0.5, hwTop: 0.62, hwSill: 0.8 });
   const r0 = ringAt(bodySpec('at300').nose, 0);
   // CHANGED (the beak was cut along the loft's own columns, an upright strip: the cheeks' inner edge one x at every height): the mask is two straight lines from the face's foot
   // (`hwFoot` either side of the middle) to its top (`hwTop`), as hull-802-doncaster-2024 shows a bullet of grey widening up the face; the beak stays inside them at every
@@ -601,7 +606,7 @@ test('the Hull Trains front: a grey beak between two blue cheeks on the face, it
   for (const car of layout.cars) assert.ok(trisOfColour(detailOf(g, car.index), HULL_DOOR).length >= 8, `car ${car.index}: red door leaves`);
 });
 
-test('the nose\'s top: the LNER has a black dome and Lumo a dark grey one over the glass from its top edge (2.5 m back), the 717 a dark nose roof from the tip, every other kind none', () => {
+test('the nose\'s top: the LNER has a black dome and Lumo a dark grey one over the glass from its top edge (2.6 m back), the 717 a dark nose roof from the tip, every other kind none', () => {
   const dark = 0x1a1c21;
   const lumoDome = 0x2a2d33;
   const cars = (kind: TrainKind): number[] => trainLayout(kind).cars.filter((c) => c.cab).map((c) => c.index);
@@ -611,14 +616,15 @@ test('the nose\'s top: the LNER has a black dome and Lumo a dark grey one over t
   // CHANGED round 5: the glass's top edge is 2.5 m back now (glass.screen.s1), so the cap starts there: the first ring at or behind 2.5 m is 2.515 m back. The nose's textured
   // columns run up to column 9 (`front.shellTop`, the AT300 front's own, so the livery's cheek and white reach over the shoulder and no vertex-coloured roof wedge shows low down on
   // the flank), so the dome's lowest edge is column 9 of the section at that ring, 3.07 m up, not column 7
+  // CHANGED (AT300 round, the blunt nose: AT300_NOSE_KNOTS): the glass's top edge is 2.6 m back (glass.screen.s1), the first ring at or behind it 2.658 m back, the dome's lowest edge 2.99 m up there (the bounds, 3.0 to 3.15 m, move down with it: 2.92 to 3.07 m)
   const at300 = bodySpec('at300');
   const sec300 = carSection(at300);
   const norm300 = normalised(sec300);
   const topColumn = at300.front.shellTop ?? 7;
   assert.equal(topColumn, 9, 'the AT300 nose\'s textured columns run to column 9');
-  const domeRing = ringStations(at300.nose).find((s) => s >= 2.5 - 1e-9) as number;
+  const domeRing = ringStations(at300.nose).find((s) => s >= 2.6 - 1e-9) as number;
   const domeFloor = (halfAt(sec300, norm300, eggSection(norm300, at300.nose.widest, at300.nose.boxiness), ringAt(at300.nose, domeRing))[topColumn] as [number, number])[1];
-  assert.ok(domeRing >= 2.5 - 1e-9 && domeRing < 2.6 && domeFloor > 3.0 && domeFloor < 3.15, `the dome's first ring is ${domeRing} m back, its lowest edge ${domeFloor} m up`);
+  assert.ok(domeRing >= 2.6 - 1e-9 && domeRing < 2.7 && domeFloor > 2.92 && domeFloor < 3.07, `the dome's first ring is ${domeRing} m back, its lowest edge ${domeFloor} m up`);
   for (const [kind, colour] of [['lner5', dark], ['lner9', dark], ['lumo5', lumoDome]] as [TrainKind, number][]) {
     const g = buildTrain(kind);
     g.updateMatrixWorld(true);
@@ -626,10 +632,10 @@ test('the nose\'s top: the LNER has a black dome and Lumo a dark grey one over t
       const car = trainLayout(kind).cars[index] as { cab: 'front' | 'rear'; start: number; end: number };
       const tris = trisOfColour(detailOf(g, index), colour);
       assert.ok(tris.length > 20, `${kind} car ${index}: the dome (${tris.length} triangles)`);
-      // all of it is more than 2.5 m from the nose's tip (the livery's `noseTopFrom`, CHANGED round 5 from 2.0 m), measured along the car, and on the roof
+      // all of it is more than 2.6 m from the nose's tip (the livery's `noseTopFrom`, CHANGED round 5 from 2.0 m, and in the AT300 round from 2.5 m), measured along the car, and on the roof
       const tip = car.cab === 'front' ? car.start : car.end;
       for (const t of tris) for (const v of t) {
-        assert.ok(Math.abs(v.z - tip) >= 2.5 - 0.05, `${kind} car ${index}: dark roof only ${Math.abs(v.z - tip).toFixed(2)} m from the tip`);
+        assert.ok(Math.abs(v.z - tip) >= 2.6 - 0.05, `${kind} car ${index}: dark roof only ${Math.abs(v.z - tip).toFixed(2)} m from the tip`);
         // (CHANGED from 2.5 m: the cap runs a little way down the sides of the glass, about a third of the way down its side edge, 2.6 m: lner-801-214-2025's close crop of the cab)
         assert.ok(v.y >= domeFloor - 1e-4, `${kind} car ${index}: dark triangle at y = ${v.y.toFixed(3)}, under the shell's top edge (${domeFloor.toFixed(3)}): not on the roof or the glass's upper shoulder`);
       }
@@ -661,5 +667,49 @@ test('the nose\'s top: the LNER has a black dome and Lumo a dark grey one over t
     const g = buildTrain(kind);
     g.updateMatrixWorld(true);
     for (const index of cars(kind)) for (const colour of [dark, lumoDome]) assert.equal(trisOfColour(detailOf(g, index), colour).length, 0, `${kind} car ${index}: a nose roof in ${colour.toString(16)}`);
+  }
+});
+
+test('LNER: no white shows under the lamp unit: the flank just under its foot and just behind the lower half of its back edge is the cheek\'s red, at both kinds (round B9b)', () => {
+  // The B9 score (nose-34-left/right, rear-nose-34-left/right, the cab-car-side views of lner5 and lner9): raising the unit's foot to 1.55 m and its back corner to 0.62 m uncovered the body's own
+  // white between the cheek's top (1.5 m) and the wing, a pale wedge about 28 by 18 px under the unit's lower outboard corner (nose-34-right). lner-801-214-2025 shows the near unit's lower corner
+  // meeting red, with no pale tab. Read in the unit's own coordinates (LNER_CLUSTER: s from the tip, which the texture takes from the car's end, faceSetback further on): 2 and 4 cm outside its
+  // rim, along the whole foot and up the back edge to the unit's mid-height.
+  const tip = faceSetback('at300');
+  for (const kind of ['lner5', 'lner9'] as const) {
+    const cluster = frontOf(kind).cluster!;
+    const win = cluster.window;
+    const rim = cluster.rim!;
+    const foot = win.y0 - (rim.foot ?? rim.width);
+    const pale: string[] = [];
+    for (const d of [0.02, 0.04]) {
+      for (let k = 0; k <= 20; k++) {
+        const s = win.sFront0 + ((win.sBack0 - win.sFront0) * k) / 20;
+        if (at(kind, LNER_NOSE, s + tip, foot - d) !== LNER_RED) pale.push(`${(s).toFixed(2)} m back, ${(foot - d).toFixed(3)} m up`);
+      }
+      for (let k = 0; k <= 10; k++) {
+        const y = win.y0 + ((win.y1 - win.y0) * 0.5 * k) / 10;
+        const s = win.sBack0 + ((win.sBack1 - win.sBack0) * (y - win.y0)) / (win.y1 - win.y0) + rim.width + d;
+        if (at(kind, LNER_NOSE, s + tip, y) !== LNER_RED) pale.push(`${s.toFixed(2)} m back, ${y.toFixed(3)} m up`);
+      }
+    }
+    assert.equal(pale.length, 0, `${kind}: the flank by the lamp unit is not red at ${pale.slice(0, 6).join('; ')}`);
+  }
+});
+
+test('LNER: no cream speck under the lamp unit\'s lower outboard corner: between the cheek and the wing the flank is red or the wing\'s pale crescent, never the body\'s cream, at both kinds (round B10)', () => {
+  // The B9b score (nose-34-left/right, rear-nose-34-left/right, faintly cab-car-side, lner5 and lner9): a cream speck about 3 by 4 px detached in the red just under the unit's lower
+  // outboard corner, nose-34-right about x 735-737, y 532-535 of the 1600 by 1000 frame. Measured: the texture held the body's cream at (0.70 to 0.72 m from the car's end, 1.47 to
+  // 1.50 m up), between the cheek's back edge (0.7 m back at 1.5 m) and the wing's front edge (0.71 to 0.73 m there); that point projects to (734, 535) through V01. lner-801-214-2025
+  // shows the unit's lower corner meeting red. Read on a 5 mm grid from the unit's back corner 0.45 m back and down to 1.4 m, where the crescent meets the body's white behind it.
+  const tip = faceSetback('at300');
+  for (const kind of ['lner5', 'lner9'] as const) {
+    const win = frontOf(kind).cluster!.window;
+    const body = liveryFor(kind).body;
+    const cream: string[] = [];
+    for (let s = win.sBack0 - 0.2; s <= win.sBack0 + 0.25; s += 0.005) {
+      for (let y = 1.4; y <= win.y0; y += 0.005) if (at(kind, LNER_NOSE, s + tip, y) === body) cream.push(`${s.toFixed(3)} m back, ${y.toFixed(3)} m up`);
+    }
+    assert.equal(cream.length, 0, `${kind}: the body's cream shows under the lamp unit at ${cream.slice(0, 6).join('; ')}`);
   }
 });

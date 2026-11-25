@@ -10,6 +10,8 @@
 // Nothing here fetches anything: the weather arrives as a `WeatherState` (weather.ts).
 import * as THREE from 'three';
 import { createPlatformLamps } from './station-lamps.ts';
+import { registerLights } from '../../core/light-sources.ts';
+import { kxStationLights } from './light-source-adapters.ts';
 import { createKxFogMaterials } from './kx-night-fog.ts';
 import type { Pt } from '../../core/geo.ts';
 import { PLATFORM_HEIGHT } from '../../core/scene.ts';
@@ -24,6 +26,8 @@ import { addRoofShade } from './lighting.ts';
 import { buildingNightMaterialsOf, officeNightFog, windowNight } from './materials.ts';
 import { createDialLights, createNightLights } from './night.ts';
 import type { NightLights, NightLightSites } from './night.ts';
+import type { NightLightLayer } from './night-light-layer.ts';
+import type { NightLightingPilot } from './night-lighting-p1.ts';
 import { createPrecip } from './precip.ts';
 import type { Precip } from './precip.ts';
 import { snowSurface } from './snow.ts';
@@ -47,8 +51,10 @@ export const REFERENCE: ReferenceRig = {
  */
 export const SURFACES: ReadonlyMap<string, { dark: number; sheen: number; snow: number }> = new Map([
   ['asphalt', { dark: 0.42, sheen: 1, snow: 1 }],
+  ['platformTop', { dark: 0.42, sheen: 1, snow: 1 }], // the shed's platform tops since round 16: the asphalt's
   ['platformEdge', { dark: 0.3, sheen: 0.8, snow: 0.7 }],
   ['platformEdgeStrip', { dark: 0.3, sheen: 0.8, snow: 0.7 }],
+  ['platformEdgeStripShed', { dark: 0.3, sheen: 0.8, snow: 0.7 }], // round 18: the King's Cross strips' own (the night floor under the roof)
   ['ballast', { dark: 0.4, sheen: 0.15, snow: 0.8 }],
   ['concourseFloor', { dark: 0.22, sheen: 0.7, snow: 0 }],
   ['city-asphalt', { dark: 0.42, sheen: 1, snow: 1 }],
@@ -297,6 +303,8 @@ function starPoints(): THREE.Points {
 }
 
 export interface AtmosphereOptions {
+  nightLightingPilot?: NightLightingPilot;
+  nightLightingLayer?: NightLightLayer;
   /** Geographic location only; omitted preserves the original London sun and lighting rig. */
   location?: LatLon;
   /** Optional solar gate for artificial light: fade weather's daytime boost
@@ -410,19 +418,25 @@ export const RAIL_NIGHT = 0.3;
 const WAVERLEY_SKYLINE_MESHES = new Set(['waverley-building-walls', 'waverley-building-ashlar',
   'waverley-building-tops', 'waverley-city-monuments', 'waverley-ground', 'waverley-ground-cover']);
 
-export function createAtmosphere({ scene, world, sites, location, haze, lampSunGate, lampLayerSunGate, platformLampFloor, kingsCrossNightFog, cityFogTint, litFogCloud }: AtmosphereOptions): Atmosphere {
+export function createAtmosphere({ scene, world, sites, location, haze, lampSunGate, lampLayerSunGate, platformLampFloor, kingsCrossNightFog, cityFogTint, litFogCloud, nightLightingPilot, nightLightingLayer }: AtmosphereOptions): Atmosphere {
   const { hemisphere, sun, fills } = world.lights;
   const kxFogMaterials = kingsCrossNightFog ? createKxFogMaterials() : null;
   const precip = createPrecip();
   scene.add(precip.group);
   const nightLights = sites ? createNightLights(sites) : null;
   if (nightLights) scene.add(nightLights.group);
-  const platformLamps = sites && platformLampFloor ? createPlatformLamps([...sites.platform,...sites.shed],platformLampFloor,PLATFORM_HEIGHT,'kx',litFogCloud&&!!cityFogTint) : null;
+  const platformLamps = sites && platformLampFloor ? createPlatformLamps([...sites.platform,...sites.shed],platformLampFloor,PLATFORM_HEIGHT,'kx',litFogCloud&&!!cityFogTint,[],[...Array<undefined>(sites.platform.length/3).fill(undefined),...sites.shedReach??[]]) : null;
   if (platformLamps) {
     scene.add(platformLamps.group); nightLights?.attach(platformLamps);
     // Shared heads replace the old oversized halos on this opt-in path only.
     for (const name of ['lights-platform','lights-shed']) nightLights?.group.getObjectByName(name)?.removeFromParent();
   }
+  const stationSources = sites ? [
+    ...kxStationLights('platform', sites.platform, PLATFORM_HEIGHT, platformLamps?.radii.slice(0, sites.platform.length / 3)),
+    ...kxStationLights('shed', sites.shed, PLATFORM_HEIGHT),
+    ...kxStationLights('concourse', sites.concourse, .02), // concourse.ts slab top
+  ] : [];
+  let unregisterStationLights: (() => void) | undefined;
   // the clock dials of the scene's buildings glow with the lamps (night.ts `createDialLights`); `rescan` finds them, as the landmarks arrive after the first frame
   const dialLights = nightLights ? createDialLights() : null;
   if (dialLights) nightLights?.attach(dialLights);
@@ -453,13 +467,21 @@ export function createAtmosphere({ scene, world, sites, location, haze, lampSunG
   // the roofs: the cover map is drawn again only when the set of roof meshes changes (the landmarks arrive after the first frame)
   let roofKey: string | null = null;
   let coverMap: CoverMap | null = null;
+  const nightReceivers = nightLightingLayer ?? nightLightingPilot;
   const rescan = (): void => {
+    nightReceivers?.restoreMaterials();
     const roofs = findRoofs(scene);
     const key = roofs.map((m) => m.uuid).join(',');
     if (key !== roofKey) {
       roofKey = key;
       coverMap = buildCoverMap(scene, roofs);
       applyCover(coverMap);
+      if (stationSources.length) {
+        unregisterStationLights?.();
+        unregisterStationLights = registerLights(scene, stationSources.map(source =>
+          source.id.startsWith('kx/platform/') && coverAt(coverMap, ...source.pos) > .5
+            ? { ...source, cover: 'under-roof' } : source));
+      }
     }
     // the far rails are unlit lines, which would glow white against a night city: they follow the daylight
     scene.getObjectByName('track')?.traverse((o) => {
@@ -540,6 +562,7 @@ if (uWaverleySkylineFog > 0.0 && vFogDepth > 550.0) {
     }
     dialLights?.scan(scene);
     kxFogMaterials?.scan(scene);
+    nightReceivers?.scan();
   };
   rescan();
 
@@ -798,6 +821,7 @@ if (uWaverleySkylineFog > 0.0 && vFogDepth > 550.0) {
         officeNightFog.value = 0;
       }
       for (const undo of skylineHooks.values()) undo();
+      unregisterStationLights?.();
       platformLamps?.dispose();
       nightLights?.dispose();
       world.sky.remove(sunSprite, stars);

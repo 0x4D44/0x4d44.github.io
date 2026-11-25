@@ -95,7 +95,7 @@ MUTATIONS = [
     ('tunnel mouths are not passed to the plan', WEB, 'data, layout, mouths,\n', 'data, layout, mouths: [],\n'),
     ('plan is not limited to the station zone', WEB, 'inZone: (x, z) => inStationZone(layout, x, z),', 'inZone: () => true,'),
     ('plan has no roof to hang from', WEB, 'roofY: (u) => shedRoofY(layout, u),', 'roofY: undefined,'),
-    ('plan has no arches', WEB, "arches: [0, 1].map(k => [layout.aisle + k * SHED_SPAN_WIDTH, layout.aisle + (k + 1) * SHED_SPAN_WIDTH] as [number, number]),", 'arches: [],'),
+    ('plan has no arches', WEB, "arches: [-1, 0].map(k => [layout.spine + k * SHED_SPAN_WIDTH, layout.spine + (k + 1) * SHED_SPAN_WIDTH] as [number, number]),", 'arches: [],'),
     ('cross-span wires are not drawn', WEB, 'wireLines([...plan.wires, ...plan.spans])', 'wireLines([...plan.wires])'),
     ('steel is not drawn', WEB, 'for (const m of plan.members) memberTriangles(m, positions);', ''),
     ('wires are not drawn', WEB, 'if (plan.wires.length) group.add(wireLines([...plan.wires, ...plan.spans]));', ''),

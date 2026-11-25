@@ -290,8 +290,14 @@ export interface ShedLayout {
   /** total width of the footprint, metres */
   width: number;
   length: number;
-  /** side aisle on each flank, metres; each arch is SHED_SPAN_WIDTH wide, two of them */
-  aisle: number;
+  /** the side aisle west of the west vault, metres (0 since the 2026-11-24 realignment: the west vault springs from the west wall) */
+  aisleWest: number;
+  /** the side aisle east of the east vault, metres: what is left of the footprint once the two published spans are taken out */
+  aisleEast: number;
+  /** u of the spine: the valley where the two vaults meet, and the line of the central arcaded brick wall under it */
+  spine: number;
+  /** how far west the west wall stands of the line it had before the realignment (platform 8's west face - 0.5 m), metres */
+  westShift: number;
   crown: number;
   /** height of the arch springing above the platform: crown minus the radius */
   springing: number;
@@ -320,12 +326,25 @@ export function stationBuilding(data: Pick<KxData, 'buildings'>): Building | und
   return data.buildings.find((b) => b.kind === 'train_station' && b.name !== undefined && /king'?s cross/i.test(b.name));
 }
 
+/** The island whose shared edge the spine (the valley and the central arcade) stands on: platforms 4 and 5 (OSM ways 68287395/68287396). */
+export const SPINE_PLATFORMS = ['4', '5'] as const;
+/** v of the samples, metres north of the south front, over which the 4/5 shared edge is averaged to place the spine. */
+export const SPINE_SAMPLE_V = Array.from({ length: 78 }, (_, i) => 12 + 3 * i); // 12, 15, ..., 243
+
+/** The u-range [lo, hi] of a polygon on the line v = vq of a shed frame, or null. */
+export function uRangeAtV(s: Pick<ShedLayout, 'origin' | 'heading'>, pts: Pt[], vq: number): [number, number] | null {
+  return xRangeAtZ(pts.map((p): Pt => { const { u, v } = worldToShed(s, p); return [u, v]; }), vq);
+}
+
 /**
- * Place the shed. The east wall is the east edge of the OSM station footprint; the west wall sits
- * just outside platform 8's west face; the south end is the footprint's south edge. The length is
- * the published 800 ft, so the north end is derived, not read from OSM (which draws the
- * footprint a few metres longer). The aisles are what is left of the footprint width once the two
- * published 105 ft arches are taken out.
+ * Place the shed. The east wall is the east edge of the OSM station footprint; the south end is the footprint's south edge. The
+ * length is the published 800 ft, so the north end is derived, not read from OSM (which draws the footprint a few metres longer).
+ * The two published 105 ft vaults meet on the spine, which stands on the line OSM draws between platforms 4 and 5 (its mean over
+ * SPINE_SAMPLE_V), and the west vault springs from the west wall, so the west wall is one span west of the spine and there is no
+ * west aisle. The east aisle is what is left of the footprint. Before 2026-11-24 the west wall stood just outside platform 8's
+ * west face and the two aisles shared the remainder evenly, which put the valley over platform 4's track (6.15 m east of the 4/5
+ * edge); the signed-off design (wrk_docs/2026.11.23 - KXLIVE - Shed realignment and centre arcade design.md, option A2) moves
+ * the west wall about 2.05 m west and keeps the east wall where OSM puts it.
  */
 export function shedLayout(data: Pick<KxData, 'platforms' | 'buildings'>): ShedLayout {
   const heading = platformHeading(data);
@@ -340,10 +359,22 @@ export function shedLayout(data: Pick<KxData, 'platforms' | 'buildings'>): ShedL
   // Work in the heading frame about a provisional origin to read the south edge of the footprint.
   const prov = { origin: [0, 0] as Pt, heading };
   const eastU = worldToShed(prov, [east[1], zRef]).u;
-  const westU = worldToShed(prov, [westFace[0] - 0.5, zRef]).u;
+  const p8WestU = worldToShed(prov, [westFace[0] - 0.5, zRef]).u;
   // The footprint's south edge: its vertices with the largest z that lie east of the concourse arc.
   const southZ = Math.max(...station.pts.filter((p) => p[0] > westFace[0]).map((p) => p[1]));
   const southV = worldToShed(prov, [(westFace[0] + east[1]) / 2, southZ]).v;
+  // the 4/5 shared edge: platform 4's west face and platform 5's east face, averaged, in the provisional frame (v is the shed's own)
+  const p4 = platforms.get(SPINE_PLATFORMS[0]), p5 = platforms.get(SPINE_PLATFORMS[1]);
+  if (!p4 || !p5) throw new Error('platforms 4 and 5 are needed to place the spine');
+  const vFrame = { origin: shedToWorld(prov, 0, southV), heading };
+  const edge: number[] = [];
+  for (const v of SPINE_SAMPLE_V) {
+    const a = uRangeAtV(vFrame, p4.pts, v), b = uRangeAtV(vFrame, p5.pts, v);
+    if (a && b) edge.push((a[0] + b[1]) / 2);
+  }
+  if (edge.length < SPINE_SAMPLE_V.length / 2) throw new Error('the 4/5 shared edge does not run under the shed');
+  const spineU = edge.reduce((x, y) => x + y, 0) / edge.length;
+  const westU = spineU - SHED_SPAN_WIDTH;
   const origin = shedToWorld(prov, westU, southV);
   const radius = SHED_SPAN_WIDTH / 2;
   const width = eastU - westU;
@@ -352,7 +383,10 @@ export function shedLayout(data: Pick<KxData, 'platforms' | 'buildings'>): ShedL
     heading,
     width,
     length: SHED_LENGTH,
-    aisle: (width - 2 * SHED_SPAN_WIDTH) / 2,
+    aisleWest: 0,
+    aisleEast: width - 2 * SHED_SPAN_WIDTH,
+    spine: SHED_SPAN_WIDTH,
+    westShift: p8WestU - westU,
     crown: SHED_CROWN_HEIGHT,
     springing: SHED_CROWN_HEIGHT - radius,
   };
@@ -475,10 +509,18 @@ export function concourseCanopy(data: Pick<KxData, 'platforms' | 'buildings'>): 
   if (!station) throw new Error('the station building is needed to place the concourse');
   const arcPts = station.pts.filter((p) => {
     const { u, v } = worldToShed(shed, p);
-    return u < -45 && v < 140;
+    return u < concourseArcU(shed) && v < 140;
   });
   const { centre, radius, rms } = fitCircle(arcPts);
   return { centre, radius, rms, apex: CONCOURSE_APEX, rim: CONCOURSE_RIM };
+}
+
+/**
+ * The concourse arc is the footprint west of this u: 45 m west of the shed's west wall as it stood before the 2026-11-24
+ * realignment, so moving the wall does not change which OSM vertices the arc fit takes (and so the concourse's fit).
+ */
+export function concourseArcU(shed: Pick<ShedLayout, 'westShift'>): number {
+  return shed.westShift - 45;
 }
 
 /** Roof height at distance r from the stalk: a shallow dome from the apex down to the rim. */

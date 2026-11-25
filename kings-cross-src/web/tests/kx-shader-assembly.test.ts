@@ -56,7 +56,7 @@ test('every patched KX material assembles with its window identifiers and origin
   for (const kind of ['lner9', 'lner5', 'hull5', 'lumo5'] as const) scene.add(buildTrain(kind));
   const original = new Map<THREE.Object3D, DefinedMaterial[]>();
   scene.traverse(o => original.set(o, materials(o)));
-  const sites = nightLightSites({ lamps: (furniture.userData.plan as FurniturePlan).lamps, layout, canopy, footprint: station.pts });
+  const sites = nightLightSites({ lamps: (furniture.userData.plan as FurniturePlan).lamps, layout, data, canopy, footprint: station.pts });
   const atmosphere = createAtmosphere({ scene, world, sites, kingsCrossNightFog: true, platformLampFloor: data.platforms.filter((p: {tunnel: boolean}) => !p.tunnel).map((p: {pts: [number, number][]}) => p.pts) });
   if (city.lights) atmosphere.nightLights!.attach(city.lights);
   const camera = new THREE.PerspectiveCamera(50, 1.6, .1, 20000); camera.position.set(260, 220, 90);

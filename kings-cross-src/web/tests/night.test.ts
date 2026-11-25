@@ -6,17 +6,29 @@ import test from 'node:test';
 import * as THREE from 'three';
 import type { KxData } from '../../core/osm.ts';
 import { PLATFORM_HEIGHT } from '../../core/scene.ts';
-import { concourseCanopy, concourseHeight, pointInPolygon, SHED_SPAN_WIDTH, shedLayout, stationBuilding, worldToShed } from '../../core/station.ts';
+import { concourseCanopy, concourseHeight, pointInPolygon, SHED_SPAN_WIDTH, shedLayout, stationBuilding, stationPlatforms, uRangeAtV, worldToShed } from '../../core/station.ts';
 import { FIGURES, furniturePlan } from '../src/furniture.ts';
 import { createNightLights, nightLightSites } from '../src/night.ts';
+// Re-pinned 2026-11-24 (shed realignment, signed off): the vault centres are the spine -/+ R (aisle + R and aisle + 3R before, the same points while the aisles were even), the valley is the spine, and there is no west aisle, so a probe of 'the aisle' stands in the east aisle.
 
 const data: KxData = JSON.parse(readFileSync(new URL('../src/data/kx-track.json', import.meta.url), 'utf8'));
 const layout = shedLayout(data);
 const canopy = concourseCanopy(data);
 const footprint = stationBuilding(data)!.pts;
 const plan = furniturePlan(data, layout);
-const sites = nightLightSites({ lamps: plan.lamps, layout, canopy, footprint });
+const sites = nightLightSites({ lamps: plan.lamps, layout, data, canopy, footprint });
 const triples = (flat: number[]): [number, number, number][] => Array.from({ length: flat.length / 3 }, (_, i) => [flat[3 * i] as number, flat[3 * i + 1] as number, flat[3 * i + 2] as number]);
+
+// The shed's islands (platforms either side of no track), read off the OSM outlines here, not from night.ts: the u of an island's
+// middle at a v of the shed frame, from the west face of its westmost platform to the east face of its eastmost.
+const ISLANDS = [['8'], ['7', '6'], ['5', '4'], ['3', '2'], ['1', '0']] as const;
+const kx = stationPlatforms(data);
+const islandAt = (i: number, v: number): number | null => {
+  const refs = ISLANDS[i]!;
+  const w = uRangeAtV(layout, kx.get(refs[0])!.pts, v), e = uRangeAtV(layout, kx.get(refs[refs.length - 1])!.pts, v);
+  return w && e ? (w[0] + e[1]) / 2 : null;
+};
+const islandMid = (i: number): number => islandAt(i, 120)!;
 
 test('every platform lamp standard gets a light at the height of its lantern', () => {
   assert.ok(plan.lamps.length > 20, `the plan has ${plan.lamps.length} lamps`);
@@ -36,21 +48,62 @@ test('the shed\'s lights hang inside it: under its two vaults, within its length
   const radius = SHED_SPAN_WIDTH / 2;
   for (const [x, y, z] of lights) {
     const { u, v } = worldToShed(layout, [x, z]);
-    assert.ok(u > layout.aisle + radius - 9 && u < layout.aisle + 3 * radius + 9, `across the vaults: ${u}`);
+    // Re-pinned 2026-11-24 (rows over the islands): 'within 9 m of a vault's middle' held rows at the crown -/+ 8 m; a row over platform 8
+    // stands 11 m off the west vault's middle and the 0/1 row 14.5 m off the east's, so this now holds what it meant: under the two vaults,
+    // between the west wall (u = 0) and the east arcade (spine + one span), not in the east aisle.
     assert.ok(v > 0 && v < layout.length, `along the shed: ${v}`);
+    // Re-pinned 2026-11-24 (platform 1's edge dark): platform 0 stands in the east aisle beyond the east arcade and now has a row of its own
+    // there, under the aisle's flat roof (its underside 0.3 m below the springing, shed.ts), so a light east of the arcade is held to the
+    // aisle and below its roof, well above the platform; every other light is held where it was, under the two vaults.
+    if (u >= layout.spine + 2 * radius) {
+      assert.ok(u < layout.width, `inside the east aisle: ${u}`);
+      assert.ok(y < layout.springing - 0.3 && y > PLATFORM_HEIGHT + 3, `under the aisle roof, well above the platform: ${y}`);
+      continue;
+    }
+    assert.ok(u > layout.spine - 2 * radius && u < layout.spine + 2 * radius, `across the vaults: ${u}`);
     assert.ok(y > layout.springing && y < layout.springing + radius, `between the springing and the crown: ${y}`);
   }
-  // two rows under each of the two vaults, equally many lights in each row
-  const rows = new Map<string, number>();
+  // Re-pinned 2026-11-24 (rows over the islands): the rows no longer stand at the vault crowns -/+ 8 m but over the five islands, so
+  // 'four rows' is now 'one row per island', still with equally many lights in each (the 4/5 row zig-zags across the spine wall).
+  const rows = new Map<number, number>();
   for (const [x, , z] of lights) {
     const { u } = worldToShed(layout, [x, z]);
-    const key = (Math.round(u * 2) / 2).toFixed(1);
-    rows.set(key, (rows.get(key) ?? 0) + 1);
+    const near = ISLANDS.map((_, i) => i).sort((a, b) => Math.abs(u - islandMid(a)) - Math.abs(u - islandMid(b)))[0]!;
+    rows.set(near, (rows.get(near) ?? 0) + 1);
   }
-  assert.equal(rows.size, 4, `four rows: ${[...rows.keys()]}`);
-  assert.equal(new Set(rows.values()).size, 1, 'the same number in each row');
+  assert.equal(rows.size, ISLANDS.length, `a row over each island: ${[...rows.keys()]}`);
+  // Re-pinned 2026-11-24 (platform 1's edge dark): the 0/1 island (the last) has two rows, one over each platform, as one row over its middle
+  // left both its track-side edges out of the pools; the others' rows have as many lights as before, the 0/1 island twice that.
+  const counts = ISLANDS.map((_, i) => rows.get(i)!);
+  assert.equal(new Set(counts.slice(0, -1)).size, 1, `the same number in each row: ${counts}`);
+  assert.equal(counts[counts.length - 1], 2 * counts[0]!, `two rows over the 0/1 island: ${counts}`);
   const spacing = triples(sites.shed).slice(0, 2).map(([x, , z]) => worldToShed(layout, [x, z]).v);
   assert.ok(Math.abs((spacing[1] as number) - (spacing[0] as number) - 12.2) < 1e-6, `a light every 12.2 m: ${spacing}`);
+});
+
+test('every island under the shed has its own row of shed lights over it, along its whole length under the vaults', () => {
+  // Added 2026-11-24: the rows hung at the vault crowns -/+ 8 m; when the 2026-11-24 realignment moved the vaults ~6 m west, the 4/5
+  // island fell between two rows (8 m from each) and went dark at night. Within NEAR of each island's middle, at every 12.2 m along
+  // the shed where the island is drawn, there is a light: a light a pool (radius 0.6 x 12.2 m) from both its faces.
+  const NEAR = 3;
+  const lights = triples(sites.shed).map(([x, , z]) => worldToShed(layout, [x, z]));
+  ISLANDS.forEach((refs, i) => {
+    let checked = 0;
+    for (let v = 12; v < layout.length - 12; v += 12.2) {
+      const mid = islandAt(i, v);
+      if (mid === null) continue;
+      checked++;
+      const near = lights.filter((l) => Math.abs(l.v - v) <= 6.1);
+      // Re-pinned 2026-11-24 (platform 1's edge dark): the 0/1 island is lit by a row over each of its platforms (it is 11.5 m across and
+      // the east arcade stands on platform 0), so there it is each platform's middle that has a light within NEAR, not the island's.
+      const middles = refs.length === 2 && refs[1] === '0' ? refs.map((ref) => { const r = uRangeAtV(layout, kx.get(ref)!.pts, v)!; return (r[0] + r[1]) / 2; }) : [mid];
+      for (const m of middles) {
+        const best = Math.min(...near.map((l) => Math.abs(l.u - m)));
+        assert.ok(best <= NEAR, `island ${refs.join('/')} at v ${v.toFixed(1)}: a middle is at u ${m.toFixed(1)}, the nearest light ${best.toFixed(1)} m off`);
+      }
+    }
+    assert.ok(checked >= 14, `island ${refs.join('/')} was checked along the shed (${checked} places)`);
+  });
 });
 
 test('the concourse\'s lights are under the dome, inside the station building and west of the shed', () => {

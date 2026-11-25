@@ -11,6 +11,24 @@ injects only the newest 30 nuggets (or 4 KiB), so entries past that stay here fo
 and cost a session nothing. Durable project facts belong in CLAUDE.md (repo) or
 ~/.claude/CLAUDE.md (global), not here. -->
 
+- 2026-11-23 - A 3/4 render scored against a long-lens photo reads a fault that is only the camera angle (tools/train-framing.mjs:TELE)
+  V01 nose-34 sits ~42 deg off the train's axis at 6 m; lner-801-214-2025 is ~11 deg off at 63 m. The windscreen's near edge foreshortens into a wedge at 42 deg that
+  no 11 deg photo can show, so T2 sat at 6.5 for rounds and a nose reshape (B13) could not fix it. Estimate each photo's angle (side vs front px ratio) before
+  comparing; compare long-lens photos with the opt-in T01 nose-tele view (--views T01). Same for distance: a 3 m head-on camera shows a waist an 80 m photo cannot.
+- 2026-11-23 - A KX worker that runs only the tests it thinks relevant misses importers; the full suite then goes red (web/tests/train-azuma-front.test.ts)
+  B9b changed train-livery.ts and its worker never ran train-azuma-front.test.ts, which pinned the old cheek top: 3663/3664 at the full suite. Brief every worker to grep
+  web/tests and tools/tests for files importing each touched module and run them all (two at a time via run-tests.sh), and to check date -u: B9's worker quit
+  after 7 minutes believing its time was up.
+- 2026-11-23 - A node_modules symlink in a task worktree is untracked: integrate refuses it as dirty (.git/info/exclude)
+  deltic start-task worktrees have no node_modules. Linking in the main clone's copy (ln -s) shows as "?? kings-cross-src/node_modules", because the root
+  .gitignore pattern node_modules/ matches only directories. deltic integrate then refuses ("worktree is dirty") and the delete guard blocks removing the link.
+  The main clone's .git/info/exclude now carries /kings-cross-src/node_modules (2026-11-22). Integrate's worktree removal left the main clone's real
+  node_modules intact. Seen on the AT300 B6 landing.
+
+- 2026-11-23 - deltic integrate deletes the worktree's .scratch: archive packs and probe scripts first (nw-packs/)
+  The LNER/AT300 landing (57d304e1) took the round's geometry-hash script (.scratch/w2/hash.mts) with it, so the next round had to rewrite it. Before
+  integrating, copy scratch scripts as well as evidence into the long-lived pack-and-scorer tree's .scratch/nw-packs/<round>/. Seen 2026-11-22.
+
 - 2026-11-12 - TrainView.heading is a compass bearing, atan2(x, -z), not atan2(dx, dz): a test built on dx/dz points the wrong way (core/motion.ts:844)
   The live layer hands trains a heading with north at -z, so a pose rotation about y (from +z) is not the same number: a pool or any decal laid along `heading` as a y rotation lies mirrored
   across the x axis. The round-7 lamp pool's first Edinburgh test read it as atan2(dx, dz) and its expectation was wrong while the code was right; train-lamp-pool.ts keeps its own

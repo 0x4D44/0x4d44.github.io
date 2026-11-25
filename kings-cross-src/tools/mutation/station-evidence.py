@@ -29,7 +29,7 @@ MUTATIONS = [
     ('Barlow companion camera omitted', "'st-pancras-shed-oblique': {", "'st-pancras-shed': {", NAMES[0]),
     ('Barlow companion frame narrowed', "fov: 55, near: 0.1,", "fov: 5, near: 0.1,", NAMES[0]),
     # platform-eye-south's target becomes platform-eye's: both stand on platform 4's midpoint, so the south eye now looks north
-    ('south platform camera points north', "target: [42.42152307476741, 2.5, -170.10857760817328],", "target: [44.66419121094691, 2.5, -250.07713667754103],", NAMES[1]),
+    ('south platform camera points north', "target: [43.26583566211386, 2.5, -170.08489939065066],", "target: [45.50850379829336, 2.5, -250.0534584600184],", NAMES[1]),
     ('slate override leaves auto opacity', 'material.opacity = 1; material.depthWrite = true;', 'material.opacity = .5; material.depthWrite = true;', NAMES[2]),
     ('slate override fails to restore callback', 'cladding.onBeforeRender = callback;', 'cladding.onBeforeRender = function() {};', NAMES[2]),
     ('physical screenshot restore omitted', 'finally { await restore(); }', 'finally { /* mutation */ }', NAMES[3]),

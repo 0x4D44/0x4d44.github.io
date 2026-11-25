@@ -24,7 +24,7 @@ import type { NightLightSites } from '../src/night.ts';
 
 const data: KxData = JSON.parse(readFileSync(new URL('../src/data/kx-track.json', import.meta.url), 'utf8'));
 const layout = shedLayout(data);
-const SITES: NightLightSites = nightLightSites({ lamps: furniturePlan(data, layout).lamps, layout, canopy: concourseCanopy(data), footprint: stationBuilding(data)!.pts });
+const SITES: NightLightSites = nightLightSites({ lamps: furniturePlan(data, layout).lamps, layout, data, canopy: concourseCanopy(data), footprint: stationBuilding(data)!.pts });
 
 const NOON = '2026-06-21T12:00:00Z'; // the sun near its highest (13:00 BST; solar noon at King's Cross is at 12:02 UTC)
 const MIDNIGHT = '2026-12-21T00:00:00Z';
@@ -596,7 +596,7 @@ test('every surface the weather wets or whitens exists under that name in the re
   const { scene } = setup();
   const flat = (() => { let found: THREE.Material | null = null; scene.traverse((o) => { const mm = (o as THREE.Mesh).material as THREE.Material | undefined; if (mm?.name === 'ground-flat') found = mm; }); return found; })();
   const real = new Map<string, THREE.Material>([
-    ...(['asphalt', 'platformEdge', 'platformEdgeStrip', 'ballast', 'concourseFloor'] as const).map((n): [string, THREE.Material] => [material(n).name, material(n)]),
+    ...(['asphalt', 'platformTop', 'platformEdge', 'platformEdgeStrip', 'platformEdgeStripShed', 'ballast', 'concourseFloor'] as const).map((n): [string, THREE.Material] => [material(n).name, material(n)]),
     ...(['asphalt', 'pavement', 'plaza', 'grass'] as const).map((n): [string, THREE.Material] => [cityMaterial(n).name, cityMaterial(n)]),
     ...(['ground', 'bank'] as const).map((n): [string, THREE.Material] => [terrainMaterial(n).name, terrainMaterial(n)]),
     ...(flat ? [['ground-flat', flat] as [string, THREE.Material]] : []),
@@ -606,7 +606,7 @@ test('every surface the weather wets or whitens exists under that name in the re
     assert.ok(m, `no material is named "${name}" in the page`);
     assert.ok((m as THREE.MeshLambertMaterial).isMeshLambertMaterial, `"${name}" is not a Lambert material, so the shader patch does not apply`);
   }
-  assert.equal(SURFACES.size, 12);
+  assert.equal(SURFACES.size, 14); // re-pinned round 16: platformTop, the shed's platform tops (the asphalt with slab joints); round 18: platformEdgeStripShed, the King's Cross strips' own
 });
 
 test('wet ground: the shader of each named surface is patched once with the shared wetness and snow, after the texture and before the output', () => {
@@ -624,7 +624,7 @@ test('wet ground: the shader of each named surface is patched once with the shar
   const roofOnly = compile(brick);
   assert.notEqual(roofOnly.fragmentShader, pristine.fragmentShader);
   assert.ok(roofOnly.fragmentShader.includes('uniform vec4 uRoofShade;') && !roofOnly.fragmentShader.includes('uWet'), 'the roof shade, and none of the wet ground\'s code');
-  assert.deepEqual(Object.keys(roofOnly.uniforms).sort(), [...Object.keys(coverUniforms), 'uRoofShade', 'uInteriorFill', ...Object.keys(headlampUniforms)].sort(), 'the cover, the shade, the concourse\'s fill and the headlamps\' slots, and nothing else');
+  assert.deepEqual(Object.keys(roofOnly.uniforms).sort(), [...Object.keys(coverUniforms), 'uRoofShade', 'uInteriorFill', 'uShedDiffuse', 'uShedFrame', 'uShedSize', ...Object.keys(headlampUniforms)].sort(), 'the cover, the shade, the concourse\'s fill, the sky through the crown (lighting.ts SHED_GLASS) and the headlamps\' slots, and nothing else');
 
   const s = compile(asphalt);
   const f = s.fragmentShader;

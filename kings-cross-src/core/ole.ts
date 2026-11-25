@@ -119,7 +119,7 @@ export interface OlePlan {
   spanCounts: { crossSpans: number; hangers: number };
 }
 
-type Layout = Pick<ShedLayout, 'origin' | 'heading' | 'width' | 'length'> & Partial<Pick<ShedLayout, 'aisle' | 'springing'>>;
+type Layout = Pick<ShedLayout, 'origin' | 'heading' | 'width' | 'length'> & Partial<Pick<ShedLayout, 'spine' | 'springing'>>;
 
 export interface OleInput {
   data: Pick<KxData, 'nodes' | 'rails'> & Partial<Pick<KxData, 'signals'>>;

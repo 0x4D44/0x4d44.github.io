@@ -53,8 +53,53 @@ export interface NoseSpec {
   /** Where the tip section is widest, as a fraction of its height (0 at the underside, 1 at the roof), and how boxy it is (2 = ellipse). */
   widest: number;
   boxiness: number;
+  /**
+   * A fuller cheek low on the nose, where it has one: from `s[0]` to `s[3]` back from the tip (full from `s[1]` to `s[2]`, easing in and out), between the heights `y[0]` and `y[3]`
+   * (full from `y[1]` to `y[2]`), the section's outer part stands up to `by` of its half-width further out (never past the body's side: CHEEK_CLEAR). Only the width changes: the roof line and the underside stay the knots'.
+   */
+  cheek?: NoseCheek;
   /** The face's lean, where it has one (an upright face, and the AT300's beak, have none). Everything laid on the nose follows it: see `rakeSet`. */
   rake?: NoseRake;
+}
+
+export interface NoseCheek {
+  by: number;
+  s: readonly [number, number, number, number];
+  y: readonly [number, number, number, number];
+  /** Only the section's outer part fills out: nothing inside `u[0]` of the ring's half-width, all of `by` from `u[1]` out, easing between. */
+  u: readonly [number, number];
+}
+
+/**
+ * A nose's cheek fills out nothing where the section is already this fraction of the body's half-width or more, and all of its fill from CHEEK_EASE below it in, blending
+ * between (so it never reaches past the body's side). CHANGED (round B15; was 0.97 and 0.12, the fill faded by a smootherstep of how far in the section stood): the fill faded
+ * faster than the section widened, so along the nose the filled outline stood out, came back in 13 mm and went out again (at 1.43 m up, 1.45 to 1.9 m back: the surface there
+ * faced backwards, a dark crease across the white in the 3/4 views, the B14 score). The filled width is now a monotone curve of the plain one (`cheekWidth`), never narrowing
+ * as the plain section widens: this wide a blend keeps it monotone for any fill up to 0.15, and the lamps' section (0.83 of the half-width or less) keeps all of it.
+ */
+const CHEEK_CLEAR = 0.995;
+const CHEEK_EASE = 0.165;
+
+/**
+ * The filled width, as a fraction of the body's half-width, of a section point `a` of the half-width out that the cheek fills out by the fraction `f`: `a (1 + f)` up to
+ * CHEEK_CLEAR - CHEEK_EASE, `a` from CHEEK_CLEAR out, and between them the cubic Hermite joining the two lines with their slopes (C1, and monotone in `a`: round B15).
+ */
+export function cheekWidth(a: number, f: number): number {
+  const a0 = CHEEK_CLEAR - CHEEK_EASE;
+  if (f <= 0 || a >= CHEEK_CLEAR) return a;
+  if (a <= a0) return a * (1 + f);
+  const t = (a - a0) / CHEEK_EASE;
+  const t2 = t * t;
+  const t3 = t2 * t;
+  return (2 * t3 - 3 * t2 + 1) * a0 * (1 + f) + (t3 - 2 * t2 + t) * CHEEK_EASE * (1 + f) + (-2 * t3 + 3 * t2) * CHEEK_CLEAR + (t3 - t2) * CHEEK_EASE;
+}
+
+/** 0 outside [a0, a3], 1 across [a1, a2], easing smoothly between. */
+function plateau(a: readonly [number, number, number, number], x: number): number {
+  if (x <= a[0] || x >= a[3]) return 0;
+  if (x < a[1]) return smootherstep((x - a[0]) / (a[1] - a[0]));
+  if (x > a[2]) return smootherstep((a[3] - x) / (a[3] - a[2]));
+  return 1;
 }
 
 export interface Ring {
@@ -65,6 +110,8 @@ export interface Ring {
   bottom: number;
   /** 1 at the tip (the section is an egg), 0 where it has become the car's section */
   round: number;
+  /** The nose's fuller cheek at this ring (its `by` eased by the distance from the tip), if any. */
+  cheek?: NoseCheek;
 }
 
 /** The right half of a car's cross-section, from the bottom corner up to the roof's centre line, in metres. */
@@ -133,6 +180,7 @@ export function ringAt(spec: NoseSpec, s: number): Ring {
     top: mid + (top0 - mid) * f,
     bottom: mid - (mid - bottom0) * f,
     round: 1 - smootherstep(s / spec.roundLen),
+    ...(spec.cheek && plateau(spec.cheek.s, s) > 0 ? { cheek: { ...spec.cheek, by: spec.cheek.by * plateau(spec.cheek.s, s) } } : {}),
   };
 }
 
@@ -186,7 +234,12 @@ export function halfAt(sec: Section, norm: readonly [number, number][], egg: rea
   const w = 1 - r.round;
   return norm.map(([uc, vc], k): [number, number] => {
     const [ue, ve] = egg[k] as [number, number];
-    return [r.ws * sec.width * lerp(ue, uc, w), r.bottom + lerp(ve, vc, w) * (r.top - r.bottom)];
+    const y = r.bottom + lerp(ve, vc, w) * (r.top - r.bottom);
+    const u = lerp(ue, uc, w);
+    const c = r.cheek;
+    // (and nothing where the section already stands near the body's own width, so the cheek never reaches past the body's side: CHEEK_CLEAR, cheekWidth)
+    const fill = c ? c.by * plateau(c.y, y) * smootherstep((u - c.u[0]) / (c.u[1] - c.u[0])) : 0;
+    return [c ? sec.width * cheekWidth(r.ws * u, fill) : r.ws * sec.width * u, y];
   });
 }
 

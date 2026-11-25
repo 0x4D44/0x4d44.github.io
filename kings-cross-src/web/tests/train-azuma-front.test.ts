@@ -7,7 +7,7 @@ import { trainLayout } from '../../core/train.ts';
 import type { TrainKind } from '../../core/train.ts';
 import { bodySpec, buildTrain } from '../src/train.ts';
 import { col } from '../src/train-geom.ts';
-import { LNER_RED, liveryFor, sideColourAt } from '../src/train-livery.ts';
+import { LNER_CHEEK_TOP, LNER_RED, liveryFor, sideColourAt } from '../src/train-livery.ts';
 
 type Pose = { id: string; suffix: string; status: string; eye: [number, number, number]; target: [number, number, number]; fov: number };
 /** The capture tool's own planner is the source of the camera: the test reads V02 from it and does not copy the numbers (the tools are plain .mjs, so they are loaded by URL). */
@@ -87,7 +87,9 @@ test('the LNER nose: no roof-white loft triangle comes down into the red cheek, 
   // the cheek's top: the highest red on the texture 0.3 m behind the tip
   let cheekTop = 0;
   for (let y = 0.5; y <= 2.0; y += 0.01) if (sideColourAt(livery, noseLength, 0.3, y) === LNER_RED) cheekTop = y;
-  assert.ok(Math.abs(cheekTop - 1.5) < 0.02, `the cheek's top is ${cheekTop.toFixed(2)} m up`);
+  // RE-PINNED (round B9b; was 1.5 m): the cheek's red now runs up under the lamp unit to LNER_CHEEK_TOP (1.57 m), so no white shows between the unit's foot and the red
+  // (lner-801-214-2025: the near unit's lower corner meets red); same 2 cm tolerance, and the roof white must still stay above it
+  assert.ok(Math.abs(cheekTop - LNER_CHEEK_TOP) < 0.02, `the cheek's top is ${cheekTop.toFixed(2)} m up`);
   const want = col(livery.roof);
   for (const kind of AT300) {
     const g = buildTrain(kind);

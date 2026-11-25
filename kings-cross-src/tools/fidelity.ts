@@ -161,7 +161,7 @@ const report = {
     method: axis01.method,
     flags: axis01.flags,
   },
-  shed: { widthM: shed.width, lengthM: shed.length, aisleM: shed.aisle, crownM: shed.crown, headingDeg: (shed.heading * 180) / Math.PI },
+  shed: { widthM: shed.width, lengthM: shed.length, aisleWestM: shed.aisleWest, aisleEastM: shed.aisleEast, spineM: shed.spine, crownM: shed.crown, headingDeg: (shed.heading * 180) / Math.PI },
   concourse: {
     radiusM: canopy.radius, // Compatibility alias; this fits only the partial OSM arc.
     partialOsmArcFitRadiusM: canopy.radius, rmsM: canopy.rms, apexM: canopy.apex, rimM: canopy.rim,
@@ -200,7 +200,7 @@ if (args.includes('--json')) {
   for (const p of drawingInferences) console.log(`P${p.ref} DRAWING INFERENCE: ${p.inference} ${p.limitation} Source: ${p.source}`);
   console.log(`\nTRACK: model ${modelTrack.toFixed(0)} m, raw ${rawTrack.toFixed(0)} m, difference ${(trackDelta * 100).toFixed(3)} %`);
   console.log(`GAUGE (twinRails arithmetic, not mesh rays): standard ${GAUGE} m, derived ${drawnGauge.toFixed(4)} m between rail faces (rail head ${RAIL_HEAD_WIDTH * 1000} mm)`);
-  console.log(`SHED:  ${shed.width.toFixed(1)} m wide x ${shed.length.toFixed(1)} m long, crown ${shed.crown.toFixed(1)} m, aisles ${shed.aisle.toFixed(1)} m, heading ${report.shed.headingDeg.toFixed(2)} deg`);
+  console.log(`SHED:  ${shed.width.toFixed(1)} m wide x ${shed.length.toFixed(1)} m long, crown ${shed.crown.toFixed(1)} m, aisles ${shed.aisleWest.toFixed(1)} m west and ${shed.aisleEast.toFixed(1)} m east, spine at ${shed.spine.toFixed(1)} m, heading ${report.shed.headingDeg.toFixed(2)} deg`);
   console.log(`CONCOURSE OSM ARC FIT: ${canopy.radius.toFixed(1)} m radius (partial arc only; rms ${canopy.rms.toFixed(1)} m)`);
   console.log(`CONCOURSE DRAWN ROOF: ${report.concourse.drawnNorthSouthM?.toFixed(3) ?? 'not measured'} m N–S vs ${report.concourse.publishedOverallRoofM ?? 'no published'} m overall roof; difference ${report.concourse.drawnMinusPublishedM?.toFixed(3) ?? 'n/a'} m`);
   console.log(`\nAXIS01 ACTUAL-MESH EVIDENCE FLAGS (${axis01.flags.length}); separate from the exit status`);

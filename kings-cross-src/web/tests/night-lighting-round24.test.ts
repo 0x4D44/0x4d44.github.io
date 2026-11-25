@@ -45,7 +45,7 @@ function withMidland(run: (brick: THREE.Mesh, stone: THREE.Mesh) => void) {
 function facadeProbe(mesh: THREE.Mesh, {
   height, albedo = [.35, .12, .06] as V3, body = 1, rake = 0, trim = 0, stage = 0, box = [0, 0, 0, 0],
 }: { height: number; albedo?: V3; body?: number; rake?: number; trim?: number; stage?: number; box?: number[] }) {
-  const { night } = buildingNightMaterialsOf(mesh)!;
+  const night = buildingNightMaterialsOf(mesh)!.night as THREE.MeshLambertMaterial; // a single material for these meshes (only shed-front carries an array, round 25)
   const source = compile(night).fragmentShader;
   const start = source.indexOf('// midland-night-begin');
   const end = source.indexOf('// midland-lamp-wash-end');
@@ -189,8 +189,8 @@ test('round 24 clock-stage shading is night-only and the day shaders and Perth w
     sample('12:00', 0);
     const day = [brick.material, stone.material];
     const dayHashes = [
-      '30cb039754b15671bf42901ea679fd6e67e3e159b09d388cc930440624b279b7',
-      '3a3e9f7341bb0c076e6fe599967ce76e2f0ab3725c9a3bdfceb330f7481880cc',
+      '5f265814b5dfe62378e707aac3249e16c9175cb78a59df1597150d96f9eff432',
+      'fabbb5bf645c5541e2df709151a01ea1d9619c1b74d58c3d38c793d80f9eb781',
     ];
     assert.deepEqual(day.map(digest), dayHashes);
     assert.equal(digest(cityMaterial('glass')), 'd11b29ab8dd58ec0e307156043b198a425cc281a4c30100c3dc5649f9a9ddf99');

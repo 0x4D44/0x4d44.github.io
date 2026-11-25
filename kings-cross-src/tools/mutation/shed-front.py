@@ -23,18 +23,18 @@ MUTATIONS = [
     ('porch openings narrowed', 'openingWidth: 6.8', 'openingWidth: 5.2', 'the ground-floor porch has six broad arches'),
     ('one arch removed from each side', 'perSide: 3', 'perSide: 2', 'the ground-floor porch has six broad arches'),
     ('holes replaced by closed brick',
-     'for (const x of entryCentres) outline.holes.push(segmentalArchOpening(x, entryFoot, entryR, SOUTH_FRONT_ARCADES.jambHeight, SOUTH_FRONT_ARCADES.archRise));',
-     'for (const x of entryCentres) void segmentalArchOpening(x, entryFoot, entryR, SOUTH_FRONT_ARCADES.jambHeight, SOUTH_FRONT_ARCADES.archRise);',
+     'for (const x of entryCentres) outline.holes.push(segmentalArchOpening(x - fx0, entryFoot, entryR, SOUTH_FRONT_ARCADES.jambHeight, SOUTH_FRONT_ARCADES.archRise));',
+     'for (const x of entryCentres) void segmentalArchOpening(x - fx0, entryFoot, entryR, SOUTH_FRONT_ARCADES.jambHeight, SOUTH_FRONT_ARCADES.archRise);',
      'the ground-floor porch has six broad arches'),
     ('plinth closes the doorways',
-     '''let plinthStart = -0.4;
+     '''let plinthStart = fx0 - feet - 0.1;
   for (const x of entryCentres) {
     const left = x - entryR, right = x + entryR;
     if (left > plinthStart) proud((plinthStart + left) / 2, GROUND_Y + 0.7, left - plinthStart, 1.4, 0.35);
     plinthStart = right;
   }
-  if (plinthStart < W + 0.4) proud((plinthStart + W + 0.4) / 2, GROUND_Y + 0.7, W + 0.4 - plinthStart, 1.4, 0.35); // plinth interrupted at each entrance''',
-     'proud(W / 2, GROUND_Y + 0.7, W + 0.8, 1.4, 0.35); // plinth mutation',
+  if (plinthStart < fx1 + feet + 0.1) proud((plinthStart + fx1 + feet + 0.1) / 2, GROUND_Y + 0.7, fx1 + feet + 0.1 - plinthStart, 1.4, 0.35); // plinth interrupted at each entrance''',
+     'proud(spine, GROUND_Y + 0.7, FW + 0.8, 1.4, 0.35); // plinth mutation',
      'the openings pass through the plinth while their piers and low sill remain solid'),
     ('five arch rings omitted', 'const entryRings = entryCentres.map(', 'const entryRings = entryCentres.slice(0, 1).map(',
      'each entrance has a visible stone arch ring on the south face'),

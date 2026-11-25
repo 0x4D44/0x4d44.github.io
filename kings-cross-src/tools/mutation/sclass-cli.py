@@ -96,6 +96,8 @@ with tempfile.TemporaryDirectory(prefix='sclass-cli-mutation-', dir=scratch) as 
     for directory in ['core', 'web', 'tools']:
         shutil.copytree(src / directory, work / directory)
     for name in ['package.json', 'package-lock.json']:
+        if name == 'package-lock.json' and not (src / name).exists():
+            continue  # gitignored, so a fresh checkout has none; the CLI records it as absent
         shutil.copy2(src / name, work / name)
     (work / 'node_modules').symlink_to(src / 'node_modules', target_is_directory=True)
     target = work / 'tools/sclass.ts'

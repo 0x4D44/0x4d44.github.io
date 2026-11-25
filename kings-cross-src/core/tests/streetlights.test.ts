@@ -208,7 +208,7 @@ test('forecourtMasts: a row of masts in front of the station front, in the shed\
   assert.ok(masts.length >= 4 && masts.length <= 10);
   masts.forEach((m, i) => {
     const [u, v] = FORECOURT_MASTS[i] as readonly [number, number];
-    const [x, z] = shedToWorld(layout, u, v);
+    const [x, z] = shedToWorld(layout, u + layout.westShift, v); // re-pinned 2026-11-24: the table's u is from the west wall before the realignment
     close(m.x, x, 1e-9, `mast ${i} x`);
     close(m.z, z, 1e-9, `mast ${i} z`);
     close(m.y, plane(x, z) + MAST_LIFT, 1e-9, `mast ${i} stands on the ground and the plaza's lift`);
@@ -306,7 +306,7 @@ test('mastIsClear: the answer core/kxcentral.ts distToRing gives with pointInPol
 test('forecourtMasts: a place of the table with a building nearer than MAST_CLEAR, or under one, has no mast, and the others keep theirs, whichever building it is', () => {
   const layout = shedLayout(data);
   const plane = (): number => 0;
-  const places = FORECOURT_MASTS.map(([u, v]) => shedToWorld(layout, u, v));
+  const places = FORECOURT_MASTS.map(([u, v]) => shedToWorld(layout, u + layout.westShift, v)); // re-pinned 2026-11-24: u from the pre-realignment west wall
   // the places that have a mast, as indexes into the table
   const standing = (buildings: Building[]): number[] => forecourtMasts({ platforms: data.platforms, buildings }, plane).map((m) => places.findIndex(([x, z]) => Math.hypot(m.x - x, m.z - z) < 1e-6));
   // a four-metre building with its near face `gap` metres east of place i
@@ -347,7 +347,7 @@ test('the real forecourt: the masts stand in the clear of every building and mor
   masts.forEach((m, i) => {
     const at = worldToShed(layout, [m.x, m.z]);
     const [u, v] = want[i] as [number, number];
-    close(at.u, u, 1e-6, `mast ${i}'s u`);
+    close(at.u - layout.westShift, u, 1e-6, `mast ${i}'s u`); // re-pinned 2026-11-24: u from the pre-realignment west wall
     close(at.v, v, 1e-6, `mast ${i}'s v`);
   });
 });

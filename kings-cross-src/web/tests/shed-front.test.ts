@@ -3,13 +3,16 @@ import test from 'node:test';
 import * as THREE from 'three';
 import type { KxData } from '../../core/osm.ts';
 import { readFileSync } from 'node:fs';
-import { shedLayout } from '../../core/station.ts';
+import { SHED_SPAN_WIDTH, shedLayout } from '../../core/station.ts';
 import { buildShed, TOWER_SIZE } from '../src/shed.ts';
 import { GROUND_Y } from '../src/world.ts';
 
 const data: KxData = JSON.parse(readFileSync(new URL('../src/data/kx-track.json', import.meta.url), 'utf8'));
 const layout = shedLayout(data);
-const W = layout.width;
+// Re-pinned 2026-11-24 (shed realignment, signed off): the front spans only the two vaults, centred on the spine, so the porch bays are
+// counted across that front (2 x 105 ft from the spine's west end) rather than across the whole footprint width.
+const X0 = layout.spine - SHED_SPAN_WIDTH;
+const W = 2 * SHED_SPAN_WIDTH;
 const perSide = 3;
 const openingWidth = 6.8; // ASSUMED clear width; six porch openings are sourced, their dimensions are not.
 const jambHeight = 2.0;
@@ -20,7 +23,7 @@ const bay = (W - TOWER_SIZE) / (2 * perSide);
 const centers = [
   ...Array.from({ length: perSide }, (_, i) => (i + 0.5) * bay),
   ...Array.from({ length: perSide }, (_, i) => W - (perSide - 0.5 - i) * bay),
-];
+].map(x => X0 + x);
 
 const facade = (): { group: THREE.Group; arch: THREE.Object3D } => {
   const group = buildShed(layout, { range: false });
@@ -33,7 +36,11 @@ const facade = (): { group: THREE.Group; arch: THREE.Object3D } => {
 const rayHits = (group: THREE.Group, x: number, y: number, target: THREE.Object3D = group): boolean => {
   const origin = group.localToWorld(new THREE.Vector3(x, y, 1));
   const direction = new THREE.Vector3(0, 0, -1).transformDirection(group.matrixWorld);
-  return new THREE.Raycaster(origin, direction, 0, 3).intersectObject(target, true).length > 0;
+  // Re-pinned 2026-11-24 (round 5, A3): the openings now carry glazed screens (PORCH_INFILL), glass the rays would meet; these checks are of the
+  // masonry hole, so the glass is not a hit. The frames stay hits: the rays pass between them. (Round 5's second pass: the glass is the
+  // first material of 'shed-front-infill' now.) Re-pinned again in the tower pass: the doors' meeting stile stands on the opening's centre
+  // line, so the infill as a whole (glass, frames, doors) is not a hit: these checks are of the masonry.
+  return new THREE.Raycaster(origin, direction, 0, 3).intersectObject(target, true).some(h => h.object.name !== 'shed-front-glass' && h.object.name !== 'shed-front-infill');
 };
 
 test('the ground-floor porch has six broad arches, three in evenly spaced bays on each side of the tower', () => {

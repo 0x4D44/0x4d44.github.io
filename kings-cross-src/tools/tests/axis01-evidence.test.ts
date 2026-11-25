@@ -5,7 +5,7 @@ import type { KxData } from '../../core/osm.ts';
 import type { ShedLayout } from '../../core/station.ts';
 import { createAxis01Report, measureBoundaryAgreement, measureGauge, meshExtent, renderAxis01Markdown, rawExtractElements } from '../axis01-evidence.ts';
 
-const layout: ShedLayout = { origin: [0, 0], heading: 0, width: 70, length: 243.84, aisle: 2.996, crown: 21.6408, springing: 5.6388 };
+const layout: ShedLayout = { origin: [0, 0], heading: 0, width: 70, length: 243.84, aisleWest: 2.996, aisleEast: 2.996, spine: 2.996 + 32.004, westShift: 0, crown: 21.6408, springing: 5.6388 };
 function fixture(): KxData {
   return { attribution: 'synthetic', origin: { lat: 0, lon: 0 },
     nodes: [[1, 10, -100], [2, 10, -400], [3, 10, -600], [4, 10, -700]],

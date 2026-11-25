@@ -43,12 +43,14 @@ type Stmt =
   | { k: 'decl'; type: string; name: string; init: Expr | null }
   | { k: 'assign'; name: string; swz: string | null; op: string; e: Expr }
   | { k: 'if'; c: Expr; a: Stmt; b: Stmt | null }
+  | { k: 'for'; init: Stmt; test: Expr; update: Stmt; body: Stmt }
+  | { k: 'break' }
   | { k: 'ret'; e: Expr | null }
   | { k: 'block'; body: Stmt[] }
   | { k: 'expr'; e: Expr };
 interface Fn { type: string; params: { type: string; name: string }[]; body: Stmt[] }
 
-const TYPES = new Set(['void', 'float', 'int', 'bool', 'vec2', 'vec3', 'vec4', 'mat3', 'mat4', 'sampler2D']);
+const TYPES = new Set(['void', 'float', 'int', 'ivec2', 'bool', 'vec2', 'vec3', 'vec4', 'mat3', 'mat4', 'sampler2D']);
 const TOKEN = /\s+|\/\/[^\n]*|\/\*[\s\S]*?\*\/|(\d+\.\d*(?:[eE][+-]?\d+)?|\.\d+(?:[eE][+-]?\d+)?|\d+(?:[eE][+-]?\d+)?)|([A-Za-z_]\w*)|(<=|>=|==|!=|&&|\|\||\+=|-=|\*=|\/=|[-+*/<>=!?:;,.(){}[\]])/y;
 
 function tokenize(source: string): Tok[] {
@@ -134,6 +136,19 @@ class Parser {
       const a = this.statement();
       return { k: 'if', c, a, b: this.take('else') ? this.statement() : null };
     }
+    if (this.take('for')) {
+      this.eat('(');
+      const init = this.statement();
+      const test = this.expr();
+      this.eat(';');
+      const update = this.assignment();
+      this.eat(')');
+      return { k: 'for', init, test, update, body: this.statement() };
+    }
+    if (this.take('break')) {
+      this.eat(';');
+      return { k: 'break' };
+    }
     if (this.take('return')) {
       const e = this.is(';') ? null : this.expr();
       this.eat(';');
@@ -150,17 +165,22 @@ class Parser {
       const dotted = this.toks[this.i + 1]!.v === '.' && this.toks[this.i + 2]!.t === 'id';
       const at = this.toks[this.i + (dotted ? 3 : 1)]!;
       if (at.t === 'op' && ['=', '+=', '-=', '*=', '/='].includes(at.v)) {
-        const name = this.ident();
-        const swz = dotted ? (this.eat('.'), this.ident()) : null;
-        const op = this.toks[this.i++]!.v;
-        const e = this.expr();
+        const assignment = this.assignment();
         this.eat(';');
-        return { k: 'assign', name, swz, op, e };
+        return assignment;
       }
     }
     const e = this.expr();
     this.eat(';');
     return { k: 'expr', e };
+  }
+
+  private assignment(): Stmt {
+    const name = this.ident();
+    const swz = this.take('.') ? this.ident() : null;
+    const op = this.toks[this.i++]!.v;
+    if (!['=', '+=', '-=', '*=', '/='].includes(op)) throw new Error('GLSL: expected assignment');
+    return { k: 'assign', name, swz, op, e: this.expr() };
   }
 
   expr(): Expr { return this.cond(); }
@@ -221,6 +241,8 @@ function callNames(n: Stmt | Expr | null): string[] {
     case 'decl': return callNames(n.init);
     case 'assign': case 'expr': return callNames(n.e);
     case 'if': return [...callNames(n.c), ...callNames(n.a), ...callNames(n.b)];
+    case 'for': return [n.init, n.test, n.update, n.body].flatMap(callNames);
+    case 'break': return [];
     case 'ret': return callNames(n.e);
     case 'block': return n.body.flatMap(callNames);
   }
@@ -343,6 +365,7 @@ const BUILTINS: Record<string, (...args: Value[]) => Value> = {
 
 function construct(type: string, args: Value[]): Value {
   if (type === 'float') return num(args[0] as Value, 'float()');
+  if (type === 'ivec2') return (construct('vec2', args) as number[]).map(Math.trunc);
   if (!/^(vec[234]|mat[34])$/.test(type)) throw new Error(`GLSL: ${type}() is not supported by this interpreter`);
   const n = Number(type.slice(3));
   if (type.startsWith('mat')) {
@@ -367,6 +390,7 @@ function construct(type: string, args: Value[]): Value {
 // ---- running it --------------------------------------------------------------------------------------------------------------------------
 
 type Scope = Map<string, { type: string; value: Value }>;
+class Break {}
 class Return {
   readonly value: Value | undefined;
   constructor(value: Value | undefined) {
@@ -479,6 +503,24 @@ export class Glsl {
         else if (s.b) this.exec(s.b, scope, env);
         return;
       }
+      case 'for': {
+        const loopScope = new Map(scope);
+        this.exec(s.init, loopScope, env);
+        for (let iterations = 0;; iterations++) {
+          const test = this.eval(s.test, loopScope, env);
+          if (typeof test !== 'boolean') throw new Error('GLSL: for wants a bool');
+          if (!test) return;
+          if (iterations >= 10000) throw new Error('GLSL: loop exceeded 10000 iterations');
+          try {
+            this.exec(s.body, new Map(loopScope), env);
+          } catch (e) {
+            if (e instanceof Break) return;
+            throw e;
+          }
+          this.exec(s.update, loopScope, env);
+        }
+      }
+      case 'break': throw new Break();
       case 'ret': throw new Return(s.e ? this.eval(s.e, scope, env) : undefined);
       case 'expr': this.eval(s.e, scope, env);
     }

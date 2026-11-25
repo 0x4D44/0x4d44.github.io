@@ -7,6 +7,7 @@ import {lunetteBars} from '../src/shed.ts';
 import {createKxFrontReflections,kxFrontSources} from '../src/kx-front-reflections.ts';
 import {Glsl} from './glsl.ts';
 import {surfaceUniforms} from '../src/atmosphere.ts';
+// Re-pinned 2026-11-24 (shed realignment, signed off): the vault centres are the spine -/+ R (aisle + R and aisle + 3R before, the same points while the aisles were even), the valley is the spine, and there is no west aisle, so a probe of 'the aisle' stands in the east aisle.
 const data=JSON.parse(readFileSync(new URL('../src/data/kx-track.json',import.meta.url),'utf8')),layout=shedLayout(data);
 function make(){
  const bytes=new Uint8Array([64,0,255,255,64,0,255,255,64,0,255,255,64,0,255,255]);
@@ -18,7 +19,7 @@ function shader(mesh:THREE.InstancedMesh){const lib=THREE.ShaderLib.basic,s={uni
 
 test('front wet source samples sit inside actual clear panes rather than the lunette bars',()=>{
  const r=make();try{const sources=kxFrontSources(layout,r.surface);assert.equal(sources.length,10);
- for(const source of sources){const {u}=worldToShed(layout,[source.head[0],source.head[2]]),centre=layout.aisle+(u<layout.width/2?.5:1.5)*SHED_SPAN_WIDTH;
+ for(const source of sources){const {u}=worldToShed(layout,[source.head[0],source.head[2]]),centre=layout.spine+(u<layout.spine?-.5:.5)*SHED_SPAN_WIDTH;
   for(const bar of lunetteBars(centre,layout.springing)){const dx=u-bar.c[0],dy=source.head[1]-bar.c[1],x=Math.cos(bar.rotZ)*dx+Math.sin(bar.rotZ)*dy,y=-Math.sin(bar.rotZ)*dx+Math.cos(bar.rotZ)*dy;assert.ok(Math.abs(x)>bar.s[0]/2+.0001||Math.abs(y)>bar.s[1]/2+.0001,'sample is clear of the built mullion, transom and ring');}
  }
  }finally{r.dispose();}

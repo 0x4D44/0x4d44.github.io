@@ -16,6 +16,18 @@
 
 window.ESSAYS = [
   {
+    slug: "strange-machine",
+    title: "Strange Machine: interim results",
+    tagline: "How well do coding models design and program a one-instruction computer? The Strange Machine pilot measured the design, the emulator and the programs it could run. See the results by model, word width and cost.",
+    url: "https://0x4d44.github.io/strange-machine/",
+    illustration: "ill-strange-machine",
+    date: "2026-11-25T10:46:00",
+    year: 2026,
+    readingMin: 4,
+    tags: ["software", "engineering"],
+    real: true,
+  },
+  {
     slug: "mdbench",
     title: "mdbench: which model holds which seat",
     tagline: "Results from a private benchmark of AI coding models on real engineering problems from our own emulator and kernel projects, rewound to before they were solved. Who should design, code, test, review and fix: a seat-by-lane table, leaderboards, and score against cost and time. More suites to come. Vanilla JS, no libraries.",
@@ -453,7 +465,7 @@ window.ESSAYS = [
   {
     slug: "model-zoo",
     title: "The Model Zoo",
-    tagline: "One afternoon, 48 GPT and Claude models, the same questions. Nine picks in ten land on 37, 42, 47 or 73, and the favourite colour is blue 94% of the time; they draw a haggis chasing a gamekeeper, write joke machines that run in a sandbox, play the Moonlight Sonata from memory, and pass one story along a sentence at a time. Vanilla JS; no build step.",
+    tagline: "One afternoon, 52 GPT and Claude models, the same questions. Nine picks in ten land on 37, 42, 47 or 73, and the favourite colour is blue 94% of the time; they draw a haggis chasing a gamekeeper, write joke machines that run in a sandbox, play the Moonlight Sonata from memory, and pass one story along a sentence at a time. Vanilla JS; no build step.",
     url: "https://0x4d44.github.io/model-zoo/",
     illustration: "ill-model-zoo",
     date: "2026-11-03T17:00:00",
@@ -2184,7 +2196,7 @@ window.COLLECTIONS = [
   { id: "ai", name: "Minds & Models", icon: "ill-ai",
     blurb: "AI, language models and the writing around them.",
     slugs: ["model-zoo", "model-welfare", "j-space", "benchmarks", "ai-history", "mdtoken", "cold-cache", "chasing-dosbox-x",
-      "codex-seat-trials", "mdbench", "claude-workflows", "the-ai-who-watched", "influence", "three-clocks"] },
+      "codex-seat-trials", "mdbench", "strange-machine", "claude-workflows", "the-ai-who-watched", "influence", "three-clocks"] },
   { id: "music", name: "Music & Instruments", icon: "ill-piano",
     blurb: "How instruments work, and what becomes of the sound afterwards — the physics of the string, the mechanism, and the codecs that carry the result.",
     slugs: ["instruments", "audio-compression"] },

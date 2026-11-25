@@ -50,7 +50,7 @@ check('C01 is one set of numbers for every kind: the baseline is the longest car
  assert.equal(F.CURVE.baselineM,longestCar,'the baseline is the longest car of any kind');
  near(F.CURVE.cutDeg*D2R,SMOOTH_TURN,1e-12,'a track that turns by more than this at a node is a corner on the page (core/curves.ts), not a curve');
  assert.deepEqual(F.CURVE_VIEWS,['curve-plan','curve-oblique']);assert.equal(F.CURVE_STAGE,'neutral-curve (scenery hidden)');
- assert.deepEqual(F.OPT_IN_VIEW_IDS,['M01','C01','C02']);assert.ok(!F.VIEW_IDS.includes('C01'),'the default views stay V01-V10');
+ assert.deepEqual(F.OPT_IN_VIEW_IDS,['M01','C01','C02','T01']);assert.ok(!F.VIEW_IDS.includes('C01'),'the default views stay V01-V10');
  for(const word of ['edgePoint','core/curves.ts','carPoses','END_GAP','FINDING','day only','1 cm'])assert.ok(F.CURVE_RULE.includes(word),`the rule names ${word}`);
 });
 
@@ -58,7 +58,7 @@ check('C02 is C01\'s second pose and has numbers of its own: a bend is 1 degree 
  assert.deepEqual({...F.CURVE_NORMAL},{id:'C02',suffix:'curve-normal',rule:F.CURVE_NORMAL_RULE,bendMinDeg:1,bandShare:.1,services:['main']});
  assert.ok(Object.isFrozen(F.CURVE_NORMAL)&&Object.isFrozen(F.CURVE_NORMAL.services));
  assert.deepEqual(F.CURVE_NORMAL_VIEWS,['curve-normal-plan','curve-normal-oblique']);assert.ok(Object.isFrozen(F.CURVE_NORMAL_VIEWS));
- assert.deepEqual(F.OPT_IN_VIEW_IDS,['M01','C01','C02']);assert.ok(!F.VIEW_IDS.includes('C02'),'the default views stay V01-V10');assert.deepEqual(F.ASKABLE_VIEW_IDS.slice(-3),['M01','C01','C02']);
+ assert.deepEqual(F.OPT_IN_VIEW_IDS,['M01','C01','C02','T01']);assert.ok(!F.VIEW_IDS.includes('C02'),'the default views stay V01-V10');assert.deepEqual(F.ASKABLE_VIEW_IDS.slice(-4),['M01','C01','C02','T01']);
  assert.notEqual(F.CURVE_NORMAL.id,F.CURVE.id);assert.notEqual(F.CURVE_NORMAL.suffix,F.CURVE.suffix);assert.notEqual(F.CURVE_NORMAL_RULE,F.CURVE_RULE);
  // the rule says how the radius was picked, from the track and not from a train, and what stands in when no stretch has it
  for(const word of ['C02','typical','median','1 degree','26 m','0.5 m','service main','10%','never from a train','synthetic','day only','information','carPoses','least mean'])assert.ok(F.CURVE_NORMAL_RULE.includes(word),`the rule names ${word}`);

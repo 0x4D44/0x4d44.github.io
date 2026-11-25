@@ -55,3 +55,21 @@ test('the EB relearn is configured by default from the committed Waverley overla
     dataDir: '/private/kx-data/areas/EB', anchorsPath: '/private/kx-data/areas/EB/anchors.json', tablePath: '/private/kx-data/areas/EB/sclass.json',
     overlayPath: path.join(packageRoot, 'web/src/data/waverley-signals.json'), trackPath: path.join(packageRoot, 'web/src/data/waverley-scene.json') });
 });
+
+test('configured Perth areas share public geometry and keep each relearn private', async () => {
+  const { areaAssetsFor } = await import('../sclass-areas.mjs');
+  const configured = [];
+  const jobs = createAreaSclassJobs({ dataDir: '/private/kx-data', areas: ['EB', 'ZZ', 'ZX'],
+    areaAssets: areaAssetsFor(['ZZ', 'ZX']), createJob: options => { configured.push(options); return {}; } });
+  assert.deepEqual(jobs.unavailable, []);
+  for (const area of ['ZZ', 'ZX']) {
+    const job = configured.find(o => o.area === area);
+    assert.equal(job.trackPath, path.join(packageRoot, 'web/src/data/perth-scene.json'));
+    assert.equal(job.overlayPath, path.join(packageRoot, 'web/src/data/perth-signals.json'));
+    assert.equal(job.anchorsPath, `/private/kx-data/areas/${area}/anchors.json`);
+    assert.equal(job.tablePath, `/private/kx-data/areas/${area}/sclass.json`);
+    assert.equal(job.recordingsDir, '/private/kx-data/recordings');
+  }
+  assert.equal(configured[0].trackPath, path.join(packageRoot, 'web/src/data/waverley-scene.json'));
+  assert.throws(() => areaAssetsFor(['EB']), /already belongs/);
+});

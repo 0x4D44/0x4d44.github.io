@@ -323,5 +323,17 @@
   "sample": 0,
   "status": "no-svg",
   "note": "ran out of output budget (max_tokens)"
+ },
+ "gpt-6.2-sol": {
+  "model": "gpt-6.2-sol",
+  "sample": 0,
+  "status": "valid",
+  "unsafe": false
+ },
+ "gpt-6.2-astra": {
+  "model": "gpt-6.2-astra",
+  "sample": 0,
+  "status": "valid",
+  "unsafe": false
  }
 }

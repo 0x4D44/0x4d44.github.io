@@ -58,7 +58,7 @@ export function memberTriangles(m: Member, out: number[]): void {
   quad(B[0]!, B[1]!, B[2]!, B[3]!);
 }
 
-export type OleLayout = Pick<ShedLayout, 'origin' | 'heading' | 'width' | 'length' | 'aisle' | 'springing'>;
+export type OleLayout = Pick<ShedLayout, 'origin' | 'heading' | 'width' | 'length' | 'spine' | 'springing'>;
 
 /** The OLE group: `userData` carries the plan's counts, triangles and draw calls. */
 export function buildOle(data: Pick<KxData, 'nodes' | 'rails'> & Partial<Pick<KxData, 'signals'>>, layout: OleLayout, mouths: readonly Pt[] = []): THREE.Group {
@@ -66,7 +66,7 @@ export function buildOle(data: Pick<KxData, 'nodes' | 'rails'> & Partial<Pick<Kx
     data, layout, mouths,
     inZone: (x, z) => inStationZone(layout, x, z),
     roofY: (u) => shedRoofY(layout, u),
-    arches: [0, 1].map(k => [layout.aisle + k * SHED_SPAN_WIDTH, layout.aisle + (k + 1) * SHED_SPAN_WIDTH] as [number, number]),
+    arches: [-1, 0].map(k => [layout.spine + k * SHED_SPAN_WIDTH, layout.spine + (k + 1) * SHED_SPAN_WIDTH] as [number, number]),
   });
   const group = new THREE.Group();
   group.name = 'ole';

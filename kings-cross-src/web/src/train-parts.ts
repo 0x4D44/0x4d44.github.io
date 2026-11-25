@@ -29,7 +29,7 @@
 //   gn387_03_387123_cambridge.jpg   the Electrostar's cab bogie, about a hundred pixels across: a dark frame with a damper
 //       across the middle (round 5: drawn as the generic outside-frame bogie from this one). Round 6: the Electrostar's frame is traced from
 //       `Bogie and traction equipment beneath Door A1 of Class 375 Electrostar .jpg` (OathOn, CC0), point by point, in `train-bogie-trace.ts`.
-// What no photograph shows is not drawn: no pipework, no cable runs, no bolt patterns, and nothing inside the frames. The one exception is what tells a motor bogie from a
+// What no photograph shows is not drawn: no pipework, no cable runs (save the LNER AT300 bogie's axle-box leads, which its photograph shows: `AT300_LEADS`), no bolt patterns, and nothing inside the frames. The one exception is what tells a motor bogie from a
 // trailer bogie, which a bogie must show and no photograph here does: a motor bogie's traction motors with their gear cases (a diesel's final drives and cardan shaft), a trailer bogie's
 // brake units, each hung low where it stands in view under the side beam; their sizes and places are ASSUMED (see `MOTOR_*`, `BRAKE_UNIT`, `GEARBOX_REACH`). Not the AT300's nor the Electrostar's: round 6 traced
 // their frames from photographs, the AT300's of a trailer bogie and the Electrostar's of a powered one, which show nothing hung between the wheels, and no photograph shows what a motor bogie of the
@@ -79,6 +79,8 @@ export interface BogieSpec {
   diesel?: boolean;
   /** Which maker's bogie to draw. Absent: the Alstom's for a diesel unit, the Hitachi's otherwise. */
   style?: BogieStyle;
+  /** The Hitachi bogie's axle-box cable leads (`AT300_LEADS`). Absent: none; only the LNER Azumas set it, so the other AT300 operators' bogies are unchanged. */
+  leads?: boolean;
 }
 
 /** The style a spec draws: its own, or the one its other flags imply. */
@@ -480,6 +482,13 @@ const AT300_DEPTH = {
   step: [0.98, 1.14],
   wall: [1.065, 1.1],
 } as const;
+/** The AT300 bogie's axle-box cable lead: its centre line's distance out from the bogie's middle, its square section, its colour, and its path as (distance outward from the axle, height over the rail head). ASSUMED by eye from lner-gwr800-bogie-detail-2017. */
+const AT300_LEADS = {
+  x: 1.13,
+  size: 0.022,
+  colour: 0x45423d,
+  path: [[0.15, 0.86], [0.42, 0.7], [0.44, 0.42], [0.3, 0.35], [0.0, 0.43]] as readonly (readonly [number, number])[],
+} as const;
 /**
  * The AT300's air spring: a pedestal on the middle of each beam and the rubber bag on it (centre x, radius of each). ASSUMED, as the depths are: the photograph shows the bag 0.49 m across and the
  * pedestal's band as wide, but not how far out they stand; the bag is drawn 0.46 m across, centred 0.91 m out, so that it stays inside the 1.15 m envelope.
@@ -600,6 +609,14 @@ function at300Frame(F: Soup, S: Soup, spec: BogieSpec, pal: Palette): void {
       F.box(wx0, wx1, window.y0, window.y1, window.z0, window.z1, pal.rubber);
       const boss = circle(t.boss, flip);
       tube(F, axisX(sx * D.boss[0], boss.y, boss.z, sx), 0, D.boss[1] - D.boss[0], boss.r, 12, pal.spring, 'end');
+      if (spec.leads) {
+        // the cable lead off the beam's end, outboard of the pedestal and the lug, down past the axle box and back up into its cap (lner-gwr800-bogie-detail-2017: one such lead loops
+        // from the beam into each axle-end cap of 800004's leading trailer bogie). The path and the 22 mm section are ASSUMED, read off the photograph by eye. A motor bogie carries the same
+        // leads, as it carries the same frame here: the photograph of the trailer bogie is the whole of what is drawn on either (see `at300Frame`)
+        const out = Math.sign(az);
+        const path = AT300_LEADS.path.map(([dz, y]): [number, number] => [y, az + out * dz]);
+        for (let k = 0; k + 1 < path.length; k++) F.bar(path[k] as [number, number], path[k + 1] as [number, number], AT300_LEADS.size, AT300_LEADS.size, col(AT300_LEADS.colour), sx * AT300_LEADS.x);
+      }
     }
     // the car's cast bracket that hangs the yaw damper, and the damper between its foot and the beam
     const [kx0, kx1] = xs(sx, D.bracket[0], D.bracket[1]);
@@ -1248,7 +1265,7 @@ export function buildBogie(spec: BogieSpec): THREE.Group {
     }
   }
   const style = bogieStyle(spec);
-  const key = `${radius}/${wb}/${track}/${spec.motor}/${spec.diesel === true}/${style}`;
+  const key = `${radius}/${wb}/${track}/${spec.motor}/${spec.diesel === true}/${style}${spec.leads === true ? '/leads' : ''}`;
   let geometry = bogieCache.get(key);
   if (!geometry) {
     geometry = bogieSoup(spec).build();
@@ -1276,22 +1293,36 @@ export function buildBogie(spec: BogieSpec): THREE.Group {
 }
 
 /** A single-arm pantograph, folded: base frame on four insulators, the arms lying down, the collector head on top. */
-export function buildPantograph(len: number, top: number): THREE.Group {
+export function buildPantograph(len: number, top: number, lner = false): THREE.Group {
   const group = new THREE.Group();
   group.name = 'pantograph';
   const soup = new Soup();
   const frame = col(0x2d3035);
   const head = col(0x8a8f96);
-  for (const sx of [-1, 1]) {
+  if (lner) {
+    // Leeds 2019: two spread lower rails, a narrow return arm and visible
+    // transverse pivots. ASSUMED sections within the 2.02 × 0.24 m folded outline.
+    const pivotZ = len / 2 - 0.15;
+    for (const sx of [-1, 1]) {
+      const x = sx * 0.54;
+      soup.box(x - 0.045, x + 0.045, 0.079, 0.13, -len / 2, len / 2, frame);
+      for (const z of [-pivotZ, pivotZ]) insulator(soup, x, -0.018, z, 0.073, 0.102, 3, 8);
+      soup.bar([0.13, pivotZ], [top - 0.05, -pivotZ], 0.054, 0.042, frame, sx * 0.20);
+    }
+    soup.box(-0.60, 0.60, 0.107, 0.155, pivotZ - 0.035, pivotZ + 0.035, frame);
+    soup.box(-0.29, 0.29, top - 0.074, top - 0.026, -pivotZ - 0.032, -pivotZ + 0.032, frame);
+    soup.bar([top - 0.05, -pivotZ], [top - 0.08, 0.73], 0.082, 0.035, frame);
+    soup.box(-0.14, 0.14, top - 0.105, top - 0.055, 0.68, 0.78, frame);
+  } else {
+    for (const sx of [-1, 1]) {
     soup.box(sx * 0.55 - 0.06, sx * 0.55 + 0.06, 0.08, 0.14, -len / 2, len / 2, frame);
     for (const z of [-len / 2 + 0.15, len / 2 - 0.15]) soup.box(sx * 0.55 - 0.05, sx * 0.55 + 0.05, -0.02, 0.08, z - 0.05, z + 0.05, col(0xd8d2c4));
+    }
+    soup.box(-0.55, 0.55, 0.08, 0.14, -0.06, 0.06, frame);
+    const knee = top - 0.045;
+    soup.bar([Math.min(0.14, top - 0.035), 0.9], [knee, -0.1], 0.1, 0.07, frame);
+    soup.bar([knee, -0.1], [top - 0.1, 0.72], 0.08, 0.06, frame);
   }
-  soup.box(-0.55, 0.55, 0.08, 0.14, -0.06, 0.06, frame);
-  // lower arm up from the rear of the base to the knee, upper arm folded back to the head
-  const knee = top - 0.045;
-  // the arm is 0.07 m thick, so its upper face stands 0.035 above its centre line: start it low enough that no part of it passes `top`
-  soup.bar([Math.min(0.14, top - 0.035), 0.9], [knee, -0.1], 0.1, 0.07, frame);
-  soup.bar([knee, -0.1], [top - 0.1, 0.72], 0.08, 0.06, frame);
   // the collector head: the bow, and two carbon strips along its top (dark against the pale aluminium; ASSUMED: the Leeds photograph's pantograph is on a pantograph car
   // seen from far above and shows the base and the arm frame, not the head); the strips stand inside the head's top, so the folded height is the bow's
   soup.box(-0.8, 0.8, top - 0.07, top - PANTOGRAPH_STRIP_THICKNESS, 0.64, 0.82, head);

@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import { ALL_KINDS, EMU_FIGURES, EMU_KINDS, FIGURES, GC_KINDS, TL_KINDS, TRAIN_KINDS, trainLayout } from '../../core/train.ts';
 import type { Car, EmuFamily, Family, TrainKind } from '../../core/train.ts';
 import { LIVERIES, ROW_H, TEX_SPAN, TEX_W, atlasRect, atlasTexts, shellMaterial, texelsPerMetre, textEms } from '../src/livery.ts';
-import { ARRAY_CELL, ASSUMED, BOGIE_STYLE, bodySpec, buildTrain, CAB_SWOOSH, carPlan, carSection, CLUSTER_ARRAY, CLUSTER_LIFT, COVER_RELIEF, COVER_SEAM, END_GAP, faceSetback, FLANK_FRACTION, frontOf, HEAD_BODY, HEAD_FILL, HEAD_SIDES, HULL_POD, LENS, NOSE_RECESS, PANE_COLS, PANE_LIFT, PANE_ROWS, PANE_SEAL, PANE_SKY_HI, PANE_SKY_MID, POD, SEAM_ON_DARK, SEAM_ON_LIGHT, SKIRT_PALE, skirtColours, underfloorBlocks } from '../src/train.ts';
+import { ARRAY_CELL, ASSUMED, BOGIE_STYLE, bodySpec, buildTrain, CAB_SWOOSH, carPlan, carSection, CLUSTER_ARRAY, CLUSTER_LIFT, COVER_RELIEF, COVER_SEAM, END_GAP, faceSetback, FLANK_FRACTION, frontOf, HEAD_BODY, HEAD_FILL, HEAD_SIDES, HULL_POD, LENS, maskLine, NOSE_RECESS, PANE_COLS, PANE_LIFT, PANE_ROWS, PANE_SEAL, PANE_SKY_HI, PANE_SKY_MID, POD, SEAM_ON_DARK, SEAM_ON_LIGHT, SKIRT_PALE, skirtColours, teardropOutline, underfloorBlocks } from '../src/train.ts';
 import { GC_ORANGE, GN_PINSTRIPE, HULL_BEAK, LNER_YELLOW, liveryFor, sideColourAt } from '../src/train-livery.ts';
 import { eggSection, filletFactor, halfAt, loopFromHalf, normalised, planProfile, ringAt, ringStations, sideProfile, xAtY, yAtX } from '../src/train-nose.ts';
 import { BOGIE_HALF_WIDTH, BOGIE_LOD_DISTANCE, BOGIE_TOP, BRAKE_UNIT, CARDAN_AXIS, CARDAN_RADIUS, DISC_RADIUS, DISC_THICKNESS, FAR_WHEEL_SEGMENTS, FLANGE_HEIGHT, GEARBOX_REACH, KIT_BIG_RADIUS, KIT_CABLE_WIDTH, KIT_COLOURS, KIT_HALF_WIDTH, KIT_PLATE_HALF, KIT_PLATE_TOP, KIT_SMALL_RADIUS, MOTOR_BOSS, MOTOR_CLEAR, MOTOR_FLOOR, MOTOR_LENGTH, MOTOR_RADIUS, PANTOGRAPH_STRIP, PANTOGRAPH_STRIP_THICKNESS, PANTOGRAPH_STRIPS, POD_PARTS, POD_SHAPE, ROOF_KITS, SKIRT_BOX_PATTERN, SKIRT_GRILLE, SKIRT_HATCH, SKIRT_HEM, SKIRT_LEAN, SKIRT_LOUVRES, SKIRT_RAKE, SKIRT_SLIT_LIFT, SKIRT_TUCK, SKIRT_VENT_CLEAR, WHEEL_SEGMENTS, WHEEL_WIDTH, YOKE_RADIUS, bogieFarSoup, bogieParts, bogieSoup, bogieStyle, buildBogie, couplerHalf, podFace, podHanger, podMarks, roofKitReach, roofKitSpan, skirtHalfAt, skirtPanel, skirtSplit, underfloorPod } from '../src/train-parts.ts';
@@ -273,7 +273,7 @@ test('nose: the section morphs from an egg at the tip to the car section, and th
   }
 });
 
-test('nose: the AT300\'s beak is long and sharp: a small face under a metre across, a ramp of about 47 degrees up to the glass\'s foot 0.7 m back and the glass 2.5 m back at its top, clear above the beak', () => {
+test('nose: the AT300\'s front is blunt and round: a face about 1.15 m across and 0.77 m tall, rising steeply off the tip, the glass\'s foot 1.0 m back and its top 2.6 m back, lying back about 31 degrees', () => {
   // The round-3 score called the beak "still short and bulbous, with a large flat yellow face"; lner-801-214-2025 and lner-800-108-offord-cluny-2023 (side on, the scale about 75 px
   // to the metre) put the glass's foot 1.3 m behind the tip and 2.3 to 2.4 m up, its top about 3.0 m back and 3.3 m up, and the ramp between the tip and the foot at about 41 degrees;
   // lner-800-113-newcastle-2025 (head on) shows a face under a metre across. The table, written out (the checks below read it from the spec):
@@ -288,32 +288,43 @@ test('nose: the AT300\'s beak is long and sharp: a small face under a metre acro
   // top". Read off lner-800-113-newcastle-2025, head on, with the 1.5 m between the rails for the scale (about 130 px to the metre): the glass's foot about 2.2 m up, its top about 3.15 m, the yellow
   // under it 1.5 to 1.7 m. (lner-800-108-offord-cluny-2023 reads lower, by the door beside it at this model's own 1.15 to 2.86 m, which is not a measured figure: not followed.) The ramp is 48.2
   // degrees (46.9 before) and the glass 31.4 degrees (29.2 before). ASSUMED to about 0.1 m: neither photograph is calibrated.
+  // CHANGED (AT300 round: web/src/train.ts AT300_NOSE_KNOTS): the beak was the round-6 score's T2 fault, "the yellow still fills about three quarters of the face". The photographs show a blunt,
+  // round, tall front (lner-800-113-newcastle-2025 head on: the cover a disc about 1.6 m across and 1.15 m tall; lner-800-108-offord-cluny-2023 side on: the centre line 1.35 m up 0.06 m back,
+  // 1.62 m at 0.24 m, 1.78 m at 0.48 m, 1.92 m at 0.79 m, 2.03 m at 1.09 m, the glass about 31 degrees off level). The face (the flat cap at the tip, inside the fillet) is 1.15 m across and
+  // 0.77 m tall (was 0.94 by 0.55); the glass's foot is 1.0 m back at 2.08 m (was 0.7 m, 2.07 m by the ring's `top`), its top 2.6 m back at 3.05 m (was 2.5 m, 3.17 m); the front rises 45 degrees
+  // over its first 0.24 m (the old ramp: 48 degrees over 0.7 m) and the glass 31.2 (31.4). The same tolerances as before.
   const spec = bodySpec('at300');
   assert.deepEqual(spec.nose, {
     length: ASSUMED.noseLength,
     knots: [
-      { s: 0, top: 1.3, ws: 0.44, bottom: 0.6 },
-      { s: 0.4, top: 1.78, ws: 0.56, bottom: 0.5 },
-      { s: 0.8, top: 2.16, ws: 0.67, bottom: 0.46 },
-      { s: 1.3, top: 2.6, ws: 0.82, bottom: 0.48 },
-      { s: 2.0, top: 2.98, ws: 0.9, bottom: 0.58 },
-      { s: 2.7, top: 3.22, ws: 0.95, bottom: 0.72 },
-      { s: 3.3, top: 3.32, ws: 0.98, bottom: 0.86 },
+      { s: 0, top: 1.6, ws: 0.62, bottom: 0.5 },
+      { s: 0.24, top: 1.7, ws: 0.7, bottom: 0.48 },
+      { s: 0.5, top: 1.82, ws: 0.76, bottom: 0.47 },
+      { s: 1.0, top: 2.08, ws: 0.84, bottom: 0.46 },
+      { s: 1.6, top: 2.44, ws: 0.91, bottom: 0.5 },
+      { s: 2.6, top: 3.05, ws: 0.97, bottom: 0.7 },
+      { s: 3.3, top: 3.3, ws: 0.995, bottom: 0.86 },
       { s: ASSUMED.noseLength, top: spec.crown, ws: 1, bottom: spec.floor },
     ],
-    fillet: 0.3,
-    filletLoss: 0.2,
+    fillet: 0.45,
+    filletLoss: 0.3,
     roundLen: 3.6,
-    widest: 0.55,
-    boxiness: 2.6,
+    widest: 0.5,
+    boxiness: 3.0,
+    // RE-PINNED (round B14; was none): the cheeks fuller at the lamps (lner-800-113-newcastle-2025: the lamp unit's outer edge about 1.17 m out, the built surface about 1.0 m)
+    // RE-PINNED (round B15; its foot was 0.9 m up): the fill rises from 0.4 m, a gentler lower flank, so the loft's normals no longer tip back into a crease (train-at300-shell.test.ts, round B15)
+    cheek: { by: 0.09, s: [0.0, 1.2, 1.7, 3.4], y: [0.4, 1.85, 2.0, 3.0], u: [0.25, 1.2] },
   });
-  assert.deepEqual(spec.glass.screen && { s0: spec.glass.screen.s0, s1: spec.glass.screen.s1 }, { s0: 0.7, s1: 2.5 }, 'the glass runs from 0.7 m back to 2.5 m');
-  // and its width: 0.7 of the cab's half-width at the foot (0.64 in round 4), narrowing to 0.52 of it at the top, the corners rounded 0.12 m at the foot and 0.3 m at the top (the glass's width is
+  assert.deepEqual(spec.glass.screen && { s0: spec.glass.screen.s0, s1: spec.glass.screen.s1 }, { s0: 1.0, s1: 2.6 }, 'the glass runs from 1.0 m back to 2.6 m');
+  // CHANGED (round B6, 0.5 -> 0.68 at the foot, 0.52 -> 0.6 at the top): head on lner-800-113-newcastle-2025 shows the glass 0.58 of the body's width, the model's was 0.47 (train-at300-shell.test.ts, round B6)
+  // and its width: 0.5 of the cab's half-width at the foot (0.7 before the AT300 round, on a narrower nose; 0.64 in round 4), widening to 0.52 of it at the top (the same as before: the ring is wider there), the corners rounded 0.12 m at the foot and 0.3 m at the top (the glass's width is
   // read off lner-800-113-newcastle-2025, head on: ASSUMED to a few centimetres, a photograph at about 75 px to the metre)
   assert.deepEqual(
     spec.glass.screen && { fraction: spec.glass.screen.fraction, fractionTop: spec.glass.screen.fractionTop, topRadius: spec.glass.screen.topRadius, bottomRadius: spec.glass.screen.bottomRadius, footSweep: spec.glass.screen.footSweep },
-    { fraction: 0.7, fractionTop: 0.52, topRadius: 0.3, bottomRadius: 0.12, footSweep: 0.3 },
-    'the glass is 0.7 of the half-width wide at its foot, 0.52 at its top, the foot swept back 0.3 m at its corners',
+    // RE-PINNED (round B7; 0.68 -> 0.6 at the foot, 0.6 -> 0.66 at the top): lner-800-113-newcastle-2025's near-parallel sides (about 0.96 as wide at the top as the foot) against B6's 0.82
+    // at 3 m, and its body margin beyond the frame at 3/4 (lner-801-214-2025, LUMO-06-803005-FPK) (train-at300-shell.test.ts, round B7)
+    { fraction: 0.6, fractionTop: 0.66, topRadius: 0.3, bottomRadius: 0.12, footSweep: 0.3 },
+    'the glass is 0.6 of the half-width wide at its foot, 0.66 at its top, the foot swept back 0.3 m at its corners',
   );
   // the nose never rises above the roof it runs into (the roof line must not go back: the test of every nose's profile reads it too)
   for (const k of spec.nose.knots) assert.ok(k.top <= spec.crown + 1e-9, `the knot at ${k.s} m is ${k.top} m up, over the roof edge at ${spec.crown} m`);
@@ -324,17 +335,18 @@ test('nose: the AT300\'s beak is long and sharp: a small face under a metre acro
   const faceWidth = 2 * Math.max(...tip.map((p) => p[0]));
   const faceTop = yAtX(tip, 0);
   const faceFoot = Math.min(...tip.map((p) => p[1]));
-  assert.ok(faceWidth > 0.85 && faceWidth < 1.05, `the face is ${faceWidth.toFixed(2)} m across`);
-  assert.ok(faceTop - faceFoot > 0.5 && faceTop - faceFoot < 0.7, `the face is ${(faceTop - faceFoot).toFixed(2)} m tall`);
-  // the ramp: from the face's top (at the tip) to the roof line over the glass's foot
-  const foot = ringAt(spec.nose, 0.7).top;
-  near(foot, 2.07, 0.05, 'the glass\'s foot stands 2.07 m up');
-  const ramp = (Math.atan2(foot - faceTop, 0.7) * 180) / Math.PI;
-  assert.ok(ramp > 44 && ramp < 50, `the ramp rises at ${ramp.toFixed(1)} degrees`);
-  const glassTop = ringAt(spec.nose, 2.5).top;
-  near(glassTop, 3.17, 0.05, 'the glass\'s top stands 3.17 m up');
-  // the glass lies flatter than the yellow cone's ramp under it: the steep slope breaks into the screen's gentler one at the glass's foot, as the side-on photographs show it
-  const glassPitch = (Math.atan2(glassTop - foot, 2.5 - 0.7) * 180) / Math.PI;
+  assert.ok(faceWidth > 1.05 && faceWidth < 1.25, `the face is ${faceWidth.toFixed(2)} m across`);
+  assert.ok(faceTop - faceFoot > 0.67 && faceTop - faceFoot < 0.87, `the face is ${(faceTop - faceFoot).toFixed(2)} m tall`);
+  // the front: from the face's top (at the tip) to the roof line 0.24 m back, steep, where the photograph's round front turns over
+  const front = ringAt(spec.nose, 0.24).top;
+  const ramp = (Math.atan2(front - faceTop, 0.24) * 180) / Math.PI;
+  assert.ok(ramp > 42 && ramp < 48, `the front rises at ${ramp.toFixed(1)} degrees`);
+  const foot = ringAt(spec.nose, 1.0).top;
+  near(foot, 2.08, 0.05, 'the glass\'s foot stands 2.08 m up');
+  const glassTop = ringAt(spec.nose, 2.6).top;
+  near(glassTop, 3.05, 0.05, 'the glass\'s top stands 3.05 m up');
+  // the glass lies flatter than the round front under it: the steep front breaks into the screen's gentler slope, as the side-on photographs show it
+  const glassPitch = (Math.atan2(glassTop - foot, 2.6 - 1.0) * 180) / Math.PI;
   assert.ok(glassPitch > 26 && glassPitch < 33 && glassPitch < ramp - 10, `the glass rises at ${glassPitch.toFixed(1)} degrees, the ramp at ${ramp.toFixed(1)}`);
 });
 
@@ -1466,12 +1478,18 @@ test('fronts: the Azuma\'s front: a slanted lamp cluster on each cheek (a strip 
   // the model reads as an eye". The housing is 0.3 m across (0.55 to 0.84 m back at its foot, 1.02 to 1.34 at its top, 1.5 to 2.1 m up), the headlamp a strip of five small lenses up its
   // slant (0.36 m long, each lens 0.06 by 0.066 m, centred 1.02 m back and 1.9 m up), the marker array a disc of 0.15 m (0.8 m back, 1.63 m up), and the livery's texture runs up to loft
   // column 9 on the nose (`shellTop`: its cheek's red/white edge is then a smooth curve of the texture, not the stair of the loft's own quads under the cluster)
+  // CHANGED a seventh time (AT300 round: the blunt nose, AT300_NOSE_KNOTS): lner-800-113-newcastle-2025, head on, puts the housings 0.67 to 1.02 m out and 1.6 to 2.13 m up, beside the
+  // yellow's upper corners under the glass's foot; on the blunt nose that is 0.45 to 1.6 m back. The window is 0.45 to 0.95 m back at its foot (1.53 m up) and 0.85 to 1.6 m at its top
+  // (2.1 m up); the headlamp a strip 0.32 m long (0.36 before) centred 0.925 m back and 1.76 m up and the array 0.6 m back and 1.63 m up, where the surface still faces forward and has not turned over onto the nose's top
   assert.deepEqual(bodySpec('at300').front, {
     cluster: {
-      window: { y0: 1.5, y1: 2.1, sFront0: 0.55, sBack0: 0.84, sFront1: 1.02, sBack1: 1.34, colour: POD },
-      head: { s: 1.02, y: 1.9, a: 0.18, b: 0.033, cells: 5 },
-      array: { s: 0.8, y: 1.63, r: 0.075 },
+      window: { y0: 1.53, y1: 2.1, sFront0: 0.45, sBack0: 0.95, sFront1: 0.85, sBack1: 1.6, colour: POD },
+      head: { s: 0.925, y: 1.76, a: 0.16, b: 0.033, cells: 5 },
+      array: { s: 0.6, y: 1.63, r: 0.075 },
       rim: { colour: 0xc7ccd3, width: 0.025 },
+      // CHANGED (round B5: absent, so CLUSTER_EDGE's 6 cm fall): every kind's housing comes down over 2 cm (the LNER's since round B4), so the skin no longer cuts its rim into a
+      // jagged outline (hull-802-doncaster-2024: an even bezel round a smooth teardrop)
+      edge: { bevel: 0.02, top: 0.008, foot: -0.003 },
     },
     shellTop: 9,
     frame: 0.07,
@@ -4973,6 +4991,8 @@ test('lamps: the AT300 kinds\' lamp clusters are a slanted window on each cheek,
   // CHANGED a third time (round 5): the round-4 score, "in the photos the clusters are slim, slanted multi-lens strips; the model reads as an eye, and only the headlamp lights at dusk".
   // The headlamp is a strip of five small lenses (0.06 by 0.066 m, 0.072 m apart, 0.36 m in all) up the slant of a slimmer window (0.3 m across), on a slim dark body of the array's grey;
   // the honeycomb (a disc of 0.15 m now) is a marker lamp, white at the leading end and red at the trailing one, so it lights at dusk too
+  // CHANGED a fourth time (AT300 round, the blunt nose): the strip is 0.32 m in all (0.064 m apart, each lens 0.054 by 0.066 m): at 0.36 m its upper end, at the headlamp's new place,
+  // stood outside the window, whose inboard edge the flank's stop holds there
   const COLOURS: Partial<Record<TrainKind, number>> = { lner5: POD, lner9: POD, hull5: HULL_POD, lumo5: POD };
   const RIMS: Partial<Record<TrainKind, number | undefined>> = { lner5: 0xc7ccd3, lner9: 0xc7ccd3, hull5: 0x4a5160, lumo5: undefined };
   assert.notEqual(POD, HULL_POD);
@@ -5032,12 +5052,23 @@ test('lamps: the AT300 kinds\' lamp clusters are a slanted window on each cheek,
         assert.ok(win.length >= 300, `${here}: only ${win.length} window vertices`);
         // (CHANGED: the window used to be held 5 cm behind the tip by a stop (FACE_CLEAR); it starts 0.5 m back now, the stop could not bind and is gone, and this holds the window to its own
         // front edge less its lift, which is 26 mm: the cheek leans forward there)
-        assert.ok(Math.min(...win.map(along)) > cluster.window.sFront0 - CLUSTER_LIFT.window, `${here}: the window starts ${Math.min(...win.map(along)).toFixed(3)} m behind the face`);
-        assert.ok(Math.min(...win.map(along)) > 0.4, `${here}: the window stands ${Math.min(...win.map(along)).toFixed(3)} m behind the face, clear of the plane it must not pass`);
+        // RE-PINNED (round B10; was sFront0 for every kind): the LNER's front edge bends in under 1.65 m to 0.175 m at its foot (LNER_CLUSTER.window.frontFoot), so its own foot is the edge
+        // the window may not pass; the same lift under it
+        const frontEdge = Math.min(cluster.window.sFront0, cluster.window.frontFoot?.s ?? Infinity);
+        assert.ok(Math.min(...win.map(along)) > frontEdge - CLUSTER_LIFT.window, `${here}: the window starts ${Math.min(...win.map(along)).toFixed(3)} m behind the face`);
+        // RE-PINNED (round B8; was 0.4 for every kind): the LNER's window starts 0.21 m behind the tip (LNER_CLUSTER: lner-800-113-newcastle-2025 puts its inner edge on the yellow's
+        // corner, which the housing reaches only by coming forward), so its clearance is the same 5 cm under its own front edge, 0.16 m; the other kinds keep 0.4
+        const clearOfFace = kind === 'lner5' || kind === 'lner9' ? 0.16 : 0.4;
+        assert.ok(Math.min(...win.map(along)) > clearOfFace, `${here}: the window stands ${Math.min(...win.map(along)).toFixed(3)} m behind the face, clear of the plane it must not pass`);
         const reach = Math.max(...win.map(along));
         near(reach, cluster.window.sBack1, 0.1, `${here}: the window's reach`);
-        near(Math.min(...win.map((v) => v.y)), cluster.window.y0, 0.03, `${here}: the window's foot`);
-        near(Math.max(...win.map((v) => v.y)), cluster.window.y1, 0.03, `${here}: the window's top`);
+        // RE-PINNED (round B17; was y0 for every kind): the Hull Trains and Lumo windows are their teardrop's outline (AT300_TEARDROP, LUMO_TEARDROP), whose lobe grew down to the
+        // photographs' fuller unit (hull-802-doncaster-2024: 0.40 to 0.46 m tall at its inboard end), its foot 1.32 m up, not the AT300 window's 1.53; so a teardrop's foot and top are
+        // its own lowest and highest points, to the same 3 cm
+        const drop = cluster.window.teardrop;
+        const [footY, topY] = drop ? [Math.min(...teardropOutline(drop).map((q) => q[1])), Math.max(...teardropOutline(drop).map((q) => q[1]))] : [cluster.window.y0, cluster.window.y1];
+        near(Math.min(...win.map((v) => v.y)), footY, 0.03, `${here}: the window's foot`);
+        near(Math.max(...win.map((v) => v.y)), topY, 0.03, `${here}: the window's top`);
         // it wraps onto the cheek: its back end stands further out from the middle than its front (the first and last fifth of its length)
         const lo = Math.min(...win.map(along));
         const first = win.filter((v) => along(v) < lo + 0.2 * (reach - lo));
@@ -5056,9 +5087,11 @@ test('lamps: the AT300 kinds\' lamp clusters are a slanted window on each cheek,
           assert.ok(rim.length >= 100 && rb.min.y < wb.min.y - 0.01 && rb.max.y > wb.max.y + 0.01, `${here}: the rim (${rim.length} triangles, y ${rb.min.y.toFixed(3)}..${rb.max.y.toFixed(3)}) does not edge the window (y ${wb.min.y.toFixed(3)}..${wb.max.y.toFixed(3)})`);
         }
         // the headlamp: a strip of five small lenses, each an ellipse of 12 sides about a centre (13 vertices) with a half-width of 0.033 m across the window's slant and a half-length of
-        // 0.84 of half its pitch (0.072 m) along it, in a row up the slant at its place on the flank, in the headlamp's colour; the row slants up and back with the window (seen from the side,
+        // 0.84 of half its pitch (0.064 m; 0.072 m before the AT300 round) along it, in a row up the slant at its place on the flank, in the headlamp's colour; the row slants up and back with the window (seen from the side,
         // from its first lens to its last it leans 25 to 55 degrees off the vertical, to the rear), and a gap of 8 mm or more is left between one lens and the next
-        const PITCH = 0.072;
+        // RE-PINNED (round B12; was 0.064 for every kind): the LNER's strip is 0.28 m long, not 0.32 (LNER_CLUSTER), so every lens lies inside its shorter dark glass head on, where the
+        // B11 score saw the lower lenses over the red cheek (front-3m) and lner-800-113-newcastle-2025 shows them all in the glass: its pitch is 0.056 m, its lenses 0.047 m long
+        const PITCH = kind === 'lner5' || kind === 'lner9' ? 0.056 : 0.064;
         const HALF_ALONG = (PITCH / 2) * 0.84;
         const HALF_ACROSS = 0.033;
         const headLenses = parts(onSide(trisOfColour(mesh, headHex)));
@@ -5083,15 +5116,23 @@ test('lamps: the AT300 kinds\' lamp clusters are a slanted window on each cheek,
         assert.ok(PITCH - 2 * HALF_ALONG >= 0.008, `a gap of ${((PITCH - 2 * HALF_ALONG) * 1000).toFixed(1)} mm between one headlamp lens and the next`);
         const lean = (Math.atan2(along(row[4]) - along(row[0]), row[4].y - row[0].y) * 180) / Math.PI;
         assert.ok(lean > 25 && lean < 55, `${here} headlamp: its strip leans ${lean.toFixed(1)} degrees off the vertical, up and back`);
-        // the dark grey is two pieces: the strip's slim body under its lenses (an ellipse of 20 sides, 0.012 m bigger than the strip all round: 0.192 m by 0.045 m, 21 vertices, 4 mm
+        // the dark grey is two pieces: the strip's slim body under its lenses (an ellipse of 20 sides, 0.012 m bigger than the strip all round: 0.172 m by 0.045 m (0.192 m before the AT300 round's shorter strip), 21 vertices, 4 mm
         // under the lenses) and the marker array's disc (14 sides, radius 0.075 m, 15 vertices)
+        // RE-PINNED (round B17; was the 0.075 m disc of 14 sides and seven cells for every kind): the Hull Trains and Lumo units have one big round lens (AT300_LENS:
+        // hull-802-doncaster-2024's near unit shows the honeycomb lens 65 to 70 px across at about 375 px to the metre, 0.17 to 0.19 m, and LUMO-06-803005-FPK one large round lens
+        // of small LEDs low in the lobe), a disc of 0.085 m radius with 28 sides holding nineteen cells, two rings round the middle one 2 cells apart (not 1.9: the smaller cells keep the
+        // 3 mm gap below), each 0.085 / 5.35 m at its corners
+        const BIG = kind === 'hull5' || kind === 'lumo5';
+        const DISC_R = BIG ? 0.085 : 0.075;
+        const DISC_SIDES = BIG ? 28 : 14;
         const dark = parts(onSide(trisOfColour(mesh, CLUSTER_ARRAY)));
         assert.equal(dark.length, 2, `${here}: ${dark.length} pieces of the lamps' dark grey (the strip's body and the array's disc)`);
         const body = dark.find((p) => p.pts.length === 21);
-        const disc = dark.find((p) => p.pts.length === 15);
-        assert.ok(body && disc, `${here}: the dark grey pieces have ${dark.map((p) => p.pts.length).join(' and ')} vertices, not 21 (the strip's body) and 15 (the array's disc)`);
+        const disc = dark.find((p) => p.pts.length === DISC_SIDES + 1);
+        assert.ok(body && disc, `${here}: the dark grey pieces have ${dark.map((p) => p.pts.length).join(' and ')} vertices, not 21 (the strip's body) and ${DISC_SIDES + 1} (the array's disc)`);
         const bodyReach = body.pts.map((v) => v.distanceTo(body.centre));
-        near(Math.max(...bodyReach), 0.18 + 0.012, 2e-4, `${here} headlamp body: its half-length`);
+        // RE-PINNED (round B12; was 0.16 for every kind): the LNER's strip is 0.28 m long (see PITCH above), its body 0.152 m by 0.045 m
+        near(Math.max(...bodyReach), (PITCH * 5) / 2 + 0.012, 2e-4, `${here} headlamp body: its half-length`);
         near(Math.min(...bodyReach.filter((d) => d > 2e-4)), 0.033 + 0.012, 2e-4, `${here} headlamp body: its half-width`);
         near(body.centre.distanceTo(hc), 0.004, 1e-3, `${here} headlamp body: 4 mm under the middle of the strip`);
         // the marker array: a dark disc of 0.075 m radius (14 sides), and in it seven hexagonal lenses of 0.075 / 3.2 m at their corners: one in the middle (4 mm over the disc: the
@@ -5099,14 +5140,22 @@ test('lamps: the AT300 kinds\' lamp clusters are a slanted window on each cheek,
         const dc = disc.centre;
         near(along(dc), cluster.array.s, 0.03, `${here} array disc: distance behind the face`);
         near(dc.y, cluster.array.y, 0.02, `${here} array disc: height`);
-        near(Math.abs(dc.x), xAtY(halfAt(sec, norm, egg, ringAt(spec.nose, cluster.array.s)), cluster.array.y), 0.03, `${here} array disc: on the flank`);
+        // RE-PINNED (round B17; was the flank's own half-width for every kind): the big lens's disc stands its lift and its own raise more off the flank (AT300_LENS.raise, 9 mm, so its edge clears
+        // the curved window under it), along a normal facing 0.8 to 0.9 out where it sits low in the bigger lobe: 3.2 cm further out than the flank, where the 0.075 m disc's lift
+        // put it 2 cm; so the big lens is held, to the same 3 cm, to the flank pushed out along its own normal by that lift
+        const rimPts = disc.pts.filter((v) => v.distanceTo(dc) > 0.05);
+        const discN = new THREE.Vector3().subVectors(rimPts[0]!, dc).cross(new THREE.Vector3().subVectors(rimPts[Math.floor(rimPts.length / 4)]!, dc)).normalize();
+        assert.ok(Number.isFinite(discN.x), `${here} array disc: its plane`);
+        const discOut = BIG ? (CLUSTER_LIFT.array + (cluster.array.raise ?? 0)) * Math.abs(discN.x) : 0;
+        near(Math.abs(dc.x), xAtY(halfAt(sec, norm, egg, ringAt(spec.nose, cluster.array.s)), cluster.array.y) + discOut, 0.03, `${here} array disc: on the flank`);
         for (const v of disc.pts) {
           const d = v.distanceTo(dc);
-          assert.ok(Math.abs(d - 0.075) < 2e-4 || d < 2e-4, `${here} array disc: a vertex ${d.toFixed(4)} m from its centre, the radius is 0.075`);
+          assert.ok(Math.abs(d - DISC_R) < 2e-4 || d < 2e-4, `${here} array disc: a vertex ${d.toFixed(4)} m from its centre, the radius is ${DISC_R}`);
         }
-        const CELL = 0.075 / 3.2;
+        const CELL = BIG ? 0.085 / 5.35 : 0.075 / 3.2;
+        const STEP = BIG ? 2 : 1.9;
         const cells = parts(onSide(trisOfColour(mesh, markerHex)));
-        assert.equal(cells.length, 7, `${here}: ${cells.length} marker lenses in the array`);
+        assert.equal(cells.length, BIG ? 19 : 7, `${here}: ${cells.length} marker lenses in the array`);
         for (const cell of cells) {
           assert.equal(cell.pts.length, 7, `${here}: a marker lens has ${cell.pts.length} vertices (6 corners and its centre)`);
           for (const v of cell.pts) {
@@ -5116,13 +5165,21 @@ test('lamps: the AT300 kinds\' lamp clusters are a slanted window on each cheek,
         }
         const middle = cells.reduce((best, c) => (c.centre.distanceTo(dc) < best.centre.distanceTo(dc) ? c : best));
         near(middle.centre.distanceTo(dc), 0.004, 5e-4, `${here}: the middle marker lens stands 4 mm over the disc's centre`);
-        const outer = cells.filter((c) => c !== middle);
+        const outer = cells.filter((c) => c !== middle && (!BIG || Math.abs(c.centre.distanceTo(middle.centre) - STEP * CELL) < 3e-4));
+        assert.equal(outer.length, 6, `${here}: ${outer.length} marker lenses in the ring round the middle one`);
         for (const c of outer) {
-          near(c.centre.distanceTo(middle.centre), 1.9 * CELL, 3e-4, `${here}: an outer marker lens's distance from the middle one`);
-          const ring2 = outer.filter((o) => o !== c && Math.abs(o.centre.distanceTo(c.centre) - 1.9 * CELL) < 3e-4);
+          near(c.centre.distanceTo(middle.centre), STEP * CELL, 3e-4, `${here}: an outer marker lens's distance from the middle one`);
+          const ring2 = outer.filter((o) => o !== c && Math.abs(o.centre.distanceTo(c.centre) - STEP * CELL) < 3e-4);
           assert.equal(ring2.length, 2, `${here}: an outer marker lens has ${ring2.length} neighbours in the ring at 1.9 cells`);
-          for (const v of c.pts) assert.ok(v.distanceTo(dc) < 0.075 - 0.005, `${here}: a marker lens corner stands ${v.distanceTo(dc).toFixed(4)} m from the disc's centre, the disc is 0.075`);
         }
+        // (the big lens's second ring: twelve more, each 4 cells from the middle one (six) or 2 root 3 cells (six between them), on the same lattice: two or more neighbours 2
+        // cells away)
+        for (const c of cells.filter((c) => c !== middle && !outer.includes(c))) {
+          const d = c.centre.distanceTo(middle.centre) / CELL;
+          assert.ok(Math.abs(d - 2 * STEP) < 0.02 || Math.abs(d - STEP * Math.sqrt(3)) < 0.02, `${here}: a marker lens ${d.toFixed(2)} cells from the middle one`);
+          assert.ok(cells.filter((o) => o !== c && Math.abs(o.centre.distanceTo(c.centre) - STEP * CELL) < 3e-4).length >= 2, `${here}: a marker lens of the second ring off the lattice`);
+        }
+        for (const c of cells) for (const v of c.pts) assert.ok(v.distanceTo(dc) < DISC_R - 0.005, `${here}: a marker lens corner stands ${v.distanceTo(dc).toFixed(4)} m from the disc's centre, the disc is ${DISC_R}`);
         // no two lenses touch: along the line between two neighbours' centres a gap of 3 mm or more is left between their corners' reach (their flats face each other: 1.9 cells apart is a
         // gap of 4.5 mm; turned a sixth of a turn their corners would face each other and overlap by 2.7 mm)
         for (const c1 of cells) {
@@ -5172,7 +5229,9 @@ test('lamps: the AT300 cluster stays on the flank and clear of the colour mask, 
   const sec = carSection(spec);
   const norm = normalised(sec);
   const egg = eggSection(norm, spec.nose.widest, spec.nose.boxiness);
-  const widest = (s: number): number => Math.max(...halfAt(sec, norm, egg, ringAt(spec.nose, Math.max(0, s))).map((p) => p[0]));
+  // RE-PINNED (round B14; was the section's widest with everything on it): the stop is measured on the section without the nose's fuller cheek (`cheek`), as the builder measures it:
+  // the cheek fills out the flank's outer part, under the stop, and the stop is to stay where the photographs put the housing's inner edge (on the yellow's), not follow the cheek out
+  const widest = (s: number): number => Math.max(...halfAt(sec, norm, egg, { ...ringAt(spec.nose, Math.max(0, s)), cheek: undefined }).map((p) => p[0]));
   /** The flank, as a fraction of the section's widest half-width: written here, not read from FLANK_FRACTION, so that the stop being switched off or loosened is seen. */
   const FLANK = 0.75;
   // the layers: the rim 2 mm over the highest of the colour mask's band (12 mm) and the cab side window's swoosh, the window 10 mm over the rim, the array's disc 3 mm over the window and
@@ -5183,6 +5242,17 @@ test('lamps: the AT300 cluster stays on the flank and clear of the colour mask, 
   assert.ok(CLUSTER_LIFT.rim - Math.max(BAND_TOP, PANE_LIFT.swoosh) >= 0.002 - 1e-9, `the rim stands ${CLUSTER_LIFT.rim} m off the loft, under or level with what it meets`);
   assert.ok(CLUSTER_LIFT.window - CLUSTER_LIFT.rim >= 0.01 - 1e-9, `the window stands ${CLUSTER_LIFT.window}, the rim ${CLUSTER_LIFT.rim}`);
   assert.ok(CLUSTER_LIFT.lens - CLUSTER_LIFT.window >= 0.003 - 1e-9, `the lenses stand ${CLUSTER_LIFT.lens}, the window ${CLUSTER_LIFT.window}`);
+  // ADDED (round B11): the LNER's own, lower lifts (LNER_CLUSTER.lift; side on the back of its housing lies on the nose's outline, which its lift pushed out): the layers still stand
+  // 3 mm apart and in the same order, the rim at least 4 mm off the loft (the B5 test holds it 2 mm clear of the skin), and clear of the colour mask's band by 2 mm under it, not level
+  for (const kind of ['lner5', 'lner9'] as const) {
+    const own = frontOf(kind).cluster!.lift!;
+    assert.ok(own, `${kind}: has its own lifts`);
+    assert.ok(own.window <= 0.01, `${kind}: the window stands ${own.window} m off the loft`);
+    assert.ok(own.rim >= 0.004 - 1e-9 && BAND_TOP - own.rim >= 0.002 - 1e-9, `${kind}: the rim stands ${own.rim} m off the loft`);
+    assert.ok(own.window - own.rim >= 0.003 - 1e-9, `${kind}: the window stands ${own.window}, the rim ${own.rim}`);
+    assert.ok(own.array - own.window >= 0.003 - 1e-9, `${kind}: the array's disc stands ${own.array}, the window ${own.window}`);
+    assert.ok(own.lens - own.array >= 0.003 - 1e-9, `${kind}: the lenses stand ${own.lens}, the array's disc ${own.array}`);
+  }
   for (const kind of ['lner5', 'hull5', 'lumo5'] as const) {
     const g = built(kind);
     const layout = trainLayout(kind);
@@ -5203,9 +5273,18 @@ test('lamps: the AT300 cluster stays on the flank and clear of the colour mask, 
         // on the flank: no vertex of the window or its rim stands nearer the middle than three quarters of the section's widest half-width at its own distance from the tip (a
         // vertex is lifted along the normal, which moves its distance a few millimetres: 2 cm of slack), and the stop is set no looser than that
         assert.ok(FLANK_FRACTION >= FLANK, `the stop is at ${FLANK_FRACTION} of the widest half-width`);
+        // RE-PINNED (round B8; the LNER's were 0.75 and 0.8, the AT300's): the LNER housing has its own stop, 0.65 of the widest half-width (LNER_CLUSTER.flank), so that head on its
+        // rim reaches the yellow's edge as lner-800-113-newcastle-2025 shows it (the unit's inner edge 85 px out, the yellow's 83 px, at 109 px to the metre); the same 0.05 of slack
+        // under its own stop for the window, and the rim on it less 2 cm
+        // RE-PINNED (round B14; was 0.65, the floor 0.6): the yellow is wider (LNER_MASK, round B14: 0.73 m out at 1.8 m up, lner-800-113-newcastle-2025's 81 px at 111 px to the
+        // metre), so the unit's stop is 0.7 and its inner edge stays on the yellow's; the same 0.05 of slack under it
+        const lner = kind === 'lner5';
+        if (lner) assert.equal(cluster.flank, 0.7, 'the LNER stop is at 0.7 of the widest half-width');
+        const flankHere = lner ? 0.65 : FLANK;
+        const stopHere = lner ? 0.7 : 0.8;
         for (const [label, vs] of [['window', win], ['rim', rim]] as const) {
           for (const v of vs) {
-            const limit = FLANK * widest(along(v) + NOSE_RECESS);
+            const limit = flankHere * widest(along(v) + NOSE_RECESS);
             assert.ok(Math.abs(v.x) >= limit - 0.02, `${here}: a ${label} vertex at ${along(v).toFixed(3)} m, ${v.y.toFixed(3)} m up stands ${Math.abs(v.x).toFixed(3)} m from the middle, the flank starts at ${limit.toFixed(3)}`);
           }
         }
@@ -5213,7 +5292,7 @@ test('lamps: the AT300 cluster stays on the flank and clear of the colour mask, 
         // the 2 cm the lift moves it. (Added after the full pass of the mutation driver: with the window's reserve gone its top edge stands on the stop and the rim 2.5 cm over it, up the roof's
         // shoulder under the colour mask's band, and nothing here noticed.)
         for (const v of rim) {
-          assert.ok(Math.abs(v.x) >= 0.8 * widest(along(v) + NOSE_RECESS) - 0.02, `${here}: a rim vertex at ${along(v).toFixed(3)} m, ${v.y.toFixed(3)} m up stands ${Math.abs(v.x).toFixed(3)} m from the middle, over the stop`);
+          assert.ok(Math.abs(v.x) >= stopHere * widest(along(v) + NOSE_RECESS) - 0.02, `${here}: a rim vertex at ${along(v).toFixed(3)} m, ${v.y.toFixed(3)} m up stands ${Math.abs(v.x).toFixed(3)} m from the middle, over the stop`);
         }
         assert.equal(FLANK_FRACTION, 0.8, 'the stop is at 0.8 of the widest half-width');
         if (cluster.rim) {
@@ -5225,7 +5304,16 @@ test('lamps: the AT300 cluster stays on the flank and clear of the colour mask, 
           const winFront = Math.min(...win.map(along));
           const winBack = Math.max(...win.map(along));
           const top = (vs: THREE.Vector3[]): number => Math.max(...vs.filter((v) => along(v) < winFront + 0.45 * (winBack - winFront)).map((v) => v.y));
-          assert.ok(top(rim) - top(win) >= 0.007, `${here}: the rim's top at the front is ${top(rim).toFixed(3)}, the window's ${top(win).toFixed(3)}`);
+          if (lner) {
+            // RE-PINNED (round B9; was >= 0.007 for the LNER): lner-800-113-newcastle-2025, lner-800-doncaster-2026 and lner-801-214-2025 show the dark glass running to a thin light
+            // line all round, and a rim standing 7 mm over the window here (the shoulder's near-flat top, where a few millimetres of height read as centimetres across) was the 7-10 cm
+            // grey frame head on that the B8 score measured. B9 builds the rim's top 1.2 cm under the window's (its rim climbs 3 mm past the stop, the window 3 mm under it). Still
+            // guarded: the front 45 % holds a rim vertex (a lost rim fails), the B9 test in train-at300-shell.test.ts bounds the inboard rim head on at 3 cm, and the overStop mutants.
+            assert.ok(rim.some((v) => along(v) < winFront + 0.45 * (winBack - winFront)), `${here}: no rim over the front of the window's top`);
+            assert.ok(top(rim) - top(win) >= -0.015, `${here}: the rim's top at the front is ${top(rim).toFixed(3)}, the window's ${top(win).toFixed(3)}`);
+          } else {
+            assert.ok(top(rim) - top(win) >= 0.007, `${here}: the rim's top at the front is ${top(rim).toFixed(3)}, the window's ${top(win).toFixed(3)}`);
+          }
         }
         // the grid follows the shoulder: no edge of the window climbs more than 9 cm (the rows: 5 rows of its 0.66 m sag 7 mm between them on the shoulder, 8 rows 3 mm), and an edge
         // along a row (climbing under 2 cm) runs no further than 15 cm behind the face-ward one (the columns: they crowd toward the front edge, the last two are the furthest apart)
@@ -5238,8 +5326,12 @@ test('lamps: the AT300 cluster stays on the flank and clear of the colour mask, 
             if (dy < 0.02) colStep = Math.max(colStep, Math.abs(along(a) - along(b)));
           }
         }
-        assert.ok(rowStep > 0.04 && rowStep <= 0.09, `${here}: the window's rows are up to ${rowStep.toFixed(3)} m apart`);
-        assert.ok(colStep > 0.05 && colStep <= 0.15, `${here}: the window's columns are up to ${colStep.toFixed(3)} m apart`);
+        // RE-PINNED for the LNER (round B8; was the same 0.04 to 0.09 and 0.05 to 0.15 as the others): its housing climbs further round the shoulder (lner-800-113-newcastle-2025: its inner
+        // edge on the yellow's), where a 4 cm chord of its edge dipped 3 mm under the skin, so its columns are spaced evenly at no more than `chord` (2.2 cm; 1.8 cm since round B9) and its rows fold onto the
+        // stop over shorter steps: each held over the 1.5 cm row, under the same 9 cm and 15 cm
+        const lnerGrid: boolean = cluster.chord !== undefined;
+        assert.ok(rowStep > (lnerGrid ? 0.015 : 0.04) && rowStep <= 0.09, `${here}: the window's rows are up to ${rowStep.toFixed(3)} m apart`);
+        assert.ok(colStep > (lnerGrid ? 0.015 : 0.05) && colStep <= 0.15, `${here}: the window's columns are up to ${colStep.toFixed(3)} m apart`);
         // both lenses lie inside the window: every vertex of a lens, seen from the side (distance behind the face, height), is in one of the window's triangles or within 5 mm of its edge
         // (the layers' lifts shift a vertex that much)
         const inWindow = (a: number, y: number): boolean =>
@@ -5274,7 +5366,17 @@ test('fronts: the AT300\'s colour mask: the LNER\'s yellow and the Hull Trains b
     assert.equal(mask?.colour, MASKS[kind], `${kind}: the mask's colour`);
     // CHANGED (the lines ran 0.44 to 0.6 m out, 0.74 at the glass's foot, on a face 1.3 m wide): the longer nose's face is 0.94 m across, so the lines run 0.4 m out at its foot and 0.46 at its
     // top, 0.72 at the windscreen's foot, written out here (the checks below read them from the spec); on the same numbers the Hull Trains' beak has its own test (train-livery.test.ts)
-    if (mask) assert.deepEqual(mask, { colour: MASKS[kind], hwFoot: 0.4, hwTop: 0.46, hwSill: 0.72 }, `${kind}: the mask's lines`);
+    // CHANGED (AT300 round: 0.4, 0.46 and 0.72 for both, on the old beak's 0.94 m face): the blunt nose's face is 1.23 m across; the LNER's yellow runs 0.44 m out at its foot, 0.56 at its
+    // top and 0.7 at the glass (lner-800-113-newcastle-2025: 0.96 m across at the chin, 1.35 m under the glass), the Hull Trains beak 0.5, 0.62 and 0.8 (hull-802-doncaster-2024: wider, between
+    // the lamp housings)
+    // RE-PINNED (round B7; the LNER's sill was 0.7, straight): its top now meets the windscreen frame's foot, flush as lner-800-113-newcastle-2025 and lner-801-214-2025 show it (LNER_MASK);
+    // (round B7b; B7 flared it, a cube) it widens straight to its last row's outer corners, an even width down from the screen's foot as that photograph shows it
+    // RE-PINNED (round B8; was straight, no `fill`): lner-800-113-newcastle-2025 keeps the yellow 0.94 of its top width at the lamps' middle and 0.88 at their foot (built straight, 0.84
+    // and 0.73), so the band widens as the 0.88th power of the way along it, as full as the B7b waist test allows
+    // RE-PINNED (round B14; was 0.44 and 0.56 m on the face, straight, and `fill` 0.88): both long-lens photographs (lner-800-113-newcastle-2025, lner-801-214-2025) keep the yellow
+    // 0.88 of its width under the frame 0.38 of the way down and 0.79 at 0.56, rounding off only near the chin (built straight 0.75 and 0.69): the edge on the face falls from 0.6 m as
+    // the 2.5th power of the way down to 0.42 m at the foot (`round`), and the band widens as the 0.55th power (train-at300-shell.test.ts, round B14)
+    if (mask) assert.deepEqual(mask, kind === 'hull5' ? { colour: HULL_BEAK, hwFoot: 0.5, hwTop: 0.62, hwSill: 0.8 } : { colour: LNER_YELLOW, hwFoot: 0.42, hwTop: 0.6, hwSill: 0.79, toCorner: true, fill: 0.55, round: 2.5 }, `${kind}: the mask's lines`);
     const family = bodySpec(layout.spec.family);
     const sec = carSection(family);
     const norm = normalised(sec);
@@ -5287,7 +5389,8 @@ test('fronts: the AT300\'s colour mask: the LNER\'s yellow and the Hull Trains b
       const tris = trisOfColour(mesh, mask.colour);
       const face = facePlane(car, true, false);
       const along = (v: THREE.Vector3): number => (car.cab === 'front' ? v.z - face : face - v.z);
-      const half = (y: number): number => mask.hwFoot + ((mask.hwTop - mask.hwFoot) * (y - r0.bottom)) / (r0.top - r0.bottom);
+      // (the mask's edge on the face: its two lines, or since round B14 the LNER's curve, train.ts maskLine)
+      const half = (y: number): number => maskLine(mask, (y - r0.bottom) / (r0.top - r0.bottom));
       const onFace = tris.filter((t) => t.every((v) => Math.abs(along(v)) < 1e-3));
       const area = onFace.reduce((a, t) => a + areaOf(t), 0);
       // CHANGED (the face was 1.3 m wide and held more than half a square metre of mask; the longer nose's face is 0.94 m across and 0.62 m tall): the mask is all that the two lines and
@@ -5380,16 +5483,19 @@ test('fronts: the Azuma\'s windscreen foot is a shallow smile and not an arch, t
         assert.ok(close.length > 0, `${kind} car ${car.index}: no glass within ${SPAN} m of x = ${x}`);
         return close.reduce((a, q) => (q.s < a.s ? q : a));
       };
+      // CHANGED (round B6, the corner read 0.55 -> 0.75 m out and the third 0.3 -> 0.4 m): the glass's foot is 0.77 m out at its corner, where it was 0.57 m (GlassSpec.screen, widened to
+      // lner-800-113-newcastle-2025's 0.58 of the body's width), and the sweep is the square of the fraction of the way out, so the two reads move out with the corner (by 1.35); the bands
+      // stay. Built: 0.075 m back 0.4 m out, 0.3 m back and 0.05 m up at 0.75 m (the photograph: the foot's middle about 0.05 m below its corners)
       const middle = foot(0);
-      const corner = foot(0.55);
+      const corner = foot(0.75);
       near(middle.s, (family.glass.screen as NonNullable<typeof family.glass.screen>).s0, 0.03, `${kind} car ${car.index}: the foot's middle stands off the spec's`);
       assert.ok(corner.s - middle.s > 0.15 && corner.s - middle.s < 0.4, `${kind} car ${car.index}: the foot's corner stands ${(corner.s - middle.s).toFixed(2)} m behind its middle, not the sweep's 0.15 to 0.4`);
       assert.ok(corner.y - middle.y > 0.03 && corner.y - middle.y < 0.15, `${kind} car ${car.index}: the foot's corner stands ${(corner.y - middle.y).toFixed(3)} m over its middle: a smile is 0.03 to 0.15 m, an arch is below 0`);
       // it curves, as the square of how far out: 0.3 m out it has swept back under 0.4 of what it has at 0.55 m (a straight sweep, a V, is about 0.55 of it), and 0.05 to 0.11 m (0.075 built:
       // the square of the distance; a cube is about 0.04, which leaves the middle of the foot a long flat and the corners a sudden hook)
-      const third = foot(0.3);
-      assert.ok(third.s - middle.s < 0.4 * (corner.s - middle.s), `${kind} car ${car.index}: the foot has swept back ${(third.s - middle.s).toFixed(3)} m 0.3 m out and ${(corner.s - middle.s).toFixed(3)} m 0.55 m out: not a curve`);
-      assert.ok(third.s - middle.s > 0.05 && third.s - middle.s < 0.11, `${kind} car ${car.index}: the foot has swept back ${(third.s - middle.s).toFixed(3)} m 0.3 m out, not 0.05 to 0.11`);
+      const third = foot(0.4);
+      assert.ok(third.s - middle.s < 0.4 * (corner.s - middle.s), `${kind} car ${car.index}: the foot has swept back ${(third.s - middle.s).toFixed(3)} m 0.4 m out and ${(corner.s - middle.s).toFixed(3)} m 0.75 m out: not a curve`);
+      assert.ok(third.s - middle.s > 0.05 && third.s - middle.s < 0.11, `${kind} car ${car.index}: the foot has swept back ${(third.s - middle.s).toFixed(3)} m 0.4 m out, not 0.05 to 0.11`);
       // the frame (the livery's black round the glass) follows it: its own foot stands 7 cm nearer the tip than the glass's (3 to 14 cm, across the whole foot)
       const frame = trisOfColour(detailOf(g, car), liveryFor(kind).glass).flat().filter((v) => Math.abs(v.x) <= 0.55 && along(v) > 0.3 && along(v) < 1.5).map((v) => ({ x: Math.abs(v.x), s: along(v) }));
       for (const x of [0.3, 0.5]) {
@@ -5443,6 +5549,8 @@ test('bogies: each family runs on its maker\'s bogie (Hitachi AT300, the Electro
           track: FIGURES.gauge.value,
           motor,
           diesel: family === 'adelante',
+          // CHANGED: the LNER's AT300 bogies carry the axle-box cable leads (train-parts.ts AT300_LEADS), a geometry of their own
+          leads: kind === 'lner5' || kind === 'lner9',
         };
         // the build shares one geometry per spec and maker, so a bogie of the right maker is the very geometry built here with that maker's style
         const actual = nearOf(named(named(g, `car-${car.index}`), `bogie-${car.index}-${k}`));

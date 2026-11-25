@@ -1,6 +1,6 @@
 {
  "schema": "mdbench-site/1",
- "generated": "2026-11-20T15:09:27Z",
+ "generated": "2026-11-23T11:52:17Z",
  "families": [
   {
    "id": "claude",
@@ -35,7 +35,7 @@
    "title": "Strange machine",
    "file": null,
    "status": "planned",
-   "description": "Coming soon: build an emulator for a CPU no model has seen, from its manual alone; then a surprise second phase."
+   "description": "Coming soon: scored rounds. A model designs, builds and programs its own one-instruction computer; the pilot results are on the Strange Machine page."
   }
  ],
  "seats": [

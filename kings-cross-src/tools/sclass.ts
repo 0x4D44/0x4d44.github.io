@@ -111,6 +111,23 @@ function isMissing(error: unknown): boolean {
   return typeof error === 'object' && error !== null && 'code' in error && error.code === 'ENOENT';
 }
 
+/** The report's provenance sources that a checkout may lack: package-lock.json is gitignored, so a fresh worktree has none. */
+export const OPTIONAL_SOURCES: readonly string[] = ['package-lock.json'];
+
+export type SourceFingerprint = { source: string; bytes: number; sha256: string } | { source: string; bytes: null; sha256: null; absent: true };
+
+/**
+ * The byte length and SHA-256 of one provenance source, named relative to the repository. An optional source that does
+ * not exist is recorded as absent (null bytes and digest) rather than failing the run; any other read error still throws.
+ */
+export async function sourceFingerprint(file: string, optional = false): Promise<SourceFingerprint> {
+  const source = path.relative(repoRoot, file);
+  let bytes: Buffer;
+  try { bytes = await readFile(file); }
+  catch (error) { if (optional && isMissing(error)) return { source, bytes: null, sha256: null, absent: true }; throw error; }
+  return { source, bytes: bytes.length, sha256: createHash('sha256').update(bytes).digest('hex') };
+}
+
 async function ensureOutputDirectory(outArg: string): Promise<string> {
   const physicalRepoRoot = await realpath(repoRoot);
   const scratchPath = path.join(physicalRepoRoot, '.scratch');
@@ -754,12 +771,10 @@ async function main(): Promise<void> {
     baselineFolds: baseline?.folds ?? null, before, after,
     semantics: 'Both head counts use this renderer, committed OSM overlay, selected anchors, and the same final available bytes. Route-only evidence never lights an aspect.' };
   const fingerprintPaths = [...recordingPaths, anchorsPath, overlayPath, trackPath,
-    ...['core/sclass.ts', 'core/graph.ts', 'core/geo.ts', 'core/station.ts', 'core/zones.ts', 'web/src/signals.ts', 'package-lock.json'].map(file => path.join(packageRoot, file)), fileURLToPath(import.meta.url),
+    ...['core/sclass.ts', 'core/graph.ts', 'core/geo.ts', 'core/station.ts', 'core/zones.ts', 'web/src/signals.ts', ...OPTIONAL_SOURCES].map(file => path.join(packageRoot, file)), fileURLToPath(import.meta.url),
     ...(args.baseline ? [await inputPath(args.baseline)] : [])];
-  const fingerprints = await Promise.all(fingerprintPaths.map(async file => {
-    const bytes = await readFile(file);
-    return { source: path.relative(repoRoot, file), bytes: bytes.length, sha256: createHash('sha256').update(bytes).digest('hex') };
-  }));
+  const optional = new Set(OPTIONAL_SOURCES.map(file => path.join(packageRoot, file)));
+  const fingerprints = await Promise.all(fingerprintPaths.map(file => sourceFingerprint(file, optional.has(file))));
   const provenance = { generatedAt, sources, fingerprints, node: process.version, validation: analysis.validation,
     baseline: baseline ? { validation: baseline.validation ?? 'halves', folds: baseline.folds, windows: baseline.windows,
       minimumSupport: baseline.minimumSupport, minimumPrecision: baseline.minimumPrecision } : null, folds: analysis.folds,

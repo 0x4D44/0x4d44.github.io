@@ -25,7 +25,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 export const IN = 0.0254; // metres per inch
 
-export type TextureName = 'brick' | 'brickRed' | 'stone' | 'slate' | 'asphalt' | 'platformEdge' | 'ballast' | 'roofGlass' | 'window' | 'windowArch' | 'floorSlab' | 'lining' | 'shedGlass';
+export type TextureName = 'brick' | 'brickRed' | 'stone' | 'slate' | 'asphalt' | 'platformTop' | 'platformEdge' | 'ballast' | 'roofGlass' | 'window' | 'windowArch' | 'floorSlab' | 'lining' | 'shedGlass';
 
 export interface TextureSpec {
   /** metres one tile covers: [along u, along v] */
@@ -38,6 +38,8 @@ export interface TextureSpec {
   average: number;
   /** tiles over a surface (true) or is drawn once over a quad (false) */
   repeat: boolean;
+  /** one tile across only (u clamped, v still repeating): its far edge must not sample its near one (the platform edge strip, round 15) */
+  clampU?: boolean;
   /** where the real-world dimensions come from; anything guessed says ASSUMED */
   source: string;
 }
@@ -65,10 +67,15 @@ export const TEXTURES: Readonly<Record<TextureName, TextureSpec>> = {
   // and the road are grey, never navy). The city's roads are the same texture at four-fifths of the light (cityMaterial 'asphalt').
   asphalt: { tile: [2, 2], px: [256, 256], density: [100, 160], average: 0x767571, repeat: true,
     source: 'ASSUMED: tarmac platform surface, grain drawn at 128 texels per metre; the tone about 0.17 reflectance' },
+  // Round 16 (rubric shed-interior B4, R-kx-shed-interior-e): the shed's platform tops, the asphalt with transverse slab joints at PLATFORM_JOINT (0.75 m,
+  // ASSUMED from shed-e's joints, about 0.6-0.9 m) across the platform (the tops' UVs are world x and -z, and the platforms run within a degree of the
+  // shed's axis). Its own texture: the asphalt is shared with the city's roads and Perth's bridge.
+  platformTop: { tile: [2, 2.25], px: [256, 288], density: [100, 160], average: 0x767571, repeat: true,
+    source: 'ASSUMED: the asphalt (paintAsphalt) with slab joints every 0.75 m along the platform (R-kx-shed-interior-e)' },
   // Platform edge, drawn across the strip (u, 0..1.6 m from the edge inboard) and tiled along it
-  // (v, 0.5 m). ASSUMED widths: coping 0.2 m, yellow tactile warning strip 0.2-0.6 m (the UK strip
+  // (v, 0.75 m since round 16, one slab joint a tile: 0.5 m before). ASSUMED widths: coping 0.2 m, yellow tactile warning strip 0.2-0.6 m (the UK strip
   // is about 0.4 m wide: DfT, Guidance on the use of tactile paving surfaces), white line 1.05-1.15 m.
-  platformEdge: { tile: [1.6, 0.5], px: [320, 100], density: [150, 250], average: 0x6f6a55, repeat: true,
+  platformEdge: { tile: [1.6, 0.75], px: [320, 150], density: [150, 250], average: 0x878479, repeat: true, clampU: true,
     source: 'tactile strip about 0.4 m wide (DfT tactile paving guidance); offsets ASSUMED' },
   ballast: { tile: [2, 2], px: [256, 256], density: [100, 160], average: 0x5f5b54, repeat: true,
     source: 'ASSUMED: crushed stone drawn at 128 texels per metre' },
@@ -279,13 +286,29 @@ function paintAsphalt(g: Ctx, w: number, h: number): void {
     const ph = 20 + r() * 60;
     wrapped(w, h, x, y, 100, (px, py) => g.fillRect(px, py, pw, ph));
   }
-  for (let i = 0; i < 5200; i++) {
+  for (let i = 0, n = Math.round((5200 * w * h) / (256 * 256)); i < n; i++) { // 5,200 on the 256 px tile: the same density on any other
     const x = r() * w;
     const y = r() * h;
     const v = r();
     g.fillStyle = v < 0.45 ? `rgba(24,23,22,${0.2 + r() * 0.25})` : `rgba(${160 + r() * 70},${160 + r() * 68},${156 + r() * 64},${0.12 + r() * 0.2})`;
     wrapped(w, h, x, y, 4, (px, py) => g.fillRect(px, py, 1 + (r() < 0.2 ? 1 : 0), 1 + (r() < 0.2 ? 1 : 0)));
   }
+}
+
+/** The slab joints' pitch along the shed's platforms, metres (ASSUMED, R-kx-shed-interior-e: about 0.6-0.9 m); the edge strip's tile along is the same. */
+export const PLATFORM_JOINT = 0.75;
+/** A transverse joint: a dark line one texel and a half wide across the whole tile at v (metres), and a faint lit lip beside it. */
+function joint(g: Ctx, w: number, y: number): void {
+  g.fillStyle = 'rgba(20,20,18,0.42)';
+  g.fillRect(0, y, w, 1.5);
+  g.fillStyle = 'rgba(255,255,250,0.06)';
+  g.fillRect(0, y + 1.5, w, 1);
+}
+
+function paintPlatformTop(g: Ctx, w: number, h: number): void {
+  paintAsphalt(g, w, h);
+  const pxm = h / TEXTURES.platformTop.tile[1];
+  for (let v = 0; v < TEXTURES.platformTop.tile[1] - 1e-6; v += PLATFORM_JOINT) joint(g, w, v * pxm);
 }
 
 function paintBallast(g: Ctx, w: number, h: number): void {
@@ -321,30 +344,44 @@ function paintPlatformEdge(g: Ctx, w: number, h: number): void {
     g.fillStyle = fill;
     g.fillRect(a * pxm, 0, (b - a) * pxm, h);
   };
-  band(0, 0.2, '#a6a6a0'); // coping stones
-  band(0.2, 0.6, '#d9b21a'); // yellow tactile strip
-  band(0.6, 1.6, '#4a4d52'); // tarmac
-  band(1.05, 1.15, '#e6e6de'); // white line
-  g.fillStyle = 'rgba(0,0,0,0.35)'; // the joint between coping and strip, and the coping's own joints
+  // round 14 (rubric shed-interior B4, R-kx-shed-interior-e and -a): pale coping, then surface-tone concrete, then the tactile strip set back 0.5-0.9 m from the
+  // edge in a muted ochre only a little warmer and lighter than the surface, then the surface again; no yellow line (shed-e shows none inward of the tactile). The
+  // surface bands are the asphalt texture's own base tone with its speckle at the same density and size on the ground, so the strip runs into the tops without a seam.
+  // (Round 13 had the tactile straight behind the coping and a yellow line behind it.) All widths and tones by eye: ASSUMED.
+  // round 15 (platform-round-2 score, section 5): the coping paler again, for the night (it read too dim in p8-south after dark), and the tactile warmed a
+  // little toward shed-e's yellow-khaki, so it separates from the surface at platform-eye range (both ASSUMED)
+  // round 16 (platform-round-3 score, section 5): paler again, so the coping reads as a pale line under the night lights (ASSUMED; no emissive: the atmosphere
+  // fades a built emissive after dark)
+  band(0, 0.2, '#d4d4ce'); // COPING_PAINT // coping stones, pale enough to read under the night lights
+  band(0.2, 1.6, '#767571'); // the platform surface (paintAsphalt's base tone)
+  band(0.5, 0.9, '#92886a'); // the tactile strip, a muted yellow-khaki
+  // the surface's speckle: paintAsphalt's 5,200 specks on a 2 m tile is 1,300 a square metre, each 1/128 m; here 200 px a metre
+  const speck = pxm / 128, area = (1.6 - 0.2) * TEXTURES.platformEdge.tile[1];
+  for (let i = 0, n = Math.round(1300 * area); i < n; i++) {
+    const x = (0.2 + r() * 1.4) * pxm, y = r() * h, v = r();
+    if (x >= 0.5 * pxm && x < 0.9 * pxm) continue; // the tactile's domes carry its texture
+    g.fillStyle = v < 0.45 ? `rgba(24,23,22,${0.2 + r() * 0.25})` : `rgba(${160 + r() * 70},${160 + r() * 68},${156 + r() * 64},${0.12 + r() * 0.2})`;
+    g.fillRect(x, y, speck * (1 + (r() < 0.2 ? 1 : 0)), speck * (1 + (r() < 0.2 ? 1 : 0)));
+  }
+  g.fillStyle = 'rgba(0,0,0,0.35)'; // the joint between coping and surface, the tactile slabs' edges, and the coping's own joints
   g.fillRect(0.2 * pxm - 1, 0, 2, h);
+  g.fillRect(0.5 * pxm - 0.5, 0, 1, h);
+  g.fillRect(0.9 * pxm - 0.5, 0, 1, h);
   for (let y = 0; y < h; y += 0.25 * pxm) g.fillRect(0, y, 0.2 * pxm, 1.5);
-  // truncated domes on a 0.06 m pitch, two flat rows of dots per 0.12 m, drawn lit on top and shaded under
+  // truncated domes on a 0.0625 m pitch, drawn lit on top and shaded under, a shade off the strip's own tone
   const pitch = 0.0625 * pxm;
-  for (let ix = 0; ix < 6; ix++) {
-    for (let iy = 0; iy < 8; iy++) {
-      const cx = 0.23 * pxm + (ix + 0.5) * pitch + ((iy % 2) * pitch) / 2;
+  for (let ix = 0; ix < 7; ix++) {
+    for (let iy = 0; iy < Math.round(TEXTURES.platformEdge.tile[1] / 0.0625); iy++) {
+      const cx = 0.52 * pxm + (ix + 0.5) * pitch + ((iy % 2) * pitch) / 2;
       const cy = (iy + 0.5) * pitch;
-      if (cx > 0.58 * pxm) continue;
-      g.fillStyle = 'rgba(120,90,0,0.55)';
+      if (cx > 0.88 * pxm) continue;
+      g.fillStyle = 'rgba(60,52,36,0.4)';
       g.beginPath(); g.arc(cx + 0.7, cy + 0.9, 2.6, 0, Math.PI * 2); g.fill();
-      g.fillStyle = '#f2cf3c';
+      g.fillStyle = '#9e9476';
       g.beginPath(); g.arc(cx, cy, 2.3, 0, Math.PI * 2); g.fill();
     }
   }
-  for (let i = 0; i < 500; i++) { // wear
-    g.fillStyle = `rgba(${r() < 0.5 ? '0,0,0' : '255,255,255'},${0.05 + r() * 0.1})`;
-    g.fillRect(r() * w, r() * h, 1.5, 1.5);
-  }
+  joint(g, w, 0); // round 16: the slab joint, once a tile (PLATFORM_JOINT), through the coping, the surface and the tactile
 }
 
 function paintRoofGlass(g: Ctx, w: number, h: number): void {
@@ -518,6 +555,7 @@ const PAINTERS: Readonly<Record<TextureName, (g: Ctx, w: number, h: number) => v
   stone: paintStone,
   slate: paintSlate,
   asphalt: paintAsphalt,
+  platformTop: paintPlatformTop,
   platformEdge: paintPlatformEdge,
   ballast: paintBallast,
   roofGlass: paintRoofGlass,
@@ -550,6 +588,7 @@ export function texture(name: TextureName): THREE.CanvasTexture | null {
       t.anisotropy = 8; // three clamps this to what the GPU offers
       if (spec.repeat) {
         t.wrapS = t.wrapT = THREE.RepeatWrapping;
+        if (spec.clampU) t.wrapS = THREE.ClampToEdgeWrapping; // round 15: the strip's inner edge no longer filters in a hairline of the coping
         t.repeat.set(1 / spec.tile[0], 1 / spec.tile[1]);
       } else {
         t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping;
@@ -562,10 +601,10 @@ export function texture(name: TextureName): THREE.CanvasTexture | null {
 }
 
 export type MaterialName =
-  | 'brick' | 'stone' | 'slate' | 'asphalt' | 'platformEdge' | 'ballast'
+  | 'brick' | 'stone' | 'slate' | 'asphalt' | 'platformTop' | 'platformEdge' | 'ballast'
   | 'roofGlass' | 'glass' | 'window' | 'windowArch'
   | 'concrete' | 'steel' | 'whiteSteel' | 'ribPaint' | 'lining' | 'valleyLining' | 'shedGlass' | 'panel' | 'concourseFloor'
-  | 'brickRed' | 'slateBothSides' | 'sash' | 'sashArch' | 'pane' | 'platformEdgeStrip' | 'brickFoot' | 'stoneFoot';
+  | 'brickRed' | 'slateBothSides' | 'sash' | 'sashArch' | 'pane' | 'platformEdgeStrip' | 'platformEdgeStripShed' | 'brickFoot' | 'stoneFoot' | 'stoneDressing' | 'stoneImpost' | 'arcadeGlass' | 'arcadeFrame';
 
 /**
  * A wall material with the contact shade at its foot, the define lighting.ts `FOOT_SHADE` names (not imported: lighting.ts is the page's chunk, this its own; a test holds the two to one name).
@@ -595,6 +634,96 @@ const FRONT_FLOOD = { brick: [0.25, 14, 0.35], stone: [0.14, 14, 0.35] } as cons
 function tiled(name: TextureName, extra: THREE.MeshLambertMaterialParameters = {}): THREE.MeshLambertMaterial {
   const t = texture(name);
   return new THREE.MeshLambertMaterial({ map: t, color: t ? 0xffffff : TEXTURES[name].average, ...extra });
+}
+
+/**
+ * The shed's pale stone dressings (shed.ts: the band and the corbels of the spine wall, the east arcade and the west arcade, the north pier's coping). The scorer of
+ * shed-arcade-round-4 (B2): the corbels and the band read as the front's dull brown stone, where R-kx-shed-interior-c and -a show them near-white. Sampled in memory
+ * (2026-11-24, the median of each patch, sRGB): shed-c-arcade-2013.jpg (lamplit, 1600 px) the band at x 1460-1600, y 375-395 (186, 180, 161) and at x 0-90, y 510-525
+ * (171, 162, 143); shed-a-north-from-footbridge-2019.jpg (daylit) the band at x 1420-1480, y 505-520 (205, 200, 176) and a bracket at x 1235-1265, y 505-520
+ * (215, 207, 183). Their mean, (194, 187, 166), is the stone's average colour here: the front's stone texture tinted to it (linear, channel by channel), or that
+ * colour itself where there is no texture (Node). The front's contact shade and floodlight (FRONT_FOOT, FRONT_FLOOD.stone) as `stoneFoot`, so it takes the night
+ * as the rest of the shed's stone does, only lighter.
+ */
+export const STONE_DRESSING = 0xc2bba6;
+/** Round S2 (shed-round-1 score, B3): the arcades' imposts, a paler cream than the dressings so they read in the shed's shade as R-b's do (ASSUMED). */
+export const STONE_IMPOST = 0xe6dcc0;
+/**
+ * The glass in the shed's west arcade (shed.ts buildWestArcade). The scorer of shed-arcade-round-5 (B3): the arches rendered as near-black holes (the library's dark
+ * `pane`, mean about (4, 6, 10) at platform eye), where R-kx-shed-interior-c (shed-c-arcade-2013.jpg) shows the lower arches glazed: grey glass by day with some
+ * reflection, lit rooms behind it at dusk. `color` a pale grey-blue glass and `sheen` an emissive stand-in for the bright vault the glass mirrors by day (as the
+ * linings' emissive stands in for the light through the glazing; the atmosphere scales it down after dark): both ASSUMED, chosen to read grey, not black, under the
+ * shed's light. After dark each arch is a window of its own (`litPane`, its number in its UVs), lit warm or cool at an hour of its own; `share` 0.8 of them lit
+ * (shed-c at dusk shows every lower arch in view lit: ASSUMED a few dark).
+ * Re-tuned for shed-arcade-round-6 (the scorer, B3 and A6): the pale glass rendered a flat (138, 150, 160) by day, brighter than the shaded brick (80, 65, 40), and
+ * the sun's shadows stopped at it: the sheen, unshadowed light, was a third of its day light. The references show the openings darker than the brick by day:
+ * sampled in memory (sRGB, rough medians): shed-a-north-from-footbridge-2019.jpg the glazed openings of the far arcade about (70, 76, 80) against its brick
+ * about (120, 100, 70); kx-front/front-d the arcade openings about (55, 60, 62) against sunlit brick about (150, 120, 85). So `color` a dark grey glass
+ * (luminance about 82, sRGB bytes) and `sheen` a faint reflection (about 17), so the sun's shadow reads across it as it does across the brick (lighting.ts:
+ * it takes the shadow, being lit and not transparent). Both ASSUMED within those samples.
+ * `night`, since round 7a (the scorer: after dark an unlit arch rendered (2, 3, 6), a black hole with its bars lost): the sheen is a daylight stand-in the
+ * atmosphere dims to a fifth of itself after dark, and the dark glass has nothing else, so the unlit panes went black. After dark (`windowNight`) the glass's
+ * own light is held at least at `night`, a floor of reflected lamplight (per channel, so a lit pane, far brighter, is as it was). Chosen for about 15-25 of
+ * luminance on screen: BASE's night capture rendered an emissive of about 0.019 (linear) as about (53, 59, 62), a gain of about 1.5-2 in linear light, so
+ * this (about 0.005 linear) at about 18-26. ASSUMED.
+ */
+export const ARCADE_GLASS = { color: 0x4c545a, sheen: 0x0e1216, share: 0.8, night: 0x0e1114 } as const;
+/**
+ * The frames, transom, mullions and fanlight bars of the west arcade's glazing (shed.ts WEST_GLAZING). Round 7a's scorer: in the shed's dark rib paint they
+ * peaked at L 44 against the glass at 33 by day and vanished at night; R-kx-shed-interior-c shows the lower windows' bars pale, read clearly through the glass.
+ * Sampled in memory (shed-c-arcade-2013.jpg, 1600 px, lamplit, rough median of the bars of the lower arches at x 1215-1300 and 1380-1445, y 490-550):
+ * about (200, 198, 186), a pale painted cream-grey: `color` that. `night`: after dark (`windowNight`) their light is the lamps' and the lit rooms' on a pale
+ * paint, held at least at this (about 44 of luminance, about 2.7 times the glass's floor). ASSUMED.
+ */
+export const ARCADE_FRAME = { color: 0xc8c6ba, night: 0x2e2c28 } as const;
+/** `m`, after dark (`windowNight`), its own light at least `floor` (sRGB hex, per channel), where its UVs are a window's (`only`: v under -0.5) or everywhere. `key` names its program. */
+function nightFloor<T extends THREE.MeshLambertMaterial>(m: T, floor: number, key: string, only: boolean): T {
+  const before = m.onBeforeCompile.bind(m);
+  const c = new THREE.Color(floor);
+  const glsl = `vec3( ${glslFloat(c.r)}, ${glslFloat(c.g)}, ${glslFloat(c.b)} )`;
+  m.onBeforeCompile = (shader, renderer) => {
+    before(shader, renderer);
+    shader.uniforms.uWinNight = windowNight;
+    if (!only) shader.fragmentShader = shader.fragmentShader.replace('#include <common>', '#include <common>\nuniform float uWinNight;');
+    shader.fragmentShader = shader.fragmentShader.replace('#include <emissivemap_fragment>',
+      `#include <emissivemap_fragment>\n${only ? 'if ( vWinUv.y < -0.5 ) ' : ''}totalEmissiveRadiance = max( totalEmissiveRadiance, ${glsl} * uWinNight );`);
+  };
+  m.customProgramCacheKey = () => key;
+  return m;
+}
+/**
+ * Round 17 (platform-round-4 score, section 5: inside the shed after dark the coping does not read; its paleness by day does not carry into the night): after
+ * dark (`windowNight`) the edge strip's coping band (u under `band` m of the strip's `width`) holds its own light at least `floor`, about lit concrete's
+ * (sRGB per channel, ASSUMED: ARCADE_FRAME.night's order), so it reads as a pale line, not a glow strip. By day uWinNight is 0: nothing changes.
+ */
+// the floor raised in round 17's second pass (the lead: at 0x2c2c29 the edge did not show in night p8-south): about 4 times it, aiming at 1.5-2 times the night-lit
+// surface's luminance beside it (not measured here: no render)
+export const COPING_NIGHT = { floor: 0x5a5a55, band: 0.2 } as const;
+/** The coping band's paint (paintPlatformEdge's '#d4d4ce'; kx-platform-round18.test.ts holds the two together), sRGB: the texel the night floor is measured against. */
+export const COPING_PAINT = 0xd4d4ce;
+function copingNight<T extends THREE.MeshLambertMaterial>(m: T): T {
+  const before = m.onBeforeCompile.bind(m), key = m.customProgramCacheKey();
+  const c = new THREE.Color(COPING_NIGHT.floor), u = COPING_NIGHT.band / TEXTURES.platformEdge.tile[0];
+  // round 18 (platform-round-5, section 3): the floor is the coping's texel over the coping's paint (COPING_PAINT), so its joints and grain still read in it, and it is
+  // scaled by the strip's `kxCover` attribute (furniture.ts underShedRoof: 1 under the roof, 0 outside it; a geometry without one reads 0)
+  const p = new THREE.Color(COPING_PAINT);
+  m.onBeforeCompile = (shader, renderer) => {
+    before(shader, renderer);
+    shader.uniforms.uWinNight = windowNight;
+    shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nattribute float kxCover;\nvarying float vKxCover;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvKxCover = kxCover;');
+    shader.fragmentShader = shader.fragmentShader.replace('#include <common>', '#include <common>\nuniform float uWinNight;').replace('#include <common>', '#include <common>\nvarying float vKxCover;').replace('#include <emissivemap_fragment>',
+      `#include <emissivemap_fragment>\n#ifdef USE_MAP\nif ( vMapUv.x < ${glslFloat(u)} ) totalEmissiveRadiance = max( totalEmissiveRadiance, vec3( ${glslFloat(c.r)}, ${glslFloat(c.g)}, ${glslFloat(c.b)} ) * diffuseColor.rgb / vec3( ${glslFloat(p.r)}, ${glslFloat(p.g)}, ${glslFloat(p.b)} ) * vKxCover * uWinNight );\n#endif`);
+  };
+  m.customProgramCacheKey = () => `${key}+coping-night`;
+  return m;
+}
+function stoneDressing(tone = STONE_DRESSING): THREE.MeshLambertMaterial {
+  const m = tiled('stone');
+  if (m.map) {
+    const want = new THREE.Color(tone), avg = new THREE.Color(TEXTURES.stone.average);
+    m.color.setRGB(want.r / avg.r, want.g / avg.g, want.b / avg.b);
+  } else m.color.set(tone);
+  return floodLit(footShaded(m, FRONT_FOOT), ...FRONT_FLOOD.stone);
 }
 
 /**
@@ -640,8 +769,12 @@ export const officeNightFog = { value: 0 };
 // is needed, and retain both materials across lighting and weather rescans.
 const buildingNightMaterials = new WeakMap<THREE.Mesh, { day: THREE.Material; night: THREE.Material }>();
 
-export function withBuildingNightMaterial<M extends THREE.Material>(mesh: THREE.Mesh<THREE.BufferGeometry, M>, night: M): typeof mesh {
-  buildingNightMaterials.set(mesh, { day: mesh.material, night });
+/**
+ * A mesh's day and night materials. Round 25: either may be an array, one per geometry group (shed-front's faces and returns); it is stored and read back
+ * as the mesh's own `material` is, so a reader that may meet such a mesh takes `[variants.night].flat()` (lighting.ts, atmosphere.ts and kx-night-fog.ts do).
+ */
+export function withBuildingNightMaterial<M extends THREE.Material | THREE.Material[]>(mesh: THREE.Mesh<THREE.BufferGeometry, M>, night: M): typeof mesh {
+  buildingNightMaterials.set(mesh, { day: mesh.material as unknown as THREE.Material, night: night as unknown as THREE.Material });
   return mesh;
 }
 
@@ -1132,10 +1265,10 @@ export function paneUv(id: number, across: number, up: number): [number, number]
  * (`PANE_UV`: v under zero), it takes its night light as the decal windows do (`winDecal`: warm or a little cool, its own hour of the dusk, some of a building's windows dark), a window's number the
  * only thing its light is read from. Where the pane's UV is a band's, a wall's or a balcony's, nothing changes. `m` is the material and is returned.
  */
-export function litPane<T extends THREE.MeshLambertMaterial>(m: T, midland: boolean | 'amber' = false): T {
+export function litPane<T extends THREE.MeshLambertMaterial>(m: T, midland: boolean | 'amber' = false, share: number = PANE_UV.share): T {
   const light = midland
     ? 'midlandVisiblePaneLight( vWinUv, wSpan, uWinNight )'
-    : `winPaneLit( vWinUv, wSpan, uWinNight, ${glslFloat(PANE_UV.share)} )`;
+    : `winPaneLit( vWinUv, wSpan, uWinNight, ${glslFloat(share)} )`;
   m.defines = { ...m.defines, WIN_GAIN: glslFloat(NIGHT_GAIN.decal) };
   m.onBeforeCompile = (shader) => {
     shader.uniforms.uWinNight = windowNight;
@@ -1146,7 +1279,7 @@ export function litPane<T extends THREE.MeshLambertMaterial>(m: T, midland: bool
       .replace('#include <common>', `#include <common>\nvarying vec2 vWinUv;\nuniform float uWinNight;${WIN_NIGHT_GLSL}${midland ? MIDLAND_PANE_GLSL + midlandVisiblePaneGlsl(midland === 'amber') : ''}`)
       .replace('#include <map_fragment>', `#include <map_fragment>\nvec2 wSpan = fwidth( vec2( vWinUv.x / ${glslFloat(1 - 2 * PANE_UV.margin)}, vWinUv.y ) );\nif ( vWinUv.y < -0.5 && uWinNight > 0.003 ) totalEmissiveRadiance += WIN_GAIN * ${light};`);
   };
-  m.customProgramCacheKey = () => midland === 'amber' ? 'midlandLitPane-amber' : midland ? 'midlandLitPane' : 'litPane';
+  m.customProgramCacheKey = () => midland === 'amber' ? 'midlandLitPane-amber' : midland ? 'midlandLitPane' : share === PANE_UV.share ? 'litPane' : `litPane-${glslFloat(share)}`;
   return m;
 }
 
@@ -1260,6 +1393,29 @@ export const GLAZING = { spacing: 1.6, tier: 5.334, springing: 5.6388 } as const
  * with it, so `gl_FrontFacing` is true there too), so that pass is left out, and `gl_FrontFacing` keeps a single-pass pane to its front face. The front's glass
  * looks out south as built; the gables' (shed.ts `facingNorth`) are turned to look out north. From inside a window shows what is outside it, and no mirror.
  */
+/**
+ * Round F11b (front A6): how far the glint's pane-to-pane streaks are flattened (`uGlintEven`, 0 as round six made them, 1 every pane the same): set for the
+ * north gables' own draw from outside by day (shed.ts gableGlassView), where dark glass turned the streaks into a mosaic of near-white and near-black
+ * panes. Flattened, each pane takes GLINT_EVEN of the streak term (about the field's mean), so only the view angle's soft gradient is left.
+ */
+export const GLINT_EVEN = 0.3;
+export const glintEven = { value: 0 };
+/**
+ * Round F12 (front-round-11b score, A6: head-on the outside gables read 30-40% too light, lighter than at a grazing view, and every pane the same): where
+ * glintEven is set (the north gables from outside by day) the glass's colour out is GABLE_SHEET: a dark blue-grey `tone` (sRGB, after the tone map; front-d's
+ * shaded screen reads about 61-65, 79-97, 89-125), each pane offset by up to `pane` and the screen by one broad soft band of up to `broad` (round F13: 9% and
+ * 8%), taking the sky's haze by a Schlick Fresnel term (`f0` head-on, rising to 1 at grazing). glintEven 0 leaves the colour exactly as before.
+ */
+// round F13 (front-round-12 score, A6): `pane` 0.04 -> 0.09 and `broad` 0.04 -> 0.08, the broad term now a soft diagonal band (`band`: its x and y wavenumbers,
+// per metre, a period of about 30 m across the panes, as front-d2's cloud); `bar`: a light secondary glazing bar halfway between each pair of mullions
+// (GLAZING.spacing apart), `width` m across its soft core and darkening the sheet by `shade`, on this outside sheet only, so twice front-d's tall narrow panes
+// read from outside and none from inside.
+// round F13b (front-round-13 score, A6): `pane` 0.09 -> 0.12, and the band a cloud: the product of two soft waves (`band`: x and y wavenumbers of each, per
+// metre), patches about 10 m (six panes) across, as front-d2's sky across several panes; `thicken`: at a view off the normal the sheet lets through less
+// of the room, its transmission cut by up to that share as the view's cosine falls from `straight` to `aslant`, so 0.93 head-on reaches about 0.97 aslant
+// (gable-oblique's ribs to faint shadows) and stays 0.93 head-on.
+export const GABLE_THICKEN = { thicken: 0.57, straight: 0.98, aslant: 0.8 } as const;
+export const GABLE_SHEET = { tone: [0x35 / 255, 0x42 / 255, 0x4e / 255], pane: 0.12, broad: 0.08, band: [0.3, 0.12, -0.12, 0.3], f0: 0.05, haze: 0.3, bar: { width: 0.05, soft: 0.06, shade: 0.3 } } as const;
 const SKY_GLINT_GLSL = /* glsl */`
 #if defined( USE_FOG ) && ! defined( FLIP_SIDED )
 vec2 gm = ( floor( vec2( ( vGlassPos.x - uPaneX ) / ${GLAZING.spacing}, ( vGlassPos.y - ${GLAZING.springing} ) / ${GLAZING.tier} ) ) + 0.5 ) * vec2( ${GLAZING.spacing}, ${GLAZING.tier} ) + vec2( uPaneX, ${GLAZING.springing} );
@@ -1267,9 +1423,15 @@ float gp = dot( gm, vec2( 0.9, 0.5 ) );
 float gb = sin( gp ) + 0.8 * sin( 0.37 * gp + 1.3 ) + 0.5 * sin( 2.3 * gp + 4.0 ) + 0.35 * sin( dot( gm, vec2( -0.45, 0.8 ) ) + 0.7 );
 float gs = gl_FrontFacing ? smoothstep( 0.55, 0.8, fogColor.g ) : 0.0;
 float gc = smoothstep( 0.04, 0.25, fogColor.b - fogColor.r );
-float gf = min( ( 0.45 + 0.4 * ( 1.0 - abs( dot( normal, normalize( vViewPosition ) ) ) ) ) * mix( 1.0, 0.075 + 0.875 * smoothstep( -0.6, 0.9, gb ), gc ), 0.8 ) * gs;
+float gf = min( ( 0.45 + 0.4 * ( 1.0 - abs( dot( normal, normalize( vViewPosition ) ) ) ) ) * mix( 1.0, 0.075 + 0.875 * mix( smoothstep( -0.6, 0.9, gb ), ${GLINT_EVEN}, uGlintEven ), gc ), 0.8 ) * gs;
 gl_FragColor.rgb = mix( gl_FragColor.rgb * ( 1.0 - 0.45 * gs ), mix( fogColor, vec3( 1.0 ), 0.7 * gs ), gf );
 gl_FragColor.a = mix( gl_FragColor.a, 1.0, 0.8 * gf );
+vec3 gt = vec3( ${GABLE_SHEET.tone.map(glslFloat).join(', ')} ) * ( 1.0 + ${glslFloat(GABLE_SHEET.pane)} * ( 2.0 * fract( sin( dot( gm, vec2( 12.9898, 78.233 ) ) ) * 43758.5453 ) - 1.0 ) + ${glslFloat(GABLE_SHEET.broad)} * sin( ${glslFloat(GABLE_SHEET.band[0])} * ( vGlassPos.x - uPaneX ) + ${glslFloat(GABLE_SHEET.band[1])} * vGlassPos.y + 0.8 ) * sin( ${glslFloat(GABLE_SHEET.band[2])} * ( vGlassPos.x - uPaneX ) + ${glslFloat(GABLE_SHEET.band[3])} * vGlassPos.y + 1.7 ) );
+float gq = abs( fract( ( vGlassPos.x - uPaneX ) / ${glslFloat(GLAZING.spacing)} ) - 0.5 ) * ${glslFloat(GLAZING.spacing)};
+gt *= 1.0 - ${glslFloat(GABLE_SHEET.bar.shade)} * ( 1.0 - smoothstep( ${glslFloat(GABLE_SHEET.bar.width / 2)}, ${glslFloat(GABLE_SHEET.bar.width / 2 + GABLE_SHEET.bar.soft)}, gq ) );
+float gr = ( ${glslFloat(GABLE_SHEET.f0)} + ${glslFloat(1 - GABLE_SHEET.f0)} * pow( 1.0 - abs( dot( normal, normalize( vViewPosition ) ) ), 5.0 ) ) * gs;
+gl_FragColor.rgb = mix( gl_FragColor.rgb, mix( gt, mix( fogColor, vec3( 1.0 ), ${glslFloat(GABLE_SHEET.haze)} ), gr ), uGlintEven );
+gl_FragColor.a = mix( gl_FragColor.a, gl_FragColor.a + ( 1.0 - gl_FragColor.a ) * ${glslFloat(GABLE_THICKEN.thicken)} * ( 1.0 - smoothstep( ${glslFloat(GABLE_THICKEN.aslant)}, ${glslFloat(GABLE_THICKEN.straight)}, abs( dot( normal, normalize( vViewPosition ) ) ) ) ), uGlintEven );
 #endif
 `;
 
@@ -1284,11 +1446,12 @@ const paneX = { value: 0 };
 export function skyGlint<T extends THREE.MeshPhongMaterial>(m: T): T {
   m.onBeforeCompile = (shader) => {
     shader.uniforms.uPaneX = paneX;
+    shader.uniforms.uGlintEven = glintEven;
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', '#include <common>\nvarying vec2 vGlassPos;')
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvGlassPos = position.xy;');
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nvarying vec2 vGlassPos;\nuniform float uPaneX;')
+      .replace('#include <common>', '#include <common>\nvarying vec2 vGlassPos;\nuniform float uPaneX;\nuniform float uGlintEven;')
       .replace('#include <fog_fragment>', `${SKY_GLINT_GLSL}#include <fog_fragment>`);
   };
   m.onBeforeRender = (_renderer, _scene, _camera, geometry) => {
@@ -1312,6 +1475,7 @@ const makers: Readonly<Record<MaterialName, () => THREE.Material>> = {
   stone: () => tiled('stone'),
   slate: () => tiled('slate'),
   asphalt: () => tiled('asphalt'),
+  platformTop: () => tiled('platformTop'),
   platformEdge: () => tiled('platformEdge'),
   ballast: () => tiled('ballast'),
   // The glazing of the shed roof: tinted, see-through, with astragal bars. Never writes depth, so
@@ -1353,7 +1517,8 @@ const makers: Readonly<Record<MaterialName, () => THREE.Material>> = {
   pane: () => nearer(new THREE.MeshLambertMaterial({ color: 0x232c38 })),
   // The coping / tactile / white-line strip laid on a platform's surface: the platform-edge texture with the
   // polygon offset that keeps it clear of the surface at any range.
-  platformEdgeStrip: () => nearer(tiled('platformEdge')),
+  platformEdgeStrip: () => nearer(tiled('platformEdge')), // round 18: Waverley's and Perth's, no night floor again (round 17 lit their copings too)
+  platformEdgeStripShed: () => copingNight(nearer(tiled('platformEdge'))), // the King's Cross strips: the floor under the roof (furniture.ts underShedRoof)
   // The King's Cross front's brick and stone (shed.ts: the front wall, its plinth and courses, the clock tower, the shed's end walls) with the contact shade at the foot of a wall (round five, E2):
   // these walls stand on the ground and their UVs are in metres from it. The Western Range's walls keep the plain ones, the colour it was fitted to.
   // Round six (the E2 scorer: "the south-front foot shade is barely visible"): a deeper long fall-off than the landmarks' (FRONT_FOOT): the piers' feet, the plinth and the arcade's wall are a clear darker
@@ -1361,6 +1526,13 @@ const makers: Readonly<Record<MaterialName, () => THREE.Material>> = {
   // Round seven (night lighting): the front is floodlit from the foot, the brick's gold and the ribs' stone brighter at the lamps (night-a-kx-square-2015-skinner.jpg, see lighting.ts `FLOOD`)
   brickFoot: () => floodLit(footShaded(tiled('brick'), FRONT_FOOT), ...FRONT_FLOOD.brick),
   stoneFoot: () => floodLit(footShaded(tiled('stone'), FRONT_FOOT), ...FRONT_FLOOD.stone),
+  // the shed's pale dressings: see STONE_DRESSING
+  stoneDressing,
+  stoneImpost: () => stoneDressing(STONE_IMPOST),
+  // the glazing of the shed's west arcade: see ARCADE_GLASS
+  arcadeGlass: () => nightFloor(litPane(nearer(new THREE.MeshLambertMaterial({ color: ARCADE_GLASS.color, emissive: ARCADE_GLASS.sheen })), false, ARCADE_GLASS.share), ARCADE_GLASS.night, 'arcadeGlass', true),
+  // the glazing's frames and bars: see ARCADE_FRAME
+  arcadeFrame: () => nightFloor(new THREE.MeshLambertMaterial({ color: ARCADE_FRAME.color }), ARCADE_FRAME.night, 'arcadeFrame', false),
 };
 
 const materials = new Map<MaterialName, THREE.Material>();

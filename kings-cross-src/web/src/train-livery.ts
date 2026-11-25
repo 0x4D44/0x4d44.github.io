@@ -132,6 +132,8 @@ export const HULL_DOOR = 0xc41e46;
  * white below, which the round 3 score called inverted; the photographs show white-silver all round it, over a third of the side white above the windows' band.
  */
 export const LNER_BAND: [number, number] = [1.85, 2.76];
+/** The LNER cheek's top edge, metres up the nose's flank: a little over the lamp unit's foot (train.ts LNER_CLUSTER, 1.55 m less its 3 mm rim), so the red meets the unit with no white between. */
+export const LNER_CHEEK_TOP = 1.57;
 
 /**
  * The Azuma's side. lner-801-214-2025 (a 5-car 801 at Doncaster-area track; a close crop of its first car) and lner-800-doncaster-2026: white-silver car sides, one
@@ -156,8 +158,13 @@ function lnerShapes(nose: number): Shape[] {
   const crescent = between(bottom, under);
   // the cheek: the red strip beside the face, from the nose's foot up under the lamp window, its back edge rounded (a smooth curve through the readings, s as a function of y:
   // drawn through the same five points as a polygon it showed its facets on the nose's flank, a stair where a photograph has one curve)
-  const cheekBack = smoothCurve([[TEX_Y0, 0.5], [0.75, 0.8], [1.05, 0.92], [1.3, 0.85], [1.5, 0.7]], 32).map(([y, s]): [number, number] => [s, y]);
-  const cheek: [number, number][] = [[0, TEX_Y0], ...cheekBack, [0, 1.5]];
+  // CHANGED (round B10; its top knot was 0.7 m back): the wing's front edge runs from (0.7, 1.42) up to (0.9, 1.95), 0.71 to 0.73 m back between 1.46 and 1.5 m up, so a back edge
+  // ending 0.7 m back at 1.5 m left the body's cream between the two, a speck about 3 by 4 px under the lamp unit's lower outboard corner in every nose 3/4 view (the B9b score,
+  // nose-34-right about x 735, y 533 of the 1600 by 1000 frame: (0.72, 1.48) projects there). Ending 0.74 m back the curve stays behind that edge, and the red meets the wing.
+  const cheekBack = smoothCurve([[TEX_Y0, 0.5], [0.75, 0.8], [1.05, 0.92], [1.3, 0.85], [1.5, 0.74]], 32).map(([y, s]): [number, number] => [s, y]);
+  // CHANGED (round B9b; its top was level at 1.5 m): the red runs on up under the lamp unit to LNER_CHEEK_TOP, and behind the unit's back edge up to 1.68 m where it meets the wing (the corner at 1.68 m lies under the unit), so no white shows between the
+  // unit's foot (1.55 m since round B9) and the red. lner-801-214-2025 shows the near unit's lower corner meeting red, with no pale tab; the B9 score saw a white wedge there in every 3/4 view.
+  const cheek: [number, number][] = [[0, TEX_Y0], ...cheekBack, [0.9, 1.5], [0.9, 1.68], [0.62, 1.68], [0.5, LNER_CHEEK_TOP], [0, LNER_CHEEK_TOP]];
   return [
     // the dark underframe, from just behind the crew door (the nose's own lower flank is white-silver)
     { colour: 0x2d3036, pts: rect(nose + 0.2, TEX_SPAN, TEX_Y0, 1.0) },
@@ -376,7 +383,10 @@ const LNER: TrainLivery = asTrainLivery(LIVERIES.lner, {
   surround: null,
   foot: 0x2d3036,
   noseTop: 0x1a1c21,
-  noseTopFrom: 2.5,
+  // the glass's top edge (glass.screen.s1; CHANGED AT300 round with the blunt nose: was 2.5 m)
+  noseTopFrom: 2.6,
+  // no `doorBand`: every passenger door is white and breaks the red band (round B4; lner-801-214-2025, lner-800-doncaster-2026 and lner-800-113-newcastle-2025 show white leaves
+  // in grey frames at every door, the band stopping at each; e76b7348 had run it across every leaf)
   // small red lettering on the white lower body, between the doors (photographs show the Azuma name and the LNER mark small, at the car ends)
   decals: (c) => [{ text: 'LNER', colour: LNER_RED, rect: [bay(c) - 0.5 * 2.722 * 0.26, 1.12, 0, 1.38] }],
 });
@@ -480,7 +490,7 @@ const GC: TrainLivery = asTrainLivery(LIVERIES.grandcentral, {
 
 // Lumo: livery.ts's row unchanged, and over the windscreen a dark grey dome (LUMO-03-Lumo-803004-passes-York-301023, LUMO-05-Lumo-803005-at-King-s-Cross-Platform-10:
 // the cab's top is a smooth dark cap from the glass's upper edge back, the shoulders beside the glass the body's blue; the shade approximate).
-const LUMO: TrainLivery = asTrainLivery(LIVERIES.lumo, { scheme: 'base', noseTop: 0x2a2d33, noseTopFrom: 2.5 });
+const LUMO: TrainLivery = asTrainLivery(LIVERIES.lumo, { scheme: 'base', noseTop: 0x2a2d33, noseTopFrom: 2.6 });
 
 const BY_KIND: Partial<Record<TrainKind, TrainLivery>> = {
   lner5: LNER,

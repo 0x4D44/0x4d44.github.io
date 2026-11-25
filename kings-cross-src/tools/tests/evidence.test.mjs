@@ -317,9 +317,18 @@ test('every named station and sample train camera clears the rendered city build
   assert.deepEqual(cameraBuildingCollisions(cameras,buildings),[]);
   // Pin the requested clear positions; check the old footprints at street height too.
   const at=(u,v,y)=>{const [x,z]=shedToWorld(s,u,v);return [x,y,z];};
-  assert.deepEqual(cameras['south-front'].pos,at(s.width/2,-70,26));
-  assert.deepEqual(cameras['western-range'].pos,at(-WESTERN_RANGE.depth-WESTERN_RANGE_STANDOFF,(WESTERN_RANGE.v0+WESTERN_RANGE.v1)/2,1.6));
-  for (const [name,pos,id] of [['south-front',at(s.width/2,-125,2),137827419],['western-range',at(-65,185,12),1018561795]]) {
+  // Re-pinned 2026-11-24: south-front is frozen at the footprint's middle as it stood before the shed realignment moved the west wall
+  // s.westShift west, (width + westShift) / 2 in today's frame; measured bit-identical, so still deepEqual.
+  const middle=(s.width+s.westShift)/2;
+  assert.deepEqual(cameras['south-front'].pos,at(middle,-70,26));
+  // Re-pinned 2026-11-24: western-range stands where it stood, off the Range's face, which did not move. The test reaches that face as
+  // -WESTERN_RANGE.depth, and depth is now the double 12 - westShift. That subtraction rounds, and shedToWorld then multiplies the rounded u
+  // through the heading's sine and cosine, so the camera and this pin can differ in the last bit of x and z. Measured: 1.4e-14 m. Hence 1e-9 m,
+  // not bit-exact; 1e-9 m is still five orders of magnitude finer than a millimetre.
+  const near=(a,b)=>a.length===b.length&&a.every((x,i)=>Math.abs(x-b[i])<1e-9);
+  const wr=at(-WESTERN_RANGE.depth-WESTERN_RANGE_STANDOFF,(WESTERN_RANGE.v0+WESTERN_RANGE.v1)/2,1.6);
+  assert.ok(near(cameras['western-range'].pos,wr),`${cameras['western-range'].pos} against ${wr}`);
+  for (const [name,pos,id] of [['south-front',at(middle,-125,2),137827419],['western-range',at(-65,185,12),1018561795]]) {
     assert.ok(cameraBuildingCollisions({[name]:{...cameras[name],pos}},buildings).some(c=>c.buildingId===id),name);
   }
 });
@@ -471,8 +480,12 @@ const trackData = JSON.parse(await readFile(path.join(root, 'kings-cross-src/web
 /** The cameras the six element rubrics add (gfx-rubrics/rubric-<element>.md, "Fixed views"), by element. */
 const NEW_CAMERAS = {
   'lighting-materials': ['facade-brick-close'],
-  'kx-front': ['tower-close', 'front-southwest-pedestrian', 'shed-east-flank'],
-  'shed-interior': ['platform-eye-p1-north', 'platform-eye-p8-south', 'roof-underside', 'furniture-close', 'suburban-p9'],
+  // gable-oblique added 2026-11-24 (round 10, end-rib-round-1 score section 5: the end rib's projection and lip need an oblique view of the north-east gable)
+  // porch-close added 2026-11-24 (round 23b, front-piers-round-3 score section 5: the canopy hid the porch heads from every front view)
+  'kx-front': ['tower-close', 'front-southwest-pedestrian', 'shed-east-flank', 'gable-oblique', 'porch-close'],
+  // platform-furniture added 2026-11-24 (round 17, platform-round-4 score section 5: no capture showed the new furniture near)
+  // platform-clock added 2026-11-24 (round 14, platform-round-1 score section 5: no capture could verify the platform clock's arm, faces or scale)
+  'shed-interior': ['platform-eye-p1-north', 'platform-eye-p8-south', 'roof-underside', 'furniture-close', 'suburban-p9', 'platform-clock', 'platform-furniture'],
   'western-concourse': ['concourse-funnel-up', 'concourse-exterior-square', 'western-range-full'],
   'historic-neighbours': ['gnh-from-square', 'midland-euston-road', 'midland-clock-tower', 'barlow-interior'],
   'city-surroundings': ['granary-square', 'gasholders', 'canal-lock', 'kings-boulevard', 'euston-road-east'],
@@ -695,12 +708,20 @@ test('the usage text names the official and the context view', async () => {
 // The round-4 scorer found `western-range` (a 1.6 m stand 6 m off the face, about three bays in frame) useless; the lead asked for it to be
 // moved back to show the whole west elevation. It keeps its name and is the one pre-wave-0 camera allowed to move (see its own test).
 const REFRAMED = ['western-range'];
+// Re-aimed on purpose 2026-11-24 by the shed realignment (tools/evidence.mjs says why, camera by camera): each keeps its subject, so it moved by
+// metres, not tens of metres; the frozen fixture holds the new values.
+const REAIMED = ['top', 'shed-interior', 'platform-eye', 'platform-eye-south', 'roof-underside', 'furniture-close', 'tower-close', 'front-southwest-pedestrian'];
 test('the twenty cameras that were there before wave 0 are all still there, and only western-range, re-framed on request, has moved', () => {
   const cameras = stationCameras(trackData);
   assert.deepEqual(Object.keys(OLD_CAMERAS).filter(name => !cameras[name]), [], 'none was removed or renamed');
   for (const [name, was] of Object.entries(OLD_CAMERAS)) {
     const now = cameras[name];
     if (REFRAMED.includes(name)) { assert.ok(Math.hypot(...now.pos.map((v, i) => v - was.pos[i])) > 30, `${name} was moved back from its close-up`); continue; }
+    if (REAIMED.includes(name)) {
+      for (const key of ['pos', 'target']) assert.ok(Math.hypot(...now[key].map((v, i) => v - was[key][i])) < 10, `${name}.${key} was re-aimed, not replaced`);
+      assert.equal(now.fov, was.fov, `${name}.fov`);
+      continue;
+    }
     for (const key of ['pos', 'target']) was[key].forEach((value, i) => assert.ok(Math.abs(now[key][i] - value) < 1e-3, `${name}.${key}[${i}]: ${now[key][i]} against ${value}`));
     assert.equal(now.fov, was.fov, `${name}.fov`);
     assert.equal(now.near, was.near, `${name}.near`);
@@ -710,9 +731,10 @@ test('the twenty cameras that were there before wave 0 are all still there, and 
 
 test('every camera the six rubrics add exists, looks somewhere, and names the photograph it was framed from', () => {
   const cameras = stationCameras(trackData), added = Object.values(NEW_CAMERAS).flat();
-  assert.equal(added.length, 21);
-  assert.equal(new Set(added).size, 21, 'no view is added twice');
-  assert.equal(Object.keys(cameras).length, Object.keys(OLD_CAMERAS).length + added.length + EXTRA_CAMERAS.length, 'nothing else was added');
+  assert.equal(added.length, 25); // re-pinned 2026-11-24 (round 10): 21 and gable-oblique; (round 14): and platform-clock; (round 17): and platform-furniture; (round 23b): and porch-close
+  assert.equal(new Set(added).size, 25, 'no view is added twice');
+  assert.deepEqual(Object.keys(cameras).slice(-1), ['kx-euston-road-lamp'], 'the night rubric view is appended after the six rubric sets');
+  assert.equal(Object.keys(cameras).length, Object.keys(OLD_CAMERAS).length + added.length + EXTRA_CAMERAS.length + 1, 'only the night rubric view was appended');
   assert.deepEqual(EXTRA_CAMERAS.filter(name => added.includes(name)), [], 'an extra camera is not one a rubric names');
   for (const name of EXTRA_CAMERAS) { assert.ok(cameras[name], name); assert.match(cameras[name].source, /\([a-z0-9-]+\.jpg/, `${name} names its reference photograph`); assert.ok(Object.values(ELEMENT_VIEWS).some(names => names.includes(name)), `${name} is scored with an element`); }
   for (const [element, names] of Object.entries(NEW_CAMERAS)) for (const name of names) {
@@ -778,6 +800,22 @@ test('the probe runs inside the page: it needs nothing from this module', () => 
   const kx = lightingKx({ atmosphere: { state: () => ({ sun: { elevationDeg: 12.5 } }) }, fog: { colour: '99aabb', near: 10, far: 900 } });
   const inPage = JSON.parse(JSON.stringify(runInNewContext(`(${lightingProbe.toString()})(kx)`, { kx })));
   assert.deepEqual(inPage, JSON.parse(JSON.stringify(lightingProbe(kx))));
+  const camera = new THREE.PerspectiveCamera(50, 1, .1, 100);
+  camera.updateMatrixWorld();
+  const withRegistry = { ...kx, camera, lightSourcesFor(scene) {
+    assert.strictEqual(scene, kx.scene);
+    return [
+      { id: 'kx/street/0', pos: [0, 0, -5], optic: { kind: 'road' } },
+      { id: 'kx/panel/0', pos: [1, 0, -5], optic: { kind: 'panel' } },
+      { id: 'kx/street/1', pos: [0, 0, 5], optic: { kind: 'road' } },
+    ];
+  } };
+  const census = runInNewContext(`(${lightingProbe.toString()})(kx)`, { kx: withRegistry });
+  assert.deepEqual(JSON.parse(JSON.stringify(census.lampRegistry)), {
+    total: 3, direct: 2, bySet: { street: 2, panel: 1 }, inFrustum: 2, directInFrustum: 1,
+    poolInstances: 0, poolTriangles: 0, poolDraws: 0,
+  });
+  assert.equal(lightingFingerprint(census), lightingFingerprint(inPage), 'the count is outside the rig fingerprint');
 });
 
 test('equal lighting fingerprints mean equal lighting, whatever the order of the lights or the keys', () => {

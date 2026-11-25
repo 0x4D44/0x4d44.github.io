@@ -186,6 +186,8 @@ export interface DrawnTrain {
 interface MaterialPalette {
   opacity: number;
   copies: Map<THREE.Material, THREE.Material>;
+  /** depth-only copies for the GHOST_DEPTH twins, while the palette is see-through */
+  depth: Map<THREE.Material, THREE.Material>;
 }
 
 /**
@@ -198,6 +200,14 @@ export function cloneWithShaderHooks<M extends THREE.Material>(original: M): M {
   if (Object.prototype.hasOwnProperty.call(original, 'customProgramCacheKey')) copy.customProgramCacheKey = original.customProgramCacheKey;
   return copy;
 }
+
+/**
+ * The depth-only twin a see-through train (opacity < 1: an estimated train at 0.55, or one fading out) gives each opaque mesh. Its
+ * colour copies draw with depth writes off, so with nothing else the far side's doors, the bogies and the window band behind the
+ * near wall would blend through it. The twin is drawn first (a lower renderOrder) with colour writes off, so the colour pass that
+ * follows (depthFunc LessEqual) keeps only the surface nearest the eye: the train fades as one shell.
+ */
+export const GHOST_DEPTH = 'ghost-depth';
 
 /**
  * What the King's Cross layer needs to set a standing train's lamps and cab light (core/cab-lamps.ts): the simulation clock, the
@@ -242,7 +252,7 @@ export function createLiveTrains(graph: Graph, parent: THREE.Object3D, kindFor?:
       buckets.set(opacity, previous);
       return previous;
     }
-    const palette: MaterialPalette = { opacity, copies: new Map() };
+    const palette: MaterialPalette = { opacity, copies: new Map(), depth: new Map() };
     buckets.set(opacity, palette);
     return palette;
   };
@@ -257,6 +267,38 @@ export function createLiveTrains(graph: Graph, parent: THREE.Object3D, kindFor?:
     return palette.copies.get(original)!;
   };
   const originalOf = (material: THREE.Material): THREE.Material => originals.get(material) ?? material;
+  /** A palette's depth-only copy of an original (made on first use; opacity plays no part in it). */
+  const depthIn = (palette: MaterialPalette, original: THREE.Material): THREE.Material => {
+    let copy = palette.depth.get(original);
+    if (!copy) {
+      copy = cloneWithShaderHooks(original);
+      copy.colorWrite = false; copy.depthWrite = true; copy.transparent = true;
+      palette.depth.set(original, copy);
+    }
+    return copy;
+  };
+  /** The palette each see-through train's depth twins were last given. */
+  const ghosts = new Map<number, MaterialPalette>();
+  /** Gives a see-through train depth twins (GHOST_DEPTH) from its palette, or takes them away once it is drawn opaque. */
+  const setGhost = (train: DrawnTrain, palette: MaterialPalette): void => {
+    const ghost = palette.opacity < 1;
+    if (ghost ? ghosts.get(train.id) === palette : !ghosts.has(train.id)) return;
+    const meshes: THREE.Mesh[] = [];
+    train.group.traverse((node) => { if (node instanceof THREE.Mesh && node.name !== GHOST_DEPTH) meshes.push(node); });
+    for (const mesh of meshes) {
+      const old = mesh.children.find((child) => child.name === GHOST_DEPTH);
+      if (old) mesh.remove(old);
+      if (!ghost || (mesh as THREE.InstancedMesh).isInstancedMesh) continue;
+      const list = (Array.isArray(mesh.material) ? mesh.material : [mesh.material]).map(originalOf);
+      // a glow or a glass that was see-through before the train faded writes no depth of its own
+      if (!list.every((m) => !m.transparent && m.depthWrite && m.colorWrite)) continue;
+      const depth = list.map((m) => depthIn(palette, m));
+      const twin = new THREE.Mesh(mesh.geometry, Array.isArray(mesh.material) ? depth : depth[0]!);
+      twin.name = GHOST_DEPTH; twin.renderOrder = mesh.renderOrder - 1; twin.frustumCulled = mesh.frustumCulled;
+      mesh.add(twin);
+    }
+    if (ghost) ghosts.set(train.id, palette); else ghosts.delete(train.id);
+  };
   const bind = (train: DrawnTrain, palette: MaterialPalette): void => {
     if (assigned.get(train.id) === palette) return;
     const copy = (material: THREE.Material): THREE.Material => copyIn(palette, material);
@@ -269,6 +311,7 @@ export function createLiveTrains(graph: Graph, parent: THREE.Object3D, kindFor?:
     for (const [kind, buckets] of palettes) {
       for (const [opacity, palette] of buckets) if (!used.has(palette)) {
         for (const material of palette.copies.values()) material.dispose();
+        for (const material of palette.depth.values()) material.dispose();
         buckets.delete(opacity);
       }
       if (!buckets.size) palettes.delete(kind);
@@ -310,7 +353,7 @@ export function createLiveTrains(graph: Graph, parent: THREE.Object3D, kindFor?:
     const t = drawn.get(id);
     if (!t) return;
     parent.remove(t.group); drawn.delete(id);
-    assigned.delete(id); lamps?.forget(id);
+    assigned.delete(id); ghosts.delete(id); lamps?.forget(id);
     // the lamp geometry setTrainLampState gave this train is its own (the rest is the template's): free it
     releaseTrainLamps(t.group);
   };
@@ -329,7 +372,7 @@ export function createLiveTrains(graph: Graph, parent: THREE.Object3D, kindFor?:
     for (const view of views) {
       const t = drawn.get(view.id)!;
       const palette = paletteFor(t.kind, view.opacity, needed.get(t.kind)!, assigned.get(view.id));
-      bind(t, palette); used.add(palette);
+      bind(t, palette); used.add(palette); setGhost(t, palette);
       t.description = view.description; t.group.userData.description = view.description;
       t.noseWorld = [view.leading.point[0], 0, view.leading.point[1]]; t.headingRad = view.heading; t.opacity = view.opacity;
       const poses = carPoses(graph, view, t.layout);

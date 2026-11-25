@@ -9,7 +9,11 @@ import { pointInPolygon } from '../../core/station.ts';
 import { LAMP_KIND, lampSpots } from '../../core/streetlights.ts';
 import type { LampRun, LampSpot } from '../../core/streetlights.ts';
 import { Batch } from './materials.ts';
+import type { LightSource } from '../../core/light-sources.ts';
+import { downlight, lampSpectrum, roadLight } from './light-source-adapters.ts';
 import { createStreetLights, headOf } from './streetlights.ts';
+import { poolFloorMap } from './pool-floor.ts';
+import type { PoolFloor } from './pool-floor.ts';
 import type { StreetLights } from './streetlights.ts';
 import { Footprints } from './waverley-city-ground.ts';
 import { WAVERLEY_LEVELS } from './waverley-mesh.ts';
@@ -42,21 +46,11 @@ function radii(spots: readonly LampSpot[], max: number, headAt: (s: LampSpot) =>
 }
 const fixtureHead = (s: LampSpot): [number,number,number] => [s.x,s.y+s.height,s.z];
 
-/** A half-metre mask of the actual platform polygons. Raised light cannot
+/** The actual platform polygons as a signed-distance floor (pool-floor.ts). Raised light cannot
  * hover across the lower track bed beside a platform. No frame-time raycasts. */
-function platformFloor(plan: PerthStationPlan): { map: THREE.DataTexture; rect: THREE.Vector4 } | undefined {
+function platformFloor(plan: PerthStationPlan): PoolFloor | undefined {
   const rings = plan.local?.platforms.map(p => p.pts.map(toWorld));
-  if (!rings?.length) return;
-  const points = rings.flat(), cell = .5;
-  const x0 = Math.floor(Math.min(...points.map(p=>p[0])))-1, z0 = Math.floor(Math.min(...points.map(p=>p[1])))-1;
-  const nx = Math.ceil((Math.max(...points.map(p=>p[0]))-x0+1)/cell), nz = Math.ceil((Math.max(...points.map(p=>p[1]))-z0+1)/cell);
-  const bytes = new Uint8Array(nx*nz);
-  for (let z=0;z<nz;z++) for (let x=0;x<nx;x++) {
-    if (rings.some(r=>pointInPolygon([x0+(x+.5)*cell,z0+(z+.5)*cell],r))) bytes[z*nx+x]=255;
-  }
-  const map = new THREE.DataTexture(bytes,nx,nz,THREE.RedFormat);
-  map.minFilter = map.magFilter = THREE.LinearFilter; map.needsUpdate = true;
-  return {map,rect:new THREE.Vector4(x0,z0,1/(nx*cell),1/(nz*cell))};
+  return rings?.length ? poolFloorMap(rings) : undefined;
 }
 
 /** Sample the surfaces actually drawn over the DTM, including raised cover and
@@ -158,7 +152,7 @@ export function perthForecourtLampSpots(file: FrontageFile, ground: Ground, foot
 }
 
 /** Instanced heads/pools and one extra Points draw for distant town cores. */
-export function createPerthLights(plan: PerthStationPlan, town: readonly LampSpot[], forecourt: readonly LampSpot[]): StreetLights {
+export function createPerthLights(plan: PerthStationPlan, town: readonly LampSpot[], forecourt: readonly LampSpot[]): StreetLights & { sources: readonly LightSource[] } {
   const group = new THREE.Group(); group.name = 'perth-night-lamps';
   // A single LED pool peaks at L*48. Keep the falloff: tightly limited reach
   // avoids round 2's many overlapping layers converging to a grey plateau.
@@ -189,7 +183,19 @@ export function createPerthLights(plan: PerthStationPlan, town: readonly LampSpo
   const geometry = fittings.build(), material = new THREE.MeshLambertMaterial({ color: 0xe8e5da });
   const mesh = new THREE.Mesh(geometry,material); mesh.name = 'perth-canopy-light-fittings';
   if (plan.canopyColumns.length) group.add(mesh);
-  return { group,
+  const sheltered = plan.structure.lamps.length + plan.canopyColumns.length;
+  const sources = [
+    ...town.map((s, i) => {
+      const radius = Math.min(inForecourt([s.x,s.z]) ? 5.5 : 8, townRadii[i]!);
+      const lumens = 6000 + 1000 * Math.min(4, Math.max(0, s.height - 4));
+      return roadLight('pt', `pt/town/${i}`, s, headOf(s),
+        { lumens, throwM: radius, spreadM: radius, tags: ['road', 'town'] });
+    }),
+    ...station.map((s, i) => downlight('pt', 'station', i, fixtureHead(s), s.y, lampSpectrum[s.kind], 6000, 60, s.radius!,
+      i < sheltered ? 'under-roof' : 'open')),
+    ...forecourt.map((s, i) => downlight('pt', 'forecourt', i, fixtureHead(s), s.y, lampSpectrum[s.kind], 6000, 60, yardRadii[i]!, 'open')),
+  ];
+  return { group, sources,
     setLevel(level) { street.setLevel(level); existing.setLevel(level); },
     counts() {
       const a = street.counts(), b = existing.counts();

@@ -19,7 +19,9 @@ import type * as THREE from 'three';
 import { createLampWetSurface, lampSurfaceAt } from './lamp-wet-surface.ts';
 import type { LampWetSurface } from './lamp-wet-surface.ts';
 import { urbanLampOptions } from './station-lamps.ts';
-import { createStreetLights } from './streetlights.ts';
+import { registerLights } from '../../core/light-sources.ts';
+import { roadLight } from './light-source-adapters.ts';
+import { createStreetLights, headOf } from './streetlights.ts';
 import type { StreetLights } from './streetlights.ts';
 
 /**
@@ -196,11 +198,12 @@ export async function loadWaverleyLamps(drawn: (x: number, z: number) => number,
   // conforming pools/strips rather than almost invisible panorama road pools.
   const rowSpots=surface&&surfaceRoot?await approachSpots(surfaceRoot,surface,spots):[];
   const approachSet=new Set(rowSpots);
+  const princesStreet = (s: LampSpot) => s.x>20&&s.x<80&&s.z>-180&&s.z<-140;
   const layer=createStreetLights(spots,nightEffects?{...urbanLampOptions(surface),roughReflections:true,lightFog:true,softFog:true,waverleyStreetFog:true,lowPressureSodium:s=>approachSet.has(s),sourceCoreAt:s=>!approachSet.has(s),fogHaloSpread:18,
     // Princes Street's narrow footway lies almost at eye level in the frozen
     // Balmoral view. A 16 m pool covered the whole road as one horizontal band.
     // Keep a local soft pool under each head, independently of its wet streak.
-    poolRadiusAt:s=>s.x>20&&s.x<80&&s.z>-180&&s.z<-140?3.2:8,poolAt:s=>Math.hypot(s.x,s.z)<250,reflectionAt:s=>Math.hypot(s.x,s.z)<200}:{});
+    poolRadiusAt:s=>princesStreet(s)?3.2:8,poolAt:s=>Math.hypot(s.x,s.z)<250,reflectionAt:s=>Math.hypot(s.x,s.z)<200}:{});
   // The western Market Street receivers project 119–132 m from their heads
   // in the North Bridge camera. Keep these urban runs finite and road-clipped,
   // without discarding their visible wet paving at the generic 96 m limit.
@@ -210,8 +213,21 @@ export async function loadWaverleyLamps(drawn: (x: number, z: number) => number,
   // The junction keeps the ordinary eye/source mirror optics instead.
   const rows=rowSpots.length?createStreetLights(rowSpots,{...urbanLampOptions(surface),roughReflections:true,lightFog:true,softFog:true,waverleyStreetFog:true,reflectionRoad:s=>s.x<-60&&s.z>100&&(s.x>-210||Math.sin(s.yaw)>0),reflectionReach:160,reflectionTail:s=>s.x<0&&s.z>100?64:0,lowPressureSodium:true,fogHaloSpread:20,postAt:s=>!spots.includes(s),coreSize:3.2,haloSize:5.5,poolCeiling:.32}):undefined;
   if(rows){rows.group.name='waverley-approach-lamps';rows.group.visible=false;layer.group.add(rows.group);}
+  const streetSet = new Set(spots);
+  const sources = spots.map((spot, i) => {
+    const promoted = approachSet.has(spot), princes = princesStreet(spot);
+    const tags = ['road'];
+    if (promoted) tags.push('approach', 'promoted-approach');
+    if (princes) tags.push('princes-street');
+    return roadLight('wv', `wv/street/${i}`, spot, headOf(spot),
+      { tags, spectrum: promoted ? 'lps' : undefined, throwM: princes ? 3.2 : undefined, spreadM: princes ? 3.2 : undefined });
+  });
+  rowSpots.forEach((spot, i) => {
+    if (!streetSet.has(spot)) sources.push(roadLight('wv', `wv/approach/${i}`, spot, headOf(spot), { spectrum: 'lps', tags: ['road', 'approach'] }));
+  });
+  const unregister = surfaceRoot && registerLights(surfaceRoot, sources);
   return {...layer,
     setLevel(level){layer.setLevel(level);if(rows){rows.setLevel(level);rows.group.visible=level>.01;}},
     counts(){const a=layer.counts(),b=rows?.counts();return b?{lamps:a.lamps+b.lamps,triangles:a.triangles+b.triangles,draws:a.draws+b.draws}:a;},
-    dispose(){rows?.group.removeFromParent();rows?.dispose();layer.dispose();surface?.dispose();}};
+    dispose(){unregister?.();rows?.group.removeFromParent();rows?.dispose();layer.dispose();surface?.dispose();}};
 }

@@ -1,6 +1,5 @@
 // The station cameras are frozen: each is a literal equal to the value the graphical-fidelity baseline holds, and none depends on the model.
-// tools/tests/frozen-station-cameras.json is the "station" section of gfx-rubrics/baseline/cameras.json (42 cameras; sha256 of the whole
-// file 67828e1b9126847e4893f44c945183078d8dfb9671d59fc338cae8b0ba029140), the views every later capture is compared against: the scorers'
+// tools/tests/frozen-station-cameras.json holds the 42 "station" views from gfx-rubrics/baseline/cameras.json and the night rubric's lamp view. The scorers'
 // camera check compares pos, target and fov with it and voids a view that moved. The cameras used to be computed on every run from the OSM
 // station frame, the landmark plans and the terrain, so setting the Midland Grand clock tower to 73 m (Bradley 2007, the rubric's figure)
 // from 76 m would have moved midland-clock-tower's aim and lens (66.5 degrees to 63.8) and voided its view.

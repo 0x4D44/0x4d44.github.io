@@ -119,6 +119,7 @@ python3 -I -u kings-cross-src/tools/mutation/station-evidence.py kings-cross-src
 python3 -I -u kings-cross-src/tools/mutation/station.py kings-cross-src .scratch/mutation/station /Users/md/kx-data/osm/kx-osm.json
 python3 -I -u kings-cross-src/tools/mutation/stations.py kings-cross-src .scratch/mutation/stations
 python3 -I -u kings-cross-src/tools/mutation/test-suite.py
+python3 -I -u kings-cross-src/tools/mutation/track-walls.py kings-cross-src .scratch/mutation/track-walls
 python3 -I -u kings-cross-src/tools/mutation/train-capture.py kings-cross-src .scratch/mutation/train-capture
 python3 -I -u kings-cross-src/tools/mutation/train.py kings-cross-src .scratch/mutation/train
 python3 -I -u kings-cross-src/tools/mutation/trainweb.py kings-cross-src .scratch/mutation/trainweb
@@ -139,7 +140,7 @@ committed. `test-suite.py` needs no external inputs.
 The pack uses the two-argument `western-front.py SOURCE SCRATCH` command above.
 Its optional third argument, `PRE_FIX_SOURCE`, is only for reproducing the historical
 red-before geometry against the current tests; it is omitted for current-source mutation
-runs and is not a pack dependency. The concourse, hotel-exterior, shed-front, shed-tower
+runs and is not a pack dependency. The concourse, hotel-exterior, shed-front, shed-tower, track-walls
 and western-front drivers need fresh output paths and run synthetic or public-OSM
 geometry/camera assertions in Node; they need no browser, relay listener or private feed.
 

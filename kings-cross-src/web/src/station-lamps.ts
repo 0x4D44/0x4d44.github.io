@@ -1,8 +1,10 @@
 // Existing station fittings share Perth's bounded pools, masked floor,
 // continuous wet reflections and fog scatter. No new lighting rig or ambient fill.
 import * as THREE from 'three';
+import type { LightSource } from '../../core/light-sources.ts';
+import { downlight, roadLight } from './light-source-adapters.ts';
 import type { Pt } from '../../core/geo.ts';
-import { pointInPolygon } from '../../core/station.ts';
+import { poolFloorMap } from './pool-floor.ts';
 import { LAMP_KIND } from '../../core/streetlights.ts';
 import type { LampSpot } from '../../core/streetlights.ts';
 import { createStreetLights, headOf, LAMP_LIGHT, MAST_STRIP } from './streetlights.ts';
@@ -131,38 +133,32 @@ if (uOpenPlatformNight > 0.003 && uOpenPlatformWet > 0.45 && uOpenPlatformSnow <
 }
 
 
-/** Rasterised once at half-metre resolution; light stops at platform edges. */
-function floorMask(rings: readonly (readonly Pt[])[]): {map: THREE.DataTexture; rect: THREE.Vector4} | undefined {
-  const points = rings.flat();
-  if (!points.length) return;
-  const cell = .5;
-  const x0 = Math.floor(Math.min(...points.map(p=>p[0])))-1, z0 = Math.floor(Math.min(...points.map(p=>p[1])))-1;
-  const nx = Math.ceil((Math.max(...points.map(p=>p[0]))-x0+1)/cell), nz = Math.ceil((Math.max(...points.map(p=>p[1]))-z0+1)/cell);
-  const bytes = new Uint8Array(nx*nz);
-  for (let z=0;z<nz;z++) for (let x=0;x<nx;x++) {
-    if (rings.some(r=>pointInPolygon([x0+(x+.5)*cell,z0+(z+.5)*cell],r as Pt[]))) bytes[z*nx+x]=255;
-  }
-  const map = new THREE.DataTexture(bytes,nx,nz,THREE.RedFormat);
-  map.minFilter = map.magFilter = THREE.LinearFilter; map.needsUpdate = true;
-  return {map,rect:new THREE.Vector4(x0,z0,1/(nx*cell),1/(nz*cell))};
-}
-
-/** Heads are the same positions used by the visible fittings/pendants, metres. */
-export function createPlatformLamps(heads: readonly number[], rings: readonly (readonly Pt[])[], floorY: number, station:'kx'|'wv'='kx', fogAir=false, open: readonly OpenPlatformLamp[] = []): StreetLights {
+/** Heads are the same positions used by the visible fittings/pendants, metres. `poolReach[i]`, where given, is head i's pool radius in place of
+ * 0.6 x the spacing to its nearest neighbour: the KX shed's rows give their own (night.ts `shedReach`), as two rows over one island
+ * (platforms 0 and 1) stand nearer each other than the lights along either. */
+export function createPlatformLamps(heads: readonly number[], rings: readonly (readonly Pt[])[], floorY: number, station:'kx'|'wv'='kx', fogAir=false, open: readonly OpenPlatformLamp[] = [], poolReach: readonly (number | undefined)[] = []): StreetLights & { radii: readonly number[]; sources: readonly LightSource[] } {
   const spots: LampSpot[] = [];
   for (let i=0;i<heads.length;i+=3) spots.push({x:heads[i]!,y:floorY,z:heads[i+2]!,height:heads[i+1]!-floorY,yaw:0,kind:LAMP_KIND.cool,slope:[0,0]});
   const radii = spots.map((s,i) => {
+    if (poolReach[i] !== undefined) return poolReach[i]!;
     let spacing = Infinity;
     spots.forEach((q,j) => { const d=Math.hypot(s.x-q.x,s.z-q.z); if(i!==j && d>3) spacing=Math.min(spacing,d); });
     return station==='kx'?Math.min(10,.6*spacing):Math.min(8,.58*spacing);
   });
-  const floor = floorMask(rings);
+  // The floor map covers the pools themselves, not every platform in the data (St Pancras, the Underground).
+  const reach = spots.map((s,i) => [s.x-radii[i]!,s.z-radii[i]!,s.x+radii[i]!,s.z+radii[i]!]);
+  const floor = poolFloorMap(rings, spots.length ? [Math.min(...reach.map(r=>r[0]!)),Math.min(...reach.map(r=>r[1]!)),Math.max(...reach.map(r=>r[2]!)),Math.max(...reach.map(r=>r[3]!))] : undefined);
   const layer = createStreetLights([...spots,...open], {posts:false,headAt:s=>[s.x,s.y+s.height,s.z],fog:true,
     sourceCores: station === 'kx' ? 'kx-platform' : 'wv-platform',
     analyticPool:true,poolCeiling:.20,poolAt:(_s,i)=>i<spots.length,poolFloor:floor,poolLiftAt:()=>.004,poolRadiusAt:(_s,i)=>radii[i]!,
     poolWeather:true,weatherEffects:true,enhancedFog:true,softFog:fogAir,boundedFog:fogAir?station:undefined,lightFog:station==='kx',suppressSnow:true,fogHaloSpread:station==='wv'?9:undefined,haloSize:3.2,coreSize:1.5,reflectionReach:8,poolFocus:station==='kx'?1.4:undefined});
   layer.group.name='station-platform-lamps';
-  return {...layer,dispose(){layer.dispose();floor?.map.dispose();layer.group.removeFromParent();}};
+  const sources = station === 'wv' ? [
+    ...spots.map((s, i) => downlight('wv', 'pendant', i, [s.x, s.y + s.height, s.z], s.y, 'led-4000', 4000, 60, radii[i]!, 'under-roof')),
+    ...open.map((s, i) => roadLight('wv', `wv/open-platform/${i}`, s, [s.x, s.y + s.height, s.z],
+      { lumens: 6000, throwM: s.reach, spreadM: s.width, tags: ['platform', 'open-platform'] })),
+  ] : [];
+  return {...layer,radii,sources,dispose(){layer.dispose();floor?.map.dispose();layer.group.removeFromParent();}};
 }
 
 /** Nearby urban heads only: no reflective quads over the wider countryside.

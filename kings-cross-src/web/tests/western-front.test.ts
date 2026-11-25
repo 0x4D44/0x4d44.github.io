@@ -11,7 +11,10 @@ const layout = shedLayout(JSON.parse(readFileSync(new URL('../src/data/kx-track.
 // Alignment/clearances ASSUMED; see source citations in shed.ts. Never infer them from returned metadata.
 const gates = [12.1, 20.1, 28.1, 36.1, 44.1];
 const facade = () => { const g = buildShed(layout); g.updateMatrixWorld(true); return g; };
-function hits(g: THREE.Group, v: number, y: number, x = -13, distance = 14): THREE.Intersection[] {
+// Re-pinned 2026-11-24: the shed realignment took 2.05 m off the Range's depth (its concourse face stands where it stood, its frame moved), so the
+// probes that started 1 m west of the face at x = -13 start there still: WEST_OF_FACE.
+const WEST_OF_FACE = -WESTERN_RANGE.depth - 0.99;
+function hits(g: THREE.Group, v: number, y: number, x = WEST_OF_FACE, distance = 14): THREE.Intersection[] {
   const start = g.localToWorld(new THREE.Vector3(x, y, -v));
   return new THREE.Raycaster(start, new THREE.Vector3(1, 0, 0).transformDirection(g.matrixWorld), 0, distance).intersectObject(g, true);
 }
@@ -43,9 +46,9 @@ test('gateline bays retain full-depth headers and internal Y supports under the 
 test('adjoining public frontage is recessed and glazed with upper sash floors and northern frontage retained', () => {
   const g = buildWesternRange(); g.updateMatrixWorld(true);
   for (const v of [52.1, 56.1]) {
-    const h = hits(g, v + 0.5, 1.2, -13, 2);
+    const h = hits(g, v + 0.5, 1.2, WEST_OF_FACE, 2);
     assert.equal(h[0]?.object.name, 'range-public-glazing', 'public interface remains a flat brick/sash wall');
-    assert.ok(h[0]!.point.x > -11.8, 'glazing must sit in a reveal');
+    assert.ok(h[0]!.point.x > -WESTERN_RANGE.depth + 0.2, 'glazing must sit in a reveal'); // re-pinned 2026-11-24: -11.8 with the 12 m Range
     assert.ok(hits(g, v, 1.2).some(i => i.object.name === 'range-brick'), 'shop must retain backing building mass');
   }
   for (const v of gates) assert.ok(hits(g, v + 1.3, 6.5).some(h => h.object.name === 'range-brick'), 'upper floor missing');
@@ -68,7 +71,7 @@ const range = (): THREE.Group => { const g = buildWesternRange(); g.updateMatrix
 const windows = Array.from({ length: 6 }, (_, i) => 56.1 + (34 * (i + 0.5)) / 6);
 const arches = [...windows, ...Array.from({ length: 15 }, (_, i) => 91.8 + 3.4 * i)];
 /** What a sight line going east at v and y meets first, from 1 m in front of the Range's face. */
-const first = (g: THREE.Group, v: number, y: number): { name: string; x: number } | undefined => { const h = hits(g, v, y, -13, 3)[0]; return h && { name: h.object.name, x: h.point.x }; };
+const first = (g: THREE.Group, v: number, y: number): { name: string; x: number } | undefined => { const h = hits(g, v, y, WEST_OF_FACE, 3)[0]; return h && { name: h.object.name, x: h.point.x }; };
 const meets = (g: THREE.Group, v: number, y: number, name: string, x: number): void => {
   const h = first(g, v, y);
   assert.ok(h?.name === name && Math.abs(h.x - x) < 1e-3, `at v ${v.toFixed(2)}, ${y} m: ${h ? `${h.name} at x ${h.x.toFixed(3)}` : 'nothing'}, not ${name} at ${x.toFixed(3)}`);

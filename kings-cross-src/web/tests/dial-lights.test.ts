@@ -21,7 +21,7 @@ import { addWorld } from '../src/world.ts';
 
 const data: KxData = JSON.parse(readFileSync(new URL('../src/data/kx-track.json', import.meta.url), 'utf8'));
 const layout = shedLayout(data);
-const SITES: NightLightSites = nightLightSites({ lamps: furniturePlan(data, layout).lamps, layout, canopy: concourseCanopy(data), footprint: stationBuilding(data)!.pts });
+const SITES: NightLightSites = nightLightSites({ lamps: furniturePlan(data, layout).lamps, layout, data, canopy: concourseCanopy(data), footprint: stationBuilding(data)!.pts });
 const NOON = '2026-06-21T12:00:00Z';
 const MIDNIGHT = '2026-12-21T00:00:00Z';
 
@@ -92,6 +92,18 @@ test('scan: a glow over the Lambert disc at each declared dial, in its place, tu
     const normal = new THREE.Vector3(...(dials[i] as ClockDial).normal).transformDirection(owner.matrixWorld);
     near(world(glow as THREE.Mesh), world(face).addScaledVector(normal, DIAL_LIFT), `the glow of dial ${i} stands DIAL_LIFT out of its face, in the world`);
   });
+});
+
+test('a face that gives a glow mask (shed.ts: its field lit, its bezel dark) glows through the mask, not its own texture', () => {
+  const { owner, cream } = tower();
+  const mask = new THREE.Texture();
+  cream.userData.glowMap = mask;
+  const scene = new THREE.Scene();
+  scene.add(owner);
+  const lights = createDialLights();
+  assert.equal(lights.scan(scene), 2);
+  assert.ok(glowsOf(scene).every((g) => glowMaterial(g).map === mask), 'the glow wears the mask');
+  lights.dispose();
 });
 
 test('scan reads a dial where it stands in the world: a tower moved and turned after it was built is found, and discs that no building declares as dials are only discs', () => {
@@ -227,16 +239,17 @@ test('the King\'s Cross tower: each of its four dials gets a glow DIAL_LIFT out 
   const shed = buildShed(layout);
   const owners: THREE.Object3D[] = [];
   shed.traverse((o) => { if (o.userData.clockDials) owners.push(o); });
-  assert.equal(owners.length, 1, 'the shed carries the tower\'s dials');
-  const kx = owners[0] as THREE.Object3D;
+  // round 13: the shed also carries the platform clock's two dials; since round 14 its faces are CircleGeometry discs too, so they take a glow (the scan below finds 6)
+  assert.deepEqual(owners.map((o) => o.name).sort(), ['clock-tower', 'shed-platform-clock'], 'the shed carries the tower\'s dials, and the platform clock\'s');
+  const kx = owners.find((o) => o.name === 'clock-tower') as THREE.Object3D;
   const dials = kx.userData.clockDials as ClockDial[];
   assert.equal(dials.length, 4);
   const scene = new THREE.Scene();
   scene.add(shed);
   const lights = createDialLights();
-  assert.equal(lights.scan(scene), 4, 'four faces: the rings are not discs');
+  assert.equal(lights.scan(scene), 6, 'four faces and the platform clock\'s two: the rings are not discs'); // re-pinned round 14: the platform clock\'s faces are discs now, lit after dark as the tower\'s
   const glows = glowsOf(scene);
-  assert.equal(glows.length, 4);
+  assert.equal(glows.length, 6);
   for (const dial of dials) {
     const centre = kx.localToWorld(new THREE.Vector3(...dial.centre));
     const normal = new THREE.Vector3(...dial.normal).transformDirection(kx.matrixWorld);

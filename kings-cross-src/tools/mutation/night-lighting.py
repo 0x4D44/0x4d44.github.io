@@ -60,6 +60,10 @@ LANES = {
     'landmarks': Lane(['web/tests/landmarks.test.ts'], ['windowId: a number of 0 to', 'addGlass: the flat shape of a window', "Midland Grand: the lit pane's windows", "the Midland's kinds of window each put lit glass",
                                                          "Midland Grand: the clock tower's lantern is open to the night", "Midland Grand: the front's brick and its stone are floodlit"]),
     'night': Lane(['web/tests/night.test.ts'], ['attach: a layer is handed the level']),
+    # the shed's lights over its islands (web/src/night.ts nightLightSites, shedIslands): the guard added 2026-11-24
+    'islands': Lane(['web/tests/night.test.ts'], ['every island under the shed has its own row of shed lights']),
+    # every shed platform's track-side edge in a pool (web/src/night.ts rows and shedReach, web/src/station-lamps.ts poolReach): the guard added 2026-11-24
+    'edges': Lane(['web/tests/platform-pool-floor.test.ts'], ['track-side edge is in a pool all along it']),
     # the clock dials' glow (web/src/night.ts `createDialLights`, its wiring in web/src/atmosphere.ts): the whole file
     'dials': Lane(['web/tests/dial-lights.test.ts']),
     'atmosphere': Lane(['web/tests/atmosphere.test.ts'], ["a scene's own haze", 'fogFar: the range', 'the windows of the city light with the lamps']),
@@ -153,7 +157,7 @@ MUTATIONS += [
     ('a mast is a street lamp\'s white', C, 'kind: LAMP_KIND.cool, slope: [gx, gz], mast: true }', 'kind: LAMP_KIND.warm, slope: [gx, gz], mast: true }'),
     ('a mast is not a mast', C, 'slope: [gx, gz], mast: true }', 'slope: [gx, gz] }'),
     ('a mast is a street lamp\'s height', C, 'height: MAST_HEIGHT, kind', 'height: 9, kind'),
-    ('the masts\' u and v are swapped', C, 'const [x, z] = shedToWorld(layout, u, v);', 'const [x, z] = shedToWorld(layout, v, u);'),
+    ('the masts\' u and v are swapped', C, 'const [x, z] = shedToWorld(layout, u + layout.westShift, v);', 'const [x, z] = shedToWorld(layout, v, u);'),
     ('a mast\'s slope along x is read across a step', C, 'heightAt(x - SLOPE_STEP, z)) / (2 * SLOPE_STEP);', 'heightAt(x - SLOPE_STEP, z)) / SLOPE_STEP;'),
     ('a mast\'s slope along z is read along x', C, 'const gz = (heightAt(x, z + SLOPE_STEP) - heightAt(x, z - SLOPE_STEP)) / (2 * SLOPE_STEP);', 'const gz = (heightAt(x + SLOPE_STEP, z) - heightAt(x - SLOPE_STEP, z)) / (2 * SLOPE_STEP);'),
     # ---- the forecourt's masts keep clear of the buildings (the rule that is camera-independent: core/streetlights.ts `mastIsClear`)
@@ -488,6 +492,23 @@ MUTATIONS += [
     ('the first layer cannot let go', NL, 'if (i >= 0) attached.splice(i, 1);', 'if (i > 0) attached.splice(i, 1);'),
     ('a layer that lets go takes the others with it', NL, 'if (i >= 0) attached.splice(i, 1);', 'if (i >= 0) attached.splice(i);'),
     ('the layers are kept when the lights are freed', NL, '      attached.length = 0;\n', ''),
+]
+
+# ------------------------------------------------------------------------------------------------ web/src/night.ts: the shed's lights over its islands
+SI = Where(NIGHT, 'islands')
+MUTATIONS += [
+    ('a shed row hangs at its vault\'s crown line, not over its island', SI, 'const u = line[k % line.length]!;', 'const u = line[k % line.length]! < layout.spine ? layout.spine - radius : layout.spine + radius;'),
+    ('the shed\'s rows stop half way along the shed', SI, 'for (let v = 6.1; v < layout.length - 6; v += 12.2, k++) {', 'for (let v = 6.1; v < layout.length / 2; v += 12.2, k++) {'),
+]
+
+# ------------------------------------------------------------------------------------------------ web/src/night.ts, web/src/station-lamps.ts: every platform's track-side edge in a pool
+SE = Where(NIGHT, 'edges')
+PE = Where('web/src/station-lamps.ts', 'edges')
+MUTATIONS += [
+    ('platform 0 has no row of its own in the east aisle', SE, '    if (beyond.length) rows.push({ line: beyond.map((u) => Math.max(u, wall + WALL_CLEAR)), aisle: true });\n', ''),
+    ('the 0/1 row stands off the east arcade over the island\'s middle, not over platform 1', SE, 'line: vault.length ? vault : [wall', 'line: false ? vault : [wall'),
+    ('a shed row\'s pools are half the spacing along it', SE, 'shedReach.push(Math.min(10, POOL_SHARE * next));', 'shedReach.push(Math.min(10, POOL_SHARE * next / 2));'),
+    ('a head\'s own pool radius is ignored', PE, '    if (poolReach[i] !== undefined) return poolReach[i]!;\n', ''),
 ]
 
 # ------------------------------------------------------------------------------------------------ web/src/night.ts: the clock dials' glow (createDialLights)

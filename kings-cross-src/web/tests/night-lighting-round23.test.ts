@@ -61,7 +61,7 @@ test('Midland upper brick darkens against the arcade on both range and tower', (
   const built = addLandmarks(new THREE.Scene(), data as KxData);
   try {
     const brick = mesh(built.group, 'brickRed');
-    const day = brick.material, night = buildingNightMaterialsOf(brick)?.night ?? day;
+    const day = brick.material, night = (buildingNightMaterialsOf(brick)?.night ?? day) as THREE.Material; // a single material here (only shed-front carries an array, round 25)
     addRoofShade(day);
     const sample = (m: THREE.Material) => ({
       arcade: facadeSample(m, 3),
@@ -82,7 +82,7 @@ test('gold is concentrated on Midland gable rakes and modelled clock-tower trim'
   const built = addLandmarks(new THREE.Scene(), data as KxData);
   try {
     const stone = mesh(built.group, 'stone');
-    const day = stone.material, night = buildingNightMaterialsOf(stone)?.night ?? day;
+    const day = stone.material, night = (buildingNightMaterialsOf(stone)?.night ?? day) as THREE.Material;
     addRoofShade(day);
     const sample = (m: THREE.Material) => ({
       rake: facadeSample(m, 25, 1, 1, 1), adjacent: facadeSample(m, 25),
@@ -172,8 +172,8 @@ test('Midland keeps its original daylight material and shader through night, and
   const day = (wallMs: number) => sky.update({ camera, target, timeMs: Date.parse('2026-11-20T12:00:00Z'), wallMs, weather: CLEAR_STATE });
   const candidates = ['brickRed', 'stone'].map(key => mesh(built.group, key));
   const digests = [
-    '30cb039754b15671bf42901ea679fd6e67e3e159b09d388cc930440624b279b7',
-    '3a3e9f7341bb0c076e6fe599967ce76e2f0ab3725c9a3bdfceb330f7481880cc',
+    '5f265814b5dfe62378e707aac3249e16c9175cb78a59df1597150d96f9eff432',
+    'fabbb5bf645c5541e2df709151a01ea1d9619c1b74d58c3d38c793d80f9eb781',
   ];
   const glass = 'd11b29ab8dd58ec0e307156043b198a425cc281a4c30100c3dc5649f9a9ddf99';
   try {

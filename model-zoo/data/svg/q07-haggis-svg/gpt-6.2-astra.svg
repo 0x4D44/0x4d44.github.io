@@ -1,0 +1,129 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-labelledby="title desc">
+  <title id="title">The great haggis chase</title>
+  <desc id="desc">A shaggy wild haggis bounds after a ginger-bearded gamekeeper in a tartan bonnet. Heather streams past their feet beneath the misty Scottish hills.</desc>
+  <defs>
+    <linearGradient id="sky" x2="0" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#90bfc2"/><stop offset=".8" stop-color="#ffe5be"/>
+    </linearGradient>
+    <linearGradient id="moor" x2=".25" y2="1">
+      <stop stop-color="#99806d"/><stop offset=".48" stop-color="#807956"/><stop offset="1" stop-color="#4a5949"/>
+    </linearGradient>
+    <radialGradient id="fur" cx=".38" cy=".28" r=".86">
+      <stop stop-color="#d29a53"/><stop offset=".6" stop-color="#97623b"/><stop offset="1" stop-color="#603e32"/>
+    </radialGradient>
+    <pattern id="tweed" width="10" height="10" patternUnits="userSpaceOnUse">
+      <rect width="10" height="10" fill="#58715b"/><path d="m0 2 5 4 5-4m-10 5 5 4 5-4" fill="none" stroke="#a6a37c" stroke-width="1.4"/>
+    </pattern>
+    <pattern id="plaid" width="22" height="22" patternUnits="userSpaceOnUse">
+      <rect width="22" height="22" fill="#a14a39"/><path d="M5 0v22M0 5h22" stroke="#493e38" stroke-width="6"/><path d="M16 0v22M0 16h22" stroke="#dfa857" stroke-width="2"/>
+    </pattern>
+    <g id="sprig">
+      <path d="M0 0q-1-16 5-37M1-7q-9-7-11-17M1-14q7-4 11-14" fill="none" stroke="#495741" stroke-width="2.5"/>
+      <g fill="#b076a1">
+        <ellipse cx="2" cy="-24" rx="3" ry="5"/><ellipse cx="5" cy="-34" rx="3" ry="5"/>
+        <ellipse cx="-7" cy="-19" rx="3" ry="4" transform="rotate(-30 -7 -19)"/><ellipse cx="10" cy="-24" rx="3" ry="5" transform="rotate(32 10 -24)"/>
+      </g>
+      <path d="m4-37 2-3m-17 17 1-3m22 2 2-4" stroke="#e2afc8" stroke-width="3" stroke-linecap="round"/>
+    </g>
+    <pattern id="field" width="126" height="63" patternUnits="userSpaceOnUse">
+      <use href="#sprig" transform="translate(17 49) scale(.65)"/><use href="#sprig" transform="translate(28 48) rotate(18) scale(.45)"/>
+      <use href="#sprig" transform="translate(93 19) rotate(-12) scale(.48)"/>
+      <path d="m50 32 8 1 5-2m37 20 5-1" fill="none" stroke="#bdab82" stroke-width="2"/>
+    </pattern>
+    <g id="bootleg" stroke="#383a30" stroke-width="3" stroke-linejoin="round">
+      <path d="m-10-5 24 1 1 37-7 14-19-5 6-22z" fill="#665d46"/>
+      <path d="m-9 35 20 2-4 36-16-1z" fill="#c4ae86"/><path d="m-9 44 17 2m-17 4 16 2" stroke="#885442"/>
+      <path d="m-10 67 18 1 3 12 15 5q5 8-4 9l-34-3z" fill="#514238"/>
+    </g>
+    <g id="paw" stroke="#523c2e" stroke-width="3">
+      <path d="m-7-3 14 1-3 27q15 1 12 8-8 5-23-1z" fill="#745135"/>
+    </g>
+    <style>
+      .stride,.counter,.bound,.jog,.ear,.tail,.scarf,.near,.middle{animation-iteration-count:infinite;animation-timing-function:ease-in-out}
+      .stride{animation-name:stride;animation-duration:.56s}.counter{animation-name:counter;animation-duration:.56s}
+      .bound{animation-name:bound;animation-duration:.56s}.jog{animation-name:jog;animation-duration:.28s}
+      .ear,.scarf,.tail{animation-name:flutter;animation-duration:.28s}
+      .near{animation:roll 1.4s linear infinite}.middle{animation:roll 3.6s linear infinite}
+      @keyframes stride{0%,100%{transform:rotate(41deg)}50%{transform:rotate(-44deg)}}
+      @keyframes counter{0%,100%{transform:rotate(-44deg)}50%{transform:rotate(41deg)}}
+      @keyframes bound{0%,100%{transform:translateY(2px) rotate(3deg)}50%{transform:translateY(-17px) rotate(-3deg)}}
+      @keyframes jog{0%,100%{transform:translateY(3px)}50%{transform:translateY(-5px)}}
+      @keyframes flutter{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(7deg)}}
+      @keyframes roll{to{transform:translateX(-126px)}}
+    </style>
+  </defs>
+
+  <rect width="800" height="600" fill="url(#sky)"/>
+  <circle cx="648" cy="112" r="46" fill="#fff0ca"/>
+  <g fill="#f6ebd6" opacity=".75">
+    <path d="M-30 113q35-24 68-13 24-41 67-15 42-6 62 20 31-3 56 8z"/>
+    <path d="M350 67q29-19 54-15 25-26 52-9 33-4 53 18l27 6z"/>
+  </g>
+  <path d="m0 251 81-63 38 14 92-90 33 25 18-3 87 92 95-59 23 10 76-75 50 45 26 4 84 78 97-61v160H0z" fill="#91a8a2"/>
+  <path d="m151 171 60-59 33 25 18-3 29 30-45-18-14 9-17-20-25 23 2-12zm344-20 48-49 50 45-33-14-13 3-9-15z" fill="#d4d4bf"/>
+  <path d="M0 247q102-43 189 0t202-15q128-69 234-20t175-6v139H0z" fill="#718e81"/>
+  <path d="M0 282q149-45 268-14t250-8q130-38 282 4v74H0z" fill="#9ba08a"/>
+  <path d="M0 305q195-59 390-9t410-9v313H0z" fill="url(#moor)"/>
+  <path d="M0 321q213-51 390-5t410-17v25q-220 50-408 8T0 337z" fill="#a98494"/>
+  <g class="middle"><rect x="0" y="343" width="940" height="257" fill="url(#field)" opacity=".76"/></g>
+  <path d="M-15 470q181-53 385-21t445-18v32q-245 53-446 26T-15 515z" fill="#b59a77"/>
+  <g fill="#514c42" opacity=".28">
+    <ellipse cx="265" cy="459" rx="88" ry="10"/><ellipse cx="553" cy="464" rx="68" ry="9"/>
+  </g>
+
+  <!-- A low-slung wild haggis, all bristles and determination. -->
+  <g transform="translate(255 393)">
+    <g class="bound">
+      <g transform="translate(-45 31)"><use class="counter" href="#paw"/></g>
+      <g transform="translate(44 30)"><use class="stride" href="#paw"/></g>
+      <g transform="translate(-67 -3)"><path class="tail" d="M4 6Q-33 8-43-21l17 9-5-13Q-8-19 4-5z" fill="#805534" stroke="#523e30" stroke-width="3"/></g>
+      <g transform="translate(-32 36)"><use class="stride" href="#paw"/></g>
+      <g transform="translate(55 35)"><use class="counter" href="#paw"/></g>
+      <path d="m-79 2-7-4 11-11-7-2 16-15-5-3 22-11-3-5 29-3-5-7 29 6 3-7 20 10 5-5 21 13 4-5q21 15 22 38 8 46-35 52l-8 5-6-4-15 6-4-5-20 3-3-5-17-1 1-5q-43-6-48-35z" fill="url(#fur)" stroke="#513e31" stroke-width="3.5"/>
+      <g fill="none" stroke-linecap="round" stroke-width="3">
+        <path d="m-60-16 12-9-1 7 13-11m-23 34 12-9-1 7 14-11m6-20 10-7-2 7 13-8m-19 34 11-8-2 7 14-8m-48 29 11-5m42-38 10-6" stroke="#d7a467"/>
+        <path d="m-55 21 10-7m17 14 13-6m12 8 9-6m-20-30 9-6" stroke="#805238"/>
+      </g>
+      <g transform="translate(38 -28)"><path class="ear" d="M3 5Q-23 1-24-26-1-25 7-5z" fill="#846044" stroke="#503d32" stroke-width="3"/></g>
+      <path d="M41-9q20-13 29 8l15 4q7 19-15 25-31 7-36-14z" fill="#c69561"/>
+      <ellipse cx="56" cy="-10" rx="11" ry="13" fill="#fff3d5" stroke="#5c4434" stroke-width="2.5"/>
+      <circle cx="61" cy="-10" r="5" fill="#302e29"/><path d="m43-26 23 6" stroke="#553e30" stroke-linecap="round" stroke-width="5"/>
+      <ellipse cx="82" cy="4" rx="10" ry="7" fill="#40322e"/><path d="M79 15q-9 11-22 4" fill="none" stroke="#51382e" stroke-width="3"/>
+    </g>
+  </g>
+
+  <!-- Looking back over his shoulder mid-stride. -->
+  <g transform="translate(550 368)">
+    <g class="jog">
+      <g transform="translate(5 5)"><use class="counter" href="#bootleg"/></g>
+      <g transform="translate(-6 6)"><use class="stride" href="#bootleg"/></g>
+      <path d="m19-71 22 25 25-12 7 11-34 23q-7 3-12-5L8-52z" fill="#465c4c" stroke="#383e32" stroke-width="3"/>
+      <path d="m64-57 5-11q4-4 5 4 13-7 14-1 4 8-15 18z" fill="#eeb18a" stroke="#5d4938" stroke-width="2.5"/>
+      <path d="M0-83q16-5 30 9l-3 38 6 44q-28 13-62-4l15-49z" fill="url(#tweed)" stroke="#374334" stroke-width="3.5"/>
+      <path d="m11-78 9 12-10 9 5 6L0-30z" fill="#364e40"/><path d="m7-13 19-2" stroke="#354637" stroke-width="4"/>
+      <g transform="translate(6 -81)"><path class="scarf" d="M4 4q-25-17-49-8-15 5-28-2 14 21 36 13Q-17 1 1 13z" fill="url(#plaid)" stroke="#634536" stroke-width="2"/></g>
+      <path d="m4-31-15 12-28-18 7-10 20 9 15-25q8-10 17-3 9 9-16 35z" fill="url(#tweed)" stroke="#394437" stroke-width="3"/>
+      <path d="m-32-46-4-10q-3-4-5 3-11-10-14-4-1 8 16 20z" fill="#edac7f" stroke="#674b38" stroke-width="2.5"/>
+      <path d="m7-97 17 2-2 18-19 2z" fill="#d89065"/>
+      <path d="M-6-121q19-18 37 0l-2 25q-4 15-21 14l-16-10-4-8-9-2 11-12z" fill="#f2b688" stroke="#614837" stroke-width="3"/>
+      <path d="M16-122q11-9 18 0l-1 19-5-4-2 8-7-6z" fill="#b6532e"/>
+      <path d="m-13-98 9 3 7-6q7 8 16 2l6-9 3 12-7 13-7 2-2 6-7-4-6 1-11-12z" fill="#bc592e" stroke="#85442c" stroke-width="2"/>
+      <ellipse cx="-3" cy="-111" rx="5" ry="6" fill="#fff5dd"/><circle cx="-5" cy="-111" r="2.5" fill="#37332c"/>
+      <path d="m-9-118 9-3m-7 30 8 2" stroke="#81412b" stroke-width="3" stroke-linecap="round"/>
+      <path d="M-18-126q-2-7 13-13 22-11 40 3 5 7-2 12l-39 4z" fill="url(#plaid)" stroke="#493f32" stroke-width="3"/>
+      <path d="m-9-126 40-4-2 7-43 6q-18 1-16-3z" fill="#414c3e"/><circle cx="10" cy="-144" r="6" fill="#944b39"/>
+    </g>
+  </g>
+  <path d="M0 551q118-30 226-9t238 6q191-34 336-16v68H0z" fill="#505944"/>
+  <g class="near">
+    <defs>
+      <g id="clump">
+        <path d="m0 598 15-36-4 30 15-13-7 19zm72-22 9-23-2 18 12-12-6 17z" fill="#768058"/>
+        <use href="#sprig" transform="translate(36 604) rotate(-18) scale(1.45)"/>
+        <use href="#sprig" transform="translate(41 603) rotate(12) scale(1.65)"/>
+        <use href="#sprig" transform="translate(94 575) rotate(8) scale(.85)"/>
+      </g>
+    </defs>
+    <use href="#clump"/><use href="#clump" x="126"/><use href="#clump" x="252"/><use href="#clump" x="378"/><use href="#clump" x="504"/><use href="#clump" x="630"/><use href="#clump" x="756"/><use href="#clump" x="882"/>
+  </g>
+</svg>

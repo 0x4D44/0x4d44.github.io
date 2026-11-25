@@ -46,7 +46,7 @@ export function kingsCrossLandingView(data: KxData): StationView {
   const mouth = tunnelMouths(data).find((m) => m.id === 'gasworks-south');
   if (!mouth) throw new Error('the Gasworks Tunnel south mouth is needed for the King’s Cross landing view');
   const shed = shedLayout(data);
-  const [aimX, aimZ] = shedToWorld(shed, shed.width / 2, shed.length + LANDING_AIM_BEYOND_GABLE_M);
+  const [aimX, aimZ] = shedToWorld(shed, shed.spine, shed.length + LANDING_AIM_BEYOND_GABLE_M);
   return {
     eye: [
       mouth.origin[0] + mouth.axis[0] * LANDING_INSIDE_MOUTH_M,

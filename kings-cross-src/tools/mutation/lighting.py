@@ -56,7 +56,7 @@ if not scratch.is_relative_to(src.parent / '.scratch'):
 
 LIGHTING_TEST = 'web/tests/lighting.test.ts'
 GLSL_TEST, THREE_TEST, HOOKS_TEST = 'tools/tests/glsl-squeeze.test.ts', 'tools/tests/three-squeeze.test.ts', 'tools/tests/three-squeeze-hooks.test.ts'
-LANES = {'lighting': [LIGHTING_TEST], 'glsl': [GLSL_TEST], 'three': [THREE_TEST], 'hooks': [HOOKS_TEST]}
+LANES = {'lighting': [LIGHTING_TEST], 'glsl': [GLSL_TEST], 'three': [THREE_TEST], 'hooks': [HOOKS_TEST], 'shed-glass': ['web/tests/shed-daylight.test.ts']}
 # Tests of this set that no change to the page or the config can turn red: one checks the test file's own scan of shader matches on small made-up modules.
 SELF_CHECKS = ('the scan finds a match that spans lines',)
 
@@ -73,6 +73,8 @@ L = Where(LIGHTING, 'lighting')  # lighting.ts, judged by the page's own tests o
 LOAD = Where(LIGHTING, 'hooks')  # a mutation that stops lighting.ts loading: lighting.test.ts dies on its import, the hooks test loads it inside a try
 HOOK = Where(LIGHTING, 'lighting', 'hooks', 'three')  # a change to what the page does to three's shader text: the squeezed text must still take it
 V = Where(VITE, 'glsl', 'three', 'hooks')
+SG = Where(LIGHTING, 'shed-glass', 'hooks')  # the sky through the crown and the crown from below, judged by their own tests
+SGS = Where('web/src/shed.ts', 'shed-glass')  # where the shed tells the shaders it stands
 MATERIALS, CONCOURSE, LANDMARKS = Where('web/src/materials.ts', 'lighting'), Where('web/src/concourse.ts', 'lighting'), Where('web/src/landmarks.ts', 'lighting')
 
 # the hook's block, as the file holds it (a template literal: `\n` is two characters, the other line ends are real)
@@ -120,8 +122,8 @@ MUTATIONS = [
     ('the concourse fill takes the cloud for the sky', L, 'interiorFillFor(graded ? hemisphere : 0, cloud,', 'interiorFillFor(graded ? cloud : 0, hemisphere,'),
     ('the concourse fill is worked out but not kept', L, FILL_CALL, 'interiorFillFor(graded ? hemisphere : 0, cloud);'),
     ('the grade never writes the concourse fill', L, '  ' + FILL_CALL + '\n', ''),
-    ('a grade with no sky gives the concourse a fill', L, 'exposure: number, hemisphere = 0, cloud = 0)', 'exposure: number, hemisphere = 1, cloud = 0)'),
-    ('a grade with no cloud given has an overcast sky', L, 'hemisphere = 0, cloud = 0)', 'hemisphere = 0, cloud = 1)'),
+    ('a grade with no sky gives the concourse a fill', L, 'exposure: number, hemisphere = 0, cloud = 0, sunKey = true)', 'exposure: number, hemisphere = 1, cloud = 0, sunKey = true)'),
+    ('a grade with no cloud given has an overcast sky', L, 'hemisphere = 0, cloud = 0, sunKey = true)', 'hemisphere = 0, cloud = 1, sunKey = true)'),
     # ----------------------------------------------------------------- what stays out of the grade (leaveOutOfGrade, the scan, the watch)
     ('lines stay in the grade', L, '(unlit.isLineBasicMaterial || unlit.isPointsMaterial || unlit.isSpriteMaterial) && material.toneMapped',
      '(unlit.isPointsMaterial || unlit.isSpriteMaterial) && material.toneMapped'),
@@ -332,7 +334,32 @@ MUTATIONS = [
     ('the cover read is never added', HOOK, "    if (!fragment.includes('float coverGroundAt')) fragment = fragment.replace('#include <common>', `#include <common>\\n${COVER_GLSL}`);\n", ''),
     ('the cover read is added where the program has no common chunk', HOOK, "fragment.replace('#include <common>', `#include <common>\\n${COVER_GLSL}`)", "fragment.replace('#include <commons>', `#include <commons>\\n${COVER_GLSL}`)"),
     ('the cover read is declared after the shade that uses it', HOOK, "fragment.replace('#include <common>', `#include <common>\\n${COVER_GLSL}`)", "fragment.replace('#include <lights_lambert_pars_fragment>', `#include <lights_lambert_pars_fragment>\\n${COVER_GLSL}`)"),
-    ('the roof shade function is left out of the program', HOOK, r'\nuniform vec3 uInteriorFill;\n${ROOF_SHADE_GLSL}`)', r'\nuniform vec3 uInteriorFill;\n`)'),
+    ('the roof shade function is left out of the program', HOOK, r'\nuniform vec4 uShedSize;\n${ROOF_SHADE_GLSL}${SHED_GLASS_GLSL}`)', r'\nuniform vec4 uShedSize;\n${SHED_GLASS_GLSL}`)'),
+    # the sky through the crown (SHED_GLASS: the shade lifted in the shed's vaults by day) and the crown from below (CROWN_BELOW), judged by their own tests (web/tests/shed-daylight.test.ts)
+    ('the sky fill lifts the moon\'s shadow', SG, 'const day = graded && hemisphere > 0 && sunKey;', 'const day = graded && hemisphere > 0;'),
+    ('the sky fill lifts every graded scene\'s shadow', SG, 'const day = graded && hemisphere > 0 && sunKey;', 'const day = graded && sunKey;'),
+    ('the crown from below is on by night', SG, 'crownBelowUniforms.uCrownBelow.value = day ? 1 : 0;', 'crownBelowUniforms.uCrownBelow.value = 1;'),
+    ('the crown from below is never on', SG, 'crownBelowUniforms.uCrownBelow.value = day ? 1 : 0;', 'crownBelowUniforms.uCrownBelow.value = 0;'),
+    ('the crown from below keeps the sky\'s colour', SG, 'return mix( c, vec3(', 'return mix( c, c + 0.0 * vec3('),
+    ('the crown\'s panes are as dark as its bars', SG, '* ( l * mix( ${CROWN_BELOW.bar.toFixed(2)}, ${CROWN_BELOW.pane.toFixed(2)}, pane ) ), w );', '* ( l * ${CROWN_BELOW.bar.toFixed(2)} ), w );'),
+    ('the crown\'s bars are as bright as its panes', SG, '* ( l * mix( ${CROWN_BELOW.bar.toFixed(2)}, ${CROWN_BELOW.pane.toFixed(2)}, pane ) ), w );', '* ( l * ${CROWN_BELOW.pane.toFixed(2)} ), w );'),
+    ('the pane mask is read inside out', SG, '* mix( ${CROWN_BELOW.bar.toFixed(2)}, ${CROWN_BELOW.pane.toFixed(2)}, pane )', '* mix( ${CROWN_BELOW.pane.toFixed(2)}, ${CROWN_BELOW.bar.toFixed(2)}, pane )'),
+    ('the pane mask measures from the tile\'s middle, not its edge', SG, 'vec2 d = abs( fract( uv + 0.5 ) - 0.5 );', 'vec2 d = abs( fract( uv ) - 0.5 );'),
+    ('the pane mask never fades with distance', SG, ', vec2( 1.0 ) - 2.0 * hw, smoothstep( hw, 4.0 * hw, f ) );', ', vec2( 1.0 ) - 2.0 * hw, vec2( 0.0 ) );'),
+    ('the far crown fades to all pane', SG, ', vec2( 1.0 ) - 2.0 * hw, smoothstep( hw, 4.0 * hw, f ) );', ', vec2( 1.0 ), smoothstep( hw, 4.0 * hw, f ) );'),
+    ('the pane mask is not read off the glass\'s tile', SG, 'float crownPaneK = crownPane( vMapUv, fwidth( vMapUv ) );', 'float crownPaneK = 1.0;'),
+    ('the crown glass is not given its look from below', SGS, '  addCrownBelow(glassMat); // grey-white from below by day (lighting.ts CROWN_BELOW)\n', ''),
+    ('the crown from below shares a program key', SG, 'material.customProgramCacheKey = () => `${ownKey}+crownBelow`;', 'material.customProgramCacheKey = () => ownKey;'),
+    ('the sky fill reaches over the east aisle', SG, 'min( min( q.x - uShedSize.x, uShedSize.y - q.x ), min( -q.z, uShedSize.w + q.z ) )', 'min( q.x - uShedSize.x, min( -q.z, uShedSize.w + q.z ) )'),
+    ('the sky fill reaches past the north end', SG, 'min( -q.z, uShedSize.w + q.z )', '-q.z'),
+    ('the sky fill reaches over the springing, to the roof', SG, ' * ( 1.0 - smoothstep( uShedSize.z - 0.1, uShedSize.z, q.y ) );', ';'),
+    ('the sky fill reaches the walls\' outer faces', SG, 'return smoothstep( -0.05, 0.0, e ) *', 'return smoothstep( -1.3, -1.0, e ) *'),
+    ('the sky fill stops 1.5 m under the springing again', SG, '( 1.0 - smoothstep( uShedSize.z - 0.1, uShedSize.z, q.y ) )', '( 1.0 - smoothstep( uShedSize.z - 1.5, uShedSize.z - 1.0, q.y ) )'),
+    ('the shed\'s frame is the world from the shed, not the shed from the world', SG, 'roofShadeUniforms.uShedFrame.value.copy(group.matrixWorld).invert();', 'roofShadeUniforms.uShedFrame.value.copy(group.matrixWorld);'),
+    ('the sky fill dims the sun\'s streaks', SG, "'directLight.color *= mix( $1, 1.0, shedSoft );'", "'directLight.color *= mix( $1, 0.45, shedSoft );'"),
+    ('the softening is never on', SG, 'float shedSoft = uShedDiffuse > 0.0 ? uShedDiffuse * shedInside(', 'float shedSoft = uShedDiffuse < 0.0 ? uShedDiffuse * shedInside('),
+    ('three\'s own lights chunk is left in', SG, "      .replace('#include <lights_fragment_begin>', shedSoftenedLights())", ''),
+    ('the shed does not say where it stands', SGS, '  setShedGlass(group, spine - 2 * R, spine + 2 * R, sp, L);', ''),
     ('the roof shade uniform is not declared', HOOK, r'\nuniform vec4 uRoofShade;\nuniform vec3 uInteriorFill;', r'\nuniform vec3 uInteriorFill;'),
     ('the concourse fill uniform is not declared', HOOK, r'uniform vec4 uRoofShade;\nuniform vec3 uInteriorFill;\n', r'uniform vec4 uRoofShade;\n'),
     ('the shade is added where the program has no lights chunk', HOOK, "fragment.replace('#include <lights_lambert_pars_fragment>', `#include <lights_lambert_pars_fragment>", "fragment.replace('#include <lights_lambert_pars_fragments>', `#include <lights_lambert_pars_fragments>"),

@@ -7,6 +7,9 @@ import { concourseCanopy, concourseHeight, shedLayout, shedToWorld, stationBuild
 import { buildConcourse, concourseGrid, CURTAIN_FIN, FACET_RISE, FASCIA_BOTTOM, FUNNEL_GLAZING_RADIUS, GLAZED_SHARE, keepTriangles, RIM_GLAZING_WIDTH,
   ROOFLIGHT_AZIMUTHS, ROOFLIGHT_FRAME, ROOFLIGHT_HALF, ROOFLIGHT_RADIUS, SKIN_LIFT, SOFFIT_LIFT } from '../src/concourse.ts';
 import { WESTERN_RANGE } from '../src/shed.ts';
+// Re-pinned 2026-11-24: the curtain wall's plane, u = -12.3 in the shed frame before the shed realignment moved the frame's origin west with the
+// west wall; it stands where it stood, 0.3 m in front of the Range's face (concourse.ts WEST_WALL).
+const GLASS_U = -WESTERN_RANGE.depth - 0.3;
 
 // The roof's skin: soffit, cladding, glazing and edge.
 // Published: only 15 % of the roof is glazed, "at the perimeter and towards the funnel" (refs/DIMENSIONS.md section 2:
@@ -461,13 +464,13 @@ test('roof edge: the glass closes the Range cut from the cornice to the roof ski
   const closure = skin.getObjectByName('concourse-closure') as THREE.Mesh;
   assert.ok(closure, 'the concourse has a closure');
   assert.equal((closure.material as THREE.Material).side, THREE.BackSide, 'bright from the concourse, as the glazing is');
-  // standing in the concourse, looking east at the Range's top from the floor: every sight line between the cornice and the roof meets glass at u = -12.3
+  // standing in the concourse, looking east at the Range's top from the floor: every sight line between the cornice and the roof meets glass at u = GLASS_U (-12.3 before the realignment)
   let sampled = 0;
   for (let v = WESTERN_RANGE.v0 + 6; v < WESTERN_RANGE.v1 - 6; v += 4.3) for (const y of [CORNICE + 0.6, CORNICE + 3, CORNICE + 5.5]) {
     if (!roofOver(-26, -13, v, y)) continue; // the roof dips under this sight line on its way to the Range, so it would meet the roof first
     const w = shedToWorld(layout, -26, v), hit = new THREE.Raycaster(new THREE.Vector3(w[0], y, w[1]), eastward).intersectObjects(roofLayers, true)[0];
     assert.equal(hit?.object.name, 'concourse-closure', `a sight line at v ${v.toFixed(1)}, ${y.toFixed(1)} m high, meets ${hit?.object.name ?? 'the open sky'}`);
-    assert.ok(Math.abs(worldToShed(layout, [hit!.point.x, hit!.point.z]).u + 12.3) < 0.02, "the glass stands 0.3 m in front of the Range's face");
+    assert.ok(Math.abs(worldToShed(layout, [hit!.point.x, hit!.point.z]).u - GLASS_U) < 0.02, "the glass stands 0.3 m in front of the Range's face");
     sampled++;
   }
   assert.ok(sampled >= 24, `${sampled} sight lines checked`);
@@ -493,7 +496,7 @@ test('roof edge: beside the Range\'s brick centre the curtain wall is thin white
   // 56.07 and 90.13 are in the half-fins the walls end in; the fins stand on the half-bays, 1.7 m apart
   const between = [38, 44, 50, 55.9, 90.3, 94, 100, 108, 114], onFins = [39.1, 44.2, 51, 56.07, 90.13, 100.3, 108.8], over = [56.13, 56.3, 59, 66, 73, 80, 87, 89.9, 90.07];
   const red = (hit: THREE.Intersection): number => (hit.object as THREE.Mesh).geometry.getAttribute('color').getX(hit.face!.a); // the fins are white, the panes blue: red well under 1
-  const plane = (hit: THREE.Intersection): boolean => Math.abs(worldToShed(layout, [hit.point.x, hit.point.z]).u + 12.3) < 0.02;
+  const plane = (hit: THREE.Intersection): boolean => Math.abs(worldToShed(layout, [hit.point.x, hit.point.z]).u - GLASS_U) < 0.02;
   for (const v of [...between, ...onFins]) {
     assert.ok(roofAt(-13, v) > CORNICE + 0.3 && roofOver(-26, -13, v, CORNICE + 0.2), `the roof is over the cornice at v ${v}`);
     assert.equal(sight(v, SILL - 0.3)?.object.name, undefined, `nothing below the sill at v ${v}`); // the name, not the hit: a failing assert prints its operand, and a hit holds the whole scene
@@ -538,7 +541,7 @@ test("roof edge: from the Range side the cut is closed too, by the dome's skin t
   assert.ok(gable.filter(f => f.area > 1).length >= 20, `${gable.length} upright cladding faces`);
   for (const f of gable.filter(g => g.area > 0)) {
     assert.ok(f.normal.dot(eastward) > 0.999, 'a gable face looks east, to the Range side');
-    for (const v of [f.a, f.b, f.c]) assert.ok(Math.abs(worldToShed(layout, [v.x, v.z]).u + 12.3) < 0.02, "the gable stands on the glass's plane, 0.3 m in front of the Range's face");
+    for (const v of [f.a, f.b, f.c]) assert.ok(Math.abs(worldToShed(layout, [v.x, v.z]).u - GLASS_U) < 0.02, "the gable stands on the glass's plane, 0.3 m in front of the Range's face");
   }
   assert.ok(Math.abs(area(gable) - area(closure)) < 1e-3 * area(closure), `the gable covers what the glass does: ${area(gable).toFixed(1)} m2 against ${area(closure).toFixed(1)} m2`);
   const material = (skin.getObjectByName('concourse-cladding') as THREE.Mesh).material as THREE.Material;
@@ -549,7 +552,7 @@ test("roof edge: from the Range side the cut is closed too, by the dome's skin t
     if (roofAt(-13, v) < y + 0.3) continue; // the roof is lower than this sight line here
     const w = shedToWorld(layout, -8, v), hit = new THREE.Raycaster(new THREE.Vector3(w[0], y, w[1]), eastward.clone().negate()).intersectObjects(roofLayers, true)[0];
     assert.equal(hit?.object.name, 'concourse-cladding', `a sight line at v ${v.toFixed(1)}, ${y.toFixed(1)} m high, from the Range side, meets ${hit?.object.name ?? 'the open sky'}`);
-    assert.ok(Math.abs(worldToShed(layout, [hit!.point.x, hit!.point.z]).u + 12.3) < 0.02, "at the glass's plane");
+    assert.ok(Math.abs(worldToShed(layout, [hit!.point.x, hit!.point.z]).u - GLASS_U) < 0.02, "at the glass's plane");
     sampled++;
   }
   assert.ok(sampled >= 24, `${sampled} sight lines checked`);

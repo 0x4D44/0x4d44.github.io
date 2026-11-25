@@ -31,25 +31,29 @@ import type { OccupiedSpan } from '../../core/signal-aspects.ts';
 
 /** Through platforms must never inherit the KX buffer-stop marker. */
 export function validateEdinburghAnchors(value: unknown, graph: Graph): AnchorMap {
+  return validateThroughAnchors(value, graph, 'EB');
+}
+
+export function validateThroughAnchors(value: unknown, graph: Graph, area: string): AnchorMap {
   const map = value as AnchorMap & { platformAssociations?: { berth: string; platform: string }[] };
-  if (!map || map.area !== 'EB' || !Array.isArray(map.anchors) || !Array.isArray(map.unmapped) || !Array.isArray(map.sources)) throw new Error('EB anchor map required');
+  if (!map || map.area !== area || !Array.isArray(map.anchors) || !Array.isArray(map.unmapped) || !Array.isArray(map.sources)) throw new Error(`${area} anchor map required`);
   const platforms = new Map<string, Set<string>>();
-  if (map.platformAssociations !== undefined && !Array.isArray(map.platformAssociations)) throw new Error('invalid EB platform alternatives');
+  if (map.platformAssociations !== undefined && !Array.isArray(map.platformAssociations)) throw new Error(`invalid ${area} platform alternatives`);
   for (const a of map.platformAssociations ?? []) {
-    if (!a || typeof a.berth !== 'string' || typeof a.platform !== 'string') throw new Error('invalid EB platform alternatives');
+    if (!a || typeof a.berth !== 'string' || typeof a.platform !== 'string') throw new Error(`invalid ${area} platform alternatives`);
     const refs = platforms.get(a.berth) ?? new Set(); refs.add(a.platform); platforms.set(a.berth, refs);
   }
   const seen = new Set<string>();
   for (const a of map.anchors) {
-    if (!a || typeof a !== 'object') throw new Error('invalid EB anchor');
+    if (!a || typeof a !== 'object') throw new Error(`invalid ${area} anchor`);
     const from = graph.pos.get(a.from), to = graph.pos.get(a.to);
     if (!from || !to || typeof a.berth !== 'string' || !/^[A-Za-z0-9_-]{1,64}$/.test(a.berth) || seen.has(a.berth) ||
       !graph.adj.get(a.from)?.some(e => e.a === a.to || e.b === a.to) ||
       !Number.isFinite(a.t) || a.t < 0 || a.t > 1 || !Array.isArray(a.point) || a.point.length !== 2 ||
       a.point.some((v, i) => !Number.isFinite(v) || Math.abs(v - (from[i]! + (to[i]! - from[i]!) * a.t)) > .05) ||
-      !Number.isFinite(a.errorM) || a.errorM < 0 || typeof a.evidence !== 'string' || !a.evidence.trim()) throw new Error('invalid EB anchor geometry');
-    if (a.platform !== undefined) throw new Error('EB anchor must not claim terminal buffer semantics');
-    if ((platforms.get(a.berth)?.size ?? 0) > 1) throw new Error('EB anchor retains conflicting platform alternatives');
+      !Number.isFinite(a.errorM) || a.errorM < 0 || typeof a.evidence !== 'string' || !a.evidence.trim()) throw new Error(`invalid ${area} anchor geometry`);
+    if (a.platform !== undefined) throw new Error(`${area} anchor must not claim terminal buffer semantics`);
+    if ((platforms.get(a.berth)?.size ?? 0) > 1) throw new Error(`${area} anchor retains conflicting platform alternatives`);
     seen.add(a.berth);
   }
   return map;
@@ -63,13 +67,18 @@ export function edinburghTrack(geometry: unknown): { data: ReturnType<typeof wav
 
 export function createEdinburghMotion(geometry: unknown, value: unknown,
   serviceFor?: (description: string, atTime: number) => EdinburghServiceEvidence | undefined, track = edinburghTrack(geometry)) {
+  return createThroughMotion('EB', value, track, serviceFor);
+}
+
+function createThroughMotion(area: string, value: unknown, track: ReturnType<typeof edinburghTrack>,
+  serviceFor?: (description: string, atTime: number) => EdinburghServiceEvidence | undefined) {
   const { data, graph } = track;
-  const anchors = validateEdinburghAnchors(value, graph), kinds = createEdinburghKinds(serviceFor, { rows: EDINBURGH_FLEET });
+  const anchors = validateThroughAnchors(value, graph, area), kinds = createEdinburghKinds(serviceFor, { rows: EDINBURGH_FLEET });
   const motion = createMotion(graph, anchors, { lengthM: kinds.lengthM,
     // ASSUMED conservative station speed until a sourced local restriction table exists.
     defaultSpeedMps: 25 / 3.6, stationSpeedMps: 25 / 3.6, estimatedMotion: false });
   const sink: MotionSink = { advance: motion.advance, apply: (event, at, observed) => {
-    if (event.area === 'EB') motion.apply(event, at, observed);
+    if (event.area === area) motion.apply(event, at, observed);
   } };
   return { data, graph, anchors, kinds, motion, sink };
 }
@@ -121,8 +130,12 @@ export function waverleyLampSubject(view: TrainView, times: ReturnType<typeof pt
 }
 
 export function edinburghLiveDependencies(deps: LiveDependencies = {}): LiveDependencies {
+  return throughLiveDependencies('EB', deps);
+}
+
+function throughLiveDependencies(area: string, deps: LiveDependencies = {}): LiveDependencies {
   const source = deps.source ?? (url => new EventSource(url));
-  return { ...deps, source: () => source('/relay/events?area=EB') };
+  return { ...deps, source: () => source(`/relay/events?area=${area}`) };
 }
 
 /** The track a train covers, as node pairs (core/signal-aspects.ts); a fading train has left the TD picture. */
@@ -132,7 +145,7 @@ export function edinburghOccupancy(views: readonly TrainView[]): OccupiedSpan[] 
 /** How often the signal heads read the trains again (ms): aspects change with sections, not with frames. */
 export const SIGNAL_OCCUPANCY_MS = 500;
 
-export function createEdinburghLive(options: {
+export interface ThroughLiveOptions {
   geometry: unknown; scene: THREE.Scene; camera: THREE.Camera; parent: HTMLElement;
   mode: 'auto' | 'live' | 'replay' | 'demo' | 'none'; date: string; speed: number; hostname: string;
   fetchImpl?: typeof fetch; liveDependencies?: LiveDependencies;
@@ -140,23 +153,30 @@ export function createEdinburghLive(options: {
   signals?: SignalOverlay | null;
   /** How often the heads read the trains again (ms, default SIGNAL_OCCUPANCY_MS). */
   signalOccupancyMs?: number;
-}) {
-  const group = new THREE.Group(); group.name = 'edinburgh-eb-trains'; options.scene.add(group);
-  const track = edinburghTrack(options.geometry);
+}
+
+export function createEdinburghLive(options: ThroughLiveOptions) {
+  return createThroughLive(options);
+}
+
+export function createThroughLive(options: ThroughLiveOptions, perth?: { area: string; track: ReturnType<typeof edinburghTrack> }) {
+  const area = perth?.area ?? 'EB';
+  const group = new THREE.Group(); group.name = perth ? `perth-${area.toLowerCase()}-trains` : 'edinburgh-eb-trains'; options.scene.add(group);
+  const track = perth?.track ?? edinburghTrack(options.geometry);
   // The heads stand by the drawn curves, four instanced draws for them all. Their aspects come from the EB feed's S-class
   // red/not-red where the private table decodes one, and are otherwise inferred from the trains ahead (Arthur, 12 Nov).
-  const signals = options.signals ? createSignals(options.signals, options.scene, { area: 'EB', track: track.graph, platforms: track.data.platforms,
+  const signals = options.signals ? createSignals(options.signals, options.scene, { area, track: track.graph, platforms: track.data.platforms,
     infer: true, instanced: true, ...(options.fetchImpl ? { fetchImpl: options.fetchImpl } : {}) }) : undefined;
   let occupancyAt = -Infinity;
   // the pool of light ahead of each lit headlamp and the halo round each lit lens: two instanced draws for all the trains of this scene (train-lamp-pool.ts)
   const lights = new TrainLampLights(); options.scene.add(lights.group);
-  const labels = options.parent.ownerDocument.createElement('div'); labels.className = 'edinburgh-train-labels';
+  const labels = options.parent.ownerDocument.createElement('div'); labels.className = perth ? 'perth-train-labels' : 'edinburgh-train-labels';
   labels.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:3;overflow:hidden'; options.parent.append(labels);
   const drawn = new Map<number, { group: THREE.Group; label: HTMLSpanElement }>();
   const lampTrains: LampTrain[] = [];
   let session: ReturnType<typeof createEdinburghMotion> | undefined, feed: TrainFeed | undefined;
   let replay: ReturnType<typeof createAreaReplay> | undefined, disposed = false, loading = false, retryAt = 0, attempt = 0;
-  let connection = 'live trains unavailable; private EB anchors required', error: string | undefined;
+  let connection = `live trains unavailable; private ${area} anchors required`, error: string | undefined;
   // The fleet evidence (private, from the relay): PTAC allocations first, then the booked diagrams. Without either every
   // train is the neutral assumed fleet.
   let fleet: FleetTable | undefined, ptac: PtacStore | undefined, fleetNote = 'fleet: no evidence; neutral';
@@ -174,31 +194,31 @@ export function createEdinburghLive(options: {
     if (disposed || loading || session || ['none', 'demo'].includes(options.mode) || !relayReachable(options.hostname)) return;
     loading = true;
     try {
-      const response = await fetchImpl('/relay/anchors?area=EB', { cache: 'no-store', signal: AbortSignal.any([abort.signal, AbortSignal.timeout(10_000)]) });
-      if (!response.ok) throw new Error(`EB anchors unavailable (${response.status})`);
+      const response = await fetchImpl(`/relay/anchors?area=${area}`, { cache: 'no-store', signal: AbortSignal.any([abort.signal, AbortSignal.timeout(10_000)]) });
+      if (!response.ok) throw new Error(`${area} anchors unavailable (${response.status})`);
       // serviceFor reads the table as it stands at each birth; the fleet is fetched below, before any train can be born.
-      const candidate = createEdinburghMotion(options.geometry, await response.json(), fleetServiceFor(() => ptac, () => fleet), track);
-      if (!candidate.anchors.anchors.length) throw new Error('EB positions/headings unresolved; no placed anchors');
+      const candidate = createThroughMotion(area, await response.json(), track, perth ? undefined : fleetServiceFor(() => ptac, () => fleet));
+      if (!candidate.anchors.anchors.length) throw new Error(`${area} positions/headings unresolved; no placed anchors`);
       // the heads hear what the trains hear: the S-class bytes and the snapshots that replace them
       const sink: MotionSink = signals ? { advance: candidate.sink.advance, apply: (event, at, observed) => {
-        candidate.sink.apply(event, at, observed); if (event.area === 'EB') signals.apply({ t: at, e: event });
+        candidate.sink.apply(event, at, observed); if (event.area === area) signals.apply({ t: at, e: event });
       } } : candidate.sink;
-      await loadFleet();
+      if (!perth) await loadFleet();
       if (options.mode === 'replay') {
-        const recording = await fetchImpl(`/relay/recording?area=EB&date=${encodeURIComponent(options.date)}`, { cache: 'no-store', signal: AbortSignal.any([abort.signal, AbortSignal.timeout(30_000)]) });
-        if (!recording.ok) throw new Error(`EB recording unavailable (${recording.status})`);
-        replay = createAreaReplay('EB', parseRecording(await recording.text()), sink, options.speed);
+        const recording = await fetchImpl(`/relay/recording?area=${area}&date=${encodeURIComponent(options.date)}`, { cache: 'no-store', signal: AbortSignal.any([abort.signal, AbortSignal.timeout(30_000)]) });
+        if (!recording.ok) throw new Error(`${area} recording unavailable (${recording.status})`);
+        replay = createAreaReplay(area, parseRecording(await recording.text()), sink, options.speed);
       }
       if (disposed) return;
       session = candidate; error = undefined;
       signals?.setAnchors(candidate.anchors, candidate.graph);
       void signals?.loadTable();
-      if (replay) connection = 'frozen EB replay';
+      if (replay) connection = `frozen ${area} replay`;
       else feed = createLiveFeed(sink, text => {
         connection = text;
         // A disconnected or invalid live stream cannot support a current aspect (as at King's Cross).
         if (!['connected', 'playing', 'recording ended'].includes(text)) signals?.reset();
-      }, edinburghLiveDependencies(options.liveDependencies));
+      }, throughLiveDependencies(area, options.liveDependencies));
     } catch (err) {
       if (!disposed) { error = (err as Error).message; connection = `live trains unavailable; ${error}`; retryAt = performance.now() + backoffMs(attempt++); }
     } finally { loading = false; }
@@ -248,9 +268,9 @@ export function createEdinburghLive(options: {
       const choice = session!.kinds.formationFor(view)!;
       let item = drawn.get(view.id);
       if (!item) {
-        const train = buildEdinburghTrain(choice) ?? buildNeutralTrain();
+        const train = perth ? buildNeutralTrain(undefined, true) : buildEdinburghTrain(choice) ?? buildNeutralTrain();
         const label = labels.ownerDocument.createElement('span'); label.style.cssText = 'position:absolute;font:11px system-ui;color:white;background:#27323cdd;padding:3px 5px;border-radius:4px;white-space:nowrap;transform:translate(-50%,-100%)';
-        Object.assign(train.userData, { area: 'EB', id: view.id, kind: choice.kind, allocation: choice.allocation, length: view.lengthM });
+        Object.assign(train.userData, { area, id: view.id, kind: choice.kind, allocation: choice.allocation, length: view.lengthM });
         group.add(train); labels.append(label); item = { group: train, label }; drawn.set(view.id, item);
       }
       Object.assign(item.group.userData, { description: view.description, formationNote: choice.note });
@@ -281,10 +301,10 @@ export function createEdinburghLive(options: {
     /** the trains drawn at the last frame, as the lamps see them (main.ts gives them to the headlamps' light, train-headlamp-light.ts) */
     lampTrains: (): readonly LampTrain[] => lampTrains,
     setSignalNightLevel: (level: number) => signals?.setNightLevel(level),
-    state: () => ({ area: 'EB', ready: !!session, connection, error, anchors: session?.anchors, trains: session?.motion.trains() ?? [], signals }),
+    state: () => ({ area, ready: !!session, connection, error, anchors: session?.anchors, trains: session?.motion.trains() ?? [], signals }),
     status: (): string => {
       const heads = signals?.counts();
-      return `Edinburgh Waverley: ${connection}${session ? ` · ${drawn.size} trains · ${fleetNote} · provisional berth positions/headings` : ''}${heads ? ` · signals: ${heads.drawn} drawn, ${heads.decoded} lit` : ''}`;
+      return `${perth ? area : 'Edinburgh Waverley'}: ${connection}${session ? ` · ${drawn.size} trains · ${fleetNote} · provisional berth positions/headings` : ''}${heads ? ` · signals: ${heads.drawn} drawn, ${heads.decoded} lit` : ''}`;
     },
     frame(dt: number, selected: boolean, utcMs?: number): void {
       group.visible = selected; lights.group.visible = selected; labels.hidden = !selected;

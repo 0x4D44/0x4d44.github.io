@@ -65,6 +65,7 @@ export function createTrustProbe({ stanox = [], now = Date.now, file = null, ...
       startedAt ??= at;
       const e = entry(id);
       const eventType = str(b.event_type).toUpperCase() || 'UNKNOWN';
+      const plannedEventType = str(b.planned_event_type).toUpperCase();
       const source = str(b.event_source).toUpperCase() || 'UNKNOWN';
       const plannedMs = ms(b.planned_timestamp), actualMs = ms(b.actual_timestamp);
       const platform = str(b.platform) || null;
@@ -80,7 +81,8 @@ export function createTrustProbe({ stanox = [], now = Date.now, file = null, ...
       const hour = new Date(at).toISOString().slice(0, 13);
       e.perHour.set(hour, (e.perHour.get(hour) ?? 0) + 1);
       while (e.perHour.size > maxHours) e.perHour.delete(e.perHour.keys().next().value);
-      e.recent.push({ trainId, headcode: /^[A-Z0-9]{6,32}$/.test(trainId) ? trainId.slice(2, 6) : '', eventType, plannedMs, actualMs,
+      e.recent.push({ trainId, headcode: /^[A-Z0-9]{6,32}$/.test(trainId) ? trainId.slice(2, 6) : '', eventType,
+        ...(plannedEventType === 'PASS' ? { plannedEventType } : {}), plannedMs, actualMs,
         latenessMin, platform, source, delaySec, receivedAtMs: at });
       if (e.recent.length > maxRecent) e.recent.shift();
       updatedAt = at; dirty = true;
@@ -115,7 +117,7 @@ export function createTrustProbe({ stanox = [], now = Date.now, file = null, ...
 
   async function close() { if (timer) { clearTimeout(timer); timer = null; } await flush(); await writing; }
 
-  return { observe, snapshot, flush, close };
+  return { observe, snapshot, flush, close, recent: id => (stations.get(id)?.recent ?? []).map(event => ({ ...event })) };
 }
 
 // CLI: node relay/trust-probe.mjs [summary.json]   (default <KX_DATA_DIR or ~/kx-data>/trust-probe.json)

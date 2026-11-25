@@ -119,7 +119,8 @@ function sitesOf(mesh: THREE.Mesh, lamps: LampRecord, dir: -1 | 1): { z: number;
   const normal = mesh.geometry.getAttribute('normal') as THREE.BufferAttribute;
   const groups = new Map<string, { role: LensRole; side: -1 | 0 | 1; sum: THREE.Vector3; count: number; min: THREE.Vector3; max: THREE.Vector3; normal: THREE.Vector3 }>();
   for (const lens of lamps.lenses) {
-    if (!(lens.v1 > lens.v0)) continue;
+    // the LNER's small upper marker over the screen lights no ground and hangs no halo: the pool and the halos are the cheek clusters'
+    if (!(lens.v1 > lens.v0) || lens.role === 'upperMarker') continue;
     let mean = 0;
     for (let v = lens.v0; v < lens.v1; v++) mean += position.getX(v);
     mean /= lens.v1 - lens.v0;

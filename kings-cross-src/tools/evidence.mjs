@@ -11,12 +11,13 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { gzipSync } from 'node:zlib';
 import { PLATFORM_HEIGHT, railSegments, twinRails } from '../core/scene.ts';
-import { GAUGE, RAIL_HEAD_WIDTH, buildingsUnderStation, concourseCanopy, platformReport, pointInPolygon, shedLayout, stationBuilding, stationPlatforms } from '../core/station.ts';
+import { GAUGE, RAIL_HEAD_WIDTH, buildingsUnderStation, concourseCanopy, platformReport, pointInPolygon, shedLayout, shedToWorld, worldToShed, stationBuilding, stationPlatforms } from '../core/station.ts';
 import { REPLACED_BUILDING_IDS } from '../core/landmarks.ts';
 import { planBuilding } from '../core/city.ts';
 import { createTerrain } from '../core/terrain.ts';
 import { ALL_KINDS, FIGURES, EMU_FIGURES, trainLayout } from '../core/train.ts';
 import { FLICKER_GAP_MS, compareFrames, flickerSummary } from './flicker.mjs';
+import { readPng } from './axis01-pixels.mjs';
 import { PIN_TIME, PIN_WEATHER, WEATHER_NAMES, pinHonoured, pinParameters, scenePinFrom, withPin } from './scene-pin.mjs';
 import { HUD_NOTE, HUD_SELECTORS, hudController, hudMode } from './hud.mjs';
 import { stationData } from './station-scene.mjs';
@@ -57,12 +58,12 @@ export const AXES = [
 /**
  * The fixed station views each graphical-fidelity element is scored from (gfx-rubrics/rubric-<element>.md, "Fixed views"),
  * so an iterator can capture only its own: `node tools/evidence.mjs --gpu --views kx-front ...`. A view may belong to
- * several elements. `<camera>-solid-slate` names are the physical-slate override shot of that camera.
+ * several elements. `<camera>-solid-slate` names are the physical-slate override shot of that camera, `<camera>-xray` its x-ray roof mode shot (round F8, A7).
  */
 export const ELEMENT_VIEWS = {
   'lighting-materials': ['overview', 'south-front', 'front-oblique-solid-slate', 'platform-eye', 'concourse', 'great-northern-hotel', 'midland-grand-front', 'gasworks-portals', 'facade-brick-close'],
-  'kx-front': ['south-front', 'front-oblique', 'front-oblique-solid-slate', 'roof-above-solid-slate', 'north-gable', 'tower-close', 'front-southwest-pedestrian', 'shed-east-flank'],
-  'shed-interior': ['platform-eye', 'platform-eye-south', 'shed-interior', 'platform-eye-p1-north', 'platform-eye-p8-south', 'roof-underside', 'furniture-close', 'suburban-p9'],
+  'kx-front': ['south-front', 'front-oblique', 'front-oblique-solid-slate', 'roof-above-solid-slate', 'front-oblique-xray', 'roof-above-xray', 'north-gable', 'tower-close', 'front-southwest-pedestrian', 'shed-east-flank', 'gable-oblique', 'porch-close'],
+  'shed-interior': ['platform-eye', 'platform-eye-south', 'shed-interior', 'platform-eye-p1-north', 'platform-eye-p8-south', 'roof-underside', 'furniture-close', 'suburban-p9', 'platform-clock', 'platform-furniture'],
   'western-concourse': ['concourse', 'concourse-roof-detail', 'western-range', 'western-range-gateline', 'concourse-hotel-junction', 'concourse-exterior-square', 'concourse-funnel-up', 'western-range-full', 'concourse-exterior-west'],
   'historic-neighbours': ['great-northern-hotel', 'midland-grand-front', 'st-pancras-shed', 'st-pancras-shed-oblique', 'gnh-from-square', 'midland-euston-road', 'midland-clock-tower', 'barlow-interior'],
   'city-surroundings': ['overview', 'gasworks-portals', 'front-oblique', 'granary-square', 'gasholders', 'canal-lock', 'kings-boulevard', 'euston-road-east'],
@@ -95,9 +96,10 @@ export function scoringViewsNote(records) {
   return lines.length ? `Scoring views: a criterion is scored from its official view; a context view is in the pack for what it shows around the subject, not for the score.\n\n${lines.join('\n')}\n\n` : '';
 }
 
-/** Every fixed station view a pack can capture: each camera, plus the solid-slate override shot of the two paired cameras. */
+/** Every fixed station view a pack can capture: each camera, plus the solid-slate and x-ray mode shots of the two paired cameras. */
 export function stationViewNames(cameras) {
-  return [...Object.keys(cameras), ...roofMaterialEvidencePairs(cameras).map(pair => `${pair.cameraName}-solid-slate`)];
+  const pairs = roofMaterialEvidencePairs(cameras);
+  return [...Object.keys(cameras), ...pairs.map(pair => `${pair.cameraName}-solid-slate`), ...pairs.map(pair => `${pair.cameraName}-xray`)];
 }
 
 /**
@@ -129,7 +131,7 @@ export function relayUrl(value) {
   return u;
 }
 export function optionsFrom(args) {
-  const values = new Map(), switches = new Set(['--gpu', '--help']);
+  const values = new Map(), switches = new Set(['--gpu', '--help', '--orbit']);
   const names = new Set(['--dist', '--out', '--relay', '--chrome', '--date', '--speed', '--signal-at', '--raw-osm', '--live-window', '--live-report', '--views', '--time', '--weather', '--sky', '--hud', '--scene', '--commit']);
   for (let i = 0; i < args.length; i++) {
     const key = args[i];
@@ -170,7 +172,7 @@ export function optionsFrom(args) {
   const pin = scenePinFrom({ time: values.get('--time'), weather: values.get('--weather'), sky: values.get('--sky') });
   const hud = hudMode(values.get('--hud'));
   return { dist: path.resolve(values.get('--dist') ?? path.join(repoRoot, '.scratch/kx-dist')), out, views, pin, hud, scene, commit,
-    rawOsm: path.resolve(values.get('--raw-osm') ?? path.join(os.homedir(), 'kx-data/osm/kx-osm.json')), relay: relayUrl(values.get('--relay')), chrome: values.get('--chrome'), gpu: values.has('--gpu'), help: values.has('--help'), date, iso, speed, signalAt, liveWindow, liveReport };
+    rawOsm: path.resolve(values.get('--raw-osm') ?? path.join(os.homedir(), 'kx-data/osm/kx-osm.json')), relay: relayUrl(values.get('--relay')), chrome: values.get('--chrome'), gpu: values.has('--gpu'), help: values.has('--help'), orbit: values.has('--orbit'), date, iso, speed, signalAt, liveWindow, liveReport };
 }
 export async function safeOutputDirectory(root, directory) {
   if (!within(root, directory)) throw new Error('output escapes its root');
@@ -194,13 +196,18 @@ export function realMetal(renderer) { return typeof renderer === 'string' && /\b
 
 export const ROOF_MATERIAL_AUTO = 'auto';
 export const ROOF_MATERIAL_SOLID = 'solid slate (evidence override)';
+/** Round F8 (A7): the shed's RoofMode forced to 'xray' (its userData.roofMode, read each frame), all else as the context shot. */
+export const ROOF_MATERIAL_XRAY = 'xray roof mode (evidence override)';
+/** shed.ts XRAY_OPACITY (the page check's expected cladding opacity in x-ray mode; kx-front-round28.test.ts holds the two equal): this file loads no web module. */
+export const XRAY_EVIDENCE_OPACITY = 0.5;
 
-/** The comparison pair shares each fixed context camera; only the slate material state changes. */
+/** The comparison pair shares each fixed context camera; only the slate material state changes (the solid slate, and the x-ray mode, round F8). */
 export function roofMaterialEvidencePairs(cameras) {
   return ['roof-above', 'front-oblique'].map(cameraName => ({
     cameraName,
     context: { camera: cameras[cameraName], roofMaterialEvidence: ROOF_MATERIAL_AUTO },
     solid: { camera: cameras[cameraName], roofMaterialEvidence: ROOF_MATERIAL_SOLID },
+    xray: { camera: cameras[cameraName], roofMaterialEvidence: ROOF_MATERIAL_XRAY },
   }));
 }
 
@@ -222,13 +229,78 @@ export async function runStationEvidenceShots(cameras, shot, attempt, select = n
     await attempt('02', name, () => shot('02', name, camera, { twoFrame: true, ...overlays, ...viewScoring(name), ...(contextEvidence.has(name) ? { roofMaterialEvidence: contextEvidence.get(name) } : {}) }));
   for (const pair of pairs.filter(pair => wanted(`${pair.cameraName}-solid-slate`)))
     await attempt('02', `${pair.cameraName}-solid-slate`, () => shot('02', `${pair.cameraName}-solid-slate`, pair.solid.camera, { twoFrame: true, ...overlays, roofMaterialEvidence: pair.solid.roofMaterialEvidence }));
+  for (const pair of pairs.filter(pair => wanted(`${pair.cameraName}-xray`)))
+    await attempt('02', `${pair.cameraName}-xray`, () => shot('02', `${pair.cameraName}-xray`, pair.xray.camera, { twoFrame: true, ...overlays, roofMaterialEvidence: pair.xray.roofMaterialEvidence }));
   if (hud === 'off' && cameras.overview && wanted('overview'))
     await attempt('02', 'overview-hud-on', () => shot('02', 'overview-hud-on', cameras.overview, { twoFrame: true, hud: 'on', label: 'The overview as a user sees the page: its overlays are shown (every other station view has them hidden).' }));
 }
 
+/**
+ * Round F10 (front A7): the glass-order orbit. Two short camera paths of ORBIT.frames each, orbiting a station view's own target at its own range and height,
+ * set out in the shed's frame (worldToShed: u east from its west side, v north from the south front) so each crosses the plane where the glazings' order
+ * switches (shed.ts glassOrder): `front` starts at front-oblique and swings ORBIT.front degrees north across the front's plane (v = 0); `gable` starts at
+ * gable-oblique and swings ORBIT.gable degrees (south) across the gables' (v = length). Each runs in auto and in x-ray. In no element's views: only
+ * `--orbit` shoots it.
+ */
+export const ORBIT = { frames: 12, front: 60, gable: -80, spike: 3, floor: 0.5 };
+export function orbitPaths(layout, cameras) {
+  const path = (view, sweep) => {
+    const { pos, target } = cameras[view], eye = worldToShed(layout, [pos[0], pos[2]]), at = worldToShed(layout, [target[0], target[2]]);
+    const range = Math.hypot(eye.u - at.u, eye.v - at.v), from = Math.atan2(eye.v - at.v, eye.u - at.u);
+    return Array.from({ length: ORBIT.frames }, (_, i) => {
+      const a = from + (sweep * Math.PI / 180) * i / (ORBIT.frames - 1), u = at.u + range * Math.cos(a), v = at.v + range * Math.sin(a), [x, z] = shedToWorld(layout, u, v);
+      return { pos: [x, pos[1], z], target: [...target], v };
+    });
+  };
+  return { front: path('front-oblique', ORBIT.front), gable: path('gable-oblique', ORBIT.gable) };
+}
+/**
+ * The mean absolute difference (0-255, over R, G and B) between two decoded frames ({width, height, channels, pixels}, axis01-pixels readPng) inside
+ * `rects` ([left, top, right, bottom] pixels, inclusive, clamped to the frame; their union): the glass mask, each glazing's bounding box projected to the
+ * screen (orbitGlassRects in the page). null if the mask is empty.
+ */
+export function maskedMeanDiff(a, b, rects) {
+  if (a.width !== b.width || a.height !== b.height || a.channels !== b.channels) throw new Error('orbit frames differ in format');
+  const { width, height, channels } = a, inside = new Uint8Array(width * height);
+  for (const [l, t, r, btm] of rects) for (let y = Math.max(0, Math.floor(t)); y <= Math.min(height - 1, Math.ceil(btm)); y++) for (let x = Math.max(0, Math.floor(l)); x <= Math.min(width - 1, Math.ceil(r)); x++) inside[y * width + x] = 1;
+  let sum = 0, n = 0;
+  for (let p = 0; p < width * height; p++) {
+    if (!inside[p]) continue;
+    for (let c = 0; c < 3; c++) sum += Math.abs(a.pixels[p * channels + c] - b.pixels[p * channels + c]);
+    n++;
+  }
+  return n ? sum / (3 * n) : null;
+}
+/**
+ * The frames whose difference from the one before is a spike: more than ORBIT.spike times the median of its neighbours' (up to two either side, those that
+ * have one) and over ORBIT.floor, so a still path's noise is not one. `diffs[i]` is frame i's difference from frame i - 1 (null for the first, or no mask).
+ */
+export function orbitSpikes(diffs, { factor = ORBIT.spike, floor = ORBIT.floor } = {}) {
+  const out = [];
+  diffs.forEach((d, i) => {
+    if (d === null || d === undefined) return;
+    const near = [i - 2, i - 1, i + 1, i + 2].map(j => diffs[j]).filter(x => x !== null && x !== undefined).sort((p, q) => p - q);
+    if (!near.length) return;
+    const m = near.length % 2 ? near[(near.length - 1) / 2] : (near[near.length / 2 - 1] + near[near.length / 2]) / 2;
+    if (d > floor && d > factor * m) out.push(i);
+  });
+  return out;
+}
+/** The orbit's record (orbit-<path>[-xray].json): per frame its view name, camera, glass order in use and masked difference, and the spikes. */
+export function orbitRecord(path, mode, frames) {
+  const spikes = orbitSpikes(frames.map(f => f.diff));
+  const name = i => `orbit-${path}-${String(i).padStart(2, '0')}${mode === 'xray' ? '-xray' : ''}`;
+  return {
+    path, mode, mask: 'the union of the gable, roof and front glazings\' bounding boxes projected to the screen; mean absolute RGB difference (0-255) from the previous frame',
+    spikeRule: `more than ${ORBIT.spike}x the median of up to two neighbours either side, and over ${ORBIT.floor}`,
+    frames: frames.map((f, i) => ({ name: name(i), camera: { pos: f.pos, target: f.target }, glassOrder: f.glassOrder, diff: f.diff, spike: spikes.includes(i) })),
+    spikes: spikes.map(name),
+  };
+}
+
 /** Capture the physical slate view while an async begin/restore bridge holds the serialized page helper open. */
 export async function captureEvidencePng(roofMaterialEvidence, { prepare, capture, restore }) {
-  if (roofMaterialEvidence !== ROOF_MATERIAL_SOLID) return await capture();
+  if (roofMaterialEvidence !== ROOF_MATERIAL_SOLID && roofMaterialEvidence !== ROOF_MATERIAL_XRAY) return await capture();
   await prepare();
   try { return await capture(); }
   finally { await restore(); }
@@ -292,6 +364,11 @@ export function stationWorld() {
  * pos, target and fov with the baseline, would have voided the view). They are literals now. Change one only on purpose, in this
  * table and in the test's copy together, and re-freeze the baseline with it. The comments keep the reasoning each camera came from
  * (the photograph, the stand, the lens); a model value they name (a height, a width) is the one it had when the camera was frozen.
+ *
+ * Re-aimed on purpose 2026-11-24 (the shed realignment: the valley and the tower moved 6.15 m west onto the 4/5 island, the west wall
+ * 2.05 m west, and an arcaded spine wall now stands there), keeping what each looks at: top and shed-interior at the footprint's new
+ * middle (width / 2); tower-close and front-southwest-pedestrian at the moved tower and west great arch; platform-eye, platform-eye-south
+ * and roof-underside off the wall (their eye stood 0.6 m from its face); furniture-close at the bench pair the wall moved 0.4 m east.
  */
 const FROZEN_STATION_CAMERAS = {
   overview: {
@@ -300,8 +377,8 @@ const FROZEN_STATION_CAMERAS = {
     source: 'shedLayout',
   },
   top: {
-    pos: [46.37560028234806, 3000, -131.62931499021622],
-    target: [46.37840361751828, 0, -131.7292756890529],
+    pos: [45.353024090970614, 3000, -131.65799249882593],
+    target: [45.355827426140834, 0, -131.75795319766263],
     source: 'shedLayout, 10 m grid',
     grid: true, fov: 12, near: 100,
   },
@@ -323,13 +400,13 @@ const FROZEN_STATION_CAMERAS = {
   },
   'shed-interior': {
     pos: [44.150000000000006, 3.2, -328.45],
-    target: [45.814933248303184, 8, -111.63717522287426],
+    target: [44.79235705692574, 8, -111.66585273148397],
     source: 'OSM platform 4 north end looking into the shed',
   },
   'platform-eye': {
-    pos: [43.54285714285716, 2.5, -210.09285714285716],
-    target: [44.66419121094691, 2.5, -250.07713667754103],
-    source: 'OSM platform 4 polygon, eye 1.6 m above platform',
+    pos: [44.38716973020361, 2.5, -210.06917892533454],
+    target: [45.50850379829336, 2.5, -250.0534584600184],
+    source: 'OSM platform 4 at its polygon midpoint\'s v, midway between the spine wall\'s east face and the platform\'s track edge (re-aimed 2026-11-24: the midpoint stands 0.6 m from the wall), eye 1.6 m above platform',
   },
   concourse: {
     pos: [-58.19823691449512, 2.5, -90.50307363615148],
@@ -370,9 +447,9 @@ const FROZEN_STATION_CAMERAS = {
     fov: 50, near: 0.1,
   },
   'platform-eye-south': {
-    pos: [43.54285714285716, 2.5, -210.09285714285716],
-    target: [42.42152307476741, 2.5, -170.10857760817328],
-    source: 'OSM platform 4 polygon, south-facing eye 1.6 m above platform',
+    pos: [44.38716973020361, 2.5, -210.06917892533454],
+    target: [43.26583566211386, 2.5, -170.08489939065066],
+    source: 'OSM platform 4 at its polygon midpoint\'s v, midway between the spine wall\'s east face and the track edge (re-aimed 2026-11-24), south-facing eye 1.6 m above platform',
   },
   // Pancras Road exterior: the concave east front sits beside the concourse. Its old
   // normal-offset camera landed below that roof and hid the hotel. The public west
@@ -433,19 +510,21 @@ const FROZEN_STATION_CAMERAS = {
   // R-kx-front-c (front-c-clocktower-2019.jpg, Acabashi CC BY-SA 4.0): the clock tower from the square. 35 m south of the
   // tower's south face at y = 28 m, aimed at the clock centre (buildTower's clockY, 5.75 m under the 112 ft overall height).
   'tower-close': {
-    pos: [41.84681231485059, 28, 29.85719398048837],
-    target: [42.82797962442912, 28.3876, -5.129050612360035],
+    pos: [35.70219423887037, 28, 29.68487201635194],
+    target: [36.6833615484489, 28.3876, -5.301372576496462],
     source: 'R-kx-front-c standpoint (front-c-clocktower-2019.jpg): 35 m south of the tower face, y = 28 m, aimed at the clock centre',
     fov: 35, near: 0.1,
   },
   // R-kx-front-b (front-b-oblique-sw-2016.jpg, Oast House Archive CC BY-SA 2.0): the front from the square's south-west,
-  // about 60 m from the west great arch (centre u = aisle + half a span), looking north-east at the front. The pure
+  // about 60 m from the west great arch (centre u = spine - half a span), looking north-east at the front. The pure
   // south-west bearing (45 degrees) puts the eye inside the square's row of trees (a trunk 0.7 m away filled 58% of the
   // frame), so the eye keeps the 60 m but stands 38 m west and 49 m south of the arch: south-south-west, clear of them.
   'front-southwest-pedestrian': {
-    pos: [-12.342812741131121, 1.8085703201461005, 35.79040898519868],
-    target: [43.01159807807881, 12, -11.676476386164524],
-    source: 'R-kx-front-b standpoint (front-b-oblique-sw-2016.jpg): 62 m south-south-west of the west great arch, eye 1.7 m on the square, looking north-east',
+    // re-aimed again 2026-11-24 (scorer hold, score-arcade-1): from [-18.487, 1.962, 35.618] trees hid 91% of the west lunette (BASE: 14%);
+    // the eye stepped 8 m east and 2.5 m south, to 9% hidden, aim unchanged
+    pos: [-10.487430817111338, 1.795114490154562, 38.11808702106225],
+    target: [36.86698000209859, 12, -11.848798350300951],
+    source: 'R-kx-front-b standpoint (front-b-oblique-sw-2016.jpg): 59 m south-south-west of the west great arch, eye 1.7 m on the square, looking north-east',
     fov: 60, near: 0.1,
   },
   // R-kx-front-d (front-d2-north-york-way-2019.jpg, Colin Cheesman CC BY-SA 2.0): the east flank from York Way. The OSM York Way
@@ -455,6 +534,25 @@ const FROZEN_STATION_CAMERAS = {
     target: [82.52031206654229, 9, -132.53641407308544],
     source: 'R-kx-front-d standpoint (front-d2-north-york-way-2019.jpg): York Way side, 40 m east of the east flank wall at mid-length, y = 12 m, looking west',
     near: 0.1,
+  },
+  // Round 10 (end-rib-round-1 score, section 5): the north-east gable corner, so the end rib's projection and lip can be judged. R-kx-front-d
+  // (front-d-north-gables-2020.jpg) looks at the gables from the north; this eye stands 40 m out from the east vault's gable rib at 30 degrees of arc
+  // above its east springing (shedLayout: spine + 2 R, length + 0.6 m), 30 degrees east of the gable's normal, y = 16 m (12 m above the ground under it),
+  // looking back at that point of the rib.
+  'gable-oblique': {
+    pos: [94.9207, 16, -289.4115],
+    target: [73.9574, 13.8648, -255.3447],
+    source: 'R-kx-front-d (front-d-north-gables-2020.jpg): 40 m out from the east vault\'s north gable rib near its east springing, 30 degrees east of the gable\'s normal, y = 16 m, looking back at the rib',
+    fov: 40, near: 0.1,
+  },
+  // Round 23b (front-piers-round-3 score, section 5: the canopy hides the porch heads from every front view): the middle porch opening under the west
+  // great arch (shed.ts southFrontArcadeCentres: u = spine - span + 1.5 bays), from under the canopy 5 m south of the front and 2.5 m west, eye 1.7 m over
+  // the shed frame's ground, looking at the opening 2.6 m over its foot
+  'porch-close': {
+    pos: [16.6327, 1.5, -7.4143],
+    target: [19.2831, 2.6, -12.7421],
+    source: 'R-kx-front-a (front-a-south-facade-2026-08.jpg): under the canopy, 5 m south of the middle porch opening under the west great arch and 2.5 m west, eye 1.7 m, looking at the opening 2.6 m up so its head soffit, reveals, doors and sign band are in frame',
+    fov: 60, near: 0.1,
   },
 
   // shed-interior. The platform eyes use platform 4's recipe (polygon midpoint, 1.6 m above the platform, looking along it).
@@ -470,19 +568,36 @@ const FROZEN_STATION_CAMERAS = {
     target: [14.286999265243583, 2.5, -176.28238713198283],
     source: 'OSM platform 8 polygon midpoint, eye 1.6 m above platform, looking south at the inner south screen; R-kx-shed-interior-b standpoint (shed-b-south-screen-2019.jpg)',
   },
+  // Round 14 (platform-round-1 score, section 5): the platform clock (shed.ts buildPlatformClock) from platform 8. Round 15 (platform-round-2 score, section 5):
+  // re-aimed off the face, 12 m south of the clock along its south face's normal and 4 m east, eye 1.6 m above the platform, looking at the middle of the
+  // beam (half way from the arcade's face to the dial's centre, 0.2 m over the beam), so the beam, the spandrel and the wall fixing are in frame
+  'platform-clock': {
+    pos: [14.6943, 2.5, -155.9474],
+    target: [10.382, 4.62, -168.0727],
+    source: 'R-kx-shed-interior-d (shed-d-platform-furniture-2022.jpg): platform 8, 12 m south of the platform clock along its south face\'s normal and 4 m east, eye 1.6 m, looking at the middle of its beam so the beam and its wall fixing are in frame',
+    fov: 50, near: 0.1,
+  },
+  // Round 17 (platform-round-4 score, section 5: no capture shows the new furniture near): the furniture group on the platforms 6-7 island (furniture.ts EXTRAS:
+  // its blade, bins and trolley point within 6.1 m of each other), from 10 m south along the platform and 1 m east, eye 1.6 m above the platform, looking at the group's middle
+  'platform-furniture': {
+    pos: [25.0523, 2.5, -96.8263],
+    target: [24.3667, 2.4, -106.7900],
+    source: 'R-kx-shed-interior-e (shed-e-footbridge-lift-2014.jpg): the furniture group on the platforms 6-7 island (its number blade, bin pair and trolley point), 10 m south of it along the platform and 1 m east, eye 1.6 m',
+    fov: 50, near: 0.1,
+  },
   // R-kx-shed-interior-a (shed-a-north-from-footbridge-2019.jpg): the roof underside, ribs and glazing. Platform 4 midpoint,
   // eye 1.6 m, pitched up 55 degrees and turned north-east so the sight line crosses the east vault.
   'roof-underside': {
-    pos: [43.54285714285716, 2.5, -210.09285714285716],
-    target: [56.04656167073201, 27.074561328669756, -221.9143760208631],
-    source: 'OSM platform 4 polygon midpoint, eye 1.6 m, pitched up 55 degrees across the east vault; R-kx-shed-interior-a standpoint (shed-a-north-from-footbridge-2019.jpg)',
+    pos: [44.38716973020361, 2.5, -210.06917892533454],
+    target: [56.89087425807847, 27.074561328669756, -221.89069780334046],
+    source: 'OSM platform 4 at its polygon midpoint\'s v, midway between the spine wall\'s east face and the track edge (re-aimed 2026-11-24), eye 1.6 m, pitched up 55 degrees across the east vault; R-kx-shed-interior-a standpoint (shed-a-north-from-footbridge-2019.jpg)',
   },
   // R-kx-shed-interior-d (shed-d-platform-furniture-2022.jpg, The wub CC BY-SA 4.0): the bench/lamp/help-point groups on a platform.
   // The nearest such group to the midpoint is everything within 3 m of the nearest piece; the eye stands 4 m from its centre,
   // along the platform on the midpoint's side, looking at it.
   'furniture-close': {
-    pos: [43.47617734039083, 2.5, -217.99980584974898],
-    target: [43.5883107471998, 1.7000000000000002, -221.99823380321737],
+    pos: [43.90811671332884, 2.5, -217.99016689946308],
+    target: [43.99671531417829, 1.7000000000000002, -221.98918556507687],
     source: 'OSM platform 4, 4 m from the nearest bench/lamp/help-point group (furniturePlan), eye 1.6 m; R-kx-shed-interior-d standpoint (shed-d-platform-furniture-2022.jpg)',
   },
   // R-kx-shed-interior-f (shed-f-suburban-platforms-2022.jpg, Mr Ignavy CC BY-SA 2.0): the platform 9-10 canopies. Platform 9's
@@ -622,6 +737,12 @@ const FROZEN_STATION_CAMERAS = {
     target: [133.5, 3.9374999990686774, -3],
     source: 'R-city-surroundings-a standpoint (city-a-aerial-skyline-2016.jpg): Euston Road outside the King\'s Cross forecourt (OSM way 367808662), eye 1.7 m, looking east along Pentonville Road',
   },
+  'kx-euston-road-lamp': {
+    pos: [-78, 2.765, 133.5],
+    target: [-88.75, 5.91, 133.06],
+    fov: 59, near: 0.1,
+    source: 'R-nw-b (night-b-euston-road-sodium-2019-oatsy40.jpg): south pavement opposite the Midland Grand, eye 1.6 m, looking west at the lamp on OSM carriageway 746410869, with the road and pavement beneath it',
+  },
 };
 
 /**
@@ -633,9 +754,9 @@ export function stationCameras(data) {
 }
 
 /**
- * The 12 frozen Edinburgh Waverley cameras (Waverley's own frame: x east, y up, z south, origin 55.9519018 N 3.1904199 W,
- * core/waverley-data.ts WAVERLEY_ORIGIN, rail datum y = 0), as gfx-rubrics/waverley/frozen-cameras.json holds them;
- * tools/tests/frozen-waverley-cameras.json is the copy tools/tests/frozen-waverley-cameras.test.mjs holds waverleyCameras to.
+ * The frozen Edinburgh Waverley cameras (Waverley's own frame: x east, y up, z south, origin 55.9519018 N 3.1904199 W,
+ * core/waverley-data.ts WAVERLEY_ORIGIN, rail datum y = 0). tools/tests/frozen-waverley-cameras.json
+ * holds the Waverley baseline views and the night rubric's signal view in capture order.
  * Like FROZEN_STATION_CAMERAS they are literals and read no model: change one only on purpose, here and in the test's copy together,
  * and re-freeze the Waverley baseline with it. A camera with no fov (wv-overview) is shot at the page's 50 degrees.
  */
@@ -716,6 +837,12 @@ const FROZEN_WAVERLEY_CAMERAS = {
     target: [32.93, 7.543, -68.61],
     fov: 60,
     source: 'Head landing of the Waverley Steps (OSM way/577519823; bridgeFrame of the outline at s 0.3 m from the Princes Street end, t 0.3, 1.3 m west of the centreline), eye 1.6 m above the head landing (15.943 m: W2 layTreads, highest DTM under the walking line + 0.02), looking south down the line to its Market Street end at t 0.3, pitched 10 degrees down: the standpoint of R-wv2-d / R-wv1-d2 (M J Richardson 2013, geotag 55.95291 N, 3.19017 W). Placed 2026-11-09 by a neutral agent from the photo, no render consulted',
+  },
+  'wv-platform-signal': {
+    pos: [119, 2.515, 5],
+    target: [141.29, 3.5, 4.47],
+    fov: 45, near: 0.1,
+    source: 'R-nw-i (John Lucas, Red signals at Edinburgh Waverley): west end of platform 6, eye 1.6 m above the deck, looking east at running signal E456 with the east roof pendants in view',
   },
 };
 
@@ -972,7 +1099,7 @@ async function waverleyMain(options, site = REMOTE_CAPTURE_SITES.waverley) {
           url:location.href,camera:{pos:k.camera.position.toArray(),target:k.controls.target.toArray(),fov:k.camera.fov,near:k.camera.near},
           renderer:d?g.getParameter(d.UNMASKED_RENDERER_WEBGL):'unknown',drawCalls:k.renderer.info.render.calls,triangles:k.renderer.info.render.triangles,
           viewport:{width:innerWidth,height:innerHeight},sun}; })()`);
-        const lightingState = await evaluate(`(()=>{const k=window.__kx,e=${site.view};return (${lightingProbe.toString()})({scene:e.scene,renderer:k.renderer,atmosphere:e.climate?.atmosphere??null});})()`);
+        const lightingState = await evaluate(`(()=>{const k=window.__kx,e=${site.view};return (${lightingProbe.toString()})({scene:e.scene,renderer:k.renderer,camera:k.camera,lightSourcesFor:k.lightSourcesFor,atmosphere:e.climate?.atmosphere??null});})()`);
         report.renderer ??= metadata.renderer;
         if (options.gpu && !realMetal(metadata.renderer)) throw new Error(`real Metal required, observed renderer: ${metadata.renderer}`);
         const departure = cameraDeparture(camera, metadata.camera);
@@ -1035,8 +1162,19 @@ export const LIGHTING_NOTE = 'Captures pin the scene with ?time=<instant>&weathe
 
 /** Serialized into the page: the lighting state of the scene, rounded so equal rigs read equal. */
 export function lightingProbe(kx) {
+  const sources = kx.lightSourcesFor?.(kx.scene);
+  let poolInstances = 0, poolTriangles = 0, poolDraws = 0;
   const round = n => Math.round(n * 1e4) / 1e4, hex = c => c?.getHexString?.() ?? null, lights = [];
   kx.scene.traverse(o => {
+    if (sources && o.isInstancedMesh && (o.name === 'street-lamp-pools' || o.name === 'street-lamp-pools-euston-p1')) {
+      let visible = true;
+      for (let ancestor = o; ancestor; ancestor = ancestor.parent) visible &&= ancestor.visible;
+      if (visible && o.count > 0) {
+        poolInstances += o.count;
+        poolTriangles += o.count * (o.geometry.index?.count ?? o.geometry.getAttribute('position').count) / 3;
+        poolDraws++;
+      }
+    }
     if (o.isLight) lights.push({ type: o.type, name: o.name || null, colour: hex(o.color), groundColour: hex(o.groundColor), intensity: round(o.intensity), position: o.position.toArray().map(round), visible: o.visible });
   });
   // The sky dome is a vertex-coloured sphere: its lowest and highest vertex colours are the horizon and the zenith.
@@ -1055,16 +1193,39 @@ export function lightingProbe(kx) {
     atmosphere = 'fixed';
     if (kx.atmosphere) { let sun = null; try { sun = kx.atmosphere.state?.().sun?.elevationDeg; } catch { /* the hook exists; its sun is unknown */ } atmosphere = { sunElevationDeg: Number.isFinite(sun) ? round(sun) : null }; }
   }
-  return { lights, background: hex(kx.scene.background), horizon, zenith, fog: fog ? { colour: hex(fog.color), near: fog.near ?? null, far: fog.far ?? null, density: fog.density ?? null } : null,
+  let lampRegistry;
+  if (sources) {
+    const bySet = {};
+    let direct = 0, inFrustum = 0, directInFrustum = 0;
+    const camera = kx.camera, p = camera?.position.clone();
+    for (const source of sources) {
+      const set = source.id.split('/')[1];
+      bySet[set] = (bySet[set] ?? 0) + 1;
+      const emits = source.optic.kind !== 'panel';
+      if (emits) direct++;
+      if (p) {
+        p.fromArray(source.pos).project(camera);
+        if (Math.abs(p.x) <= 1 && Math.abs(p.y) <= 1 && Math.abs(p.z) <= 1) {
+          inFrustum++;
+          if (emits) directInFrustum++;
+        }
+      }
+    }
+    lampRegistry = { total: sources.length, direct, bySet, inFrustum: p ? inFrustum : null,
+      directInFrustum: p ? directInFrustum : null, poolInstances, poolTriangles, poolDraws };
+  }
+  return { ...(lampRegistry ? { lampRegistry } : {}), lights, background: hex(kx.scene.background), horizon, zenith, fog: fog ? { colour: hex(fog.color), near: fog.near ?? null, far: fog.far ?? null, density: fog.density ?? null } : null,
     toneMapping: kx.renderer.toneMapping, exposure: round(kx.renderer.toneMappingExposure), outputColorSpace: kx.renderer.outputColorSpace, atmosphere };
 }
 
 /** A short stable id for a lighting state: independent of the order of lights and of object key order. */
 export function lightingFingerprint(state) {
+  // The registry and camera counts are evidence metadata, outside the rig fingerprint.
+  const { lampRegistry: _lampRegistry, ...rig } = state;
   const canonical = value => Array.isArray(value) ? value.map(canonical) : value && typeof value === 'object'
     ? Object.fromEntries(Object.keys(value).sort().map(key => [key, canonical(value[key])])) : value;
-  const lights = state.lights.map(canonical).map(light => JSON.stringify(light)).sort();
-  return createHash('sha256').update(JSON.stringify({ ...canonical(state), lights })).digest('hex').slice(0, 16);
+  const lights = rig.lights.map(canonical).map(light => JSON.stringify(light)).sort();
+  return createHash('sha256').update(JSON.stringify({ ...canonical(rig), lights })).digest('hex').slice(0, 16);
 }
 
 /** Serialized into the page so a deferred city cannot arrive after a cutaway was hidden. */
@@ -1254,6 +1415,7 @@ export async function main(args = process.argv.slice(2)) {
   const options = optionsFrom(args);
   if (options.help) { console.log(`node tools/evidence.mjs --gpu --dist <built dir> --out <worktree/.scratch/pack> [--relay http://127.0.0.1:8787] [--date YYYYMMDD] [--speed 8] [--signal-at HH:mm:ss] [--live-window <1..3600 seconds> | --live-report <path>] [--raw-osm <OSM extract.json>] [--chrome <path>]
 node tools/evidence.mjs --gpu --dist <built dir> --out <worktree/.scratch/pack> --views <element|view>[,<element|view>...]   (station views only: no trains, relay, tests or performance run)
+  add --orbit (King's Cross only) for the glass-order orbit: 12 frames each round front-oblique and gable-oblique, auto and x-ray, as axis-02/orbit-*.png with orbit-<path>[-xray].json
   elements: ${Object.keys(ELEMENT_VIEWS).join(', ')}; or station for every fixed station view
 node tools/evidence.mjs --gpu --scene waverley --dist <built dir> --out <worktree/.scratch/dir> [--views <element|view>,...] [--commit <sha>]   (the frozen Edinburgh Waverley cameras; no relay or EB data)
   elements: ${Object.keys(WAVERLEY_ELEMENT_VIEWS).join(', ')}; views: ${Object.keys(FROZEN_WAVERLEY_CAMERAS).join(', ')}
@@ -1357,7 +1519,8 @@ The page draws its own overlays (station switcher, status and attribution panels
         city:{loaded:!!k.parts?.buildings,bare:new URLSearchParams(location.search).has('bare'),visible:k.parts?.buildings?.visible??false},
         motion:k.motionState?.map(t=>({id:t.id,state:t.state,speed:t.speed,point:t.leading.point})),signals:k.signals?.signals().map(r=>({id:r.signal.id,berth:r.group.userData.berth??r.signal.berth,state:r.state,inferred:r.inferredPosition,starter:!!r.group.userData.platformStarter,label:r.label}))}; })()`);
       const lightingState = await evaluate(`(${lightingProbe.toString()})(window.__kx)`), lighting = lightingFingerprint(lightingState);
-      (report.lighting.fingerprints[lighting] ??= { state: lightingState, shots: 0 }).shots++;
+      const { lampRegistry, ...rigState } = lightingState;
+      (report.lighting.fingerprints[lighting] ??= { state: rigState, shots: 0 }).shots++;
       if (pinnedLoad) report.lighting.pinHonoured = (report.lighting.pinHonoured ?? true) && pinHonoured(options.pin, lightingState.atmosphere);
       const collisions = cameraBuildingCollisions({ [name]: metadata.camera }, buildings);
       report.cameraClearance.captures.push({ name, collisions });
@@ -1372,7 +1535,11 @@ The page draws its own overlays (station switcher, status and attribution panels
       try {
         if (extra.signalId !== undefined) await twoFrames();
         png = await captureEvidencePng(extra.roofMaterialEvidence, {
-          prepare: async () => evaluate(`(() => {
+          prepare: async () => extra.roofMaterialEvidence === ROOF_MATERIAL_XRAY ? evaluate(`(() => {
+            const k=window.__kx, shed=k.parts?.shed;
+            if(!shed?.getObjectByName('shed-roof-cladding')) throw new Error('shed roof cladding unavailable');
+            k.__xrayCapture={shed,before:shed.userData.roofMode}; shed.userData.roofMode='xray'; return true;
+          })()`) : evaluate(`(() => {
             const k=window.__kx, cladding=k.parts?.shed?.getObjectByName('shed-roof-cladding');
             if(!cladding) throw new Error('shed roof cladding unavailable');
             const materials=Array.isArray(cladding.material)?cladding.material:[cladding.material];
@@ -1381,6 +1548,14 @@ The page draws its own overlays (station switcher, status and attribution panels
             k.__solidSlateCapture=state; return true;
           })()`),
           capture: async () => {
+            if (extra.roofMaterialEvidence === ROOF_MATERIAL_XRAY) {
+              await twoFrames();
+              captureRender = await evaluate(`(() => {
+                const k=window.__kx,shed=k.parts.shed,cladding=shed.getObjectByName('shed-roof-cladding'),glass=shed.getObjectByName('shed-roof-glass'),bars=shed.getObjectByName('shed-roof-bars');
+                if (shed.userData.roofMode!=='xray' || cladding.material.opacity!==${XRAY_EVIDENCE_OPACITY}) throw new Error('x-ray roof mode was not active after two rendered frames');
+                return {drawCalls:k.renderer.info.render.calls,triangles:k.renderer.info.render.triangles,roofMode:'xray',roofCladding:{opacity:cladding.material.opacity,depthWrite:cladding.material.depthWrite,glassOpacity:glass.material.opacity,barsOpacity:bars.material.opacity},overrideFrames:2};
+              })()`);
+            }
             if (extra.roofMaterialEvidence === ROOF_MATERIAL_SOLID) {
               await until('window.__kx.__solidSlateCapture?.ready === true');
               await twoFrames();
@@ -1399,6 +1574,11 @@ The page draws its own overlays (station switcher, status and attribution panels
             return first;
           },
           restore: async () => {
+            if (extra.roofMaterialEvidence === ROOF_MATERIAL_XRAY) {
+              const back = await evaluate(`(() => { const s=window.__kx.__xrayCapture; s.shed.userData.roofMode=s.before; delete window.__kx.__xrayCapture; return s.shed.userData.roofMode==='auto'; })()`);
+              if (!back) throw new Error('x-ray evidence failed to restore the auto roof mode');
+              return;
+            }
             await evaluate('window.__kx.__solidSlateCapture?.release?.(true); true');
             await evaluate('window.__kx.__solidSlateCapture.promise');
             const restored = await evaluate(`(() => {
@@ -1416,7 +1596,7 @@ The page draws its own overlays (station switcher, status and attribution panels
       if (extra.signalId !== undefined && !await evaluate(`window.__kx.signals.signals().find(r=>r.signal.id===${extra.signalId})?.state===${JSON.stringify(extra.observedState)}`)) throw new Error('signal changed during capture; shot was not accepted');
       await writePrivateFile(path.join(options.out, file), Buffer.from(png.data, 'base64'));
       const flicker = secondPng ? compareFrames(Buffer.from(png.data, 'base64'), Buffer.from(secondPng.data, 'base64')) : null;
-      const record = { file, axis: id, scenario: currentScenario, ...metadata, ...(captureRender ?? {}), source: c?.source ?? 'current page camera', lighting, ...(flicker ? { flicker } : {}), ...(hud ? { hud } : {}), ...extra };
+      const record = { file, axis: id, scenario: currentScenario, ...metadata, ...(captureRender ?? {}), source: c?.source ?? 'current page camera', lighting, ...(lampRegistry ? { lampRegistry } : {}), ...(flicker ? { flicker } : {}), ...(hud ? { hud } : {}), ...extra };
       report.screenshots.push(record); axis(id).screenshots.push(file); return record;
     };
     const attempt = async (id, name, work) => { try { await work(); } catch (e) { gap(id, `${name}: ${e.message}`); } };
@@ -1435,6 +1615,45 @@ The page draws its own overlays (station switcher, status and attribution panels
     // Fixed offline views deliberately keep the station intact; only measuring views are bare.
     await navigate('?trains=none&board=0', 'station');
     await runStationEvidenceShots(cameras, shot, attempt, selected, options.hud);
+    // round F10: the glass-order orbit (--orbit only), in auto and x-ray; frames and a JSON per path and mode in axis-02
+    if (options.orbit) await attempt('02', 'orbit', async () => {
+      const paths = orbitPaths(shedLayout(data), stationCameras(data));
+      for (const mode of ['auto', 'xray']) for (const [pathName, frames] of Object.entries(paths)) {
+        await evaluate(`(() => { window.__kx.parts.shed.userData.roofMode=${JSON.stringify(mode)}; return true; })()`);
+        let previous = null; const done = [];
+        try {
+          for (const [i, c] of frames.entries()) {
+            await setCamera(c);
+            const page = await evaluate(`(() => {
+              const k=window.__kx, shed=k.parts.shed, cam=k.camera, dpr=window.devicePixelRatio||1, w=innerWidth, h=innerHeight, order={}, rects=[];
+              for (const [key,n] of [['gable','shed-gable-glass'],['roof','shed-roof-glass'],['front','shed-front-glass']]) {
+                const m=shed.getObjectByName(n); order[key]=m.renderOrder; m.geometry.computeBoundingBox(); const b=m.geometry.boundingBox;
+                let l=Infinity,t=Infinity,r=-Infinity,bt=-Infinity,front=false;
+                for (const x of [b.min.x,b.max.x]) for (const y of [b.min.y,b.max.y]) for (const z of [b.min.z,b.max.z]) {
+                  const p=m.localToWorld(new cam.position.constructor(x,y,z)).project(cam); if (p.z<1) front=true;
+                  const sx=(p.x+1)/2*w*dpr, sy=(1-p.y)/2*h*dpr; l=Math.min(l,sx); r=Math.max(r,sx); t=Math.min(t,sy); bt=Math.max(bt,sy);
+                }
+                if (front && r>=0 && bt>=0 && l<w*dpr && t<h*dpr) rects.push([l,t,r,bt]);
+              }
+              return {order,rects};
+            })()`);
+            const png = await S('Page.captureScreenshot', { format: 'png' }), bytes = Buffer.from(png.data, 'base64');
+            const name = `orbit-${pathName}-${String(i).padStart(2, '0')}${mode === 'xray' ? '-xray' : ''}`;
+            await mkdir(path.join(options.out, 'axis-02'), { recursive: true });
+            await writePrivateFile(path.join(options.out, 'axis-02', `${name}.png`), bytes);
+            const decoded = readPng(bytes);
+            done.push({ pos: c.pos, target: c.target, glassOrder: page.order, diff: previous ? maskedMeanDiff(previous, decoded, page.rects) : null });
+            previous = decoded;
+          }
+        } finally {
+          await evaluate(`(() => { window.__kx.parts.shed.userData.roofMode='auto'; return true; })()`);
+        }
+        const record = orbitRecord(pathName, mode, done);
+        await writePrivateFile(path.join(options.out, 'axis-02', `orbit-${pathName}${mode === 'xray' ? '-xray' : ''}.json`), JSON.stringify(record, null, 2));
+        (report.orbit ??= []).push({ path: pathName, mode, spikes: record.spikes });
+        if (record.spikes.length) gap('02', `orbit ${pathName} (${mode}): a glass-region difference spike at ${record.spikes.join(', ')}`);
+      }
+    });
     if (!cameras['gasworks-portals'] && (!selected || selected.has('gasworks-portals'))) gap('02', 'Gasworks south mouth could not be located in public geometry');
     const gridViews = Object.entries(cameras).filter(([name, c]) => c.grid && (!selected || selected.has(name)));
     if (gridViews.length) {

@@ -9,6 +9,7 @@ import { Batch, boxProjectUV, CITY_PAINTERS, cityMaterial, footShaded, GLAZING, 
 import { MOTTLE } from '../src/lighting.ts';
 import type { PartMap, TextureName, V3 } from '../src/materials.ts';
 import { Glsl, Mat } from './glsl.ts';
+// Re-pinned 2026-11-24 (shed realignment, signed off): the vault centres are the spine -/+ R (aisle + R and aisle + 3R before, the same points while the aisles were even), the valley is the spine, and there is no west aisle, so a probe of 'the aisle' stands in the east aisle.
 
 const names = Object.keys(TEXTURES) as TextureName[];
 const close = (a: number, b: number, eps = 1e-6): void => assert.ok(Math.abs(a - b) <= eps, `${a} != ${b}`);
@@ -562,7 +563,8 @@ test('the shed\'s great windows mirror a clear sky in diagonal streaks on their 
     const toCamera = camera.map((c, i) => c - point[i]!);
     const length = Math.hypot(...toCamera);
     // the glass is in the plane z = 0 of its own frame here, so a point's x and y are the glass's (`vGlassPos`), and the panes are counted from x = 0 (`uPaneX`)
-    const env = { vars: { gl_FragColor: [...glass], gl_FrontFacing: front, fogColor: fog, cameraPosition: camera, viewMatrix: identity, vViewPosition: toCamera, normal: normal ?? toCamera.map((c) => c / length), vGlassPos: [point[0]!, point[1]!], uPaneX: 0 } };
+    // round F11b: uGlintEven is the gables' flattening (materials.ts glintEven), 0 here as for every other window: the streaks as round six made them
+    const env = { vars: { gl_FragColor: [...glass], gl_FrontFacing: front, fogColor: fog, cameraPosition: camera, viewMatrix: identity, vViewPosition: toCamera, normal: normal ?? toCamera.map((c) => c / length), vGlassPos: [point[0]!, point[1]!], uPaneX: 0, uGlintEven: 0 } };
     glsl.run(body, env);
     const out = env.vars.gl_FragColor as number[];
     return { rgb: out.slice(0, 3), alpha: out[3]!, share: (out[3]! - glass[3]!) / (0.8 * (1 - glass[3]!)) };
@@ -624,7 +626,7 @@ test('the shed\'s great windows mirror a clear sky in diagonal streaks on their 
   assert.ok(Math.abs(paneAt(3, 1, 0.5, 0.999) - paneAt(3, 1, 0.5, 0.5)) < 1e-9 && Math.abs(paneAt(3, 1, 0.5, 1.001) - paneAt(3, 2, 0.5, 0.5)) < 1e-9, 'and at its transom');
   // the panes are counted from `uPaneX`: move it and the grid moves with it
   const shifted = (shift: number): number => {
-    const env = { vars: { gl_FragColor: [...glass], gl_FrontFacing: true, fogColor: day, cameraPosition: [0, 0, 60], viewMatrix: identity, vViewPosition: [0, 0, 60], normal: [0, 0, 1], vGlassPos: [10.2, 12], uPaneX: shift } };
+    const env = { vars: { gl_FragColor: [...glass], gl_FrontFacing: true, fogColor: day, cameraPosition: [0, 0, 60], viewMatrix: identity, vViewPosition: [0, 0, 60], normal: [0, 0, 1], vGlassPos: [10.2, 12], uPaneX: shift, uGlintEven: 0 } };
     glsl.run(body, env);
     return ((env.vars.gl_FragColor as number[])[3]! - glass[3]!) / (0.8 * (1 - glass[3]!));
   };
@@ -653,11 +655,11 @@ test('the shed\'s great windows mirror a clear sky in diagonal streaks on their 
 test('the great windows\' panes are the shed\'s real bars (a mullion every 1.6 m from the shed\'s centre line, a transom at each third), in both windows, on the front and the gables, and the glass finds the centre line itself (round six, E4)', () => {
   const data: KxData = JSON.parse(readFileSync(new URL('../src/data/kx-track.json', import.meta.url), 'utf8'));
   const layout = shedLayout(data);
-  const centre = layout.width / 2;
+  const centre = layout.spine; // re-pinned 2026-11-24: the shed's centre line is its spine (width / 2 before, the same line while the aisles were even)
   // the constants are the bars': the springing, the third of the half disc, the bar spacing
   close(GLAZING.springing, layout.springing, 1e-3);
   close(GLAZING.tier, SHED_SPAN_WIDTH / 2 / 3, 1e-3);
-  for (const uc of [layout.aisle + SHED_SPAN_WIDTH / 2, layout.aisle + 1.5 * SHED_SPAN_WIDTH]) {
+  for (const uc of [layout.spine - SHED_SPAN_WIDTH / 2, layout.spine + SHED_SPAN_WIDTH / 2]) {
     const bars = lunetteBars(uc, layout.springing);
     const mullions = bars.filter((b) => b.kind === 'mullion'), transoms = bars.filter((b) => b.kind === 'transom');
     assert.ok(mullions.length >= 15 && transoms.length === 2, `the bars are found: ${mullions.length} mullions, ${transoms.length} transoms`);
