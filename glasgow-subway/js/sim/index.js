@@ -344,7 +344,7 @@ class Sim {
     let spot = null;
     if (seat) { seat.p = q; const f = sc.seatFeet(q.char, seat); spot = f ? { x: Math.sign(seat.x) * Math.max(0.14, Math.abs(f.x)), z: f.z, feet: true } : { x: Math.sign(seat.x) * 0.2, z: seat.z }; }   // (to where their feet will be when seated: they turn and sit down there without sliding - review 45)
     else if (q.char.kid) { /* a child with no seat waits for the next train rather than stand alone in the car (review 33) */ }
-    else if (q.char.pools.pole && sc.rng() < 0.6) {   // most hold on: a free pole near their door (review 14: a standing boarder put a hand up to a pole that was not there)
+    else if (q.char.pools.pole && !(q.bag && q.bag.kind === 'trolley') && sc.rng() < 0.6) {   // (not with a wheeled case: towed from the hand on the pole it swung round the rider - review 63)   // most hold on: a free pole near their door (review 14: a standing boarder put a hand up to a pole that was not there)
       const poles = this._carPoles(ci, info), took = (pl) => sc.people.some((o) => o.parent === car && o.poleAt && Math.hypot(o.poleAt.x - pl.x, o.poleAt.z - pl.z) < 0.05) || X.stands.some((o) => o.ci === ci && o.pole && Math.hypot(o.pole.x - pl.x, o.pole.z - pl.z) < 0.05);
       const ok = this._standOk(sc, car, ci, info, poles, (x, z) => !X.stands.some((o) => o.ci === ci && (Math.hypot(o.x - x, o.z - z) < 0.55 || (Math.abs(o.z - z) < 1.0 && Math.sign(o.x) !== Math.sign(x)))) && !bagComing(x, z));
       for (const pl of poles.filter((pl) => !pl.gang && !took(pl)).sort((a, b) => Math.abs(a.z - dz) - Math.abs(b.z - dz)).slice(0, 4)) { const f = sc.poleSpot(q.char, pl, { y: PY, ceilAt }, ok); if (f) { spot = f; X.stands.push({ ci, x: f.x, z: f.z, pole: pl, adult: true }); break; } }

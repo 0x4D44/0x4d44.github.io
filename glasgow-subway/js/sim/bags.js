@@ -290,7 +290,7 @@ export function stepBag(rig, sit, pole, fresh, o) {
   if (where === 'floor') {
     const yaw = fz > 0 ? 0 : Math.PI, sd0 = fit.side, walk = o && o.walk ? Math.min(1, o.walk) : 0, lift = !!(o && o.lift);
     rig.gh = sit ? -1 : 0;
-    const tw = sit || (pole && !(o && o.turn)) ? 0 : walk; if (fresh) rig.tow = tw; else rig.tow += (tw - rig.tow) * (o && o.settle ? 0.035 : 0.14);   // (set back upright slowly after a stepped turn - snapped back in 0.25 s, 36 cm at up to 7 m/s - review 53; and towed round by a pole holder too)
+    const tw = sit || (pole && !(o && o.turn)) ? 0 : walk; rig.fresh = fresh; if (fresh) rig.tow = tw; else rig.tow += (tw - rig.tow) * (o && o.settle ? 0.035 : 0.14);   // (set back upright slowly after a stepped turn - snapped back in 0.25 s, 36 cm at up to 7 m/s - review 53; and towed round by a pole holder too)
     if (sit) {   // on the floor in front of the knees, the pull handle stowed
       at(B.calf_l, v); at(B.calf_r, u); const kx = (v.x + u.x) / 2, kf = (v.z + u.z) / 2; at(B.foot_l, v); at(B.foot_r, u);
       const ff = fz * Math.max(fz * kf, fz * v.z + 0.17 * rig.s, fz * u.z + 0.17 * rig.s);   // clear of the knees and of the toes
@@ -342,7 +342,11 @@ function floorPose(rig, o, walk, sit, pole, yaw, sd0, hx, v) {
   // after a turn on the spot it stays where it was towed to, and is stood up there: moved back to its place beside the leg it slid 0.3 - 0.5 m with no hand on it (reviews 53 - 57)
   const sx = rig.park ? rig.park[0] : fit.midx + sd0 * (fit.hip + rig.w / 2 + 0.06), sz = rig.park ? rig.park[1] : -fz * 0.1, t = rig.tow;
   if (t < 0.01) { mesh.position.set(sx, 0, sz); mesh.rotation.set(0, yaw, 0); return; }
-  const th = Math.acos(Math.min(0.985, Math.max(0.55, (v.y + 0.02) / rig.gripH))) * t, c = Math.cos(th), sn = Math.sin(th);
+  // the tilt follows the hand's height with the case's own inertia: taken straight from it (acos is steep near upright), the 10 - 12 cm the hand rises and falls in a stride
+  // swung the wheels 0.1 - 0.24 m along the floor in one frame (review 63's towed-case whip)
+  const th0 = Math.acos(Math.min(0.985, Math.max(0.55, (v.y + 0.02) / rig.gripH)));
+  rig.th = rig.th === undefined || rig.fresh || t < 0.05 ? th0 : rig.th + (th0 - rig.th) * 0.12;
+  const th = rig.th * t, c = Math.cos(th), sn = Math.sin(th);
   const gx = fit.midx + sd0 * Math.max(hx, 0.15 + rig.w / 2), gzw = v.z;   // where the grip is
   // the case's own (0, gripH, gz) is at the grip; its wheels (0, 0, pz) are on the floor
   const lz = rig.gripH * sn + rig.gz * c, wy = -rig.pz * sn;
