@@ -126,11 +126,16 @@ class EndToEnd(unittest.TestCase):
                   for i in range(2)]
             with open(os.path.join(d, "human", "gutenberg.jsonl"), "w") as f:
                 f.write("\n".join(json.dumps(r) for r in gb) + "\n")
+            ax = [{"source": "author", "group": "0x4D44", "id": "ax-%d" % i, "article": "Private title %d" % i,
+                   "text": "Marmalade %s number %d." % (WP_SENTENCE, i)} for i in range(2)]
+            with open(os.path.join(d, "human", "author.jsonl"), "w") as f:
+                f.write("\n".join(json.dumps(r) for r in ax) + "\n")
             rng = np.random.default_rng(1)
             emb = {"m1@thinking-s0": rng.normal(size=8).tolist(),
                    "m1@thinking-s1": rng.normal(size=8).tolist(),
                    "wp-0": rng.normal(size=8).tolist(), "wp-1": rng.normal(size=8).tolist(),
-                   "wp-2": rng.normal(size=8).tolist(), "pg-0": rng.normal(size=8).tolist()}
+                   "wp-2": rng.normal(size=8).tolist(), "pg-0": rng.normal(size=8).tolist(),
+                   "ax-0": rng.normal(size=8).tolist(), "ax-1": rng.normal(size=8).tolist()}
             with open(os.path.join(d, "embeddings", "stories.json"), "w") as f:
                 json.dump(emb, f)
 
@@ -140,7 +145,7 @@ class EndToEnd(unittest.TestCase):
             words = re.findall(r"[a-z]+", " ".join(r["text"] for r in wp).lower())
             for i in range(len(words) - 7):
                 self.assertNotIn(" ".join(words[i:i + 8]), blob.lower())
-            for w in ("lighthouse keeper", "umbrellas", "Quentin"):
+            for w in ("lighthouse keeper", "umbrellas", "Quentin", "Marmalade", "Private title"):
                 self.assertNotIn(w.lower(), blob.lower())
 
             g = out["groups"]["m1@thinking"]
@@ -151,7 +156,9 @@ class EndToEnd(unittest.TestCase):
             self.assertIn("names_distinct", out["groups"]["wp-00"])
             self.assertNotIn("names_top", out["groups"]["wp-00"])
             self.assertEqual(out["groups"]["Saki"]["kind"], "gutenberg")
-            self.assertEqual(len(out["points"]), 6)
+            self.assertEqual(out["groups"]["0x4D44"]["kind"], "author")
+            self.assertIsNotNone(out["groups"]["0x4D44"]["spread"])
+            self.assertEqual(len(out["points"]), 8)
             self.assertIsNone(out["groups"]["Saki"]["spread"])  # only one vector
             self.assertIn("closest_pair", g)
             for k in ("groups", "points", "method", "generated"):

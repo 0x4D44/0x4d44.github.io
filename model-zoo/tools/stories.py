@@ -311,7 +311,8 @@ def build(data_dir=None, models_path=None):
         groups[model] = group_stats(items, "model", emb, prov)
         members[model] = [i["id"] for i in items]
 
-    for fname, kind in (("writingprompts.jsonl", "writingprompts"), ("gutenberg.jsonl", "gutenberg")):
+    for fname, kind in (("writingprompts.jsonl", "writingprompts"), ("gutenberg.jsonl", "gutenberg"),
+                        ("author.jsonl", "author")):
         by_g = {}
         for r in read_jsonl(os.path.join(data_dir, "human", fname)):
             if (r.get("text") or "").strip():
