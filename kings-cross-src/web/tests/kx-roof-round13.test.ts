@@ -42,9 +42,14 @@ test('A5 (A5-1): from outside by day in auto and solid the crown glass is drawn 
   const day = S.crownDay as ((n: number) => number) | undefined;
   assert.ok(day, 'crownDay is exported');
   assert.equal(day(0), 1); assert.equal(day(1), 0);
-  const a0 = (alpha as (c: V3, l: typeof layout, m: string, n: number) => number)(above, layout, 'auto', 0), a6 = (alpha as (c: V3, l: typeof layout, m: string, n: number) => number)(above, layout, 'auto', 0.6), a1 = (alpha as (c: V3, l: typeof layout, m: string, n: number) => number)(above, layout, 'auto', 1);
+  // round A5-1c: the dusk capture (16:15Z, level 0.62) keeps the day's raise; the fade is in the last of the dusk, so a6 is taken at 0.9
+  const aAt = alpha as (c: V3, l: typeof layout, m: string, n: number) => number;
+  assert.equal(aAt(above, layout, 'auto', 0.62), aAt(above, layout, 'auto', 0), 'the dusk capture: the full raise');
+  const a0 = (alpha as (c: V3, l: typeof layout, m: string, n: number) => number)(above, layout, 'auto', 0), a6 = (alpha as (c: V3, l: typeof layout, m: string, n: number) => number)(above, layout, 'auto', 0.9), a1 = (alpha as (c: V3, l: typeof layout, m: string, n: number) => number)(above, layout, 'auto', 1);
   assert.ok(a1 < a6 && a6 < a0 && a0 === alpha(above, layout, 'auto'), `alpha ${a0} by day, ${a6} at dusk, ${a1} at night`);
-  assert.equal(depth(above, layout, 0.6, 'auto'), true, 'dusk: still writes depth, no lattice');
+  assert.equal(depth(above, layout, 0.62, 'auto'), true, 'the dusk capture: still writes depth, no lattice');
+  assert.equal(depth(above, layout, 0.9, 'auto'), true, 'late dusk: still writes depth');
+  assert.equal(depth(above, layout, 1, 'solid'), false, 'full night: none, as before');
   assert.equal(depth(above, layout, 0.6, 'xray'), false, 'dusk in x-ray: none');
   assert.ok(Math.abs((alpha as (c: V3, l: typeof layout, m: string, n: number) => number)(above, layout, 'xray', 0.6) - 0.85 * 0.5) < 1e-9, 'x-ray at dusk: as before');
   assert.equal(alpha(under, layout, 'auto'), 0, 'inside: as before');

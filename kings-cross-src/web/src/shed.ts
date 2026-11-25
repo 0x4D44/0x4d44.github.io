@@ -886,9 +886,14 @@ export function crownAlpha(cam: V3, layout: Pick<ShedLayout, 'width' | 'length' 
   return crownOutside(cam, layout) * (mode === 'xray' ? CROWN_ALPHA * XRAY_OPACITY : CROWN_OUTSIDE.alpha * crownDay(night));
 }
 /** Round A5-1b (the scorer: at dusk the far arcs showed again, the depth write cut at a night level of 0.5): the one day factor the crown's outside raise and depth write follow, 1 by day to 0 at full night. */
+// round A5-1c (the scorer on 13b: at the dusk capture, 2026-11-23T16:15Z, night level 0.62 (the sun 2.6 degrees down), the trusses and the far arcs showed
+// through, the raise faded to 0.42 there): the fade is held to the last of the dusk, 0.75 to 1, so the dusk capture keeps the full raise (the tint is dimmed
+// by the light instead, CROWN_OUTSIDE.lightDay) and the night capture (22:00Z, level 1) is as before
 export function crownDay(night: number): number {
-  return 1 - smoothstep(0.2, 1, night);
+  return 1 - smoothstep(0.75, 1, night);
 }
+/** Round A5-1c: the night level below which the crown glass writes depth from outside (crownDepth): every view but full night (the 22:00Z capture is at 1). */
+export const CROWN_DEPTH_NIGHT = 0.95;
 /** Round A5-1: the level of CROWN_OUTSIDE's tint and bars, and of SLATE_FLANK, for `cam`: crownOutside in the physical modes, 0 in x-ray (as before there). */
 export function crownTint(cam: V3, layout: Pick<ShedLayout, 'width' | 'length' | 'crown'>, mode: RoofMode = 'auto'): number {
   return mode === 'xray' ? 0 : crownOutside(cam, layout);
@@ -897,10 +902,10 @@ export function crownTint(cam: V3, layout: Pick<ShedLayout, 'width' | 'length' |
  * Round A5-1 (gap-scan-2, A5 item 1: the far slope's rib caps showed through the crown as a crossed-arc lattice): whether the crown glass writes depth. The caps
  * and bars (shed-roof-bars) draw after it, transparent, so with no depth from the glass the far slope's drew over the near slope's glass at full strength. From
  * outside by day in the physical modes it writes depth, so they are hidden behind it and the near ones (proud of it) still draw; inside, at night and in x-ray
- * it writes none, as before. Round A5-1b: by day and through dusk, while crownDay is above 0.02, not cut at a night level of 0.5.
+ * it writes none, as before. Round A5-1c: by day and through dusk, below CROWN_DEPTH_NIGHT, not cut at a night level of 0.5.
  */
 export function crownDepth(cam: V3, layout: Pick<ShedLayout, 'width' | 'length' | 'crown'>, night: number, mode: RoofMode = 'auto'): boolean {
-  return mode !== 'xray' && crownDay(night) > 0.02 && crownOutside(cam, layout) > 0;
+  return mode !== 'xray' && night < CROWN_DEPTH_NIGHT && crownOutside(cam, layout) > 0;
 }
 
 /** How far outside the shed `cam` is, 0 anywhere inside it to 1 ROOF_EXTERIOR.fade metres out (a camera rising above the crown counts four times), in every roof mode. */
