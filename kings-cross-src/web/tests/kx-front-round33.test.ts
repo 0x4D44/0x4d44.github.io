@@ -51,13 +51,17 @@ test('A6 (F13): the panes carry 10-12% of life each and a cloud of up to 8% span
   assert.ok(Math.max(...all) / mean - 1 >= 0.1 && 1 - Math.min(...all) / mean >= 0.1, `life: ${(Math.min(...all) / mean).toFixed(3)} to ${(Math.max(...all) / mean).toFixed(3)}`);
   // re-pinned round F14 (front-round-13b score, A6: the cloud as sky, +20-25%, lightening only; kx-front-round34 pins it): up to 42% over the mean and 25%
   // under it (the mean is lifted by the cloud); were 21% each way
-  assert.ok(Math.max(...all) / mean - 1 <= 0.42 && 1 - Math.min(...all) / mean <= 0.25, 'and no more than pane plus cloud');
+  // re-pinned round F16 (front-round-15c score, A6: pane-to-pane life): the pane's offset taken after the cloud (kx-front-round38): 50% over, 30% under; were
+  // 42% and 25%
+  assert.ok(Math.max(...all) / mean - 1 <= 0.5 && 1 - Math.min(...all) / mean <= 0.3, `and no more than pane plus cloud: ${(Math.min(...all) / mean).toFixed(3)} to ${(Math.max(...all) / mean).toFixed(3)}`);
   let worst = 0;
   t.forEach((col, i) => col.forEach((v, j) => { for (const q of [t[i + 1]?.[j], col[j + 1]]) if (q !== undefined) worst = Math.max(worst, Math.abs(v - q)); }));
   // re-pinned round F14: the cloud's brighter cores add up to about 10 levels a pane to the 12% panes' 21: 32; was 26
   // re-pinned round F15 (front-round-14 score: the cloud still weak; lift 0.095 -> 0.2, kx-front-round35 pins it): the cores' slope adds about 20 levels a
   // pane to the panes' 21: 44; was 32
-  assert.ok(worst <= 44, `neighbours ${worst.toFixed(1)} levels apart at most`);
+  // re-pinned round F16 (front-round-15c score, A6: pane-to-pane life; kx-front-round38): the pane's offset taken after the cloud, so on a core two panes at
+  // either end of 12% differ by about 25 more than the tone's: 50; was 44
+  assert.ok(worst <= 50, `neighbours ${worst.toFixed(1)} levels apart at most`);
   // the cloud: averaged over 3 by 3 panes (so the panes' own offsets mostly cancel) the tone still swings, slowly (re-pinned round F13b: the cloud's swing along
   // one row is under the old band's, 5% or more where it was 8%; and with 12% panes neighbouring blocks within 9 levels, where it was 6)
   const block = (i: number, j: number): number => { let a = 0; for (let di = 0; di < 3; di++) for (let dj = 0; dj < 3; dj++) a += t[i + di]![j + dj]!; return a / 9; };
@@ -130,8 +134,9 @@ test('A6 (F13b): each pane is offset by up to 11-13% (the score\'s 12%), and the
   // pane than its slope allows (0.32 m between a quarter-pane and the bar's edge: under 1.5%)
   let down = 0, across1 = 0;
   for (let k = -20; k < 20; k++) for (let j = 0; j < 5; j++) {
-    const y0 = GLAZING.springing + j * GLAZING.tier + 0.3, x = (k + 0.1) * P;
-    const col = Array.from({ length: 10 }, (_, m) => run(1, x, y0 + m * 0.5)[2]!);
+    // re-pinned round F16 (front-round-15c score, A6): a pane is a third of the tier now (GABLE_SHEET.row), so down the middle row's 1.6 m, not 4.5 m of the tier
+    const y0 = GLAZING.springing + j * GLAZING.tier + GLAZING.tier / 3 + 0.09, x = (k + 0.1) * P;
+    const col = Array.from({ length: 10 }, (_, m) => run(1, x, y0 + m * 0.177)[2]!);
     down = Math.max(down, (Math.max(...col) - Math.min(...col)) / col[0]!);
     const a = run(1, (k + 0.1) * P, y0 + 2)[2]!, b = run(1, (k + 0.1) * P + 0.32, y0 + 2)[2]!;
     across1 = Math.max(across1, Math.abs(a - b) / a);

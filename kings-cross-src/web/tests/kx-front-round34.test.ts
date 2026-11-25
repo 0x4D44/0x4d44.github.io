@@ -30,7 +30,7 @@ test('A6 (F14): the cloud only lightens: in every pane the darkest the cloud lea
   assert.ok(C.cloud, 'GABLE_SHEET.cloud');
   let most = 0;
   for (let k = -12; k < 12; k += 3) for (const j of [1, 3]) {
-    const y = GLAZING.springing + (j + 0.5) * GLAZING.tier, xs = [0.15, 0.3, 0.7, 0.85].map(q => (k + q) * P), ys = [y - 1.5, y, y + 1.5];
+    const y = GLAZING.springing + (j + 0.5) * GLAZING.tier, xs = [0.15, 0.3, 0.7, 0.85].map(q => (k + q) * P), ys = [y - 0.6, y, y + 0.6]; // re-pinned round F16: the pane is a third of the tier now (GABLE_SHEET.row), so its middle row's points; were 1.5 m off
     const floors = xs.flatMap(x => ys.map(yy => Math.min(...sweep.map(cam => G(x, yy, cam)))));
     assert.ok(Math.max(...floors) - Math.min(...floors) < 0.01, `pane ${k},${j}: the cloud's floor is the pane's own tone (${Math.min(...floors).toFixed(2)}-${Math.max(...floors).toFixed(2)})`);
     const base = Math.min(...floors);
