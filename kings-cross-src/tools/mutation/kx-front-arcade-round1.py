@@ -45,13 +45,13 @@ MUTATIONS = [
     ('a pool over the whole soffit', 'web/src/shed.ts', 'gain: 0.05, radius: 0.7 }', 'gain: 0.05, radius: 4 }', "canopy's soffit"),
     ('the pools off the lamps', 'web/src/shed.ts', 'KX_POOL: `vec4(${(fx0 + 0.9).toFixed(4)}', 'KX_POOL: `vec4(${(fx0 + 2.1).toFixed(4)}', "canopy's soffit"),
     ('black figures by day', 'web/src/shed.ts', 'figureLift: 0.22,', 'figureLift: 0,', 'lit mid tone'),
-    ('pale figures by day again', 'web/src/shed.ts', 'figureLift: 0.22,', 'figureLift: 0.55,', 'lit mid tone'),
+    ('figures black after dark', 'web/src/shed.ts', 'figureLift: 0.22,', 'figureLift: 0,', 'lit mid tone'),  # re-aimed arcade round 2: the day tone is the interior's (kx-front-arcade-round2.py); the lift is the night's
     ('drums again', 'web/src/shed.ts', 'lamp: [1.2, 0.15, 0.12] as const', 'lamp: [0.6, 0.18, 0.6] as const', "canopy's soffit"),
     ('square strips', 'web/src/shed.ts', 'downlights.box([x, ly, d * row], [lw, lh, lz]', 'downlights.box([x, ly, d * row], [lw, lh, lw]', "canopy's soffit"),
     ('black figures', 'web/src/shed.ts', 'figure: 0x4a4540,', 'figure: 0x2a2c2e,', 'lit mid tone'),
     ('no night glow', 'web/src/shed.ts', 'figureNight: [0xffc98a, 0.22]', 'figureNight: [0xffc98a, 0]', 'lit mid tone'),
-    ('figures in the frames', 'web/src/shed.ts', 'figures.poly([[px - fw0 / 2', 'frames.poly([[px - fw0 / 2', 'lit mid tone'),
-    ('barriers in the frames', 'web/src/shed.ts', 'figures.poly([[bx - bw / 2', 'frames.poly([[bx - bw / 2', 'lit mid tone'),
+    ('figures in the frames', 'web/src/shed.ts', 'fig([[px - fw0 / 2', 'frames.poly([[px - fw0 / 2', 'lit mid tone'),  # re-anchored arcade round 2
+    ('barriers in the frames', 'web/src/shed.ts', 'fig([[bx - bw / 2', 'frames.poly([[bx - bw / 2', 'lit mid tone'),  # re-anchored arcade round 2
 ]
 
 def run(work: Path) -> subprocess.CompletedProcess[str]:

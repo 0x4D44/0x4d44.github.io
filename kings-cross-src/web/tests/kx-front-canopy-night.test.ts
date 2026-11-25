@@ -25,7 +25,7 @@ group.updateMatrixWorld(true);
 const porch = group.getObjectByName('shed-front-porch-arches') as THREE.Mesh;
 const infill = group.getObjectByName('shed-front-infill') as THREE.Mesh | undefined;
 const mats = (m: THREE.Mesh): THREE.MeshLambertMaterial[] => (Array.isArray(m.material) ? m.material : [m.material]) as THREE.MeshLambertMaterial[];
-const steelIndex = mats(porch).findIndex(m => m !== material('stone') && m !== material('stoneFoot') && m !== material('brickFoot')); // re-pinned round 24: the voussoirs are in the floodlit stoneFoot now; re-pinned arcade round 1: the rings are the wall's brickFoot (PORCH_ORDERS)
+const steelIndex = mats(porch).findIndex((m, i) => i > 0 && m !== material('stone') && m !== material('stoneFoot') && m !== material('brickFoot')); // re-pinned arcade round 2: the rings by day a vertex-coloured clone of the brick, the first material // re-pinned round 24: the voussoirs are in the floodlit stoneFoot now; re-pinned arcade round 1: the rings are the wall's brickFoot (PORCH_ORDERS)
 const rgb = (c: THREE.Color): [number, number, number] => { const h = c.getHex(); return [(h >> 16) & 255, (h >> 8) & 255, h & 255]; };
 
 /** the first hit of a ray from (x, y, z) along `dir` (shed frame) on `target`'s material `index`, as a shed-frame point */

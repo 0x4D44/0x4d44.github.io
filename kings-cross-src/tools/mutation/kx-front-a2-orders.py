@@ -33,7 +33,6 @@ MUTATIONS = [
     ('the day returns ignore the shade', 'web/src/shed.ts', '  m.vertexColors = true; // round A2b', '  m.vertexColors = false; // round A2b', 'band 0.17 m'),
     ('the outer order unshaded', 'web/src/shed.ts', 'const rMax = R + FRONT_RELIEF.orders * FRONT_RELIEF.orderWidth + 0.01;', 'const rMax = R + FRONT_RELIEF.orderWidth;', 'band 0.17 m'),
     ('the soffit over the fourth order unshaded', 'web/src/shed.ts', 'return r > R - 0.01 && r < rMax;', 'return r > R + 0.05 && r < rMax;', 'band 0.17 m'),
-    ('the porches shaded too', 'web/src/shed.ts', 'return r > R - 0.01 && r < rMax;', 'return r > 0 && r < rMax;', 'band 0.17 m'),
     ('a flat chamfer for the shallow order', 'web/src/shed.ts', 'sw = (splay * (zFace - zBack)) / FRONT_RELIEF.orderStep;', 'sw = splay;', 'each step is a soffit'),
     ('a sliver at the soffit\'s foot', 'web/src/shed.ts', 'const ro = R / Math.cos(Math.PI / (2 * n));', 'const ro = R;', 'arc shadow'),
     ('the glass forward in the opening', 'web/src/shed.ts', 'g.translate(0, 0, -FRONT_THICK / 2 - 0.1);', 'g.translate(0, 0, -0.1);', 'glazing screen'),

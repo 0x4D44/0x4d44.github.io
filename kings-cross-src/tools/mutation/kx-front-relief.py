@@ -39,8 +39,8 @@ MUTATIONS = [
      "  proud(spine, frontTop - 0.9 - bh / 2, FW + toMass, bh, bo); // its bed mould: a step under the overhang, so its soffit reads\n", '',
      'parapet cornice overhangs'),
     ('canopy dropped from the porch mesh', 'web/src/shed.ts',
-     "mergeGeometries([entryRingGeo, canopyGeo], true), [material('brickFoot'), canopySteel]",  # re-anchored round A2: the porch rings in brick since arcade round 1
-     "mergeGeometries([entryRingGeo], true), [material('brickFoot')]", 'the low canopy of the current front'),
+     "mergeGeometries([entryRingGeo, canopyGeo], true), [ringDay, canopySteel]), [material('brickFoot'), canopySteel]",  # re-anchored arcade round 2: the rings' day material a vertex-coloured clone
+     "mergeGeometries([entryRingGeo], true), [ringDay]), [material('brickFoot')]", 'the low canopy of the current front'),
 ]
 
 def run(work: Path) -> subprocess.CompletedProcess[str]:

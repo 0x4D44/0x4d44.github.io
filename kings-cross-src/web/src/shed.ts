@@ -130,13 +130,17 @@ export const PORCH_FANLIGHT = { bar: 0.08, headSegments: 12 } as const;
  * lamps are linear strips (FRONT_CANOPY.lamp). The porch interiors' figures and barriers take `figure`, a mid tone, by day and a warm glow after
  * dark (`figureNight`, below the interior's FRONT_NIGHT.glass) in place of the frames' charcoal (they read as flat black slabs at night). ASSUMED.
  */
-export const PORCH_TONES = { soffit: 0x3a3f45, figure: 0x4a4540, figureNight: [0xffc98a, 0.22] as const, soffitFill: 0.85, figureLift: 0.22, pool: { colour: 0xffe2b8, gain: 0.05, radius: 0.7 } as const } as const;
+export const PORCH_TONES = { soffit: 0x3a3f45, figure: 0x4a4540, figureNight: [0xffc98a, 0.22] as const, soffitFill: 0.85, figureLift: 0.22, figureDay: 0.65, pool: { colour: 0xffe2b8, gain: 0.05, radius: 0.7 } as const } as const;
 // round 1b (the GPU captures: the soffit still 5/5/6 by day in porch-close, the figures near black, the lamps white boxes on a dark soffit at night): by day
 // the soffit's faces turned down take a paving bounce, `soffitFill` times their own colour as light (gone at night: there it is as before), about 45-58
 // sRGB at the clear day's exposure (ACES); at night each strip lamp throws a warm pool on the soffit round it (`pool`: its colour times `gain`, falling
 // off over `radius` m from the strip, about 95 at its peak at the night exposure); and the figures carry `figureLift` times their colour as a constant
 // light (round 1c, the scorer: at 0.55 they read 47/40/32 on the GPU, paler than the interior's ~30/23/16 round them, tonally inverted; now 0.22,
 // about 19/16/13 by day, some 10 levels under the interior) (ASSUMED, all three tuned on three's ACES curve, tests/aces.ts, not measured on the GPU)
+// Arcade round 2 (the GPU: a figure 41/35/28 against the interior's 24/16/7 beside it; the interior runs 5-37 across its gradient and vignette, so no
+// constant sits under it everywhere): by day the figures and barriers are the interior's own material at their spot (its colour, day darkening, map at the
+// same UV, emissive) times `figureDay` (linear; on three's ACES curve at the day exposure, tests/aces.ts, 0.53-0.66 of the interior's level in display sRGB over its 15-37 range, ASSUMED), so they read darker than the hall round them
+// wherever they stand; at night their colour, `figureLift` and glow as before
 /**
  * The front's relief (rubric A2). R-kx-front-a (2026) and R-kx-front-b (2016) show each great arch's reveal in three brick orders stepping
  * back to the glass (MEASURED: three orders in both photographs; their width and depth ASSUMED, held to the old stone ring's 1.2 m, since the
@@ -189,6 +193,10 @@ export const FRONT_ORDER_FACE = 1.25;
 /** Round A2b (the GPU capture: the deeper steps' returns read lit, the rings one pale band; no arc shadow showed, and the haunches toward the sun cannot): a contact shade painted on the great arches' returns (the orders' splayed steps and the opening's soffit over the fourth order), by vertex
  * colour on the day return material only (ASSUMED 0.5; the night wash keeps its own soffit lift, so no black line at night). */
 export const FRONT_ORDER_SHADE = 0.5;
+/** Arcade round 2 (the A2 round's score, A3: by day the lower arcade's returns read paler than the great arches'): the same day-only contact shade on
+ * the porch openings' brick reveals in the front (FRONT_ORDER_SHADE on the return tone) and on the porch rings' returns and soffits, which are in the
+ * wall's own brick, so they take the return tone too: FRONT_RETURN x FRONT_ORDER_SHADE, the great arches' returns' tone. */
+export const PORCH_RETURN_SHADE = FRONT_RETURN * FRONT_ORDER_SHADE;
 /** Round 27 (A2: the spandrel's head showed no shadow square-on): the panel's top `height` m, under the frame's band, in the return tone. */
 export const FRONT_PANEL_HEAD = { height: 0.4 } as const;
 export const FRONT_TYMPANUM = { out: 0.5, band: 0.45, strip: 0.5, recess: 0.6 } as const; // round 22 (A2: 0.15 m read about 1 px square-on): 0.3; round 23b (the painted line was black at night): 0.5, the band's own soffit casting the shadow line
@@ -259,6 +267,10 @@ function frontNightGlow(m: THREE.MeshLambertMaterial, [colour, gain]: readonly [
         + `#ifdef KX_GLOW_DOWN\nfrontGlowAdd *= max( -vFrontNy, 0.0 );\n#endif\ntotalEmissiveRadiance += frontGlowAdd;`
         // round 27: a material defining KX_DAY_DARK has its diffuse scaled by that factor by day, back to 1 at night (its night glow as it was)
         + `\n#ifdef KX_DAY_DARK\ndiffuseColor.rgb *= mix( KX_DAY_DARK, 1.0, uWinNight );\n#endif`
+        // arcade round 2: a material defining KX_FIG_DAY (linear vec3s KX_FIG_DAY, KX_FIG_DAY_EMIT, KX_FIG_NIGHT) takes by day a diffuse of KX_FIG_DAY
+        // times its map and the emissive KX_FIG_DAY_EMIT, at night its own colour KX_FIG_NIGHT (no map) and emissive, as before
+        + `\n#if defined( KX_FIG_DAY ) && defined( USE_MAP )\ndiffuseColor.rgb = mix( KX_FIG_DAY * texture2D( map, vMapUv ).rgb, KX_FIG_NIGHT, uWinNight );\n`
+        + `totalEmissiveRadiance = mix( KX_FIG_DAY_EMIT, totalEmissiveRadiance, uWinNight );\n#endif`
         // arcade round 1: a material defining KX_SOFFIT (a linear vec3) takes that diffuse on its faces turned down (the canopy's soffit, PORCH_TONES);
         // round 1b: by day KX_SOFFIT_FILL times it as a paving bounce, and with KX_POOL (lamps' first x, pitch, the two rows' z) a warm pool round each strip lamp at night
         + `\n#ifdef KX_SOFFIT\nfloat kxDown = step( 0.5, -vFrontNy );\ndiffuseColor.rgb = mix( diffuseColor.rgb, KX_SOFFIT, kxDown );\n`
@@ -337,6 +349,17 @@ function glassStructureTexture(foot: number): THREE.DataTexture {
   return t;
 }
 /** Round 22 (A3: a flat interior plane): the concourse behind the porch glass darker at the floor and brighter toward its ceiling, a 1 x 16 map over the plane's 0..1 v. */
+/** Round 20: the interior plane's constant day light (sRGB hex). */
+const PORCH_INTERIOR_EMIT = 0x140e08;
+/** Arcade round 2: the figures' defines (frontNightGlow KX_FIG_DAY): by day the interior's diffuse (its colour, day-darkened) and emissive times PORCH_TONES.figureDay; at night their own colour. */
+function figureDay(): Record<string, string> {
+  const v = (c: THREE.Color): string => `vec3(${c.r.toFixed(5)}, ${c.g.toFixed(5)}, ${c.b.toFixed(5)})`, k = PORCH_TONES.figureDay;
+  return {
+    KX_FIG_DAY: v(new THREE.Color(PORCH_DEPTH.interior).multiplyScalar(PORCH_DEPTH.dayDark * k)),
+    KX_FIG_DAY_EMIT: v(new THREE.Color(PORCH_INTERIOR_EMIT).multiplyScalar(k)),
+    KX_FIG_NIGHT: v(new THREE.Color(PORCH_TONES.figure)),
+  };
+}
 function interiorGradientTexture(): THREE.DataTexture {
   // rows up the plane (its v), columns across it (its u); round 26: two-dimensional, the vignette (PORCH_DEPTH.vignette) over the rising gradient
   const n = 16, w = 16, [lo, hi] = PORCH_DEPTH.gradient, V = PORCH_DEPTH.vignette, data = new Uint8Array(n * w * 4);
@@ -1734,12 +1757,14 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   const frontGeo = mergeGeometries([mergeGeometries(faces, false), mergeGeometries(returns, false), mergeGeometries(orderFaces, false)], true);
   frontGeo.translate(0, 0, -FRONT_THICK);
   {
-    // round A2b: FRONT_ORDER_SHADE on the returns round the great arches (from the opening out to the outer order); 1 elsewhere
+    // round A2b: FRONT_ORDER_SHADE on the returns round the great arches (from the opening out to the outer order); arcade round 2: and on the porch
+    // openings' reveals (inside an opening's outline, from its foot to its crown); 1 elsewhere
     const pos = frontGeo.getAttribute('position'), col = new Float32Array(pos.count * 3).fill(1), ret = frontGeo.groups.find(g => g.materialIndex === 1)!;
     const rMax = R + FRONT_RELIEF.orders * FRONT_RELIEF.orderWidth + 0.01;
     for (let k = ret.start; k < ret.start + ret.count; k++) {
       const x = pos.getX(k), y = pos.getY(k) - sp;
-      if (centres.some(uc => { const r = Math.hypot(x - (uc - fx0), y); return r > R - 0.01 && r < rMax; })) col.fill(FRONT_ORDER_SHADE, 3 * k, 3 * k + 3);
+      const porchReveal = y + sp > entryFoot - 0.01 && y + sp < entryFoot + SOUTH_FRONT_ARCADES.jambHeight + SOUTH_FRONT_ARCADES.archRise + 0.01 && entryCentres.some(xc => Math.abs(x - (xc - fx0)) < entryR + 0.01);
+      if (porchReveal || centres.some(uc => { const r = Math.hypot(x - (uc - fx0), y); return r > R - 0.01 && r < rMax; })) col.fill(FRONT_ORDER_SHADE, 3 * k, 3 * k + 3);
     }
     frontGeo.setAttribute('color', new THREE.BufferAttribute(col, 3));
   }
@@ -1829,6 +1854,10 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   // arcade round 1 (A3): each arch turned in PORCH_ORDERS brick orders, the outer prouder by `step`, down the jambs to the paving
   const entryRings = entryCentres.flatMap(x => Array.from({ length: PORCH_ORDERS.orders }, (_, i) => {
     const g = new THREE.ExtrudeGeometry(porchOrder(x, entryFoot + SOUTH_FRONT_ARCADES.jambHeight, entryR + i * PORCH_ORDERS.depth, SOUTH_FRONT_ARCADES.archRise + i * PORCH_ORDERS.depth, PORCH_ORDERS.depth, PORCH_ORDERS.toGround ? GROUND_Y : entryFoot + SOUTH_FRONT_ARCADES.jambHeight), { depth: (i + 1) * PORCH_ORDERS.step, bevelEnabled: false, curveSegments: PORCH_ORDERS.segments });
+    // arcade round 2: the ring's side walls (its returns and its soffit, the extrusion's group 1) in PORCH_RETURN_SHADE by day, its face 1
+    const col = new Float32Array(g.getAttribute('position').count * 3).fill(1);
+    for (const grp of g.groups) if (grp.materialIndex === 1) col.fill(PORCH_RETURN_SHADE, 3 * grp.start, 3 * (grp.start + grp.count));
+    g.setAttribute('color', new THREE.BufferAttribute(col, 3));
     return g;
   }));
   // the low canopy along the front (FRONT_CANOPY): dark steel, a second material of the porch arches' mesh, so that it casts (lighting.ts
@@ -1860,6 +1889,7 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
     }
   }
   const canopyGeo = plainGeometry(canopy.build().toNonIndexed());
+  canopyGeo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(canopyGeo.getAttribute('position').count * 3).fill(1), 3)); // arcade round 2: the rings' colour, unused by the steel
   const entryRingGeo = mergeGeometries(entryRings, false);
   // round 24 (A3: at night the voussoirs and the canopy's underside were pure black in porch-close): the voussoirs in the floodlit dressing stone
   // (stoneFoot, as the front's other dressings), and the canopy's steel lifted after dark by its own downlights (a clone of the frames' steel: the
@@ -1876,7 +1906,11 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
     KX_POOL_HALF: (FRONT_CANOPY.lamp[0] / 2).toFixed(4), KX_POOL_R2: (PORCH_TONES.pool.radius ** 2).toFixed(4),
     KX_POOL_COLOUR: `vec3(${poolTone.r.toFixed(5)}, ${poolTone.g.toFixed(5)}, ${poolTone.b.toFixed(5)})`,
   };
-  const porch = new THREE.Mesh(mergeGeometries([entryRingGeo, canopyGeo], true), [material('brickFoot'), canopySteel]);
+  // arcade round 2: by day the rings in a clone of the brick that takes their vertex colour (PORCH_RETURN_SHADE); at night the brick itself, as before
+  const ringDay = (material('brickFoot') as THREE.MeshLambertMaterial).clone();
+  ringDay.defines = { ...(material('brickFoot') as THREE.MeshLambertMaterial).defines };
+  ringDay.vertexColors = true;
+  const porch = withBuildingNightMaterial(new THREE.Mesh(mergeGeometries([entryRingGeo, canopyGeo], true), [ringDay, canopySteel]), [material('brickFoot'), canopySteel]);
   porch.name = 'shed-front-porch-arches';
   group.add(porch);
   disposables.push(...entryRings, entryRingGeo, canopyGeo);
@@ -1931,17 +1965,19 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
     // round 20: the concourse behind the glass, under the transom: a dim warm plane on the glass, and the ticket barriers' silhouettes on it
     const gz = -PORCH_DEPTH.glass + 0.004, bz = gz + 0.003, [bw, bh] = PORCH_DEPTH.barrier; // the barriers a hair in front of the plane
     interior.poly([[x - entryR + 0.02, entryFoot + 0.3, gz], [x + entryR - 0.02, entryFoot + 0.3, gz], [x + entryR - 0.02, entryFoot + t0, gz], [x - entryR + 0.02, entryFoot + t0, gz]], [[0, 0], [1, 0], [1, 1], [0, 1]], { facing: [0, 0, 1] });
+    // arcade round 2: a figure's or barrier's UV the interior plane's at the same point, so by day it samples the interior's map there (PORCH_TONES.figureDay)
+    const fig = (pts: V3[]): void => figures.poly(pts, pts.map(([px, py]) => [(px - (x - entryR + 0.02)) / (2 * entryR - 0.04), (py - entryFoot - 0.3) / (t0 - 0.3)] as V2), { facing: [0, 0, 1] });
     for (let k = 0; k < PORCH_DEPTH.barriers; k++) {
       const bx = x - entryR + ((k + 0.5) * 2 * entryR) / PORCH_DEPTH.barriers;
-      figures.poly([[bx - bw / 2, entryFoot + 0.3, bz], [bx + bw / 2, entryFoot + 0.3, bz], [bx + bw / 2, entryFoot + 0.3 + bh, bz], [bx - bw / 2, entryFoot + 0.3 + bh, bz]], undefined, { facing: [0, 0, 1] }); // a barrier's cabinet
-      figures.poly([[bx + bw / 2, entryFoot + 0.3 + bh * 0.7, bz], [bx + bw / 2 + 0.3, entryFoot + 0.3 + bh * 0.7, bz], [bx + bw / 2 + 0.3, entryFoot + 0.3 + bh * 0.82, bz], [bx + bw / 2, entryFoot + 0.3 + bh * 0.82, bz]], undefined, { facing: [0, 0, 1] }); // its paddle
+      fig([[bx - bw / 2, entryFoot + 0.3, bz], [bx + bw / 2, entryFoot + 0.3, bz], [bx + bw / 2, entryFoot + 0.3 + bh, bz], [bx - bw / 2, entryFoot + 0.3 + bh, bz]]); // a barrier's cabinet
+      fig([[bx + bw / 2, entryFoot + 0.3 + bh * 0.7, bz], [bx + bw / 2 + 0.3, entryFoot + 0.3 + bh * 0.7, bz], [bx + bw / 2 + 0.3, entryFoot + 0.3 + bh * 0.82, bz], [bx + bw / 2, entryFoot + 0.3 + bh * 0.82, bz]]); // its paddle
     }
     // round 21 (A3 polish): deeper in, PORCH_DEPTH.figures people (dark, on the plane behind the barriers' line); and the reveal's returns from the face back to the glass darkened (the frames' charcoal), so
     // the set-back reads as a dark edge either side
     const fz = gz + 0.0015, [fw0, fh] = PORCH_DEPTH.figure;
     for (let k = 0; k < PORCH_DEPTH.figures; k++) {
       const px = x + (k === 0 ? -0.35 : 0.55) * entryR;
-      figures.poly([[px - fw0 / 2, entryFoot + 0.3, fz], [px + fw0 / 2, entryFoot + 0.3, fz], [px + fw0 * 0.3, entryFoot + 0.3 + fh, fz], [px - fw0 * 0.3, entryFoot + 0.3 + fh, fz]], undefined, { facing: [0, 0, 1] }); // a figure
+      fig([[px - fw0 / 2, entryFoot + 0.3, fz], [px + fw0 / 2, entryFoot + 0.3, fz], [px + fw0 * 0.3, entryFoot + 0.3 + fh, fz], [px - fw0 * 0.3, entryFoot + 0.3 + fh, fz]]); // a figure
     }
     for (const sd of [-1, 1]) {
       const rx = x + sd * (entryR - 0.003), yj = entryFoot + SOUTH_FRONT_ARCADES.jambHeight;
@@ -1979,18 +2015,19 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
     shades.poly([[fx0, yb - FRONT_RELIEF.shadowLine, e], [fx1, yb - FRONT_RELIEF.shadowLine, e], [fx1, yb, e], [fx0, yb, e]], undefined, { facing: [0, 0, 1] }); // the shadow line
   }
   const infillParts = [mergeGeometries(infillGlass, false), plainGeometry(frames.build()), plainGeometry(fasciae.build()), plainGeometry(downlights.build()), plainGeometry(interior.build()), plainGeometry(soffits.build()), plainGeometry(shades.build()), plainGeometry(figures.build())];
+  const interiorMap = interiorGradientTexture();
   const infillMats = [
     frontNightGlow(Object.assign(new THREE.MeshLambertMaterial({ color: FRONT_COLOURS.glass, emissive: FRONT_COLOURS.glassSky, map: glassStructureTexture(entryFoot) }), { defines: { KX_GLOW_BY_MAP: '' } }), FRONT_NIGHT.glass, 'kx-front-infill-glass', [entryFoot + FRONT_GLOW_FADE.from, entryFoot + FRONT_GLOW_FADE.to, FRONT_GLOW_FADE.head]),
     frontSteel,
     frontNightGlow(Object.assign(fasciaMaterial(), { defines: { KX_GLOW_BY_MAP: '' } }), FRONT_NIGHT.fascia, 'kx-front-infill-fascia'), // round 25: its glow by its map, so the pale lettering glows and the navy hardly (blue on blue before)
     frontNightGlow(new THREE.MeshLambertMaterial({ color: FRONT_COLOURS.downlight, emissive: 0x141414 }), FRONT_NIGHT.downlight, 'kx-front-downlight'),
     // round 20: the concourse behind the screens, dim and warm by day, glowing warm after dark (the glass's night colour and its fade)
-    frontNightGlow(Object.assign(new THREE.MeshLambertMaterial({ color: PORCH_DEPTH.interior, emissive: 0x140e08, map: interiorGradientTexture() }), { defines: { KX_DAY_DARK: PORCH_DEPTH.dayDark.toFixed(3) } }), FRONT_NIGHT.glass, 'kx-front-infill-interior', [entryFoot + FRONT_GLOW_FADE.from, entryFoot + FRONT_GLOW_FADE.to, FRONT_GLOW_FADE.head]),
+    frontNightGlow(Object.assign(new THREE.MeshLambertMaterial({ color: PORCH_DEPTH.interior, emissive: PORCH_INTERIOR_EMIT, map: interiorMap }), { defines: { KX_DAY_DARK: PORCH_DEPTH.dayDark.toFixed(3) } }), FRONT_NIGHT.glass, 'kx-front-infill-interior', [entryFoot + FRONT_GLOW_FADE.from, entryFoot + FRONT_GLOW_FADE.to, FRONT_GLOW_FADE.head]),
     // round 23: the heads' soffits, pale stone lit from inside by day, warm after dark (the downlights' night colour)
     frontNightGlow(new THREE.MeshLambertMaterial({ color: PORCH_DEPTH.soffit }), FRONT_NIGHT.downlight, 'kx-front-infill-soffit'), // round 24: no day emissive (it read as a light tan shelf)
     frontNightGlow(new THREE.MeshLambertMaterial({ color: FRONT_COLOURS.steel, emissive: FRONT_COLOURS.steelLift }), FRONT_NIGHT.shade, 'kx-front-infill-shade'),
     // arcade round 1: the figures and barriers in a mid tone, warm after dark below the interior's glow (the same fade), not the frames' black
-    frontNightGlow(new THREE.MeshLambertMaterial({ color: PORCH_TONES.figure, emissive: new THREE.Color(PORCH_TONES.figure).multiplyScalar(PORCH_TONES.figureLift) }), PORCH_TONES.figureNight, 'kx-front-infill-figures', [entryFoot + FRONT_GLOW_FADE.from, entryFoot + FRONT_GLOW_FADE.to, FRONT_GLOW_FADE.head]),
+    frontNightGlow(Object.assign(new THREE.MeshLambertMaterial({ color: PORCH_TONES.figure, emissive: new THREE.Color(PORCH_TONES.figure).multiplyScalar(PORCH_TONES.figureLift), map: interiorMap }), { defines: figureDay() }), PORCH_TONES.figureNight, 'kx-front-infill-figures', [entryFoot + FRONT_GLOW_FADE.from, entryFoot + FRONT_GLOW_FADE.to, FRONT_GLOW_FADE.head]),
   ];
   const infill = new THREE.Mesh(mergeGeometries(infillParts, true), infillMats);
   infill.name = 'shed-front-infill';
