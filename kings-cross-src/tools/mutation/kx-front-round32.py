@@ -1,6 +1,7 @@
 """Catch round F12 regressions (front A6: the outside gable sheet dark head-on and lighter at grazing, a little pane life and one broad ramp, no mosaic,
 glintEven 0 exactly as before; the deeper lattice girder) through web/tests/kx-front-round32.test.ts only.
 Usage: python3 -I -u tools/mutation/kx-front-round32.py SOURCE WORKTREE_SCRATCH
+Anchors moved round F13 (the new pane, band and web figures).
 Source stays untouched; all baseline and mutation logs go to WORKTREE_SCRATCH.
 """
 from pathlib import Path
@@ -27,16 +28,16 @@ MUTATIONS = [
     ('a grey sheet', 'web/src/materials.ts', 'tone: [0x35 / 255, 0x42 / 255, 0x4e / 255]', 'tone: [0x42 / 255, 0x42 / 255, 0x42 / 255]', 'head-on'),
     ('a high F0', 'web/src/materials.ts', 'f0: 0.05,', 'f0: 0.2,', 'head-on'),
     ('the lit colour kept', 'web/src/materials.ts', '), gr ), uGlintEven );', '), gr ), 0.5 * uGlintEven );', 'head-on'),
-    ('a loud pane offset', 'web/src/materials.ts', 'pane: 0.04,', 'pane: 0.12,', 'some life'),
-    ('a loud ramp', 'web/src/materials.ts', 'broad: 0.04,', 'broad: 0.12,', 'some life'),
-    ('dead panes', 'web/src/materials.ts', 'pane: 0.04, broad: 0.04,', 'pane: 0, broad: 0,', 'some life'),
-    ('a busy ramp', 'web/src/materials.ts', 'sin( 0.06 * ( vGlassPos.x - uPaneX ) + 0.09 * vGlassPos.y + 0.8 )', 'sin( 3.0 * ( vGlassPos.x - uPaneX ) + 0.09 * vGlassPos.y + 0.8 )', 'some life'),
+    ('a loud pane offset', 'web/src/materials.ts', 'pane: 0.09,', 'pane: 0.25,', 'some life'),
+    ('a loud ramp', 'web/src/materials.ts', 'broad: 0.08,', 'broad: 0.2,', 'some life'),
+    ('dead panes', 'web/src/materials.ts', 'pane: 0.09, broad: 0.08,', 'pane: 0, broad: 0,', 'some life'),
+    ('a busy ramp', 'web/src/materials.ts', 'band: [0.15, -0.12]', 'band: [3.0, -0.12]', 'some life'),
     ('the sheet everywhere', 'web/src/materials.ts', '), gr ), uGlintEven );', '), gr ), 1.0 );', 'exactly the old'),
     ('the alpha touched', 'web/src/materials.ts', 'gl_FragColor.rgb = mix( gl_FragColor.rgb, mix( gt,', 'gl_FragColor.a = mix( gl_FragColor.a, 1.0, 0.1 );\ngl_FragColor.rgb = mix( gl_FragColor.rgb, mix( gt,', 'exactly the old'),
     ('the old shallow girder', 'web/src/shed.ts', 'depth: 2.4, panel', 'depth: 1.5, panel', 'girder is front-d'),
-    ('thin diagonals', 'web/src/shed.ts', 'web: [0.18, 0.18] as const', 'web: [0.1, 0.15] as const', 'girder is front-d'),
+    ('thin diagonals', 'web/src/shed.ts', 'web: [0.15, 0.15] as const', 'web: [0.1, 0.1] as const', 'girder is front-d'),
     ('thin chords', 'web/src/shed.ts', 'chord: [0.3, 0.3] as const', 'chord: [0.2, 0.25] as const', 'girder is front-d'),
-    ('a solid wall', 'web/src/shed.ts', 'web: [0.18, 0.18] as const', 'web: [0.5, 0.5] as const', 'girder is front-d'),
+    ('a solid wall', 'web/src/shed.ts', 'web: [0.15, 0.15] as const', 'web: [0.5, 0.5] as const', 'girder is front-d'),
 ]
 
 def run(work: Path) -> subprocess.CompletedProcess[str]:

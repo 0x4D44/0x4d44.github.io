@@ -1403,10 +1403,14 @@ export const glintEven = { value: 0 };
 /**
  * Round F12 (front-round-11b score, A6: head-on the outside gables read 30-40% too light, lighter than at a grazing view, and every pane the same): where
  * glintEven is set (the north gables from outside by day) the glass's colour out is GABLE_SHEET: a dark blue-grey `tone` (sRGB, after the tone map; front-d's
- * shaded screen reads about 61-65, 79-97, 89-125), each pane offset by up to `pane` and the screen by one broad soft ramp of up to `broad` (together at most
+ * shaded screen reads about 61-65, 79-97, 89-125), each pane offset by up to `pane` and the screen by one broad soft band of up to `broad` (round F13: 9% and
  * 8%), taking the sky's haze by a Schlick Fresnel term (`f0` head-on, rising to 1 at grazing). glintEven 0 leaves the colour exactly as before.
  */
-export const GABLE_SHEET = { tone: [0x35 / 255, 0x42 / 255, 0x4e / 255], pane: 0.04, broad: 0.04, f0: 0.05, haze: 0.3 } as const;
+// round F13 (front-round-12 score, A6): `pane` 0.04 -> 0.09 and `broad` 0.04 -> 0.08, the broad term now a soft diagonal band (`band`: its x and y wavenumbers,
+// per metre, a period of about 30 m across the panes, as front-d2's cloud); `bar`: a light secondary glazing bar halfway between each pair of mullions
+// (GLAZING.spacing apart), `width` m across its soft core and darkening the sheet by `shade`, on this outside sheet only, so twice front-d's tall narrow panes
+// read from outside and none from inside.
+export const GABLE_SHEET = { tone: [0x35 / 255, 0x42 / 255, 0x4e / 255], pane: 0.09, broad: 0.08, band: [0.15, -0.12], f0: 0.05, haze: 0.3, bar: { width: 0.05, soft: 0.06, shade: 0.3 } } as const;
 const SKY_GLINT_GLSL = /* glsl */`
 #if defined( USE_FOG ) && ! defined( FLIP_SIDED )
 vec2 gm = ( floor( vec2( ( vGlassPos.x - uPaneX ) / ${GLAZING.spacing}, ( vGlassPos.y - ${GLAZING.springing} ) / ${GLAZING.tier} ) ) + 0.5 ) * vec2( ${GLAZING.spacing}, ${GLAZING.tier} ) + vec2( uPaneX, ${GLAZING.springing} );
@@ -1417,7 +1421,9 @@ float gc = smoothstep( 0.04, 0.25, fogColor.b - fogColor.r );
 float gf = min( ( 0.45 + 0.4 * ( 1.0 - abs( dot( normal, normalize( vViewPosition ) ) ) ) ) * mix( 1.0, 0.075 + 0.875 * mix( smoothstep( -0.6, 0.9, gb ), ${GLINT_EVEN}, uGlintEven ), gc ), 0.8 ) * gs;
 gl_FragColor.rgb = mix( gl_FragColor.rgb * ( 1.0 - 0.45 * gs ), mix( fogColor, vec3( 1.0 ), 0.7 * gs ), gf );
 gl_FragColor.a = mix( gl_FragColor.a, 1.0, 0.8 * gf );
-vec3 gt = vec3( ${GABLE_SHEET.tone.map(glslFloat).join(', ')} ) * ( 1.0 + ${glslFloat(GABLE_SHEET.pane)} * ( 2.0 * fract( sin( dot( gm, vec2( 12.9898, 78.233 ) ) ) * 43758.5453 ) - 1.0 ) + ${glslFloat(GABLE_SHEET.broad)} * sin( 0.06 * ( vGlassPos.x - uPaneX ) + 0.09 * vGlassPos.y + 0.8 ) );
+vec3 gt = vec3( ${GABLE_SHEET.tone.map(glslFloat).join(', ')} ) * ( 1.0 + ${glslFloat(GABLE_SHEET.pane)} * ( 2.0 * fract( sin( dot( gm, vec2( 12.9898, 78.233 ) ) ) * 43758.5453 ) - 1.0 ) + ${glslFloat(GABLE_SHEET.broad)} * sin( ${glslFloat(GABLE_SHEET.band[0])} * ( vGlassPos.x - uPaneX ) + ${glslFloat(GABLE_SHEET.band[1])} * vGlassPos.y + 0.8 ) );
+float gq = abs( fract( ( vGlassPos.x - uPaneX ) / ${glslFloat(GLAZING.spacing)} ) - 0.5 ) * ${glslFloat(GLAZING.spacing)};
+gt *= 1.0 - ${glslFloat(GABLE_SHEET.bar.shade)} * ( 1.0 - smoothstep( ${glslFloat(GABLE_SHEET.bar.width / 2)}, ${glslFloat(GABLE_SHEET.bar.width / 2 + GABLE_SHEET.bar.soft)}, gq ) );
 float gr = ( ${glslFloat(GABLE_SHEET.f0)} + ${glslFloat(1 - GABLE_SHEET.f0)} * pow( 1.0 - abs( dot( normal, normalize( vViewPosition ) ) ), 5.0 ) ) * gs;
 gl_FragColor.rgb = mix( gl_FragColor.rgb, mix( gt, mix( fogColor, vec3( 1.0 ), ${glslFloat(GABLE_SHEET.haze)} ), gr ), uGlintEven );
 #endif

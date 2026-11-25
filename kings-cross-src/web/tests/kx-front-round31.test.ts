@@ -115,9 +115,11 @@ test('A6 (F11b): with glintEven at 1 the glint is one even sheen: over a 60 m by
     glsl.run(body, env);
     return (env.vars.gl_FragColor as number[]).slice(0, 3).map(c => c * 255);
   };
+  const nearBar = (x: number): boolean => Math.abs((((x / 1.6) % 1) + 1) % 1 - 0.5) * 1.6 < 0.15;
   const worst = (flat: number): number => {
     let w = 0;
     for (let x = 0; x < 60; x += 0.75) for (let y = 0; y < 30; y += 0.75) {
+      if (nearBar(x) || nearBar(x + 0.75)) continue; // re-pinned round F13: round F13's secondary bars are meant to be dark lines (kx-front-round33 tests them)
       const a = shade(flat, x, y), b = shade(flat, x + 0.75, y), c = shade(flat, x, y + 0.75);
       w = Math.max(w, ...a.map((v, i) => Math.abs(v - b[i]!)), ...a.map((v, i) => Math.abs(v - c[i]!)));
     }
@@ -126,8 +128,8 @@ test('A6 (F11b): with glintEven at 1 the glint is one even sheen: over a 60 m by
   const streaked = worst(0), flat = worst(1);
   assert.ok(streaked > 30, `the streaks as round six made them: ${streaked.toFixed(1)} levels between neighbours`);
   // re-pinned round F12 (front-round-11b score, A6: the panes want a little life): GABLE_SHEET offsets each pane by up to 4%, so neighbours may differ by up to
-  // 7 levels (kx-front-round32 pins it); the streaks' tens of levels stay out. Was 2.
-  assert.ok(flat <= 7, `even: ${flat.toFixed(2)} levels between neighbouring points`);
+  // 7 levels (kx-front-round32 pins it); the streaks' tens of levels stay out. Was 2. Re-pinned round F13: 9% offsets and an 8% band, so 16 levels
+  assert.ok(flat <= 16, `even: ${flat.toFixed(2)} levels between neighbouring points`);
   const mid = shade(1, 30, 15);
   assert.ok(Math.max(...mid) < 140 && mid[2]! > mid[0]!, `still dark blue-grey with a sheen: ${mid.map(v => v.toFixed(0)).join(', ')}`);
   // round F12: GABLE_SHEET now sets the colour where glintEven is 1, so the flattening shows in the alpha: what of the room behind shows through must not

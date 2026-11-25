@@ -24,7 +24,9 @@ const shade = (even: number, x: number, y: number, cos = 1, lit = [0.45, 0.47, 0
   glsl.run(body, env);
   return (env.vars.gl_FragColor as number[]).slice(0, 3).map(c => c * 255);
 };
-const grid = (fn: (x: number, y: number) => number[]): number[][][] => Array.from({ length: 40 }, (_, i) => Array.from({ length: 24 }, (_, j) => fn(-30 + i * 1.5, 9.5 + j * 1.0)));
+// re-pinned round F13: one column a pane (GLAZING.spacing, 1.6 m), a quarter-pane off each mullion, so it reads the panes' tone and not round F13's secondary
+// bars at the pane's middle (kx-front-round33 tests those); it was every 1.5 m, from -30
+const grid = (fn: (x: number, y: number) => number[]): number[][][] => Array.from({ length: 40 }, (_, i) => Array.from({ length: 24 }, (_, j) => fn(-31.6 + i * 1.6, 9.5 + j * 1.0)));
 
 test('A6 (F12): from outside by day head-on the gable glass sits at front-d\'s shaded blue-grey, darker than at a grazing view, whatever the light on it', () => {
   assert.ok(M.GABLE_SHEET, 'GABLE_SHEET exported');
@@ -38,26 +40,29 @@ test('A6 (F12): from outside by day head-on the gable glass sits at front-d\'s s
   }
 });
 
-test('A6 (F12): some life in the panes, no mosaic: within 8% of the sheet\'s mean everywhere, neighbours within 7 levels (two panes at either end of a 4% offset on the bluest channel, about 80), and not all the same', () => {
+// re-pinned round F13 (front-round-12 score, A6: at 4% the life was barely seen): the pane offset is 9% and the band 8%, so within 18% of the mean, and
+// neighbours within 16 levels (two panes at either end of 9% on the bluest channel, about 86); it was 8% and 7 levels
+test('A6 (F12): some life in the panes, no mosaic: within 18% of the sheet\'s mean everywhere, neighbours within 16 levels, and not all the same', () => {
   for (const cos of [1, 0.5]) {
     const g = grid((x, y) => shade(1, x, y, cos)).flat();
     const mean = [0, 1, 2].map(c => g.reduce((a, p) => a + p[c]!, 0) / g.length);
-    for (const p of g) for (const c of [0, 1, 2]) assert.ok(Math.abs(p[c]! / mean[c]! - 1) <= 0.085, `within 8%: ${p[c]} against ${mean[c]}`);
+    for (const p of g) for (const c of [0, 1, 2]) assert.ok(Math.abs(p[c]! / mean[c]! - 1) <= 0.18, `within 18%: ${p[c]} against ${mean[c]}`);
     const spread = Math.max(...g.map(p => p[1]!)) - Math.min(...g.map(p => p[1]!));
     assert.ok(spread >= 4, `some life: ${spread.toFixed(1)} levels`);
     const rows = grid((x, y) => shade(1, x, y, cos));
     let worst = 0;
     rows.forEach((col, i) => col.forEach((p, j) => { for (const q of [rows[i + 1]?.[j], col[j + 1]]) if (q) worst = Math.max(worst, ...p.map((v, c) => Math.abs(v - q[c]!))); }));
-    assert.ok(worst <= 7, `neighbours ${worst.toFixed(1)} levels apart at most`);
+    assert.ok(worst <= 16, `neighbours ${worst.toFixed(1)} levels apart at most`);
   }
 });
 
 test('A6 (F12): with glintEven 0 (inside, on the plane, night, every other window) the colour and alpha are exactly the old glint\'s', () => {
   const old = new Glsl('');
-  const oldBody = body.split('\n').filter(l => !/^vec3 gt =|^float gr =|uGlintEven \);$/.test(l)).join('\n');
-  assert.ok(oldBody.split('\n').length === body.split('\n').length - 3, 'three new lines');
+  // re-pinned round F13: two more new lines, the secondary bars (gq, and gt darkened by them); it was three
+  const oldBody = body.split('\n').filter(l => !/^vec3 gt =|^float gq =|^gt \*=|^float gr =|uGlintEven \);$/.test(l)).join('\n');
+  assert.ok(oldBody.split('\n').length === body.split('\n').length - 5, 'five new lines');
   const lines = body.split('\n').filter(l => l.trim());
-  assert.deepEqual(lines.slice(-4).map(l => l.split(' ')[0]), ['gl_FragColor.a', 'vec3', 'float', 'gl_FragColor.rgb'], 'the three new lines come last, after the old alpha, and only the last writes the colour');
+  assert.deepEqual(lines.slice(-6).map(l => l.split(' ')[0]), ['gl_FragColor.a', 'vec3', 'float', 'gt', 'float', 'gl_FragColor.rgb'], 'the new lines come last, after the old alpha, and only the last writes the colour');
   for (const fog of [day, night]) for (const [x, y, cos] of [[3, 15, 1], [-12, 20, 0.3], [20, 11, 0.7]] as const) {
     const run = (src: string, g: Glsl): number[] => {
       const view = [Math.sqrt(1 - cos * cos), 0, cos];
@@ -69,12 +74,13 @@ test('A6 (F12): with glintEven 0 (inside, on the plane, night, every other windo
   }
 });
 
-test('A6 (F12): the gables\' lattice girder is front-d\'s: 2.2-2.6 m deep, chords 0.25 m or more and diagonals 0.15 m or more, its triangles as before', () => {
+test('A6 (F12): the gables\' lattice girder is front-d\'s: 2.2-2.6 m deep, chords 0.25 m or more and diagonals 0.15 m or more, its bars as counted', () => {
   const G = shed.GABLE_GIRDER;
   assert.ok(G.depth >= 2.2 && G.depth <= 2.6, `depth ${G.depth}`);
   assert.ok(Math.min(...G.chord) >= 0.25 && Math.min(...G.web) >= 0.15, `chords ${G.chord}, diagonals ${G.web}`);
   assert.ok(Math.max(...G.chord) <= 0.35 && Math.max(...G.web) <= 0.22, 'still an open truss, not a wall');
   const bars = shed.gableGirder(0, 0, 9.5);
   const n = Math.max(2, Math.round((2 * (Math.sqrt((SHED_SPAN_WIDTH / 2) ** 2 - (9.5 - G.depth) ** 2) - 0.12)) / G.panel));
-  assert.equal(bars.length, n + 1, 'a chord and one diagonal a panel');
+  // re-pinned round F13 (front-round-12 score: twice the diagonals and a vertical at each panel point; kx-front-round33): it was a chord and one diagonal a panel
+  assert.equal(bars.length, 3 * n + 2, 'a chord, two diagonals a panel and a vertical at each panel point');
 });

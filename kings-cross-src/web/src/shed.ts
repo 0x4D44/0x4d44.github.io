@@ -688,15 +688,19 @@ export function gableBars(uc: number, springing: number, from: number, r = R): B
  */
 // round F12 (front-round-11b score, A6: front-d's truss is deep, dark and open, the model's thin): 2.4 m deep (front-d: about 2.5 m against the 32 m span), its
 // chords 0.3 m and its diagonals 0.18 m (were 1.5 m, 0.2-0.25 m, 0.1-0.15 m; kx-front-round32 pins them)
-export const GABLE_GIRDER = { depth: 2.4, panel: 2.3, chord: [0.3, 0.3] as const, web: [0.18, 0.18] as const } as const;
+// round F13: the webs 0.18 -> 0.15 m, there being twice the diagonals and a vertical at each panel point, so it stays an open truss from inside (B3)
+export const GABLE_GIRDER = { depth: 2.4, panel: 2.3, chord: [0.3, 0.3] as const, web: [0.15, 0.15] as const } as const;
 export function gableGirder(uc: number, springing: number, top: number, r = R): BarSpec[] {
   const { depth, panel, chord, web } = GABLE_GIRDER, y0 = top - depth;
   const half = Math.sqrt(Math.max(0, r * r - (y0 - springing) ** 2)) - 0.12, n = Math.max(2, Math.round((2 * half) / panel)), w = (2 * half) / n;
   const out: BarSpec[] = [{ c: [uc, y0, 0], s: [2 * half, chord[0], chord[1]], rotZ: 0, kind: 'transom' }];
   for (let i = 0; i < n; i++) {
-    const xa = uc - half + i * w, xb = xa + w, [ya, yb] = i % 2 === 0 ? [y0, top] : [top, y0];
-    out.push({ c: [(xa + xb) / 2, (ya + yb) / 2, 0], s: [Math.hypot(w, depth) + 0.05, web[0], web[1]], rotZ: Math.atan2(yb - ya, w), kind: 'mullion' });
+    const xa = uc - half + i * w, xb = xa + w;
+    // round F13 (front-round-12 score, A6/B3: front-d's and R-a's lattice is denser): both diagonals in every panel, where it was one, zigzagging
+    for (const [ya, yb] of [[y0, top], [top, y0]]) out.push({ c: [(xa + xb) / 2, (ya + yb) / 2, 0], s: [Math.hypot(w, depth) + 0.05, web[0], web[1]], rotZ: Math.atan2(yb - ya, w), kind: 'mullion' });
   }
+  // and a vertical at every panel point (round F13)
+  for (let i = 0; i <= n; i++) out.push({ c: [uc - half + i * w, y0 + depth / 2, 0], s: [web[0], depth, web[1]], rotZ: 0, kind: 'mullion' });
   return out;
 }
 
@@ -896,7 +900,8 @@ function dimInXray(glass: THREE.Mesh, group: THREE.Group): void {
  * shed): the gable glass seen from outside, north of the gables' plane, by day: its colour, opacity and specular (ASSUMED from front-d). From inside, on the
  * plane, or at night it is the library glass as before (the screens from inside are shed B3's, and lit at night they should show the room).
  */
-export const GABLE_OUTSIDE = { color: 0x35424e, opacity: 0.86, specular: 0xdce6f0 } as const;
+// round F13 (front-round-12 score, A6: the ribs and the far south screen showed plainly through): opacity 0.86 -> 0.93, half what comes through from the room
+export const GABLE_OUTSIDE = { color: 0x35424e, opacity: 0.93, specular: 0xdce6f0 } as const;
 /** The share of GABLE_OUTSIDE the gable glass takes for a camera at `cam` (the shed's frame): 1 - night north of the gables' plane, 0 elsewhere. */
 export function gableOutside(cam: V3, layout: Pick<ShedLayout, 'length'>, night: number): number {
   return cam[2] < -layout.length ? 1 - Math.min(1, Math.max(0, night)) : 0;
@@ -910,7 +915,7 @@ function gableGlassView(glass: THREE.Mesh, group: THREE.Group, layout: Pick<Shed
     was = m.opacity; colour.copy(m.color); specular.copy(m.specular);
     cam.copy(camera.position).applyMatrix4(inverse.copy(group.matrixWorld).invert());
     const k = gableOutside([cam.x, cam.y, cam.z], layout, windowNight.value);
-    m.opacity = (was + (GABLE_OUTSIDE.opacity - was) * k) * endGlassFactor(group.userData.roofMode as RoofMode);
+    m.opacity = (was * (1 - k) + GABLE_OUTSIDE.opacity * k) * endGlassFactor(group.userData.roofMode as RoofMode);
     if (k > 0) { m.color.lerp(tint.setHex(GABLE_OUTSIDE.color), k); m.specular.lerp(tint.setHex(GABLE_OUTSIDE.specular), k); }
     even = glintEven.value; glintEven.value = k; // round F11b: one even sheen, not a mosaic of streaked and clear panes
   };
