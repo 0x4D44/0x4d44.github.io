@@ -552,6 +552,7 @@ export function shellMaterialFor(kind: TrainKind, nose: number): THREE.MeshLambe
   let m = shells.get(key);
   if (!m) {
     m = new THREE.MeshLambertMaterial({ color: new THREE.Color(0xffffff).multiplyScalar(LIGHT_GAIN) });
+    m.defines = { NO_SHED_LIGHT: '' }; // lighting.ts NO_SHED_LIGHT: none of the shed's daylight additions (a sunlit white side would clip)
     if (typeof document !== 'undefined') {
       let t = textures.get(key);
       if (!t) {
