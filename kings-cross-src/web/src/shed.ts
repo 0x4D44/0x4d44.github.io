@@ -909,7 +909,10 @@ function dimInXray(glass: THREE.Mesh, group: THREE.Group): void {
 // round F13 (front-round-12 score, A6: the ribs and the far south screen showed plainly through): opacity 0.86 -> 0.93, half what comes through from the room
 // round F15 (front-round-14 score, A6: the roof ribs and their pane shadows still showed through): opacity 0.93 -> 0.955, a third less through head-on,
 // and with GABLE_THICKEN about 0.98 aslant
-export const GABLE_OUTSIDE = { color: 0x35424e, opacity: 0.955, specular: 0xdce6f0 } as const;
+// round F15b (front-round-15 score, A6: the ribs behind the glass no fainter): from outside by day the room's share (1 - opacity) is cut by 0.6 more, its place
+// taken by the sheet's own tone, so a rib or a dash behind shows at 0.4 of F15's contrast: opacity 0.955 -> 0.982. Over a blend, lerping the transmitted room
+// toward the glass's colour is exactly this raise of alpha; set here, on the draw, x-ray's endGlassFactor still thins it (a shader fade would not)
+export const GABLE_OUTSIDE = { color: 0x35424e, opacity: 0.982, specular: 0xdce6f0 } as const;
 /** The share of GABLE_OUTSIDE the gable glass takes for a camera at `cam` (the shed's frame): 1 - night north of the gables' plane, 0 elsewhere. */
 export function gableOutside(cam: V3, layout: Pick<ShedLayout, 'length'>, night: number): number {
   return cam[2] < -layout.length ? 1 - Math.min(1, Math.max(0, night)) : 0;

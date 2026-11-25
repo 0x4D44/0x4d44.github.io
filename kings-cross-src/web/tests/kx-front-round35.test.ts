@@ -35,12 +35,15 @@ test('A6 (F15): the cloud\'s cores sit 35-52% over the pane\'s own tone, lighten
   assert.ok(most >= 1.35, `bright sky cores: ${most.toFixed(3)}`);
 });
 
-test('A6 (F15): from outside by day a third less of the room shows through: opacity 0.955 head-on, 0.975-0.985 aslant; inside the library glass', () => {
+test('A6 (F15, re-pinned F15b): from outside by day less of the room shows through, a quarter of F14\'s: opacity 0.982 head-on, 0.99-0.996 aslant; inside the library glass', () => {
   const O = shed.GABLE_OUTSIDE;
-  assert.ok(Math.abs(O.opacity - 0.955) < 0.006, `head-on ${O.opacity}`);
-  assert.ok((1 - O.opacity) <= (1 - 0.93) * 0.7 && (1 - O.opacity) >= (1 - 0.93) * 0.6, 'a third less through than F14');
+  // re-pinned round F15b (front-round-15 score, A6: the ribs behind no fainter): the room's share cut by 0.6 more, kx-front-round36 pins it: 0.982 head-on, a
+  // quarter of F14's 0.07 through; were 0.955 and a third less
+  assert.ok(Math.abs(O.opacity - 0.982) < 0.004, `head-on ${O.opacity}`);
+  assert.ok((1 - O.opacity) <= (1 - 0.93) * 0.32 && (1 - O.opacity) >= (1 - 0.93) * 0.2, 'a quarter of F14 through');
   const aslant = run(body, glsl, 1, 0.4, 15, 0.75, [0, 0, 0], O.opacity)[3]!;
-  assert.ok(aslant >= 0.975 && aslant <= 0.985, `aslant ${aslant.toFixed(4)}`);
+  // re-pinned round F15b: with 0.982 head-on, aslant 0.99-0.996; was 0.975-0.985
+  assert.ok(aslant >= 0.99 && aslant <= 0.996, `aslant ${aslant.toFixed(4)}`);
   const layout = shedLayout(JSON.parse(readFileSync(new URL('../src/data/kx-track.json', import.meta.url), 'utf8')) as KxData);
   const g = shed.buildShed(layout, { range: false, roof: 'auto' }); g.updateMatrixWorld(true);
   const glass = g.getObjectByName('shed-gable-glass') as THREE.Mesh, mat = glass.material as THREE.MeshPhongMaterial, base = mat.opacity;

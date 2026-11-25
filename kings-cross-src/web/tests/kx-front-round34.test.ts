@@ -49,7 +49,9 @@ test('A6 (F14): the cloud patches are broad and elongated: along a pane row a pa
   }
   const whole = runs.slice(1);
   assert.ok(whole.length >= 2, `patches along the row: ${runs}`);
-  for (const r of whole) assert.ok(r >= 3 && r <= 9, `a patch ${r} panes across (${runs})`);
+  // re-pinned round F15b (front-round-15 score, A6): with the sharper cores (kx-front-round36) a lobe's tip, where the waves barely agree, is lit over 2 panes
+  // and no longer a faint skirt of 3; was 3-9
+  for (const r of whole) assert.ok(r >= 2 && r <= 9, `a patch ${r} panes across (${runs})`);
   // the patches move as the camera moves: 40 m along the gable changes the tone somewhere by 5 levels or more, 1 m by under 2 anywhere
   let far = 0, near = 0;
   for (let k = -10; k < 10; k++) for (const yy of [12, 18, 24]) {
