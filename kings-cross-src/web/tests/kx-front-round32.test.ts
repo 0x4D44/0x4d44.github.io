@@ -48,7 +48,9 @@ test('A6 (F12): some life in the panes, no mosaic: within 42% over and 25% under
     const g = grid((x, y) => shade(1, x, y, cos)).flat();
     const mean = [0, 1, 2].map(c => g.reduce((a, p) => a + p[c]!, 0) / g.length);
     // re-pinned round F14 (the cloud as sky, lightening only, up to about 27%; kx-front-round34): up to 42% over the mean, 25% under; was 21% each way
-    for (const p of g) for (const c of [0, 1, 2]) assert.ok(p[c]! / mean[c]! - 1 <= 0.42 && 1 - p[c]! / mean[c]! <= 0.25, `within 42% over, 25% under: ${p[c]} against ${mean[c]}`);
+    // re-pinned round F16 (front-round-15c score, A6: pane-to-pane life): each pane's offset now taken on the sheet after the cloud (kx-front-round38), so a
+    // light pane on a cloud's core sits up to 50% over the mean and a dark one 30% under; were 42% and 25%
+    for (const p of g) for (const c of [0, 1, 2]) assert.ok(p[c]! / mean[c]! - 1 <= 0.5 && 1 - p[c]! / mean[c]! <= 0.3, `within 50% over, 30% under: ${p[c]} against ${mean[c]}`);
     const spread = Math.max(...g.map(p => p[1]!)) - Math.min(...g.map(p => p[1]!));
     assert.ok(spread >= 4, `some life: ${spread.toFixed(1)} levels`);
     const rows = grid((x, y) => shade(1, x, y, cos));
@@ -57,7 +59,9 @@ test('A6 (F12): some life in the panes, no mosaic: within 42% over and 25% under
     // re-pinned round F14: the cloud's cores add about 10 levels a pane: 32; was 26
     // re-pinned round F15b (front-round-15 score, A6: the cloud a glow, not shapes): the cores' sharper edge (kx-front-round36) steepens the step between
     // two panes on it: 36; was 32
-    assert.ok(worst <= 36, `neighbours ${worst.toFixed(1)} levels apart at most`);
+    // re-pinned round F16 (front-round-15c score, A6: pane-to-pane life; kx-front-round38): the pane's offset after the cloud, on a core's lighter sheet and a quarter more aslant
+    // (this grid's cos 0.5): 50; was 36
+    assert.ok(worst <= 50, `neighbours ${worst.toFixed(1)} levels apart at most`);
   }
 });
 
@@ -65,10 +69,12 @@ test('A6 (F12): with glintEven 0 (inside, on the plane, night, every other windo
   const old = new Glsl('');
   // re-pinned round F13: two more new lines, the secondary bars (gq, and gt darkened by them); it was three. Re-pinned round F13b: and the thickening alpha
   // last (kx-front-round33), six
-  const oldBody = body.split('\n').filter(l => !/^vec3 gt =|^float gq =|^gt \*=|^float gr =|uGlintEven \);$/.test(l)).join('\n');
-  assert.ok(oldBody.split('\n').length === body.split('\n').length - 6, 'six new lines');
+  // re-pinned round F16 (front-round-15c score, A6: pane-to-pane life): and the pane cell of the gables' new rows (gn) before gt, seven
+  // re-pinned round F16b: the pane's index (gi) and its offset, leaning from its neighbours' (go), eight
+  const oldBody = body.split('\n').filter(l => !/^vec2 gi =|^float go =|^vec3 gt =|^float gq =|^gt \*=|^float gr =|uGlintEven \);$/.test(l)).join('\n');
+  assert.ok(oldBody.split('\n').length === body.split('\n').length - 8, 'eight new lines');
   const lines = body.split('\n').filter(l => l.trim());
-  assert.deepEqual(lines.slice(-7).map(l => l.split(' ')[0]), ['gl_FragColor.a', 'vec3', 'float', 'gt', 'float', 'gl_FragColor.rgb', 'gl_FragColor.a'], 'the new lines come last, after the old alpha');
+  assert.deepEqual(lines.slice(-9).map(l => l.split(' ')[0]), ['gl_FragColor.a', 'vec2', 'float', 'vec3', 'float', 'gt', 'float', 'gl_FragColor.rgb', 'gl_FragColor.a'], 'the new lines come last, after the old alpha');
   for (const fog of [day, night]) for (const [x, y, cos] of [[3, 15, 1], [-12, 20, 0.3], [20, 11, 0.7]] as const) {
     const run = (src: string, g: Glsl): number[] => {
       const view = [Math.sqrt(1 - cos * cos), 0, cos];

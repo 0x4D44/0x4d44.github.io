@@ -51,12 +51,17 @@ test('A6 (F13): the panes carry 10-12% of life each and a cloud of up to 8% span
   assert.ok(Math.max(...all) / mean - 1 >= 0.1 && 1 - Math.min(...all) / mean >= 0.1, `life: ${(Math.min(...all) / mean).toFixed(3)} to ${(Math.max(...all) / mean).toFixed(3)}`);
   // re-pinned round F14 (front-round-13b score, A6: the cloud as sky, +20-25%, lightening only; kx-front-round34 pins it): up to 42% over the mean and 25%
   // under it (the mean is lifted by the cloud); were 21% each way
-  assert.ok(Math.max(...all) / mean - 1 <= 0.42 && 1 - Math.min(...all) / mean <= 0.25, 'and no more than pane plus cloud');
+  // re-pinned round F16 (front-round-15c score, A6: pane-to-pane life): the pane's offset taken after the cloud (kx-front-round38): 50% over, 30% under; were
+  // 42% and 25%
+  // re-pinned round F16b: the offsets 7%: 42% and 25% again
+  assert.ok(Math.max(...all) / mean - 1 <= 0.42 && 1 - Math.min(...all) / mean <= 0.25, `and no more than pane plus cloud: ${(Math.min(...all) / mean).toFixed(3)} to ${(Math.max(...all) / mean).toFixed(3)}`);
   let worst = 0;
   t.forEach((col, i) => col.forEach((v, j) => { for (const q of [t[i + 1]?.[j], col[j + 1]]) if (q !== undefined) worst = Math.max(worst, Math.abs(v - q)); }));
   // re-pinned round F14: the cloud's brighter cores add up to about 10 levels a pane to the 12% panes' 21: 32; was 26
   // re-pinned round F15 (front-round-14 score: the cloud still weak; lift 0.095 -> 0.2, kx-front-round35 pins it): the cores' slope adds about 20 levels a
   // pane to the panes' 21: 44; was 32
+  // re-pinned round F16 (front-round-15c score, A6: pane-to-pane life; kx-front-round38): the pane's offset taken after the cloud: 50; was 44. Re-pinned round
+  // F16b (front-round-16 score: a quilt; kx-front-round39): the offsets 7%, so 44 again
   assert.ok(worst <= 44, `neighbours ${worst.toFixed(1)} levels apart at most`);
   // the cloud: averaged over 3 by 3 panes (so the panes' own offsets mostly cancel) the tone still swings, slowly (re-pinned round F13b: the cloud's swing along
   // one row is under the old band's, 5% or more where it was 8%; and with 12% panes neighbouring blocks within 9 levels, where it was 6)
@@ -123,15 +128,18 @@ test('A6 (F13b): from outside by day the glass thickens off the normal: its alph
 test('A6 (F13b): each pane is offset by up to 11-13% (the score\'s 12%), and the cloud\'s patches span 4-8 panes, soft', () => {
   // re-pinned round F14: the cloud's waves are GABLE_SHEET.cloud.waves (they were .band)
   const B = (materials as Record<string, unknown>).GABLE_SHEET as { cloud: { waves: readonly number[] }; pane: number };
-  assert.ok(B.pane >= 0.11 && B.pane <= 0.13, `pane offset ${B.pane}`);
+  // re-pinned round F16b (front-round-16 score, A6: the panes' dark offsets read as a quilt; kx-front-round39): 6-8%, about +-4-5 levels head-on; was 11-13%
+  assert.ok(B.pane >= 0.06 && B.pane <= 0.08, `pane offset ${B.pane}`);
   const across = Math.PI / Math.abs(B.cloud.waves[0]!) / GLAZING.spacing;
   assert.ok(across >= 4 && across <= 8, `a patch ${across.toFixed(1)} panes across`);
   // inside one pane (its own offset fixed) only the cloud moves the tone: somewhere it swings 5% or more down a pane's height, and nowhere faster across a
   // pane than its slope allows (0.32 m between a quarter-pane and the bar's edge: under 1.5%)
   let down = 0, across1 = 0;
   for (let k = -20; k < 20; k++) for (let j = 0; j < 5; j++) {
-    const y0 = GLAZING.springing + j * GLAZING.tier + 0.3, x = (k + 0.1) * P;
-    const col = Array.from({ length: 10 }, (_, m) => run(1, x, y0 + m * 0.5)[2]!);
+    // re-pinned round F16 (front-round-15c score, A6): a pane is part of a tier now (GABLE_SHEET.row), so down one pane, not 4.5 m of the tier; round F16b:
+    // the half-tier pane's lower 2.4 m
+    const y0 = GLAZING.springing + j * GLAZING.tier + 0.09, x = (k + 0.1) * P;
+    const col = Array.from({ length: 10 }, (_, m) => run(1, x, y0 + m * 0.26)[2]!);
     down = Math.max(down, (Math.max(...col) - Math.min(...col)) / col[0]!);
     const a = run(1, (k + 0.1) * P, y0 + 2)[2]!, b = run(1, (k + 0.1) * P + 0.32, y0 + 2)[2]!;
     across1 = Math.max(across1, Math.abs(a - b) / a);

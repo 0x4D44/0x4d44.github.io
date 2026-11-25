@@ -668,9 +668,22 @@ export function lunetteBars(uc: number, springing: number, r = R, spacing = 1.6)
   return out;
 }
 
-/** The bars of one north gable: the window bars above `from`, mullions trimmed to start there. */
+/**
+ * Round F16 (front-round-15c score, A6: front-d and front-d2 show about 6-8 rows of glazing bars across each north screen, the model 2-3, so it read as tall
+ * strips): `split` transoms to each third of the radius where the lunette has one, the new ones `width` m deep (a little lighter than the 0.09 m bars), so
+ * seven rows of panes over the crown, each GLAZING.tier / 3 tall (materials.ts GABLE_SHEET.row: a pane's own tone is held over these).
+ */
+// round F16b (front-round-16 score, B3: from inside an even graph paper of near-square cells, where shed-a shows about 3 main transoms and tall lights): a
+// tier split in 2, not 3, so 5 rows over the crown and panes 1.67 times as tall as wide, and the new transoms 0.045 m deep, about half the mullions' 0.09
+export const GABLE_TRANSOM = { split: 2, width: 0.045 } as const;
+/** The bars of one north gable: the window bars above `from`, mullions trimmed to start there, and GABLE_TRANSOM's transoms between the lunette's. */
 export function gableBars(uc: number, springing: number, from: number, r = R): BarSpec[] {
   const out: BarSpec[] = [];
+  for (let k = 1; k < 3 * GABLE_TRANSOM.split; k++) {
+    if (k % GABLE_TRANSOM.split === 0) continue; // the lunette's own, below
+    const y = (r * k) / (3 * GABLE_TRANSOM.split), half = Math.sqrt(r * r - y * y) - 0.12;
+    if (springing + y > from + 0.2 && half > 0.3) out.push({ c: [uc, springing + y, 0], s: [2 * half, GABLE_TRANSOM.width, 0.12], rotZ: 0, kind: 'transom' });
+  }
   for (const b of lunetteBars(uc, springing, r)) {
     if (b.kind === 'mullion') {
       const top = b.c[1] + b.s[1] / 2;

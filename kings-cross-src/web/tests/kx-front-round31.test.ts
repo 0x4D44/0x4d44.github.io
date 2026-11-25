@@ -129,7 +129,9 @@ test('A6 (F11b): with glintEven at 1 the glint is one even sheen: over a 60 m by
   assert.ok(streaked > 30, `the streaks as round six made them: ${streaked.toFixed(1)} levels between neighbours`);
   // re-pinned round F12 (front-round-11b score, A6: the panes want a little life): GABLE_SHEET offsets each pane by up to 4%, so neighbours may differ by up to
   // 7 levels (kx-front-round32 pins it); the streaks' tens of levels stay out. Was 2. Re-pinned round F13: 9% offsets and an 8% band, so 16 levels. Re-pinned round F13b: 12% panes and an 8% cloud, 26
-  assert.ok(flat <= 26, `even: ${flat.toFixed(2)} levels between neighbouring points`);
+  // re-pinned round F16 (front-round-15c score, A6: single panes lighter or darker than their neighbours, front-d's pane life): each pane's 12% offset is now
+  // taken on the sheet as seen and grows a quarter aslant (kx-front-round38), so on this eye's bright, grazing sheet neighbours may differ by 40; was 26
+  assert.ok(flat <= 40, `even: ${flat.toFixed(2)} levels between neighbouring points`);
   const mid = shade(1, 30, 15);
   assert.ok(Math.max(...mid) < 140 && mid[2]! > mid[0]!, `still dark blue-grey with a sheen: ${mid.map(v => v.toFixed(0)).join(', ')}`);
   // round F12: GABLE_SHEET now sets the colour where glintEven is 1, so the flattening shows in the alpha: what of the room behind shows through must not
