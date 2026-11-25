@@ -31,7 +31,7 @@ MUTATIONS = [
     ('no spade', 'web/src/clocks.ts', '[0.2, 0.72], [0.5, 0.84], [0, 1], [-0.5, 0.84], [-0.2, 0.72]', '[0.2, 0.72], [0.2, 0.84], [0, 1], [-0.2, 0.84], [-0.2, 0.72]', 'broad at the boss'),
     ('no cornice soffit', 'web/src/shed.ts', "{ facing: [0, -1, 0] }); // the cornice's soffit", "{ facing: [0, 1, 0] }); // the cornice's soffit", 'dark soffit and shadow line'),
     ('no shadow line', 'web/src/shed.ts', '{ facing: [0, 0, 1] }); // the shadow line', '{ facing: [0, 0, -1] }); // the shadow line', 'dark soffit and shadow line'),
-    ('impost no prouder than the orders', 'web/src/shed.ts', 'impost: { height: 0.35, out: 1.0, past: 0.15 }', 'impost: { height: 0.35, out: 0.5, past: 0.15 }', 'dark soffit and shadow line'),
+    ('impost no prouder than the orders', 'web/src/shed.ts', 'impost: { height: 0.35, out: 1.1, past: 0.15 }', 'impost: { height: 0.35, out: 0.5, past: 0.15 }', 'dark soffit and shadow line'),
 ]
 
 def run(work: Path) -> subprocess.CompletedProcess[str]:

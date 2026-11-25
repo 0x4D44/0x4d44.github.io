@@ -43,12 +43,12 @@ test('A2: the front\'s returns are a darker shade of its brick, by day and at ni
 test('A2: each order\'s step face is a return: under the crown, between one order\'s face and the next, a ray up meets the darker group', () => {
   const F = shed.FRONT_RELIEF;
   for (const uc of [layout.spine - R, layout.spine + R]) for (let i = 1; i < F.orders; i++) {
-    const z = (i + 0.5) * F.orderStep; // in front of order i - 1's face, behind order i's
+    const z = shed.frontOrderZ(i) - F.orderStep / 2; // in front of order i - 1's face, behind order i's (re-pinned round A2: the faces at frontOrderZ)
     const up = ray([uc, sp + R - 1.0, z], [0, 1, 0], [front]);
     const sy = (F as typeof F & { splay?: number }).splay ?? 0; // re-pinned round 26 (front-round-5 score, A2): the step splayed, so halfway up it stands half the splay out from its foot
     assert.ok(up && up.mat === 1 && Math.abs(up.y - (sp + R + i * F.orderWidth + sy / 2)) < 0.05, `order ${i}'s step face over x ${uc.toFixed(1)}: ${up?.mat} at ${up?.y.toFixed(2)}`);
     const face = ray([uc, sp + R + i * F.orderWidth + (sy + F.orderWidth) / 2, 5], [0, 0, -1], [front]); // re-pinned round 26: the face's middle, outside the splayed step
-    assert.ok(face && face.mat !== 1 && Math.abs(face.z - (i + 1) * F.orderStep) < 0.02, // re-pinned round 27: the orders' faces in their own lighter brick (mat 2, kx-front-round27), still not the return tone
+    assert.ok(face && face.mat !== 1 && Math.abs(face.z - shed.frontOrderZ(i)) < 0.02, // re-pinned round 27: the orders' faces in their own lighter brick (mat 2, kx-front-round27), still not the return tone
       `and its face in the brick (${face?.mat} at ${face?.z.toFixed(2)})`);
   }
 });

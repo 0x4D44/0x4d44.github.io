@@ -29,12 +29,14 @@ test('A2: square-on, each order shows a band of its splayed step in the return t
   const F = shed.FRONT_RELIEF as typeof shed.FRONT_RELIEF & { splay: number };
   assert.ok(F.splay >= 0.15 && F.splay <= F.orderWidth - 0.1, `splay ${F.splay}`);
   for (const uc of [layout.spine - R, layout.spine + R]) for (const a of [Math.PI / 2, Math.PI / 4, (3 * Math.PI) / 4]) for (let i = 0; i < F.orders; i++) {
+    // re-pinned round A2: the faces at frontOrderZ, the inner order (shallower, standing on the wall's face) splayed in proportion to its depth
+    const zb = Math.max(0, shed.frontOrderZ(i - 1)), zf = shed.frontOrderZ(i), sw = (F.splay * (zf - zb)) / F.orderStep;
     const r0 = R + i * F.orderWidth, at = (r: number): [number, number, number] => [uc + r * Math.cos(a), sp + r * Math.sin(a), 5];
-    const step = ray(at(r0 + F.splay / 2), [0, 0, -1], [front]);
-    assert.ok(step && step.mat === 1 && step.z > i * F.orderStep + 0.02 && step.z < (i + 1) * F.orderStep - 0.02 && step.nz > 0.3,
+    const step = ray(at(r0 + sw / 2), [0, 0, -1], [front]);
+    assert.ok(step && step.mat === 1 && step.z > zb + 0.02 && step.z < zf - 0.02 && step.nz > 0.3,
       `order ${i}'s step at x ${uc.toFixed(1)}, ${(a * 180 / Math.PI).toFixed(0)} deg: ${step?.mat} at ${step?.z.toFixed(2)} facing ${step?.nz.toFixed(2)}`);
     const face = ray(at(r0 + (F.splay + F.orderWidth) / 2), [0, 0, -1], [front]);
-    assert.ok(face && face.mat !== 1 && Math.abs(face.z - (i + 1) * F.orderStep) < 0.01, // re-pinned round 27: the orders' faces in their own lighter brick (mat 2, kx-front-round27), still not the return tone
+    assert.ok(face && face.mat !== 1 && Math.abs(face.z - zf) < 0.01, // re-pinned round 27: the orders' faces in their own lighter brick (mat 2, kx-front-round27), still not the return tone
       `and its face: ${face?.mat} at ${face?.z.toFixed(2)}`);
   }
   // the opening's clear width kept: inside the inner order nothing of the front

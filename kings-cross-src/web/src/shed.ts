@@ -146,8 +146,18 @@ export const PORCH_TONES = { soffit: 0x3a3f45, figure: 0x4a4540, figureNight: [0
  * Round 5's relief pass (the tower-round-2b score, A2 6.5): each order steps 0.28 m (it was 0.15), a fourth order (`innerOrder`) inside the
  * opening, flush with the wall's face, the glass's lunette 0.4 m narrower behind it (the opening's outline and springing unchanged); and a
  * stone bed mould under the parapet cornice, `bedMould` proud, so the cornice's 0.7 m overhang reads as a stepped soffit, not a block.
+ *
+ * Round A2 (gap scan 2, A2 8.5: the orders read as thin painted bands where R-kx-front-a/b show deeply stepped orders casting arc shadows): each
+ * order steps `orderStep` 0.4 m (was 0.28) and the whole stack is set `set` m back (frontOrderZ): the inner order's face 0.18 m proud (in front of
+ * the end piers' 0.15 m face strip under its feet), the middle one's 0.58 (in front of the spandrel frame's 0.5 band, which crosses it at the crown),
+ * the outer one's 0.98 (was 0.84; the impost it stands on now 1.1 m proud, was 1.0), and the fourth order's face `set` m behind the wall's face, the
+ * wall's own reveal over it a square soffit: 1.2 m from the outer face to the fourth's. The splay 0.15 (was 0.22), so each step is a soffit that throws an arc
+ * shadow onto the face inside it once the sun is above about 21 degrees (0.4 tan e > 0.15; at 0.28 and 0.22 it needed 38). Values ASSUMED, read
+ * in memory from the photographs; no new triangle, only vertices move.
  */
-export const FRONT_RELIEF = { orders: 3, orderWidth: 0.4, orderStep: 0.28, splay: 0.22, innerOrder: true, bedMould: { height: 0.25, out: 0.35 }, impost: { height: 0.35, out: 1.0, past: 0.15 }, shadowLine: 0.25, springing: { height: 0.3, out: 1.0 }, corona: { height: 0.3, out: 1.1 }, impostAboveGround: 4.95, impostHeight: 0.25, impostOut: 0.2 } as const;
+export const FRONT_RELIEF = { orders: 3, orderWidth: 0.4, orderStep: 0.4, set: 0.22, splay: 0.15, innerOrder: true, bedMould: { height: 0.25, out: 0.35 }, impost: { height: 0.35, out: 1.1, past: 0.15 }, shadowLine: 0.25, springing: { height: 0.3, out: 1.0 }, corona: { height: 0.3, out: 1.1 }, impostAboveGround: 4.95, impostHeight: 0.25, impostOut: 0.2 } as const;
+/** The face of great-arch order `i` in metres proud of the front's wall face (negative: behind it); -1 is the fourth order, inside the opening. */
+export const frontOrderZ = (i: number): number => (i + 1) * FRONT_RELIEF.orderStep - FRONT_RELIEF.set;
 /**
  * The porch openings' infill (A3), from R-kx-front-a: dark-framed glazed screens set back in each opening, glazed doors with a push rail,
  * a deep transom (the signage fascia) at about 2.5 m, and glazing over it in the arch head. Five bays to an opening and the frame sizes are
@@ -1659,30 +1669,33 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
     // round 26 (front-round-5 score, A2: "one broad ring with thin lines" square-on): each order is a layer on the one inside it (the wall's face behind
     // the first, its hole the arch's own), out to the band's outer edge, and its inner edge splayed: its face's inner edge FRONT_RELIEF.splay out from its foot, so its step is a
     // chamfer seen square-on as a band of the return tone (FRONT_RETURN). The same contours and triangles as the square steps; only vertices move
-    const rOut = R + FRONT_RELIEF.orders * FRONT_RELIEF.orderWidth, { orderStep: st, splay } = FRONT_RELIEF;
+    const rOut = R + FRONT_RELIEF.orders * FRONT_RELIEF.orderWidth, { splay } = FRONT_RELIEF;
     for (let i = 0; i < FRONT_RELIEF.orders; i++) {
-      const r0 = R + i * FRONT_RELIEF.orderWidth, zBack = FRONT_THICK + i * st, zFace = FRONT_THICK + (i + 1) * st;
+      const r0 = R + i * FRONT_RELIEF.orderWidth, zBack = FRONT_THICK + Math.max(0, frontOrderZ(i - 1)), zFace = FRONT_THICK + frontOrderZ(i); // round A2: order 0 stands on the wall's face, the fourth (frontOrderZ(-1)) behind it
       const g = new THREE.ExtrudeGeometry(archRing(uc - fx0, sp, r0, rOut), { depth: zFace - zBack, bevelEnabled: false, curveSegments: 12 });
       g.translate(0, 0, zBack);
-      const pos = g.getAttribute('position') as THREE.BufferAttribute;
+      const pos = g.getAttribute('position') as THREE.BufferAttribute, sw = (splay * (zFace - zBack)) / FRONT_RELIEF.orderStep; // round A2: a shallower order's splay in proportion, so every step keeps one slope
       for (let k = 0; k < pos.count; k++) {
         const dx = pos.getX(k) - (uc - fx0), dy = pos.getY(k) - sp, r = Math.hypot(dx, dy);
-        if (Math.abs(pos.getZ(k) - zFace) < 1e-6 && Math.abs(r - r0) < 1e-4) pos.setXY(k, uc - fx0 + (dx * (r0 + splay)) / r, sp + (dy * (r0 + splay)) / r);
+        if (Math.abs(pos.getZ(k) - zFace) < 1e-6 && Math.abs(r - r0) < 1e-4) pos.setXY(k, uc - fx0 + (dx * (r0 + sw)) / r, sp + (dy * (r0 + sw)) / r);
       }
       g.computeVertexNormals();
       frontParts.push(g);
       orderParts.add(g);
     }
     if (FRONT_RELIEF.innerOrder) {
-      // the fourth order, inside the opening and a step back from the third: flush with the wall's face, to the springing. Only its face
-      // and its inner side are built (its outer side is the opening's own, its back is unseen): the shadow pass has 335 triangles to spare
-      const u = uc - fx0, w = FRONT_RELIEF.orderWidth, n = 14, inner = new Batch(); // round 27: 14 steps (was 16), its 16 triangles a vault paying for the panels' heads
+      // the fourth order, inside the opening and a step back from the third: since round A2 `set` m behind the wall's face (frontOrderZ(-1)), to the
+      // springing, the opening's own side over it its soffit. Only its face and its inner side are built (its outer side is the opening's own, its back is unseen)
+      const u = uc - fx0, w = FRONT_RELIEF.orderWidth, n = 14, inner = new Batch(), zi = FRONT_THICK + frontOrderZ(-1); // round 27: 14 steps (was 16), its 16 triangles a vault paying for the panels' heads
       for (let k = 0; k < n; k++) {
         const [a0, a1] = [(k * Math.PI) / n, ((k + 1) * Math.PI) / n];
         const p = (r: number, a: number, z: number): V3 => [u + r * Math.cos(a), sp + r * Math.sin(a), z];
-        inner.poly([p(R - w, a0, FRONT_THICK), p(R, a0, FRONT_THICK), p(R, a1, FRONT_THICK), p(R - w, a1, FRONT_THICK)], undefined, { facing: [0, 0, 1] });
+        // round A2: its outer edge's chords circumscribe the opening (vertices R / cos(half a step), inside the wall's mass), so no sliver of the glass
+        // shows between it and the opening's side at the soffit's foot, now that it stands back of the face
+        const ro = R / Math.cos(Math.PI / (2 * n));
+        inner.poly([p(R - w, a0, zi), p(ro, a0, zi), p(ro, a1, zi), p(R - w, a1, zi)], undefined, { facing: [0, 0, 1] });
         const am = (a0 + a1) / 2;
-        inner.poly([p(R - w, a0, 0), p(R - w, a0, FRONT_THICK), p(R - w, a1, FRONT_THICK), p(R - w, a1, 0)], undefined, { facing: [-Math.cos(am), -Math.sin(am), 0] });
+        inner.poly([p(R - w, a0, 0), p(R - w, a0, zi), p(R - w, a1, zi), p(R - w, a1, 0)], undefined, { facing: [-Math.cos(am), -Math.sin(am), 0] });
       }
       frontParts.push(plainGeometry(inner.build().toNonIndexed()));
     }
