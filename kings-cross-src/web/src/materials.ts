@@ -1400,6 +1400,8 @@ export const GLAZING = { spacing: 1.6, tier: 5.334, springing: 5.6388 } as const
  */
 export const GLINT_EVEN = 0.3;
 export const glintEven = { value: 0 };
+/** Round F17: 1 for the north gables' own draw, either side, day or night (shed.ts gableGlassView), so only their glass takes GABLE_FINE's bars. */
+export const gableDraw = { value: 0 };
 /**
  * Round F12 (front-round-11b score, A6: head-on the outside gables read 30-40% too light, lighter than at a grazing view, and every pane the same): where
  * glintEven is set (the north gables from outside by day) the glass's colour out is GABLE_SHEET: a dark blue-grey `tone` (sRGB, after the tone map; front-d's
@@ -1440,6 +1442,19 @@ function paneOffset(): string {
   const n = ['vec2( 1.0, 0.0 )', 'vec2( -1.0, 0.0 )', 'vec2( 0.0, 1.0 )', 'vec2( 0.0, -1.0 )'].map(d => h(`gi + ${d}`)).join(' + ');
   return `0.5 * ( ${h('gi')} - ${glslFloat(GABLE_SHEET.apart)} * ( ${n} ) )`;
 }
+/**
+ * Round F17 (front-round-16b score, A6/B3: front-d, front-d2 and shed-a show tall narrow lights, the model 1.6 m bays): fine glazing bars in the gables' glass,
+ * not geometry: a dark line `width` m wide every `spacing` m (three between each pair of the 1.6 m bars; the outside mid-pane bar is one of them), darkening the
+ * glass by `shade` and making it as opaque, from either side. Box-filtered on the pixel's footprint (fwidth) and, as that footprint nears half the spacing,
+ * faded to its mean cover, so it never aliases or moires at a distance.
+ */
+export const GABLE_FINE = { spacing: GLAZING.spacing / 4, width: 0.02, shade: 0.55 } as const;
+/**
+ * Round F17 (front-round-16b score, A6: the dapple came from the panes; front-d's from the sky): from outside by day a low reflection field over each gable,
+ * two soft waves' product (`waves`: x and y wavenumbers of each, per metre), 2-3 light and dark zones across a gable, lifting or dimming the sheet by up to
+ * `amp` (about +-10-15 levels), drifting with the camera as the cloud does.
+ */
+export const GABLE_REFLECT = { amp: 0.15, waves: [0.22, 0.05, 0.06, 0.11] } as const;
 const SKY_GLINT_GLSL = /* glsl */`
 #if defined( USE_FOG ) && ! defined( FLIP_SIDED )
 vec2 gm = ( floor( vec2( ( vGlassPos.x - uPaneX ) / ${GLAZING.spacing}, ( vGlassPos.y - ${GLAZING.springing} ) / ${GLAZING.tier} ) ) + 0.5 ) * vec2( ${GLAZING.spacing}, ${GLAZING.tier} ) + vec2( uPaneX, ${GLAZING.springing} );
@@ -1459,6 +1474,16 @@ float gr = max( ${glslFloat(GABLE_SHEET.f0)} + ${glslFloat(1 - GABLE_SHEET.f0)} 
 gl_FragColor.rgb = mix( gl_FragColor.rgb, mix( gt, mix( fogColor, vec3( 1.0 ), ${glslFloat(GABLE_SHEET.haze)} ), gr ) * ( 1.0 + ${glslFloat(GABLE_SHEET.pane)} * ( 1.0 + ${glslFloat(GABLE_SHEET.graze)} * ( 1.0 - smoothstep( ${glslFloat(GABLE_THICKEN.aslant)}, ${glslFloat(GABLE_THICKEN.straight)}, abs( dot( normal, normalize( vViewPosition ) ) ) ) ) ) * go ), uGlintEven );
 gl_FragColor.a = mix( gl_FragColor.a, gl_FragColor.a + ( 1.0 - gl_FragColor.a ) * ${glslFloat(GABLE_THICKEN.thicken)} * ( 1.0 - smoothstep( ${glslFloat(GABLE_THICKEN.aslant)}, ${glslFloat(GABLE_THICKEN.straight)}, abs( dot( normal, normalize( vViewPosition ) ) ) ) ), uGlintEven );
 #endif
+#if defined( USE_FOG ) && ! defined( FLIP_SIDED )
+// round F17: from outside by day the sky's reflection field (GABLE_REFLECT), then the gables' fine glazing bars (GABLE_FINE), either side
+float gz = sin( ${glslFloat(GABLE_REFLECT.waves[0])} * ( vGlassPos.x - uPaneX ) + ${glslFloat(GABLE_REFLECT.waves[1])} * vGlassPos.y + 0.3 + ${glslFloat(GABLE_SHEET.cloud.drift)} * ( cameraPosition.x + cameraPosition.z ) ) * sin( ${glslFloat(GABLE_REFLECT.waves[2])} * ( vGlassPos.x - uPaneX ) + ${glslFloat(GABLE_REFLECT.waves[3])} * vGlassPos.y + 2.1 + ${glslFloat(GABLE_SHEET.cloud.drift)} * ( cameraPosition.x - cameraPosition.z ) );
+gl_FragColor.rgb *= 1.0 + ${glslFloat(GABLE_REFLECT.amp)} * gz * uGlintEven;
+float gfw = fwidth( vGlassPos.x );
+float gfd = abs( fract( ( vGlassPos.x - uPaneX ) / ${glslFloat(GABLE_FINE.spacing)} + 0.5 ) - 0.5 ) * ${glslFloat(GABLE_FINE.spacing)};
+float gfk = mix( max( 0.0, min( gfd + 0.5 * gfw, ${glslFloat(GABLE_FINE.width / 2)} ) - max( gfd - 0.5 * gfw, ${glslFloat(-GABLE_FINE.width / 2)} ) ) / max( gfw, 0.00001 ), ${glslFloat(GABLE_FINE.width / GABLE_FINE.spacing)}, smoothstep( ${glslFloat(GABLE_FINE.spacing / 8)}, ${glslFloat(GABLE_FINE.spacing / 2)}, gfw ) ) * ${glslFloat(GABLE_FINE.shade)} * uGableBars;
+gl_FragColor.rgb *= 1.0 - gfk;
+gl_FragColor.a = mix( gl_FragColor.a, 1.0, gfk );
+#endif
 `;
 
 /** The x, in the glass's own frame, that the panes are counted from: the middle of the geometry being drawn (the shed's centre line, for the front's glass and the gables'). */
@@ -1473,11 +1498,12 @@ export function skyGlint<T extends THREE.MeshPhongMaterial>(m: T): T {
   m.onBeforeCompile = (shader) => {
     shader.uniforms.uPaneX = paneX;
     shader.uniforms.uGlintEven = glintEven;
+    shader.uniforms.uGableBars = gableDraw;
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', '#include <common>\nvarying vec2 vGlassPos;')
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvGlassPos = position.xy;');
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nvarying vec2 vGlassPos;\nuniform float uPaneX;\nuniform float uGlintEven;')
+      .replace('#include <common>', '#include <common>\nvarying vec2 vGlassPos;\nuniform float uPaneX;\nuniform float uGlintEven;\nuniform float uGableBars;')
       .replace('#include <fog_fragment>', `${SKY_GLINT_GLSL}#include <fog_fragment>`);
   };
   m.onBeforeRender = (_renderer, _scene, _camera, geometry) => {

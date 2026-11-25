@@ -35,7 +35,8 @@ MUTATIONS = [
     ('dusk all or nothing', 'web/src/shed.ts', 'm.opacity = (was * (1 - k) + GABLE_OUTSIDE.opacity * k)', 'm.opacity = (k > 0 ? GABLE_OUTSIDE.opacity : was)', 'from inside'),
     ('the front glass dark too', 'web/src/shed.ts', '  dimInXray(lunMesh, group);', '  gableGlassView(lunMesh, group, { length: -1e6 });', 'from inside'),
     ('the gables keep the streaks', 'web/src/shed.ts', 'even = glintEven.value; glintEven.value = k;', 'even = glintEven.value;', 'A6 (F11b): the gable glass flattens'),
-    ('the flattening left on', 'web/src/shed.ts', 'glintEven.value = even; };', '};', 'A6 (F11b): the gable glass flattens'),
+    ('the flattening left on', 'web/src/shed.ts', 'glintEven.value = even; gableDraw.value = drawn; };', 'gableDraw.value = drawn; };',  # anchor moved round F17
+     'A6 (F11b): the gable glass flattens'),
     ('flattened always', 'web/src/shed.ts', 'even = glintEven.value; glintEven.value = k;', 'even = glintEven.value; glintEven.value = 1;', 'A6 (F11b): the gable glass flattens'),
     ('the shader ignores it', 'web/src/materials.ts', 'mix( smoothstep( -0.6, 0.9, gb ), ${GLINT_EVEN}, uGlintEven )', 'smoothstep( -0.6, 0.9, gb )', 'A6 (F11b): with glintEven'),
     ('half flattened', 'web/src/materials.ts', 'mix( smoothstep( -0.6, 0.9, gb ), ${GLINT_EVEN}, uGlintEven )', 'mix( smoothstep( -0.6, 0.9, gb ), ${GLINT_EVEN}, 0.5 * uGlintEven )', 'A6 (F11b): with glintEven'),
