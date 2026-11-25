@@ -19,7 +19,7 @@ const group = shed.buildShed(layout, { range: false });
 const A = shed.SOUTH_FRONT_ARCADES, T = shed.PORCH_TONES, D = shed.PORCH_DEPTH;
 type V = readonly number[];
 const G = (shed as unknown as { PORCH_GLASS: { band: { v: V; colour: V }; day: { v: V; feather: number; base: number; pools: V; width: number; colour: V };
-  signs: { boxes: readonly V[]; colour: V }; lift: { v: V; colour: V }; reflect: { forecourt: V; sky: V; door: number; doors: V }; gpu: number } }).PORCH_GLASS;
+  signs: { boxes: readonly V[]; colour: V }; lift: { v: V; colour: V }; reflect: { forecourt: V; sky: V; door: number; doors: V }; gpu: { band: number; lift: number; reflect: number } } }).PORCH_GLASS;
 const F = (T as unknown as { figureDay: { t: readonly number[]; k: readonly number[]; hips: number; legs: number } }).figureDay;
 const entryFoot = GROUND_Y + A.footAboveGround;
 const infill = group.getObjectByName('shed-front-infill') as THREE.Mesh;
@@ -40,12 +40,12 @@ const kAt = (t: number): number => {
   const lerp = (a: number, b: number, x: number): number => a + (b - a) * Math.min(1, Math.max(0, x));
   return t <= t1 ? lerp(k0, k1, (t - t0) / (t1 - t0)) : t <= t2 ? lerp(k1, k2, (t - t1) / (t2 - t1)) : lerp(k2, k3, (t - t2) / (t3 - t2));
 };
-// Round 3b: the GPU's emissive add measured at about G.gpu of the model's (the round-3 reflection: +3 predicted, +0.3 seen), so a day term adds G.gpu times
-// itself here (ASSUMED). The lift's share at v, the reflection's luminance at v (forecourt at the foot, sky at the transom).
-const g = G.gpu;
+// Round 3c (re-pinned from 3b's single 0.1): each day term adds G.gpu.<term> times itself here, fitted to the 3b GPU column (shed.ts PORCH_GLASS).
+// The lift's and the reflection's light at v (forecourt at the foot, sky at the transom), each times its own factor.
+const gB = G.gpu.band, gL = G.gpu.lift, gR = G.gpu.reflect;
 const ss = (a: number, b: number, x: number): number => { const y = Math.min(1, Math.max(0, (x - a) / (b - a))); return y * y * (3 - 2 * y); };
-const liftAt = (v: number): number => lum(G.lift.colour) * (1 - ss(G.lift.v[0]!, G.lift.v[1]!, v));
-const reflAt = (v: number): number => lum(G.reflect.forecourt) + (lum(G.reflect.sky) - lum(G.reflect.forecourt)) * Math.min(1, Math.max(0, v));
+const liftAt = (v: number): number => gL * lum(G.lift.colour) * (1 - ss(G.lift.v[0]!, G.lift.v[1]!, v));
+const reflAt = (v: number): number => gR * (lum(G.reflect.forecourt) + (lum(G.reflect.sky) - lum(G.reflect.forecourt)) * Math.min(1, Math.max(0, v)));
 const tOf = (H: number): number => (H - E) / C;
 
 test('A3 round 3b: each figure\'s upper body sits about 12 levels under the hall behind it (the lower hall lit, the figures not), the dark-zone floor as measured, its legs darker', () => {
@@ -60,13 +60,14 @@ test('A3 round 3b: each figure\'s upper body sits about 12 levels under the hall
   // the floor: the model reads the darkest hall's figure under 6 (4.9-5.4 on halls of 7-13) where the GPU measured about 7.5 with the reflection's +0.3, so
   // the knots stay as measured and the model's floor in the dark zone here is 4.5
   for (const h of [7, 9, 10, 13, 16, 19, 22, 25, 30, 37]) {
-    const H = inv(h), k = kAt(tOf(H)), hall = show(H + g * (liftAt(v) + reflAt(v))), up = show(k * H), legs = show(F.legs * k * H);
+    const H = inv(h), k = kAt(tOf(H)), hall = show(H + (liftAt(v) + reflAt(v))), up = show(k * H), legs = show(F.legs * k * H);
     out.push(`${h}->${hall.toFixed(0)}:${up.toFixed(0)}/${legs.toFixed(0)}`);
     assert.ok(up >= (h < 19 ? 4.5 : 6) && up <= hall - 2, `a hall of ${hall.toFixed(1)}: the figure ${up.toFixed(1)}, not crushed, not lighter`);
     assert.ok(hall - up >= 12, `a hall of ${hall.toFixed(1)}: the figure ${up.toFixed(1)}, about 12 or more under`);
-    assert.ok(hall >= 20, `the lower hall lit to ${hall.toFixed(1)} from ${h}`);
-    const lit = show(H + g * liftAt(v));
-    assert.ok(h < 9 || lit >= 19, `the lift alone takes a hall of ${h} to ${lit.toFixed(1)}`);
+    // re-pinned round 3c (3b's lift blew the GPU hall to 115-165): the lower hall about 25, not a wash
+    assert.ok(hall >= 20 && hall <= Math.max(30, h + 14), `the lower hall lit to ${hall.toFixed(1)} from ${h}`);
+    const lit = show(H + liftAt(v));
+    assert.ok(h < 9 || (lit >= 14 && lit <= Math.max(20, h + 6)), `the lift alone takes a hall of ${h} to ${lit.toFixed(1)}`);
     assert.ok(h < 25 || up <= h - 10, `a figure ${up.toFixed(1)} 10 or more under the unlit hall of ${h}, as in round 3`);
     assert.ok(h >= 19 || up <= 9.5, `a dark hall of ${h}: the figure ${up.toFixed(1)}, clamped near 7`);
     assert.ok(legs <= up - 1 && legs >= (h < 19 ? 2.5 : 3), `the legs ${legs.toFixed(1)} under the upper body ${up.toFixed(1)}`);
@@ -92,11 +93,12 @@ test('A3 round 3b: by day the back-wall band feathered top and bottom, in two or
   assert.ok(d.feather >= 0.08 && d.feather <= 0.1 && d.v[0]! >= 0.3 && d.v[1]! <= 0.85 && d.v[1]! - d.v[0]! >= 2.5 * d.feather, `feathered over ${d.feather} of the hall`);
   assert.ok(d.pools.length === 3 && d.pools.every((p, i) => p > 0.1 && p < 0.9 && (i === 0 || p - d.pools[i - 1]! >= 2 * d.width)) && d.width >= 0.08 && d.width <= 0.16 && d.base >= 0.25 && d.base <= 0.5, 'three pools along it');
   const out: string[] = [];
-  for (const h of [20, 23, 26, 30]) {
-    const H = inv(h), add = g * lum(d.colour) * tOf(H), pool = show(H + add), between = show(H + d.base * add), edge = show(H + ss(0, d.feather, d.feather / 3) * add);
+  // re-pinned round 3c (3b: the band 205 on the GPU): a pool about 55, about 35 between, on the GPU column's band-zone hall of 27-29
+  for (const h of [24, 28, 30]) {
+    const H = inv(h), add = gB * lum(d.colour) * tOf(H), pool = show(H + add), between = show(H + d.base * add), edge = show(H + ss(0, d.feather, d.feather / 3) * add);
     out.push(`${h}: ${pool.toFixed(0)}/${between.toFixed(0)}/${edge.toFixed(0)}`);
-    assert.ok(pool >= 45 && pool <= 72, `a pool over a hall of ${h}: ${pool.toFixed(1)}`);
-    assert.ok(between - h >= 6 && pool - between >= 12, `between the pools ${between.toFixed(1)}, under the pool ${pool.toFixed(1)}`);
+    assert.ok(pool >= 46 && pool <= 64, `a pool over a hall of ${h}: ${pool.toFixed(1)}`);
+    assert.ok(between - h >= 3 && between <= 42 && pool - between >= 12, `between the pools ${between.toFixed(1)}, under the pool ${pool.toFixed(1)}`);
     assert.ok(edge - h < (pool - h) / 2, `a third into the feather ${edge.toFixed(1)}, under half the lift`);
   }
   console.log('hall: pool/between/feather', out.join(' '));
@@ -115,7 +117,7 @@ test('A3 round 3b: two small blue signs in the band, by day', () => {
   assert.ok(src.includes('+ step( KX_SIGN1.x, vMapUv.x ) * step( vMapUv.x, KX_SIGN1.y ) * step( KX_SIGN1.z, vMapUv.y ) * step( vMapUv.y, KX_SIGN1.w ) );'), 'in the shader');
   const c = S.colour;
   assert.ok(c[2]! > 2 * c[1]! && c[1]! > c[0]!, 'blue');
-  const sign = show(inv(30) + g * lum(c));
+  const sign = show(inv(30) + gL * lum(c));
   assert.ok(sign >= 55 && sign <= 85, `a sign over a hall of 30: ${sign.toFixed(1)}`);
 });
 
@@ -126,15 +128,16 @@ test('A3 round 3b: the glass reflects by day, forecourt at the foot to sky under
   assert.ok(Number(d.KX_REFLECT_DOOR) === R.door && nums(d.KX_REFLECT_DOORS).join() === R.doors.join(), 'the doors');
   assert.ok(frag(interior).includes('totalEmissiveRadiance += ( 1.0 - uWinNight ) * mix( KX_REFLECT, KX_REFLECT_SKY, clamp( vMapUv.y, 0.0, 1.0 ) )')
     && frag(interior).includes('* mix( 1.0, KX_REFLECT_DOOR, step( KX_REFLECT_DOORS.x, vMapUv.x ) * step( vMapUv.x, KX_REFLECT_DOORS.y ) );'), 'by day only, the doors, in the shader');
-  assert.ok(R.sky[2]! > R.sky[0]! && R.forecourt[0]! >= R.forecourt[2]! && lum(R.sky) > lum(R.forecourt), 'a cool, brighter sky over a warmer forecourt');
+  assert.ok(R.sky[2]! > R.sky[0]! && R.forecourt[0]! >= R.forecourt[2]! && lum(R.sky) <= 1.15 * lum(R.forecourt) && lum(R.sky) >= 0.85 * lum(R.forecourt), 'a cool sky over a warmer forecourt, about as bright (round 3c)');
   assert.ok(R.door >= 0.4 && R.door <= 0.6, `the doors at ${R.door}`);
   assert.ok(Math.abs(R.doors[0]! - 0.3) < 1e-9 && Math.abs(R.doors[1]! - 0.7) < 1e-9, 'the doors under the rail');
   const out: string[] = [];
   for (const h of [10, 18, 25]) {
     for (const v of [0, 1]) {
-      const base = show(inv(h) + g * liftAt(v)), pane = show(inv(h) + g * (liftAt(v) + reflAt(v))) - base, door = show(inv(h) + g * (liftAt(v) + R.door * reflAt(v))) - base;
+      const base = show(inv(h) + liftAt(v)), pane = show(inv(h) + liftAt(v) + reflAt(v)) - base, door = show(inv(h) + liftAt(v) + R.door * reflAt(v)) - base;
       out.push(`${h}@${v}: +${pane.toFixed(1)}/+${door.toFixed(1)}`);
-      assert.ok(pane >= 7.5 && pane <= 16, `a hall of ${h} at v ${v}: the pane +${pane.toFixed(1)}`);
+      assert.ok(pane >= 7.5 && pane <= 12, // re-pinned round 3c: 3b's sky end greyed the transom; +8-12 at both ends
+        `a hall of ${h} at v ${v}: the pane +${pane.toFixed(1)}`);
       assert.ok(door >= 0.4 * pane && door <= 0.65 * pane, `the door +${door.toFixed(1)}, about half the pane's +${pane.toFixed(1)}`);
     }
   }

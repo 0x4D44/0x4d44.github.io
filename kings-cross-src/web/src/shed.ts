@@ -151,20 +151,23 @@ export const PORCH_TONES = { soffit: 0x3a3f45, figure: 0x4a4540, figureNight: [0
 // so the knots hold their measured ~7 floor.
 /**
  * Arcade round 3 (A3): behind the screens a lit back-wall band, the hall's map times `band.colour` (linear) over `band.v` of the hall's height; since round
- * 3b night only (unchanged there). Round 3b (the round-3 GPU score: the band a hard flat stripe, the reflection +0.3 where the model said +3, the dark
- * zone hall 10-12 behind figures of 7): the GPU's emissive add measured at about `gpu` of tests/aces.ts's, so these day terms are sized for it (ASSUMED):
- * `day`, the band feathered over `feather` at each end of `v` and pooled along u (gaussians at `pools`, `width` wide, `base` between), about 55 at a
- * pool (71 on the brightest hall, 30) and 35 between on a mid hall of 23; `signs`, two blue boxes (u0, u1, v0, v1) in it, about 70; `lift`, light over the hall below `lift.v` (full to
- * v0, gone by v1), a dark-zone hall of 10 to about 20; `reflect`, the glass from `forecourt` at the hall's foot to `sky` at the transom (about +8.5 to
- * +14), `door` of it on the door leaves (`doors`, the hall's u share). All on the hall only, all gone at night; the figures get none.
+ * 3b night only (unchanged there). Round 3b: by day, all on the hall only, all gone at night, the figures get none: `day`, the band feathered over
+ * `feather` at each end of `v` and pooled along u (gaussians at `pools`, `width` wide, `base` between); `signs`, two blue boxes (u0, u1, v0, v1) in it;
+ * `lift`, light over the hall below `lift.v` (full to v0, gone by v1); `reflect`, the glass from `forecourt` at the hall's foot to `sky` at the transom
+ * (the same brightness, warm to cool), `door` of it on the door leaves (`doors`, the hall's u share).
+ * Round 3c (the 3b GPU, porch-close x=600: the hall 23-29 went to 115-209, a white wash): `gpu` is each term's effect on the GPU over tests/aces.ts's
+ * model, fitted to that column (3b's terms at its v, the hall's BASE level inverted on the model): the lower hall (lift plus reflection) 0.75 on every
+ * point, the transom (reflection alone) 0.5, so `lift` 1 and `reflect` 0.5; the band 1.1-1.3 at a pool (2.2 off one; the column taken at the opening's
+ * middle pool), so 1.2; the signs take `lift`'s. Sized on those: a pool about 55 and 35 between on a hall of 28, a dark-zone hall of 10 lifted to
+ * about 15 (25 with the reflection), the reflection about +8.5 at the foot and +9 under the transom on a hall of 30, the signs about 70. MEASURED fit, ASSUMED to hold.
  */
 export const PORCH_GLASS = {
   band: { v: [0.45, 0.72] as const, colour: [0.0285, 0.0249, 0.0205] as const },
-  day: { v: [0.42, 0.75] as const, feather: 0.09, base: 0.35, pools: [0.18, 0.5, 0.82] as const, width: 0.12, colour: [0.58, 0.505, 0.417] as const },
-  signs: { boxes: [[0.3, 0.42, 0.58, 0.64], [0.58, 0.7, 0.58, 0.64]] as const, colour: [0.159, 0.37, 1.057] as const },
-  lift: { v: [0.45, 0.55] as const, colour: [0.0876, 0.0647, 0.0409] as const },
-  reflect: { forecourt: [0.0711, 0.0675, 0.0626] as const, sky: [0.096, 0.108, 0.126] as const, door: 0.5, doors: [0.3, 0.7] as const },
-  gpu: 0.1,
+  day: { v: [0.42, 0.75] as const, feather: 0.09, base: 0.25, pools: [0.18, 0.5, 0.82] as const, width: 0.12, colour: [0.0319, 0.0278, 0.0229] as const },
+  signs: { boxes: [[0.3, 0.42, 0.58, 0.64], [0.58, 0.7, 0.58, 0.64]] as const, colour: [0.0159, 0.037, 0.1057] as const },
+  lift: { v: [0.45, 0.55] as const, colour: [0.004, 0.003, 0.0018] as const },
+  reflect: { forecourt: [0.0135, 0.0128, 0.0119] as const, sky: [0.0132, 0.0148, 0.0173] as const, door: 0.5, doors: [0.3, 0.7] as const },
+  gpu: { band: 1.2, lift: 1, reflect: 0.5 },
 } as const;
 /**
  * The front's relief (rubric A2). R-kx-front-a (2026) and R-kx-front-b (2016) show each great arch's reveal in three brick orders stepping
