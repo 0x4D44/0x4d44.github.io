@@ -48,6 +48,9 @@ export const SHED_POOL = { sigma: 1.2, spill: 0.18, max: 1.2, gain: 0.85, tint: 
 // is about 0.7 of the sun) puts round 2's values back exactly: the day's contrast belongs in the sun, not in a darker shade
 export const SHED_CROWN_FLOOR = { flank: 0.6, from: 0.35, to: 1.0 } as const;
 
+// round 4 gave the floor a day gain (SHED_DAY_FLOOR, 1.6 on sun and shade alike); round 4b (the round-4 score: in R-a the floor is darker than the
+// sunlit brick, and the gain washed the floor out) takes it away and lifts the sun on the walls instead (lighting.ts SHED_WALL_SUN)
+
 /** The lamps' pools alone (capped at `max`, no spill) at the world point (x, z), from lamps at `heads` (flat x, y, z): what the map's red holds. */
 export function shedPoolGauss(heads: readonly number[], x: number, z: number): number {
   const k = 1 / (2 * SHED_POOL.sigma * SHED_POOL.sigma), reach2 = (4 * SHED_POOL.sigma) ** 2;
@@ -83,7 +86,7 @@ export function shedCrownFloor(layout: Pick<ShedLayout, 'origin' | 'heading' | '
   return 1 - smoothstep(SHED_CROWN_FLOOR.from, SHED_CROWN_FLOOR.to, off);
 }
 
-/** The floor's factors as the shader applies them, for a CPU check: `day` the floor light's factor by day (direct and indirect); `night` the base's factor and `pool` the emissive (times the albedo and the tint) after dark. */
+/** The floor's factors as the shader applies them, for a CPU check: `day` the floor light's crown-to-wall share by day (direct and indirect); `night` the base's factor and `pool` the emissive (times the albedo and the tint) after dark. */
 export function shedFloorLight(layout: Pick<ShedLayout, 'origin' | 'heading' | 'width' | 'length' | 'spine'>, heads: readonly number[], x: number, z: number, dist = 0): { day: number; night: number; pool: number } {
   const inside = shedFloorInside(layout, x, z);
   return {
@@ -129,7 +132,7 @@ export function shedFloorGlsl(): string {
   vec2 shedFloorUv = ( shedFloorW.xz - uShedFloorRect.xy ) * uShedFloorRect.zw;
   if ( shedFloorUv.x >= 0.0 && shedFloorUv.y >= 0.0 && shedFloorUv.x <= 1.0 && shedFloorUv.y <= 1.0 ) {
     vec4 shedFloorT = texture2D( uShedFloorMap, shedFloorUv );
-    float shedFloorDayK = 1.0 + ( ${f(SHED_CROWN_FLOOR.flank)} + ${f(1 - SHED_CROWN_FLOOR.flank)} * shedFloorT.b - 1.0 ) * shedFloorT.g * uShedFloorDay;
+    float shedFloorDayK = ( 1.0 + ( ${f(SHED_CROWN_FLOOR.flank)} + ${f(1 - SHED_CROWN_FLOOR.flank)} * shedFloorT.b - 1.0 ) * shedFloorT.g * uShedFloorDay );
     reflectedLight.directDiffuse *= shedFloorDayK;
     reflectedLight.indirectDiffuse *= shedFloorDayK;
     float shedFloorNight = shedFloorT.g * uShedFloorNight;

@@ -119,7 +119,7 @@ test('A2 orders: the glazing screen and its bars stand behind the innermost orde
   }
 });
 
-test('A2 orders: each return round the arches is a band 0.17 m or more wide square-on, painted in a contact shade by day; the night wash and the porches\' reveals unshaded', () => {
+test('A2 orders: each return round the arches is a band 0.17 m or more wide square-on, painted in a contact shade by day; the night wash unshaded', () => {
   const F = shed.FRONT_RELIEF, mats = front.material as THREE.MeshLambertMaterial[], night = [buildingNightMaterialsOf(front)!.night].flat() as THREE.MeshLambertMaterial[];
   const S = (shed as unknown as { FRONT_ORDER_SHADE: number }).FRONT_ORDER_SHADE;
   assert.ok(S >= 0.4 && S <= 0.6, `FRONT_ORDER_SHADE ${S}`);
@@ -143,10 +143,11 @@ test('A2 orders: each return round the arches is a band 0.17 m or more wide squa
     const h = new THREE.Raycaster(group.localToWorld(new THREE.Vector3(uc, sp + R - 1, -0.1)), new THREE.Vector3(0, 1, 0).transformDirection(group.matrixWorld), 0, 3).intersectObject(front)[0];
     assert.ok(h && h.face!.materialIndex === 1 && Math.abs(shadeAt(h) - S) < 1e-6, `the soffit over the fourth order: ${h?.face?.materialIndex}, shade ${h && shadeAt(h)}`);
   }
-  // a porch opening's reveal, under the springing: a return, unshaded
+  // a porch opening's reveal, under the springing: a return; re-pinned arcade round 2 (the A2 score: the arcade's returns read paler than the great
+  // arches'): shaded alike now (kx-front-arcade-round2)
   const x = shed.southFrontArcadeCentres(4 * R, shed.TOWER_SIZE)[0]! + layout.spine - 2 * R;
   const p = new THREE.Raycaster(group.localToWorld(new THREE.Vector3(x, layout.springing - 4, -0.3)), new THREE.Vector3(-1, 0, 0).transformDirection(group.matrixWorld), 0, 8).intersectObject(front)[0];
-  assert.ok(p && p.face!.materialIndex === 1 && shadeAt(p) === 1, `a porch reveal unshaded: ${p?.face?.materialIndex} ${p && shadeAt(p)}`);
+  assert.ok(p && p.face!.materialIndex === 1 && Math.abs(shadeAt(p) - S) < 1e-6, `a porch reveal shaded alike: ${p?.face?.materialIndex} ${p && shadeAt(p)}`);
 });
 
 test('A2 orders: no new triangle: the front mesh keeps its count', () => {

@@ -197,11 +197,11 @@ test('the live Waverley night variants return to the exact main daylight program
     const signatures = materials.map(signature), keys = materials.map(m => m.customProgramCacheKey()), counts = topology();
     console.log('Waverley daylight shader hashes', signatures);
     assert.deepEqual(signatures, [
-      '8a4f97f10b89bc08bf9c9e181a3253b61a629c6bdae3af2b6a7b36f230a9a16f',
-      '82399ff22b82e531c947b625b989134649f909b3246fd0b406e8c6ac55b66ce1',
-      'f92538cda46ae5ab2d78488388cc0c6bdc7869225dc436973ac498feedb84f33',
-      'fe9748b2eb5af81537308feea7b4b3307db285ec929d894268b3dd45ad6f3a7b',
-      '8203f3c3668172f16676d671ac6728cdd59dc94713d52beb2d91d85863c120f7',
+      'c55857a2b07669c48ad67d5591308a8d18ee265a69e2e369f61bf00cc3ff0340',
+      '89587c3ad991dcbeba04d012ce1694a8671527a854069102b25d41a9463db4ba',
+      'b898a045be08e9e0facaa6739bca1b5218710b3cae08e06a2417e0ef3e48f782',
+      '7a62b9daa498ea71e7fcfae2e36eb5c2a3a1de4f160727e2513c1e2db4eae5fb',
+      '5fad12e03a1931aa44c870a4b99e0054b510669525b9c003260e7725bca4eab0',
     ]);
     at('2026-11-20T22:30:00Z', 1000);
     assert.ok(meshes.every((mesh, i) => mesh.material === materials[i] && mesh.geometry === geometries[i]));
@@ -214,7 +214,7 @@ test('the live Waverley night variants return to the exact main daylight program
     assert.ok(meshes.every((mesh, i) => mesh.material === materials[i] && mesh.geometry === geometries[i]));
     assert.deepEqual(topology(), counts);
     assert.ok(perthWall.material === stone);
-    assert.equal(signature(stone), '026d08cd4ebafb4aad1238d03874a2e0c9c890762e74ad722cf62bea85bf43dd');
+    assert.equal(signature(stone), '840e266fc92ab37602690c50724893d38a3f91d96efd1c1256abd6d02b30ac9d');
     assert.equal(stone.customProgramCacheKey(), perthKey);
     assert.ok(nightKeys.every((key, i) => key !== keys[i] && nightSignatures[i] !== signatures[i]),
       'each changed material selects a distinct program through the real weather entry point');

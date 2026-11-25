@@ -132,13 +132,15 @@ test('B7: no pools by day, and none outside the shed (the open platform ends kee
 test('B7 day: the floor\'s light is full under the crown and falls toward the vault walls, its direct light (the shade\'s crown fill) too', () => {
   const [cx, cz] = shedToWorld(layout, layout.spine - R, 100), [wx, wz] = shedToWorld(layout, layout.spine - 2 * R + 1.5, 100);
   const crown = shade(cx, cz, 0, 1), flank = shade(wx, wz, 0, 1);
-  assert.ok(Math.abs(crown.indirect[1]! - BASE[1]!) < 1e-4, 'under the crown, as before');
-  const k = flank.indirect[1]! / BASE[1]!;
+  // round 4 gave the floor a day gain and round 4b took it away (round 4's test holds that); the share by the wall is read against the crown's
+  const gain = 1;
+  assert.ok(Math.abs(crown.indirect[1]! - BASE[1]! * gain) < 1e-4, 'under the crown, the gain alone');
+  const k = flank.indirect[1]! / (BASE[1]! * gain);
   // re-pinned in round 2 (b7-round-1-score: wall about 0.6, not 0.78), same width of band: was 0.75-0.86; round 3 moved it to 0.32-0.43 and round 3b (the round-3 score: the wrong way against R-a) restores round 2's
   assert.ok(k >= 0.57 && k <= 0.68 && Math.abs(k - SHED_CROWN_FLOOR.flank) < 0.03, `by the wall ${k.toFixed(3)}`);
   // round 1b: the floor's day light in the shade is mostly the direct term (the sun's, lifted by lighting.ts SHED_GLASS), so the factor takes it too
-  assert.ok(Math.abs(flank.direct[1]! / BASE[1]! - k) < 1e-6, 'the direct light falls with it');
-  assert.ok(Math.abs(crown.direct[1]! - BASE[1]!) < 1e-4, 'under the crown, the direct as before');
+  assert.ok(Math.abs(flank.direct[1]! / (BASE[1]! * gain) - k) < 1e-6, 'the direct light falls with it');
+  assert.ok(Math.abs(crown.direct[1]! - BASE[1]! * gain) < 1e-4, 'under the crown, the direct the gain alone');
   const night = shade(wx, wz, 1, 0);
   assert.ok(Math.abs(night.indirect[1]! - BASE[1]! * SHED_POOL.moon) < 1e-6, 'after dark the crown term is off');
 });

@@ -172,8 +172,8 @@ test('Midland keeps its original daylight material and shader through night, and
   const day = (wallMs: number) => sky.update({ camera, target, timeMs: Date.parse('2026-11-20T12:00:00Z'), wallMs, weather: CLEAR_STATE });
   const candidates = ['brickRed', 'stone'].map(key => mesh(built.group, key));
   const digests = [
-    '5f265814b5dfe62378e707aac3249e16c9175cb78a59df1597150d96f9eff432',
-    'fabbb5bf645c5541e2df709151a01ea1d9619c1b74d58c3d38c793d80f9eb781',
+    'aac2b9307254c595133a582d72b4d2c0c383052b25c84a3c39f75cf83d217360',
+    'de393553c9bbc7fc49ea6b5cb02de19c46dbe7ac9533280ca95e958bdf02749c',
   ];
   const glass = 'd11b29ab8dd58ec0e307156043b198a425cc281a4c30100c3dc5649f9a9ddf99';
   try {

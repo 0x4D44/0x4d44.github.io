@@ -141,13 +141,13 @@ test('the Midland runs the 69c80505 night programs in all four states and preser
   const target = new THREE.Vector3();
   const keys = ['brickRed', 'stone', 'pane'] as const;
   const fingerprints = [
-    '5f265814b5dfe62378e707aac3249e16c9175cb78a59df1597150d96f9eff432',
-    'fabbb5bf645c5541e2df709151a01ea1d9619c1b74d58c3d38c793d80f9eb781',
-    '5fd416ae6caa324a932e1afc0f8e4662815d86778ed7bdb3daceb54f1c6c15e5',
+    'aac2b9307254c595133a582d72b4d2c0c383052b25c84a3c39f75cf83d217360',
+    'de393553c9bbc7fc49ea6b5cb02de19c46dbe7ac9533280ca95e958bdf02749c',
+    '86f3e66fdd384ce3ce719f3393e9bbb5de65a12744e3a5b86cb210c334bd8eaf',
   ];
   const nightFingerprints = [
-    '7af5826ae7c02bb3938759a7661ae9f46a13d71c442b6f7b45980bf01171999c',
-    '5001f9d1c87b22d3b2a717e224926827fa96c36423a9274707f7ea0878435fd9',
+    '063a1897d2e98d3f8cfe3c0a927553b1685662abc98504ca95c581fe5a2ffed5',
+    'db05e8cc7d2a731b12da3bc58f123ace98f1b7dfa49f51f9ea2b618a811246bd',
   ];
   const fingerprint = (material: THREE.Material) => {
     const { vertexShader, fragmentShader } = compile(material);

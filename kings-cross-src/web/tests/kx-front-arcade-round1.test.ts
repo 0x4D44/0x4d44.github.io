@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import type { KxData } from '../../core/osm.ts';
 import { readFileSync } from 'node:fs';
 import { SHED_SPAN_WIDTH, shedLayout } from '../../core/station.ts';
-import { material } from '../src/materials.ts';
+import { buildingNightMaterialsOf, material } from '../src/materials.ts';
 import * as shed from '../src/shed.ts';
 import { GROUND_Y } from '../src/world.ts';
 import { DAY_EXPOSURE, NIGHT_EXPOSURE } from '../../core/daylight.ts';
@@ -37,7 +37,10 @@ const near = (a: number[], b: number[], tol: number): boolean => a.every((v, i) 
 
 test('A3: each porch arch is turned in two brick orders, each 0.23 m on the face, the inner 0.11 m proud of the wall and the outer 0.11 m prouder, over the head and down the jambs', () => {
   assert.deepEqual([O.orders, O.depth, O.step], [2, 0.23, 0.11]);
-  assert.equal((porch.material as THREE.Material[])[0], material('brickFoot'), 'the rings in the wall\'s brick');
+  // re-pinned arcade round 2: by day a clone of the wall's brick that takes the returns' contact shade by vertex colour (kx-front-arcade-round2); at night the brick itself
+  const day0 = (porch.material as THREE.MeshLambertMaterial[])[0]!;
+  assert.ok(day0.map === (material('brickFoot') as THREE.MeshLambertMaterial).map && day0.color.equals((material('brickFoot') as THREE.MeshLambertMaterial).color), 'the rings in the wall\'s brick');
+  assert.equal(([buildingNightMaterialsOf(porch)!.night].flat() as THREE.Material[])[0], material('brickFoot'), 'and at night the brick itself');
   assert.ok(!(porch.material as THREE.Material[]).includes(material('stoneFoot')) && !(porch.material as THREE.Material[]).includes(material('stone')), 'no stone voussoirs');
   for (const c of centres) {
     for (const [y, x] of [[crown, c], [spring - 0.4, c - entryR]] as const) { // over the crown (up) and on the west jamb (out), above the plinth
@@ -160,10 +163,10 @@ test('A3: the figures and barriers behind the glass are a lit mid tone, warm aft
   assert.ok(near(srgb(fig.color), hexRgb(T.figure), 1), `the figures ${srgb(fig.color)}`);
   const lum = (c: THREE.Color): number => 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
   assert.ok(lum(fig.color) >= 2 * lum(frames.color) && lum(fig.color) <= lum(interior.color), 'lighter than the frames, no lighter than the interior');
-  const dayFig = toSrgb(acesFilmic([fig.emissive.r, fig.emissive.g, fig.emissive.b], DAY_EXPOSURE)).map(v => Math.round(v * 255)); // round 1b: not black by day behind the glass
-  // round 1c: on the GPU (porch-close, day) the figures showed their lift alone (47/40/32 at 0.55, 47/42/37 here) and the interior round them ~30/23/16:
-  // the figures 8-12 or more levels darker than that, but not black (the base was ~5)
-  assert.ok(Math.max(...dayFig) >= 12 && Math.max(...dayFig) <= 30 - 8, `the figures' own lift by day ${dayFig}, under the interior's ~30/23/16`);
+  // re-pinned arcade round 2: the figures' day tone is now the interior's own at their spot times PORCH_TONES.figureDay (kx-front-arcade-round2), not
+  // a constant lift held under a fixed interior of 30; the lift stays theirs after dark (not black at night)
+  const nightFig = toSrgb(acesFilmic([fig.emissive.r, fig.emissive.g, fig.emissive.b], NIGHT_EXPOSURE)).map(v => Math.round(v * 255));
+  assert.ok(Math.max(...nightFig) >= 5, `the figures' own lift after dark ${nightFig}`);
   const glow = fig.userData.nightGlow as THREE.Color, inGlow = interior.userData.nightGlow as THREE.Color;
   assert.ok(glow && lum(glow) > 0.25 * lum(inGlow) && lum(glow) < 0.75 * lum(inGlow), 'a warm glow after dark, below the interior\'s');
   const D = shed.PORCH_DEPTH;
