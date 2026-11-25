@@ -486,7 +486,8 @@ const NEW_CAMERAS = {
   // platform-furniture added 2026-11-24 (round 17, platform-round-4 score section 5: no capture showed the new furniture near)
   // platform-clock added 2026-11-24 (round 14, platform-round-1 score section 5: no capture could verify the platform clock's arm, faces or scale)
   // platform-eye-crown-west added 2026-11-25 (B7 round 8, the round-7 GPU score: no capture showed island 6/7 under the west crown, so the crown band was never seen)
-  'shed-interior': ['platform-eye-p1-north', 'platform-eye-p8-south', 'roof-underside', 'furniture-close', 'suburban-p9', 'platform-clock', 'platform-furniture', 'platform-eye-crown-west'],
+  // shed-across-west added 2026-11-25 (B7 round 9, the round-8 score: the crown band read only by comparing two cameras; one view across the west vault)
+  'shed-interior': ['platform-eye-p1-north', 'platform-eye-p8-south', 'roof-underside', 'furniture-close', 'suburban-p9', 'platform-clock', 'platform-furniture', 'platform-eye-crown-west', 'shed-across-west'],
   'western-concourse': ['concourse-funnel-up', 'concourse-exterior-square', 'western-range-full'],
   'historic-neighbours': ['gnh-from-square', 'midland-euston-road', 'midland-clock-tower', 'barlow-interior'],
   'city-surroundings': ['granary-square', 'gasholders', 'canal-lock', 'kings-boulevard', 'euston-road-east'],
@@ -732,8 +733,8 @@ test('the twenty cameras that were there before wave 0 are all still there, and 
 
 test('every camera the six rubrics add exists, looks somewhere, and names the photograph it was framed from', () => {
   const cameras = stationCameras(trackData), added = Object.values(NEW_CAMERAS).flat();
-  assert.equal(added.length, 26); // re-pinned 2026-11-24 (round 10): 21 and gable-oblique; (round 14): and platform-clock; (round 17): and platform-furniture; (round 23b): and porch-close; 2026-11-25 (B7 round 8): and platform-eye-crown-west
-  assert.equal(new Set(added).size, 26, 'no view is added twice');
+  assert.equal(added.length, 27); // re-pinned 2026-11-24 (round 10): 21 and gable-oblique; (round 14): and platform-clock; (round 17): and platform-furniture; (round 23b): and porch-close; 2026-11-25 (B7 round 8): and platform-eye-crown-west; (B7 round 9): and shed-across-west
+  assert.equal(new Set(added).size, 27, 'no view is added twice');
   assert.deepEqual(Object.keys(cameras).slice(-1), ['kx-euston-road-lamp'], 'the night rubric view is appended after the six rubric sets');
   assert.equal(Object.keys(cameras).length, Object.keys(OLD_CAMERAS).length + added.length + EXTRA_CAMERAS.length + 1, 'only the night rubric view was appended');
   assert.deepEqual(EXTRA_CAMERAS.filter(name => added.includes(name)), [], 'an extra camera is not one a rubric names');
