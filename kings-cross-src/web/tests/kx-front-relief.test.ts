@@ -120,7 +120,7 @@ test('A3: the low canopy of the current front runs across the six openings at th
   const porch = group.getObjectByName('shed-front-porch-arches') as THREE.Mesh | undefined;
   assert.ok(porch && Array.isArray(porch.material), 'the canopy is the porch mesh\'s second material');
   // Re-pinned 2026-11-24 (round 5, second pass): the canopy is charcoal now (its own steel, FRONT_COLOURS), not the ribs' paint
-  const steel = (porch.material as THREE.Material[]).findIndex(m => m !== material('stone') && m !== material('stoneFoot')); // re-pinned round 24: the voussoirs are in the floodlit stoneFoot now
+  const steel = (porch.material as THREE.Material[]).findIndex(m => m !== material('stone') && m !== material('stoneFoot') && m !== material('brickFoot')); // re-pinned round 24: the voussoirs are in the floodlit stoneFoot now; re-pinned arcade round 1: the rings are the wall's brickFoot (PORCH_ORDERS)
   const span = porch.geometry.groups.find(g => g.materialIndex === steel);
   assert.ok(steel > 0 && span, 'dark steel, the second material');
   const pos = porch.geometry.getAttribute('position');

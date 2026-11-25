@@ -98,7 +98,7 @@ test('A3: each opening\'s arched head shows its own brick reveal in the front\'s
 test('A3: the voussoirs are in the floodlit dressing stone and the canopy\'s steel lifts a little at night, on its underside', () => {
   const porch = group.getObjectByName('shed-front-porch-arches') as THREE.Mesh;
   const pm = porch.material as THREE.MeshLambertMaterial[];
-  assert.equal(pm[0], material('stoneFoot'), 'the voussoirs floodlit as the front\'s dressings');
+  assert.equal(pm[0], material('brickFoot'), 'the arch rings floodlit as the front\'s brick'); // re-pinned arcade round 1: brick orders (PORCH_ORDERS), not stone voussoirs
   assert.ok(pm[0]!.defines?.FLOOD !== undefined, 'FLOOD');
   assert.ok(pm[1]!.customProgramCacheKey().includes('canopy'), 'the canopy\'s own night lift');
   // re-pinned round 24b (the 0.12 lift lit the canopy a flat tan, as bright as the floodlit stone): dark steel picking up a little spill, a quarter or less

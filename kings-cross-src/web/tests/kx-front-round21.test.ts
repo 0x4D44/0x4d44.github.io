@@ -68,7 +68,7 @@ test('A3: each porch opening shows figures deeper in, and its reveal\'s returns 
   const D = S.PORCH_DEPTH as { glass: number; figures: number; figure: readonly [number, number] };
   assert.ok(D.figures >= 1 && D.figures <= 2, 'one or two figures an opening');
   for (const x of doors) {
-    const fig = ray([x - 0.35 * 3.4, foot + 0.3 + D.figure[1] * 0.85, 10], [0, 0, -1], [infill], [1]);
+    const fig = ray([x - 0.35 * 3.4, foot + 0.3 + D.figure[1] * 0.85, 10], [0, 0, -1], [infill], [7]); // re-pinned arcade round 1: the figures' own mid tone (PORCH_TONES), the infill's eighth material
     assert.ok(fig && Math.abs(fig.z + D.glass) < 0.02, `a figure on the plane at x ${x.toFixed(1)}`);
     for (const sd of [-1, 1]) {
       const r = ray([x, foot + 1.0, -0.08], [sd, 0, 0], [infill]); // between the face and the frames' fronts
