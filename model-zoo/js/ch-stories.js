@@ -13,6 +13,9 @@ Zoo.chapter("stories", ["stories"], function (el, data) {
   var models = Zoo.order(all.filter(function (k) { return G[k].kind === "model"; }));
   var wp = all.filter(function (k) { return G[k].kind === "writingprompts"; });
   var gb = all.filter(function (k) { return G[k].kind === "gutenberg"; });
+  var ax = all.filter(function (k) { return G[k].kind === "author"; });
+  var AUTHOR = "0x4D44 (this site’s author)";
+  function cls(k) { var g = G[k]; return g.kind === "gutenberg" ? "gb" : g.kind === "author" ? "ax" : "wp"; }
   if (!models.length && !wp.length) {
     el.appendChild(h("p", { class: "note", text: "The stories are still being collected." }));
     return;
@@ -23,6 +26,7 @@ Zoo.chapter("stories", ["stories"], function (el, data) {
     var g = G[k];
     if (g.kind === "model") return Zoo.model(k).label;
     if (g.kind === "writingprompts") return "Reddit writers, group " + k.replace(/^wp-0?/, "");
+    if (g.kind === "author") return AUTHOR;
     return k;
   }
   function pct(x) { return x == null ? "–" : Math.round(x * 100) + "%"; }
@@ -39,7 +43,7 @@ Zoo.chapter("stories", ["stories"], function (el, data) {
   }
   el.appendChild(h("h3", { class: "part", text: "How the comparison works" }));
   el.appendChild(h("div", { class: "how" }, [
-    para("Three sources, all about 300 words", [
+    para((ax.length ? "Four" : "Three") + " sources, all about 300 words", [
       ["The models.", models.length + " models, " + nModelStories + " stories. Every model got the same one-line prompt, " +
         "“Write a short story of about 300 words”, ten times. Each request was a separate call with no memory of the others, " +
         "at the model’s default settings. We cut off the title before measuring, so only the prose counts."],
@@ -48,7 +52,10 @@ Zoo.chapter("stories", ["stories"], function (el, data) {
         "Within a group, nearly every story has a different author and answers a different prompt."],
       ["The classic authors.", "O. Henry, Anton Chekhov (in Constance Garnett’s translation), Saki and Katherine Mansfield, " +
         "all public domain from Project Gutenberg. From each author’s collection we took ten 300-word passages at random, " +
-        "skipping the front matter and the end of the book."]]),
+        "skipping the front matter and the end of the book."]].concat(ax.length ? [
+      ["This site’s author.", "Ten 300-word passages from his Substack essays, each from a different essay picked at random with a fixed seed, " +
+        "prose only: no headings, lists, captions, code or reader comments. They are essays about software and AI, not fiction, " +
+        "so they are a second one-writer control rather than a story baseline. Like the Reddit stories, the text stays off this page."]] : [])),
     para("Always ten against ten",
       "Every “how alike are they?” number is worked out inside a group of ten texts of similar length. " +
       "Those groups are one model’s ten stories, one group of ten Reddit stories, or one author’s ten passages. " +
@@ -87,7 +94,7 @@ Zoo.chapter("stories", ["stories"], function (el, data) {
     h("span", null, [h("span", { class: "dot anthropic" }), "Claude stories"]),
     h("span", null, [h("span", { class: "dot wp" }), "Reddit writers (WritingPrompts)"]),
     h("span", null, [h("span", { class: "dot gb" }), "Classic authors (Project Gutenberg)"]),
-  ]));
+  ].concat(ax.length ? [h("span", null, [h("span", { class: "dot ax" }), AUTHOR])] : [])));
   if (pts.length) {
     var W = 720, HH = 440, P = 14;
     var xs = pts.map(function (p) { return p.x; }), ys = pts.map(function (p) { return p.y; });
@@ -103,27 +110,39 @@ Zoo.chapter("stories", ["stories"], function (el, data) {
     frame.setAttribute("x", 0.5); frame.setAttribute("y", 0.5); frame.setAttribute("width", W - 1); frame.setAttribute("height", HH - 1);
     frame.setAttribute("class", "frame");
     svg.appendChild(frame);
-    var rank = { writingprompts: 0, gutenberg: 1, model: 2 };
+    var rank = { writingprompts: 0, gutenberg: 1, model: 2, author: 3 };
     pts.slice().sort(function (a, b) { return rank[(G[a.group] || {}).kind] - rank[(G[b.group] || {}).kind]; }).forEach(function (p) {
       var g = G[p.group] || { kind: "model" };
-      var c = document.createElementNS(NS, "circle");
-      c.setAttribute("cx", sx(p.x).toFixed(1)); c.setAttribute("cy", sy(p.y).toFixed(1));
-      c.setAttribute("r", g.kind === "model" ? 4.5 : 3.5);
-      c.setAttribute("class", g.kind === "model" ? "pt " + prov(p.group) : g.kind === "gutenberg" ? "pt gb" : "pt wp");
+      var cx = sx(p.x).toFixed(1), cy = sy(p.y).toFixed(1), c;
+      if (g.kind === "author") {  // a diamond as well as green: green and orange can merge for red-green colour blindness
+        c = document.createElementNS(NS, "rect");
+        c.setAttribute("x", cx - 4); c.setAttribute("y", cy - 4); c.setAttribute("width", 8); c.setAttribute("height", 8);
+        c.setAttribute("transform", "rotate(45 " + cx + " " + cy + ")");
+      } else {
+        c = document.createElementNS(NS, "circle");
+        c.setAttribute("cx", cx); c.setAttribute("cy", cy);
+        c.setAttribute("r", g.kind === "model" ? 4.5 : 3.5);
+      }
+      c.setAttribute("class", g.kind === "model" ? "pt " + prov(p.group) : "pt " + cls(p.group));
       var n = /-s(\d+)$/.exec(p.id);
       c.setAttribute("data-tip", g.kind === "model" ? label(p.group) + (n ? ", story " + (+n[1] + 1) : "") :
-        g.kind === "gutenberg" ? p.group + ", a 300-word passage" : label(p.group) + " (one of ten different writers)");
+        g.kind === "gutenberg" ? p.group + ", a 300-word passage" : g.kind === "author" ? AUTHOR + ", a 300-word passage from one essay" :
+        label(p.group) + " (one of ten different writers)");
       svg.appendChild(c);
     });
     el.appendChild(h("div", { class: "mapwrap" }, [svg]));
     var ex = (S.method && S.method.pca_explained) || [];
     if (ex.length) el.appendChild(h("p", { class: "note", text: "The two axes have no names; together they hold " +
       pct((ex[0] || 0) + (ex[1] || 0)) + " of the differences between stories, so the map is a rough sketch. Distances in the full space are measured in the numbers below." }));
+    var spr = function (keys) { var r = range(keys, "spread"); return r ? r[0].toFixed(2) + "–" + r[1].toFixed(2) : "–"; };
+    if (ax.length && G[ax[0]].spread != null) el.appendChild(h("p", { class: "note", text: "Spread, how far a group’s ten texts sit from their own centre: " +
+      "this site’s author " + G[ax[0]].spread.toFixed(2) + ", the Reddit groups " + spr(wp) + ", the classic authors " + spr(gb) + ", the models " + spr(models) + "." }));
   }
 
   // ---- 2. Sameness: self-overlap and distinct-2 -------------------------------------
   el.appendChild(h("h3", { class: "part", text: "How much do the ten repeat each other?" }));
-  el.appendChild(h("p", { class: "note", text: "Two measures, one chart each. Each coloured dot is one model's ten stories. The light band is the range across the 25 groups of Reddit writers, the darker band the range across the four classic authors." }));
+  el.appendChild(h("p", { class: "note", text: "Two measures, one chart each. Each coloured dot is one model's ten stories. The light band is the range across the 25 groups of Reddit writers, the darker band the range across the four classic authors." +
+    (ax.length ? " The green diamond is this site’s author." : "") }));
 
   function range(keys, f) {
     var v = keys.map(function (k) { return G[k][f]; }).filter(function (x) { return x != null; });
@@ -131,7 +150,7 @@ Zoo.chapter("stories", ["stories"], function (el, data) {
   }
 
   function strip(f, title, help, fmt) {
-    var keys = models.concat(wp, gb);
+    var keys = models.concat(wp, gb, ax);
     var vals = keys.map(function (k) { return G[k][f]; }).filter(function (x) { return x != null; });
     var lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals), padv = (hi - lo) * 0.08 || 0.01;
     if (f === "self_overlap") lo = 0; else lo -= padv;
@@ -152,7 +171,7 @@ Zoo.chapter("stories", ["stories"], function (el, data) {
       rows.appendChild(h("div", { class: "row" }, [h("div", { class: "lab" }, [Zoo.name(k)]),
         track(v == null ? [] : [h("i", { class: "pt " + prov(k), tabindex: "0", style: "left:" + at(v), "data-tip": label(k) + ": " + fmt(v) })])]));
     });
-    [["wp", wp, "Reddit writers (each group)"], ["gb", gb, "Classic authors"]].forEach(function (r) {
+    [["wp", wp, "Reddit writers (each group)"], ["gb", gb, "Classic authors"], ["ax", ax, AUTHOR]].forEach(function (r) {
       if (!r[1].length) return;
       rows.appendChild(h("div", { class: "row human" }, [h("div", { class: "lab" }, [h("span", { class: "who" }, [h("span", { class: "dot " + r[0] }), r[2]])]),
         track(r[1].map(function (k) { return h("i", { class: "pt " + r[0], tabindex: "0", style: "left:" + at(G[k][f]), "data-tip": label(k) + ": " + fmt(G[k][f]) }); }))]));
@@ -177,9 +196,9 @@ Zoo.chapter("stories", ["stories"], function (el, data) {
   el.appendChild(h("details", { class: "tableview" }, [h("summary", { text: "Table view" }),
     h("div", { class: "table-wrap" }, [h("table", { class: "data" }, [
       h("thead", null, [h("tr", null, [h("th", { text: "Group" })].concat(cols.map(function (c) { return h("th", { class: "num", text: c[0] }); })))]),
-      h("tbody", null, models.concat(gb, wp).map(function (k) {
+      h("tbody", null, models.concat(ax, gb, wp).map(function (k) {
         var g = G[k];
-        return h("tr", null, [h("td", null, [g.kind === "model" ? Zoo.name(k) : h("span", { class: "who" }, [h("span", { class: "dot " + (g.kind === "gutenberg" ? "gb" : "wp") }), label(k)])])]
+        return h("tr", null, [h("td", null, [g.kind === "model" ? Zoo.name(k) : h("span", { class: "who" }, [h("span", { class: "dot " + cls(k) }), label(k)])])]
           .concat(cols.map(function (c) { return h("td", { class: "num", text: cell(g[c[1]], c[1]) }); })));
       }))])])]));
 

@@ -7,6 +7,10 @@
         publishes only metrics, never this text, and these files stay out of git.
       - Project Gutenberg (public domain, pre-1928): 300-word passages, 10 per author
         (O. Henry, Chekhov tr. Garnett, Saki, Mansfield): one author, ten passages.
+  corpus.py author <substack_dir>  this site's author, as the Gutenberg authors: ten 300-word
+        passages, each from a different one of his Substack articles (the .docx files in
+        <substack_dir>/0x4D44), prose only, into ../data/human/author.jsonl. Private text:
+        it stays out of git and goes nowhere but the embeddings endpoint.
   corpus.py embed               embed every human text and model story (text-embedding-3-small)
                                 into ../data/embeddings/*.json (resumable)
 """
@@ -54,6 +58,61 @@ def prep(cdir):
     print(f"writingprompts: {len(pick)} of {len(stories)} eligible; gutenberg: {10 * len(GUTENBERG)}")
 
 
+W_NS = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
+DATE_RE = re.compile(r"^[A-Z][a-z]{2} \d{1,2}, \d{4}$")  # the Substack byline date, "Oct 21, 2025"
+# Substack's page furniture: the article ends at the first of these (comments follow it).
+END_MARKS = ("Thanks for reading", "Discussion about this post", "Top of Form", "Subscribed")
+CODE_RE = re.compile(r"[{};<>=\\]|\w\(\)|^\s*(\$|#|//)")
+
+
+def docx_paras(path):
+    import zipfile
+    from xml.etree import ElementTree as ET
+    root = ET.fromstring(zipfile.ZipFile(path).read("word/document.xml"))
+    for p in root.iter(W_NS + "p"):
+        yield "".join(n.text or "" if n.tag == W_NS + "t" else " " if n.tag in (
+            W_NS + "tab", W_NS + "br", W_NS + "cr") else "" for n in p.iter())
+
+
+def article_prose(path):
+    """The body's prose paragraphs, as words: no title, byline, headings, list items,
+    captions, code, links or the comments; a paragraph counts as prose when it has
+    eight words or more and ends a sentence."""
+    paras = [re.sub(r"\s+", " ", t.replace("\xa0", " ")).strip() for t in docx_paras(path)]
+    start = next((i + 1 for i, t in enumerate(paras[:8]) if DATE_RE.match(t)), 0)
+    words = []
+    for t in paras[start:]:
+        if t.startswith(END_MARKS):
+            break
+        t = re.sub(r"https?://\S+", "", t).strip()
+        if len(t.split()) < 8 or not re.search(r"[.!?…][\"'”’)]?$", t) or CODE_RE.search(t):
+            continue
+        if sum(c.isascii() or c in "‘’“”–—…£€é" for c in t) < 0.98 * len(t):
+            continue  # pasted model output in other scripts
+        words += t.split()
+    return words
+
+
+def prep_author(sdir):
+    os.makedirs(HUMAN, exist_ok=True)
+    rnd = random.Random(0x4D44)
+    arts = {}
+    for f in sorted(glob.glob(os.path.join(sdir, "0x4D44", "*.docx"))):
+        words = article_prose(f)
+        if len(words) >= 400:
+            arts[os.path.basename(f)[:-5]] = words
+    pick = sorted(rnd.sample(sorted(arts), 10))
+    with open(os.path.join(HUMAN, "author.jsonl"), "w") as f:
+        for j, name in enumerate(pick):
+            words = arts[name]
+            s = rnd.randrange(0, len(words) - 300 + 1)
+            f.write(json.dumps({"source": "author", "group": "0x4D44", "id": f"ax-{j}",
+                                "article": name, "text": " ".join(words[s:s + 300])}) + "\n")
+    print(f"author: 10 passages from {len(pick)} of {len(arts)} eligible articles")
+    for name in pick:
+        print("  ", name)
+
+
 def embed():
     import run
     os.makedirs(EMB, exist_ok=True)
@@ -88,4 +147,5 @@ def embed():
 
 
 if __name__ == "__main__":
-    prep(sys.argv[2]) if sys.argv[1] == "prep" else embed()
+    {"prep": lambda: prep(sys.argv[2]), "author": lambda: prep_author(sys.argv[2]),
+     "embed": embed}[sys.argv[1]]()

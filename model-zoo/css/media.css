@@ -54,12 +54,18 @@
 /* ---- Stories ---- */
 #stories .dot.wp { background: var(--human-wp); }
 #stories .dot.gb { background: var(--human-gb); }
+/* This site's author: categorical green (light: the ramp's #006c10, CVD dE 10 to the orange; dark: #3fb950, dE 6.8,
+   so the diamond shape carries it too). */
+#stories { --human-ax: #006c10; }
+@media (prefers-color-scheme: dark) { #stories { --human-ax: #3fb950; } }
+#stories .dot.ax { background: var(--human-ax); border-radius: 1px; transform: rotate(45deg) scale(0.85); }
 #stories .mapwrap { background: var(--surface-1); border: 1px solid var(--rule); border-radius: 12px; padding: 8px; max-width: 900px; }
 #stories svg.map { display: block; width: 100%; height: auto; }
 #stories svg.map .frame { fill: none; stroke: none; }
 #stories svg.map .pt { stroke: var(--surface-1); stroke-width: 1; }
 #stories svg.map .pt.wp { fill: var(--human-wp); }
 #stories svg.map .pt.gb { fill: var(--human-gb); }
+#stories svg.map .pt.ax { fill: var(--human-ax); }
 #stories svg.map .pt.openai { fill: var(--openai); }
 #stories svg.map .pt.anthropic { fill: var(--anthropic); }
 #stories svg.map .pt:hover { stroke: var(--text-primary); stroke-width: 1.5; }
@@ -81,6 +87,7 @@
 #stories .strip .pt.anthropic { background: var(--anthropic); }
 #stories .strip .pt.wp { background: var(--human-wp); width: 7px; height: 7px; margin: -3.5px 0 0 -3.5px; }
 #stories .strip .pt.gb { background: var(--human-gb); }
+#stories .strip .pt.ax { background: var(--human-ax); border-radius: 1px; transform: rotate(45deg); }
 #stories .strip .row.axis { min-height: 16px; }
 #stories .strip .ticks { position: relative; height: 16px; margin: 0 6px; font: 11px var(--mono); color: var(--text-muted); }
 #stories .strip .ticks span { position: absolute; top: 0; transform: translateX(-50%); white-space: nowrap; }
