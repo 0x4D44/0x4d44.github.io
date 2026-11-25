@@ -292,6 +292,7 @@ let plainMaterial: THREE.MeshLambertMaterial | null = null;
 export const plain = (): THREE.MeshLambertMaterial => {
   if (!plainMaterial) {
     plainMaterial = new THREE.MeshLambertMaterial({ name: 'train-body', vertexColors: true });
+    plainMaterial.defines = { NO_SHED_LIGHT: '' }; // lighting.ts NO_SHED_LIGHT: none of the shed's daylight additions (a sunlit white side would clip)
     // Add the lamp glow after lighting. Vertices with no `aGlow` attribute read 0 and draw as before. A window (tag 1) glows only after dark; a lit lens (tag 2) glows in its own
     // colour by `mix( day, night, uNight )`, so by day it keeps the floor and an unlit one (tag 0) is the paint it always was.
     plainMaterial.onBeforeCompile = (shader) => {

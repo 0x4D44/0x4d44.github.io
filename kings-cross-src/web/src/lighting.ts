@@ -426,6 +426,56 @@ export const SHED_WALL_SUN = { gain: 2.4, vertical: [0.5, 0.9] } as const;
  * outer face draw as before round 4b. `shedInside` itself, the crown's fill in the shade (SHED_GLASS), is as it was.
  */
 export const SHED_UNDER = { ends: [1.3, 1.5] } as const;
+/**
+ * THE SHADE BY THE WALLS AND THE SKY UNDER THE CROWN (B7 round 6; the round-4b score: in shade beside the arcades the floor reads about 0.4 of the crown
+ * floor, about 51 against 125-130; and R-a's floor is brightest in a band under the glazed crown). Both on the sky's light only (the indirect term, after
+ * the roof's shade), by day in the vaults under the roof (`shedUnder`, so the south front stays out); the sun's term, and so the walls' sunlit band and
+ * the crown floor's sun, does not move.
+ * - `bounce`: the sunlit brick's light back onto what stands by it. The indirect light is taken `1 + bounce` within `reach[0]` m of a wall (the west and
+ *   east walls and the spine's arcade between the vaults), fading to 1 by `reach[1]` m, on the floor and on the walls' and piers' lower parts (full under
+ *   `height[0]` m, gone by `height[1]`). ASSUMED amount, aimed low on purpose (an overshoot is the worse error): shade by a wall is about 0.7 sky to
+ *   0.3 the sun's fill, so 3 m out (0.84 of `bounce`) its light is about 1.5 times what it was: 51 on the screen to about 70 (73 at 1 m).
+ * - `crown`: on a face that looks up (the floor; `up` as SHED_WALL_SUN's `vertical`), the indirect light (and since round 8 the direct too) is taken `1 + crown` under each vault's centre
+ *   line, full within `band[0]` of the half-span off it, fading to 1 by `band[1]`. ASSUMED amount: on a sunlit crown floor at 128, the sky about 0.3 of
+ *   its light, about +12 levels (140, under the sunlit brick's 185-195); a shaded crown floor more (+25 at 100). The yellow line and the slab are lifted
+ *   by the same factor, so the line's lead over the slab grows.
+ * Not on a material with the define NO_SHED_LIGHT (the trains: a sunlit white livery, 0xf2f2ee at the shells' 1.5 gain, reads about 237 by day and about
+ * 248 with the walls' sun), which takes neither this nor SHED_WALL_SUN.
+ */
+/*
+ * Round 7 (the scorer's GPU measures of round 6, platform-eye-p1-north: the shaded floor by the wall 49-56 -> 61-64 under a sunlit floor at 117-122,
+ * 0.52 of it, 0.6 wanted; and no band: the islands under the crowns, 6/7 at u 13-21 and 2/3 at 43-51 against crowns at 16 and 48, are only 3-5 m
+ * either side of the centre line, so a band full to 0.15 of the half-span (2.4 m) and gone by 0.6 (9.6 m) lifted them evenly). FIT from that
+ * capture: 0.8 of bounce took 52.5 to 62.5, a light 1.23 times, so the place measured takes 0.29 of `bounce`; 1.6 puts it at about 72, 0.6 of
+ * the sunlit floor. `bounce` is the floor's (a face looking up, by `up`); `wall` is the walls' and piers' own faces, kept at round 6's 0.8 so the
+ * shaded brick keeps its dark-brick mix (B3 held at 9 with it); a face between takes a mix by `up`. The band is full on the centre line and gone
+ * by `band[1]` (6.1 m), at `crown` 1.2: with the sky 0.3 of a sunlit floor at 119.5, about 140 at an island's middle against about 126 at its
+ * edges (+14), under the sunlit brick's 185-195. ASSUMED as before: the sky's share; a shaded crown floor lifts more (100 to about 130).
+ */
+/*
+ * Round 8 (the round-7 GPU score: still no band, a flat +7 across platform-eye, -south and furniture-close). Those three stand on platform 4, 0.1-3.8 m
+ * from the spine arcade's line (u 32), inside the near-wall bounce's full reach, so the whole platform took the round-7 bounce alike: that flat +7 was
+ * the bounce, not the band. The band (centre lines u 16 and 48, the 6-7 and 2-3 islands) was where no camera stood (tools/evidence.mjs now has
+ * platform-eye-crown-west there). And at 1.2 on the sky alone it would have lifted the rib shadows' shade more than the sun (the stripes' sun over
+ * shade down to about 1.4). So the band is now on the floor's diffuse light, the sun's and the sky's alike (`crown` on both terms): the stripes keep
+ * their ratio, and the sunlit floor on the crown line (119.5) is about 134 (+14.6), nothing by `band[1]` (0.38) of the half-span.
+ */
+export const SHED_SKY = { bounce: 1.6, wall: 0.8, reach: [2, 6], height: [3, 6], crown: 0.22, band: [0, 0.38], up: [0.5, 0.9] } as const;
+export const NO_SHED_LIGHT = 'NO_SHED_LIGHT';
+/** GLSL (after the roof's shade, with SHED_WALL_SUN_GLSL): SHED_SKY on the indirect light. */
+export const SHED_SKY_GLSL = `if ( uShedDiffuse > 0.0 ) {
+    vec3 shedP = cameraPosition - vViewPosition * mat3( viewMatrix );
+    vec3 shedQ = ( uShedFrame * vec4( shedP, 1.0 ) ).xyz;
+    float shedR = 0.25 * ( uShedSize.y - uShedSize.x );
+    float shedOff = abs( abs( shedQ.x - 0.5 * ( uShedSize.x + uShedSize.y ) ) - shedR );
+    float shedNear = ( 1.0 - smoothstep( ${SHED_SKY.reach[0].toFixed(2)}, ${SHED_SKY.reach[1].toFixed(2)}, shedR - shedOff ) ) * ( 1.0 - smoothstep( ${SHED_SKY.height[0].toFixed(2)}, ${SHED_SKY.height[1].toFixed(2)}, shedQ.y ) );
+    float shedUp = smoothstep( ${SHED_SKY.up[0].toFixed(2)}, ${SHED_SKY.up[1].toFixed(2)}, ( normal * mat3( viewMatrix ) ).y );
+    float shedCrown = ( 1.0 - smoothstep( ${SHED_SKY.band[0].toFixed(2)}, ${SHED_SKY.band[1].toFixed(2)}, shedOff / shedR ) ) * shedUp;
+    float shedK = shedUnder( shedP );
+    float shedC = shedK * ${SHED_SKY.crown.toFixed(4)} * shedCrown;
+    reflectedLight.directDiffuse *= 1.0 + shedC;
+    reflectedLight.indirectDiffuse *= 1.0 + shedK * mix( ${SHED_SKY.wall.toFixed(4)}, ${SHED_SKY.bounce.toFixed(4)}, shedUp ) * shedNear + shedC;
+  }`;
 /** GLSL (after the roof's shade in every roof-shaded Lambert program): SHED_WALL_SUN on the direct light. */
 export const SHED_WALL_SUN_GLSL = `if ( uShedDiffuse > 0.0 ) reflectedLight.directDiffuse *= 1.0 + ${(SHED_WALL_SUN.gain - 1).toFixed(4)} * shedUnder( cameraPosition - vViewPosition * mat3( viewMatrix ) ) * ( 1.0 - smoothstep( ${SHED_WALL_SUN.vertical[0].toFixed(2)}, ${SHED_WALL_SUN.vertical[1].toFixed(2)}, abs( ( normal * mat3( viewMatrix ) ).y ) ) );`;
 
@@ -733,7 +783,10 @@ export function addRoofShade(material: THREE.MeshLambertMaterial): void {
   float looksDown = max( -dot( normal, viewMatrix[ 1 ].xyz ), 0.0 );
   reflectedLight.indirectDiffuse *= roofK.rgb;
   reflectedLight.directDiffuse *= roofK.a;
+#ifndef ${NO_SHED_LIGHT}
   ${SHED_WALL_SUN_GLSL}
+  ${SHED_SKY_GLSL}
+#endif
 #ifdef ${FOOT_SHADE}
   float h = max( vMapUv.y, 0.0 );
   float foot = 1.0 - ${FOOT_SHADE} * exp( -0.3 * h ) - 0.40 * exp( -2.5 * h );

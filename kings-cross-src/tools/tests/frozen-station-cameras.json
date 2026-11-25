@@ -420,6 +420,34 @@
     "fov": 50,
     "near": 0.1
   },
+  "platform-eye-crown-west": {
+    "pos": [
+      26.4331,
+      2.5,
+      -210.6194
+    ],
+    "target": [
+      27.5544,
+      2.5,
+      -250.6037
+    ],
+    "source": "R-kx-shed-interior-a (shed-a-north-from-footbridge-2019.jpg): platform 7 on the platforms 6-7 island, on the west vault's crown line (shed u 16.0 m) at platform-eye's v, eye 1.6 m, looking north along the platform under the crown"
+  },
+  "shed-across-west": {
+    "pos": [
+      39.9098,
+      6.5,
+      -191.8342
+    ],
+    "target": [
+      21.9168,
+      0.9,
+      -192.3388
+    ],
+    "source": "R-kx-shed-interior-a (shed-a-north-from-footbridge-2019.jpg): from footbridge height over platform 5 by the spine (shed u 30, v 180), looking west across the west vault: island 6/7 under the west crown and the near-wall floor of platform 8 by the west wall",
+    "fov": 60,
+    "near": 0.1
+  },
   "roof-underside": {
     "pos": [
       44.38716973020361,

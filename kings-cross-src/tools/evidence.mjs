@@ -63,7 +63,7 @@ export const AXES = [
 export const ELEMENT_VIEWS = {
   'lighting-materials': ['overview', 'south-front', 'front-oblique-solid-slate', 'platform-eye', 'concourse', 'great-northern-hotel', 'midland-grand-front', 'gasworks-portals', 'facade-brick-close'],
   'kx-front': ['south-front', 'front-oblique', 'front-oblique-solid-slate', 'roof-above-solid-slate', 'front-oblique-xray', 'roof-above-xray', 'north-gable', 'tower-close', 'front-southwest-pedestrian', 'shed-east-flank', 'gable-oblique', 'porch-close'],
-  'shed-interior': ['platform-eye', 'platform-eye-south', 'shed-interior', 'platform-eye-p1-north', 'platform-eye-p8-south', 'roof-underside', 'furniture-close', 'suburban-p9', 'platform-clock', 'platform-furniture'],
+  'shed-interior': ['platform-eye', 'platform-eye-south', 'shed-interior', 'platform-eye-p1-north', 'platform-eye-p8-south', 'roof-underside', 'furniture-close', 'suburban-p9', 'platform-clock', 'platform-furniture', 'platform-eye-crown-west', 'shed-across-west'],
   'western-concourse': ['concourse', 'concourse-roof-detail', 'western-range', 'western-range-gateline', 'concourse-hotel-junction', 'concourse-exterior-square', 'concourse-funnel-up', 'western-range-full', 'concourse-exterior-west'],
   'historic-neighbours': ['great-northern-hotel', 'midland-grand-front', 'st-pancras-shed', 'st-pancras-shed-oblique', 'gnh-from-square', 'midland-euston-road', 'midland-clock-tower', 'barlow-interior'],
   'city-surroundings': ['overview', 'gasworks-portals', 'front-oblique', 'granary-square', 'gasholders', 'canal-lock', 'kings-boulevard', 'euston-road-east'],
@@ -132,7 +132,7 @@ export function relayUrl(value) {
 }
 export function optionsFrom(args) {
   const values = new Map(), switches = new Set(['--gpu', '--help', '--orbit']);
-  const names = new Set(['--dist', '--out', '--relay', '--chrome', '--date', '--speed', '--signal-at', '--raw-osm', '--live-window', '--live-report', '--views', '--time', '--weather', '--sky', '--hud', '--scene', '--commit']);
+  const names = new Set(['--dist', '--out', '--relay', '--chrome', '--date', '--speed', '--signal-at', '--raw-osm', '--live-window', '--live-report', '--views', '--time', '--weather', '--sky', '--hud', '--scene', '--commit', '--trains']);
   for (let i = 0; i < args.length; i++) {
     const key = args[i];
     if (values.has(key) || !switches.has(key) && !names.has(key)) throw new Error(`unknown or repeated option: ${key}`);
@@ -167,13 +167,20 @@ export function optionsFrom(args) {
     if (london.length) throw new Error(`--scene ${scene} captures the frozen ${site.label} cameras only; remove ${london.join(', ')}`);
     resolveWaverleyViews(views, site.cameras(), site.elements, site.label);
   }
+  // B7 round 9: --trains demo takes a --views run's station views with the page's sample trains at the buffers (?trains=demo), so a fixed view can
+  // show a train standing under the roof by day. Only with --views: the full pack keeps its own sample-train runs, and the default stays none.
+  const trains = values.get('--trains') ?? 'none';
+  if (!['none', 'demo'].includes(trains)) throw new Error('--trains must be none or demo');
+  if (trains !== 'none' && views === 'all') throw new Error('--trains demo needs --views (the full pack stages its own sample trains)');
   const commit = values.get('--commit') ?? null;
   if (commit !== null && !/^[0-9a-f]{7,40}$/.test(commit)) throw new Error('--commit must be the commit the --dist was built from (7 to 40 hex digits)');
   const pin = scenePinFrom({ time: values.get('--time'), weather: values.get('--weather'), sky: values.get('--sky') });
   const hud = hudMode(values.get('--hud'));
-  return { dist: path.resolve(values.get('--dist') ?? path.join(repoRoot, '.scratch/kx-dist')), out, views, pin, hud, scene, commit,
+  return { dist: path.resolve(values.get('--dist') ?? path.join(repoRoot, '.scratch/kx-dist')), out, views, pin, hud, scene, commit, trains,
     rawOsm: path.resolve(values.get('--raw-osm') ?? path.join(os.homedir(), 'kx-data/osm/kx-osm.json')), relay: relayUrl(values.get('--relay')), chrome: values.get('--chrome'), gpu: values.has('--gpu'), help: values.has('--help'), orbit: values.has('--orbit'), date, iso, speed, signalAt, liveWindow, liveReport };
 }
+/** The page query the fixed station views are taken with: no trains (the default), or the sample trains at the buffers (`--trains demo`, B7 round 9). */
+export function stationQuery(options) { return `?trains=${options.trains === 'demo' ? 'demo' : 'none'}&board=0`; }
 export async function safeOutputDirectory(root, directory) {
   if (!within(root, directory)) throw new Error('output escapes its root');
   const realRoot = await realpath(root);
@@ -584,6 +591,24 @@ const FROZEN_STATION_CAMERAS = {
     target: [24.3667, 2.4, -106.7900],
     source: 'R-kx-shed-interior-e (shed-e-footbridge-lift-2014.jpg): the furniture group on the platforms 6-7 island (its number blade, bin pair and trolley point), 10 m south of it along the platform and 1 m east, eye 1.6 m',
     fov: 50, near: 0.1,
+  },
+  // B7 round 8 (the round-7 GPU score: no capture shows island 6/7, so the crown band under the west vault's glazing was never seen): platform 7 on the
+  // 6-7 island, on the west crown's centre line (shed frame u = spine - SHED_SPAN_WIDTH / 2 = 16.0 m) at platform-eye's v (198.4 m), eye 1.6 m,
+  // looking north along the platform, so the floor runs from the crown line out to the island's edges
+  'platform-eye-crown-west': {
+    pos: [26.4331, 2.5, -210.6194],
+    target: [27.5544, 2.5, -250.6037],
+    source: 'R-kx-shed-interior-a (shed-a-north-from-footbridge-2019.jpg): platform 7 on the platforms 6-7 island, on the west vault\'s crown line (shed u 16.0 m) at platform-eye\'s v, eye 1.6 m, looking north along the platform under the crown',
+  },
+  // B7 round 9 (the round-8 score: the band reads only by comparing two cameras): across the west vault in one frame. Over platform 5 by the spine
+  // (shed u 30.0) at v 180 (past the sample lner5's end, so `--trains demo` leaves the view open; the sample Azuma on track 1, u 11.2, crosses
+  // it), 6.5 m up (footbridge height, ASSUMED), looking west and 17 degrees down at u 12: island 6/7 under the west crown (u 16) across the
+  // middle, platform 8's near-wall floor by the west wall beyond it; the floor takes the frame's lower part, the roof only its top
+  'shed-across-west': {
+    pos: [39.9098, 6.5, -191.8342],
+    target: [21.9168, 0.9, -192.3388],
+    source: 'R-kx-shed-interior-a (shed-a-north-from-footbridge-2019.jpg): from footbridge height over platform 5 by the spine (shed u 30, v 180), looking west across the west vault: island 6/7 under the west crown and the near-wall floor of platform 8 by the west wall',
+    fov: 60, near: 0.1,
   },
   // R-kx-shed-interior-a (shed-a-north-from-footbridge-2019.jpg): the roof underside, ribs and glazing. Platform 4 midpoint,
   // eye 1.6 m, pitched up 55 degrees and turned north-east so the sight line crosses the east vault.
@@ -1414,7 +1439,7 @@ export function createEvidenceServer({ dist, relay, repo = repoRoot }) {
 export async function main(args = process.argv.slice(2)) {
   const options = optionsFrom(args);
   if (options.help) { console.log(`node tools/evidence.mjs --gpu --dist <built dir> --out <worktree/.scratch/pack> [--relay http://127.0.0.1:8787] [--date YYYYMMDD] [--speed 8] [--signal-at HH:mm:ss] [--live-window <1..3600 seconds> | --live-report <path>] [--raw-osm <OSM extract.json>] [--chrome <path>]
-node tools/evidence.mjs --gpu --dist <built dir> --out <worktree/.scratch/pack> --views <element|view>[,<element|view>...]   (station views only: no trains, relay, tests or performance run)
+node tools/evidence.mjs --gpu --dist <built dir> --out <worktree/.scratch/pack> --views <element|view>[,<element|view>...] [--trains demo]   (station views only: no relay, tests or performance run; --trains demo takes them with the sample trains at the buffers)
   add --orbit (King's Cross only) for the glass-order orbit: 12 frames each round front-oblique and gable-oblique, auto and x-ray, as axis-02/orbit-*.png with orbit-<path>[-xray].json
   elements: ${Object.keys(ELEMENT_VIEWS).join(', ')}; or station for every fixed station view
 node tools/evidence.mjs --gpu --scene waverley --dist <built dir> --out <worktree/.scratch/dir> [--views <element|view>,...] [--commit <sha>]   (the frozen Edinburgh Waverley cameras; no relay or EB data)
@@ -1613,7 +1638,7 @@ The page draws its own overlays (station switcher, status and attribution panels
 
 
     // Fixed offline views deliberately keep the station intact; only measuring views are bare.
-    await navigate('?trains=none&board=0', 'station');
+    await navigate(stationQuery(options), options.trains === 'demo' ? 'station with sample trains' : 'station');
     await runStationEvidenceShots(cameras, shot, attempt, selected, options.hud);
     // round F10: the glass-order orbit (--orbit only), in auto and x-ray; frames and a JSON per path and mode in axis-02
     if (options.orbit) await attempt('02', 'orbit', async () => {

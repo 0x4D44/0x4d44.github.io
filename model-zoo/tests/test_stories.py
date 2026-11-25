@@ -230,7 +230,9 @@ class GroupedSplit(unittest.TestCase):
             ax = [{"group": "0x4D44", "id": "ax-%d" % i, "article": "2025.01.01 - Private title %d" % i,
                    "text": "Marmalade passage %d." % i} for i in range(3)]
             gb = [{"group": "Saki", "id": "pg-%d" % i, "text": "Clovis %d." % i} for i in range(3)]
-            for name, rows in (("writingprompts", wp), ("author", ax), ("gutenberg", gb)):
+            wk = [{"group": "wiki-%d" % (i // 2), "id": "wiki-%02d" % i, "title": "Zeppelin harbour %d" % i,
+                   "text": "Encyclopaedic %d." % i} for i in range(6)]
+            for name, rows in (("writingprompts", wp), ("author", ax), ("gutenberg", gb), ("wikipedia", wk)):
                 with open(os.path.join(d, "human", name + ".jsonl"), "w") as f:
                     f.write("\n".join(json.dumps(r) for r in rows) + "\n")
                 for r in rows:
@@ -239,7 +241,9 @@ class GroupedSplit(unittest.TestCase):
                    for m in ("gpt-a", "claude-b") for t in range(0, 9, 2)]
             gen += [{"set": "essay", "model": m, "topic": "ax-%d" % t, "sample": 0, "ok": True, "text": "Essay %d" % t}
                     for m in ("gpt-a", "claude-b") for t in range(3)]
-            for kind in ("wp", "essay"):
+            gen += [{"set": "nf", "model": m, "topic": "wiki-%02d" % t, "sample": 0, "ok": True, "text": "Explainer %d" % t}
+                    for m in ("gpt-a", "claude-b") for t in range(6)]
+            for kind in ("wp", "essay", "nf"):
                 with open(os.path.join(d, "detect-%s.jsonl" % kind), "w") as f:
                     f.write("\n".join(json.dumps(r) for r in gen if r["set"] == kind) + "\n")
             for r in gen:
@@ -249,7 +253,8 @@ class GroupedSplit(unittest.TestCase):
 
             out = D.build(data_dir=d)
             blob = json.dumps(out).lower()
-            for w in ("lighthouse", "quentin", "marmalade", "private title", "clovis", "wp-0", "ax-"):
+            for w in ("lighthouse", "quentin", "marmalade", "private title", "clovis", "wp-0", "ax-",
+                      "zeppelin", "encyclopaedic", "wiki-"):
                 self.assertNotIn(w, blob)
             self.assertEqual(out["base"]["kinds"]["reddit"]["n_human"], 9)
             self.assertEqual(out["base"]["kinds"]["claude"]["n_model"], 8)
@@ -260,6 +265,88 @@ class GroupedSplit(unittest.TestCase):
             self.assertEqual(stories_row["matched_new"]["n_model"], 5)
             self.assertEqual(len(out["map"]), len(gen))
             self.assertIn("stories", out["distances"])
+            self.assertIn("nonfiction", out["distances"])
+            self.assertNotIn("wiki", out["base"]["kinds"])    # the original table keeps its original texts
+            nf_row = [r for r in out["matched"]["rows"] if r["genre"] == "nonfiction" and r["family"] == "claude"][0]
+            self.assertEqual(nf_row["matched_new"]["n_human"], 6)
+            self.assertEqual(nf_row["matched_new"]["n_model"], 6)
+            self.assertEqual(out["matched"]["humans_new"]["wiki"]["n_human"], 6)
+
+    def test_scrub_drops_the_heading_and_the_title(self):
+        t = D.scrub("# On Owning Nothing\n\nI wrote on owning nothing last year. On Owning Nothing, again.", "On Owning Nothing")
+        self.assertNotIn("owning nothing", t.lower())
+        self.assertFalse(t.startswith("#"))
+        self.assertEqual(t.count(D.TITLE_MARK), 2)
+        self.assertEqual(D.scrub("Plain text.", None), "Plain text.")
+
+    def test_committed_essays_carry_no_title(self):
+        data = os.path.join(os.path.dirname(HERE), "data")
+        with open(os.path.join(data, "detect-essay.jsonl")) as f:
+            rows = [json.loads(l) for l in f]
+        self.assertTrue(rows)
+        self.assertFalse([r for r in rows if (r.get("text") or "").lstrip().startswith("#")])
+        ap = os.path.join(data, "human", "author.jsonl")
+        if os.path.exists(ap):                        # the titles are local only; check them where they are
+            with open(ap) as f:
+                titles = [D.essay_title(json.loads(l)["article"]).lower() for l in f]
+            blob = "\n".join((r.get("text") or "") for r in rows).lower()
+            self.assertFalse([t for t in titles if t in blob])
+
+
+
+_bspec = importlib.util.spec_from_file_location("books", os.path.join(os.path.dirname(HERE), "tools", "books.py"))
+BK = importlib.util.module_from_spec(_bspec)
+_bspec.loader.exec_module(BK)
+
+
+class Books(unittest.TestCase):
+    def test_labels_follow_the_file_where_it_says_otherwise(self):
+        self.assertEqual(BK.label("2025.02.05 - o1-pro - Short stories", "SS04 - The Memory Auditor.md"), "o1-pro")
+        self.assertEqual(BK.label("2025.02.05 - o1-pro - Short stories", "2025.02.24 - 01 - X (temp=0.7).md"), "gemini")
+        self.assertIsNone(BK.label("2025.02.05 - o1-pro - Short stories", "HG10a - Y (GPT4).md"))
+        self.assertEqual(BK.label("2025.11.07 - mixed - o1 o3 and Gemini", "Z - o3-mini-high (8.5).md"), "o3-mini")
+        self.assertIsNone(BK.label("2026.06.08 - mixed - Chat shows", "a.md"))
+
+    def test_site_file_has_no_text_or_titles(self):
+        rng = np.random.default_rng(7)
+        with tempfile.TemporaryDirectory() as b:
+            para = "The heron counted the barges, and she did not say a word to anybody. " * 6
+            for coll, model in (("2025.01.01 - claude-x - Secret Harbour", "claude-x"), ("2025.01.02 - o9 - Quiet Mill", "o9"),
+                                ("2025.01.03 - unknown - Hidden Lane", "unknown")):
+                for k in range(4):
+                    p = os.path.join(b, "fiction", "short-stories", coll)
+                    os.makedirs(p, exist_ok=True)
+                    with open(os.path.join(p, "Chapter %d - Velvet Orchard.md" % k), "w") as f:
+                        f.write("# Velvet Orchard\n\n" + "\n\n".join("%s %d %d. %s" % (model, k, j, para) for j in range(30)))
+            real = BK.embed
+            BK.embed = lambda pas: np.vstack([rng.normal(size=8) + (2 if p["model"].startswith("claude") else -2) for p in pas])
+            old = (BK.MIN_ID, BK.CAP_UNKNOWN)
+            BK.MIN_ID = (10, 3)
+            try:
+                with tempfile.TemporaryDirectory() as d:
+                    os.makedirs(os.path.join(d, "embeddings"))
+                    os.makedirs(os.path.join(d, "human"))
+                    emb = {}
+                    with open(os.path.join(d, "q33-story.jsonl"), "w") as f:
+                        for s in range(6):
+                            f.write(json.dumps({"model": "gpt-a", "sample": s, "ok": True, "text": "x"}) + "\n")
+                            emb["gpt-a-s%d" % s] = (rng.normal(size=8) + 2).tolist()
+                    with open(os.path.join(d, "human", "gutenberg.jsonl"), "w") as f:
+                        for s in range(6):
+                            f.write(json.dumps({"group": "Saki", "id": "pg-%d" % s, "text": "y"}) + "\n")
+                            emb["pg-%d" % s] = (rng.normal(size=8) - 2).tolist()
+                    with open(os.path.join(d, "embeddings", "stories.json"), "w") as f:
+                        json.dump(emb, f)
+                    out = BK.build(b, data_dir=d)
+            finally:
+                BK.embed = real
+                BK.MIN_ID, BK.CAP_UNKNOWN = old
+            blob = json.dumps(out).lower()
+            for w in ("heron", "barges", "secret harbour", "quiet mill", "hidden lane", "velvet", "chapter"):
+                self.assertNotIn(w, blob)
+            self.assertEqual(out["who"]["models"]["classes"], ["claude-x", "o9"])
+            self.assertEqual(out["unknown"][0]["date"], "2025.01.03")
+            self.assertTrue(any(r["model"] == "claude-x" and r["form"] is None for r in out["detector"]))
 
 
 if __name__ == "__main__":

@@ -11,6 +11,10 @@
         passages, each from a different one of his Substack articles (the .docx files in
         <substack_dir>/0x4D44), prose only, into ../data/human/author.jsonl. Private text:
         it stays out of git and goes nowhere but the embeddings endpoint.
+  corpus.py wiki                human non-fiction: 50 passages of about 300 words, one each from 50 random
+        English Wikipedia articles (wikimedia/wikipedia, the 1 Nov 2023 dump) of 1,200 words or more,
+        in 5 groups of 10, into ../data/human/wikipedia.jsonl. CC BY-SA text: it stays out of git
+        like the Reddit stories, and the site shows only metrics.
   corpus.py embed               embed every human text and model story (text-embedding-3-small)
                                 into ../data/embeddings/*.json (resumable)
 """
@@ -113,6 +117,70 @@ def prep_author(sdir):
         print("  ", name)
 
 
+WIKI_ROWS = ("https://datasets-server.huggingface.co/rows?dataset=wikimedia%2Fwikipedia"
+             "&config=20231101.en&split=train&offset={}&length=20")
+WIKI_TOTAL = 6407814
+WIKI_END = re.compile(r"^(See also|References|External links|Notes|Further reading|Bibliography|Sources)\s*$")
+
+
+def wiki_passage(text, lo=250, hi=400):
+    """About 300 words of body prose: past the lead, before the reference sections, paragraphs only
+    (no headings, list items or table rows). None when the article has too little of it."""
+    paras = []
+    for p in text.split("\n"):
+        p = p.strip()
+        if WIKI_END.match(p):
+            break
+        if len(p.split()) >= 40 and p[-1:] in ".\"')":
+            paras.append(p)
+    paras = paras[1:]                      # the lead summarises; the body is the writing
+    chunks, cur = [], []
+    for p in paras:
+        cur.append(p)
+        if sum(len(c.split()) for c in cur) >= lo:
+            chunks.append(cur)
+            cur = []
+    if not chunks:
+        return None
+    words = "\n\n".join(chunks[len(chunks) // 2]).split(" ")
+    if len(words) > hi:
+        t = " ".join(words[:hi])
+        return t[:t.rfind(". ") + 1] if t.rfind(". ") > len(t) // 2 else t
+    return " ".join(words)
+
+
+def prep_wiki(n=50):
+    import time, urllib.request
+    rnd = random.Random(0x4D44)
+    got, seen = [], set()
+    for off in rnd.sample(range(0, WIKI_TOTAL - 20), 400):
+        for wait in (2, 5, 15, 30, 60, 0):
+            try:
+                rows = json.load(urllib.request.urlopen(WIKI_ROWS.format(off), timeout=60))["rows"]
+                break
+            except OSError:              # the rows API answers 429 to bursts
+                if not wait:
+                    raise
+                time.sleep(wait)
+        time.sleep(1)
+        for r in rows:
+            a = r["row"]
+            if len(a["text"].split()) < 1200 or a["title"] in seen or a["title"].startswith("List of"):
+                continue
+            t = wiki_passage(a["text"])
+            if t:
+                seen.add(a["title"])
+                got.append((a["title"], t))
+                break                       # one article per random offset: neighbours share a topic
+        if len(got) >= n:
+            break
+    with open(os.path.join(HUMAN, "wikipedia.jsonl"), "w") as f:
+        for i, (title, t) in enumerate(got):
+            f.write(json.dumps({"source": "wikipedia", "group": f"wiki-{i // 10}", "id": f"wiki-{i:02d}",
+                                "title": title, "text": t}) + "\n")
+    print(f"wikipedia: {len(got)} passages")
+
+
 def embed():
     import run
     os.makedirs(EMB, exist_ok=True)
@@ -147,5 +215,5 @@ def embed():
 
 
 if __name__ == "__main__":
-    {"prep": lambda: prep(sys.argv[2]), "author": lambda: prep_author(sys.argv[2]),
+    {"prep": lambda: prep(sys.argv[2]), "author": lambda: prep_author(sys.argv[2]), "wiki": prep_wiki,
      "embed": embed}[sys.argv[1]]()

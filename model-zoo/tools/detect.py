@@ -7,8 +7,10 @@
   detect.py estimate               what the topic-matched set would cost, from each model's story costs
   detect.py gen                    the topic-matched texts: each model answers the sampled Reddit prompts
                                    and writes essay passages on the titles of this site's author's ten
-                                   sampled essays (titles only), into ../data/detect-{wp,essay}.jsonl
-                                   (resumable; hard cap DETECT_BUDGET, default USD 12)
+                                   sampled essays (titles only, never stored verbatim), and encyclopedia
+                                   passages on the titles of the 50 sampled Wikipedia articles, into
+                                   ../data/detect-{wp,essay,nf}.jsonl (resumable; hard cap DETECT_BUDGET,
+                                   default USD 18, counting all three)
   detect.py embed                  embed those texts (text-embedding-3-small) into ../data/embeddings/detect.json
   detect.py                        build ../site/detect.json: grouped-split logistic regression on the
                                    embeddings, error rates per kind, and the topic-matched comparison
@@ -34,7 +36,7 @@ MODELS = ["gpt-4o-mini", "gpt-4.1", "gpt-5", "gpt-6.2-sol",
 N_PROMPTS = 50        # two Reddit stories from each of the 25 groups of ten
 ESSAY_SAMPLES = 3     # per model and title
 MAX_TOKENS = 4000
-BUDGET = float(os.environ.get("DETECT_BUDGET", "12.0"))
+BUDGET = float(os.environ.get("DETECT_BUDGET", "18.0"))
 K_TOPIC = 5           # topic folds for the matched texts
 ALPHA = 1e-2          # L2 strength of the logistic regression (on standardised features)
 
@@ -42,8 +44,12 @@ WP_PROMPT = ("Here is a writing prompt from Reddit's r/WritingPrompts:\n\n{promp
              "Write a story of about 300 words in response. Reply with only the story: no title, no preamble.")
 ESSAY_PROMPT = ("Write a passage of about 300 words from a personal blog essay titled \"{title}\". "
                 "Flowing prose paragraphs only: no title, headings, lists or code. Reply with only the passage.")
+NF_PROMPT = ("Write a passage of about 300 words from the body of an encyclopedia article titled \"{title}\". "
+             "Flowing prose paragraphs only: no title, headings, lists or code. Reply with only the passage.")
+SETS = ("wp", "essay", "nf")
+TITLE_MARK = "[the essay's title]"
 
-KINDS = ["reddit", "gutenberg", "author", "gpt", "claude"]
+KINDS = ["reddit", "gutenberg", "author", "gpt", "claude"]   # the original set; Wikipedia is matched only
 
 
 def jl(path):
@@ -88,6 +94,13 @@ def essay_title(article):
     return re.sub(r"^\d{4}\.\d{2}\.\d{2}\s*-\s*", "", article).strip()
 
 
+def scrub(text, title):
+    """An essay passage as stored: no leading heading, and the author's title never verbatim. The titles are
+    private (they lead to the author's Substack) and one model heads every passage with its title."""
+    t = re.sub(r"\A\s*#[^\n]*\n+", "", text or "")
+    return re.sub(re.escape(title), lambda m: TITLE_MARK, t, flags=re.I) if title else t
+
+
 def jobs():
     """Every (set, topic, sample, prompt) to put to each model."""
     out = []
@@ -98,6 +111,8 @@ def jobs():
     for r in jl(os.path.join(DATA, "human", "author.jsonl")):
         for s in range(ESSAY_SAMPLES):
             out.append(("essay", r["id"], s, ESSAY_PROMPT.format(title=essay_title(r["article"]))))
+    for r in jl(os.path.join(DATA, "human", "wikipedia.jsonl")):
+        out.append(("nf", r["id"], 0, NF_PROMPT.format(title=r["title"])))
     return out
 
 
@@ -122,7 +137,7 @@ def out_path(kind):
 
 
 def spent():
-    return sum(r.get("cost", 0.0) for k in ("wp", "essay") for r in jl(out_path(k)))
+    return sum(r.get("cost", 0.0) for k in SETS for r in jl(out_path(k)))
 
 
 def estimate():
@@ -147,7 +162,8 @@ def gen():
     lock = threading.Lock()
     acc = {"spent": spent(), "reserved": 0.0}
     todo = []
-    for kind in ("wp", "essay"):
+    titles = {r["id"]: essay_title(r["article"]) for r in jl(os.path.join(DATA, "human", "author.jsonl"))}
+    for kind in SETS:
         have = {(r["model"], r["topic"], r["sample"]) for r in jl(out_path(kind)) if r.get("ok") and r.get("text")}
         todo += [(m, j) for m in MODELS for j in js if j[0] == kind and (m, j[1], j[2]) not in have]
     print(f"{len(todo)} calls to make; spent USD {acc['spent']:.2f} of USD {BUDGET:.2f}", flush=True)
@@ -161,6 +177,8 @@ def gen():
                 return "budget"
             acc["reserved"] += worst
         r = run.call_retry(m, live[m], prompt, MAX_TOKENS)
+        if kind == "essay" and r.get("text"):
+            r["text"] = scrub(r["text"], titles.get(topic))
         c = run.cost(m, r.get("usage", {})) if r["ok"] else 0.0
         with lock:
             acc["reserved"] -= worst
@@ -190,7 +208,7 @@ def prose(text):
 
 def gen_rows(data_dir=None):
     rows = []
-    for kind in ("wp", "essay"):
+    for kind in SETS:
         last = {}
         for r in jl(os.path.join(data_dir or DATA, f"detect-{kind}.jsonl")):
             if r.get("ok") and (r.get("text") or "").strip():
@@ -355,10 +373,12 @@ def load(data_dir=None):
             add(id="%s-s%s" % (r["model"], r["sample"]), model=r["model"], group=model_group(r["model"]),
                 kind="gpt" if provider(r["model"], meta) == "openai" else "claude", y=1, topic=None, set="base")
     for fname, kind in (("writingprompts.jsonl", "reddit"), ("gutenberg.jsonl", "gutenberg"),
-                        ("author.jsonl", "author")):
+                        ("author.jsonl", "author"), ("wikipedia.jsonl", "wiki")):
         for r in jl(os.path.join(d, "human", fname)):
-            topic = r["id"] if kind in ("reddit", "author") else None
-            add(id=r["id"], group="h:" + r["group"], kind=kind, y=0, topic=topic, set="base")
+            topic = r["id"] if kind in ("reddit", "author", "wiki") else None
+            # Wikipedia came later, with its matched texts: it stays out of the original set.
+            add(id=r["id"], group="h:" + r["group"], kind=kind, y=0, topic=topic,
+                set="nf" if kind == "wiki" else "base")
     for r in gen_rows(d):
         add(id=gen_id(r), model=r["model"], group=model_group(r["model"]), y=1, topic=r["topic"], set=r["set"],
             kind="gpt" if provider(r["model"], meta) == "openai" else "claude")
@@ -375,7 +395,7 @@ def build(data_dir=None):
     n = len(items)
     base = [i for i in range(n) if items[i]["set"] == "base"]
     sA = cross_scores(items, x, base)          # trained on the original texts only
-    matched_models = sorted({items[i]["model"] for i in range(n) if items[i]["set"] != "base"})
+    matched_models = sorted({items[i]["model"] for i in range(n) if items[i]["set"] != "base" and items[i]["y"] == 1})
     sC = cross_scores(items, x, list(range(n))) if matched_models else sA   # with the matched texts too
 
     def kidx(kind, sets=("base",), pred=lambda it: True):
@@ -395,8 +415,12 @@ def build(data_dir=None):
         mm = set(matched_models)
         hum_wp = [i for i in range(n) if items[i]["kind"] == "reddit" and items[i]["topic"] is not None]
         hum_ax = kidx("author")
+        hum_wk = kidx("wiki", ("nf",))
         rows = []
-        for label, hum, sets in (("stories", hum_wp, ("wp",)), ("essays", hum_ax, ("essay",))):
+        for label, hum, sets in (("stories", hum_wp, ("wp",)), ("essays", hum_ax, ("essay",)),
+                                 ("nonfiction", hum_wk, ("nf",))):
+            if not [i for i in range(n) if items[i]["set"] in sets and items[i]["y"] == 1]:
+                continue
             for fam in ("gpt", "claude"):
                 unmatched = kidx(fam, ("base",), lambda it: it["model"] in mm)
                 matched = kidx(fam, sets)
@@ -407,13 +431,15 @@ def build(data_dir=None):
         models = []
         for m in matched_models:
             r = {"model": m, "unmatched": rates(items, sA, [i for i in base if items[i].get("model") == m])}
-            for label, s in (("stories", "wp"), ("essays", "essay")):
+            for label, s in (("stories", "wp"), ("essays", "essay"), ("nonfiction", "nf")):
                 ix = [i for i in range(n) if items[i].get("model") == m and items[i]["set"] == s]
                 r[label] = {"old": rates(items, sA, ix), "new": rates(items, sC, ix)}
             models.append(r)
         out["matched"] = {"rows": rows, "models": models,
-                          "humans_old": {"reddit": rates(items, sA, hum_wp), "author": rates(items, sA, hum_ax)},
-                          "humans_new": {"reddit": rates(items, sC, hum_wp), "author": rates(items, sC, hum_ax)}}
+                          "humans_old": {"reddit": rates(items, sA, hum_wp), "author": rates(items, sA, hum_ax),
+                                         "wiki": rates(items, sA, hum_wk)},
+                          "humans_new": {"reddit": rates(items, sC, hum_wp), "author": rates(items, sC, hum_ax),
+                                         "wiki": rates(items, sC, hum_wk)}}
         out["distances"] = distances(items, x, mm)
         out["map"] = map_points(items, x)
     return out
@@ -433,7 +459,7 @@ def distances(items, x, mm):
     def cen(ids):
         return stories._unit([np.mean(stories._unit([vec[i] for i in ids]), axis=0)])[0]
     res = {}
-    for label, kind in (("stories", "reddit"), ("essays", "author")):
+    for label, kind in (("stories", "reddit"), ("essays", "author"), ("nonfiction", "wiki")):
         hum = [it["id"] for it in items if it["kind"] == kind and it["topic"] in by_topic]
         if not hum:
             continue
@@ -464,7 +490,7 @@ def map_points(items, x):
             axes[a] = -axes[a]
     pts = []
     for i, it in enumerate(items):
-        if it["set"] != "base":
+        if it["set"] != "base" and it["y"] == 1:
             px, py = (x[i] - mean) @ axes.T
             pts.append({"set": it["set"], "kind": it["kind"], "model": it["model"],
                         "x": stories.r4(px), "y": stories.r4(py)})

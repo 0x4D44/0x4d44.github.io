@@ -1,0 +1,745 @@
+{
+ "generated": "2026-11-25T21:20:52Z",
+ "n_passages": 1496,
+ "n_files": 431,
+ "n_labelled": 1328,
+ "detector": [
+  {
+   "model": "claude-fable-5.2",
+   "form": null,
+   "n": 43,
+   "plain": 0.0233,
+   "matched": 0.6279,
+   "with_nonfiction": 0.5116
+  },
+  {
+   "model": "claude-fable-5.2",
+   "form": "short-stories",
+   "n": 43,
+   "plain": 0.0233,
+   "matched": 0.6279,
+   "with_nonfiction": 0.5116
+  },
+  {
+   "model": "claude-opus-3",
+   "form": null,
+   "n": 120,
+   "plain": 0.0,
+   "matched": 0.5833,
+   "with_nonfiction": 0.7083
+  },
+  {
+   "model": "claude-opus-3",
+   "form": "short-stories",
+   "n": 120,
+   "plain": 0.0,
+   "matched": 0.5833,
+   "with_nonfiction": 0.7083
+  },
+  {
+   "model": "claude-opus-4",
+   "form": null,
+   "n": 128,
+   "plain": 0.2031,
+   "matched": 0.9609,
+   "with_nonfiction": 0.9531
+  },
+  {
+   "model": "claude-opus-4.1",
+   "form": null,
+   "n": 160,
+   "plain": 0.1938,
+   "matched": 0.9563,
+   "with_nonfiction": 0.9375
+  },
+  {
+   "model": "claude-opus-4.1",
+   "form": "short-stories",
+   "n": 160,
+   "plain": 0.1938,
+   "matched": 0.9563,
+   "with_nonfiction": 0.9375
+  },
+  {
+   "model": "claude-opus-4.5",
+   "form": null,
+   "n": 116,
+   "plain": 0.2759,
+   "matched": 0.9397,
+   "with_nonfiction": 0.9224
+  },
+  {
+   "model": "claude-opus-4.5",
+   "form": "short-stories",
+   "n": 116,
+   "plain": 0.2759,
+   "matched": 0.9397,
+   "with_nonfiction": 0.9224
+  },
+  {
+   "model": "claude-opus-4",
+   "form": "short-stories",
+   "n": 128,
+   "plain": 0.2031,
+   "matched": 0.9609,
+   "with_nonfiction": 0.9531
+  },
+  {
+   "model": "claude-sonnet-3.5",
+   "form": null,
+   "n": 51,
+   "plain": 0.0,
+   "matched": 0.9216,
+   "with_nonfiction": 0.7647
+  },
+  {
+   "model": "claude-sonnet-3.5",
+   "form": "short-stories",
+   "n": 51,
+   "plain": 0.0,
+   "matched": 0.9216,
+   "with_nonfiction": 0.7647
+  },
+  {
+   "model": "claude-sonnet-4.5",
+   "form": null,
+   "n": 160,
+   "plain": 0.1,
+   "matched": 0.8438,
+   "with_nonfiction": 0.8938
+  },
+  {
+   "model": "claude-sonnet-4.5",
+   "form": "novels",
+   "n": 61,
+   "plain": 0.0328,
+   "matched": 0.9672,
+   "with_nonfiction": 0.9016
+  },
+  {
+   "model": "claude-sonnet-4.5",
+   "form": "scripts-and-tv",
+   "n": 29,
+   "plain": 0.0,
+   "matched": 0.3103,
+   "with_nonfiction": 0.8621
+  },
+  {
+   "model": "claude-sonnet-4.5",
+   "form": "short-stories",
+   "n": 70,
+   "plain": 0.2,
+   "matched": 0.9571,
+   "with_nonfiction": 0.9
+  },
+  {
+   "model": "gemini",
+   "form": null,
+   "n": 96,
+   "plain": 0.0,
+   "matched": 0.875,
+   "with_nonfiction": 0.8125
+  },
+  {
+   "model": "gemini",
+   "form": "short-stories",
+   "n": 96,
+   "plain": 0.0,
+   "matched": 0.875,
+   "with_nonfiction": 0.8125
+  },
+  {
+   "model": "o1",
+   "form": null,
+   "n": 157,
+   "plain": 0.051,
+   "matched": 0.535,
+   "with_nonfiction": 0.8089
+  },
+  {
+   "model": "o1-pro",
+   "form": null,
+   "n": 158,
+   "plain": 0.2532,
+   "matched": 0.9747,
+   "with_nonfiction": 0.9937
+  },
+  {
+   "model": "o1-pro",
+   "form": "short-stories",
+   "n": 158,
+   "plain": 0.2532,
+   "matched": 0.9747,
+   "with_nonfiction": 0.9937
+  },
+  {
+   "model": "o1",
+   "form": "non-fiction",
+   "n": 29,
+   "plain": 0.0,
+   "matched": 0.4828,
+   "with_nonfiction": 0.7241
+  },
+  {
+   "model": "o1",
+   "form": "scripts-and-tv",
+   "n": 100,
+   "plain": 0.0,
+   "matched": 0.46,
+   "with_nonfiction": 0.79
+  },
+  {
+   "model": "o1",
+   "form": "short-stories",
+   "n": 28,
+   "plain": 0.2857,
+   "matched": 0.8571,
+   "with_nonfiction": 0.9643
+  },
+  {
+   "model": "o3",
+   "form": null,
+   "n": 46,
+   "plain": 0.0,
+   "matched": 0.0652,
+   "with_nonfiction": 0.4348
+  },
+  {
+   "model": "o3-mini",
+   "form": null,
+   "n": 93,
+   "plain": 0.0,
+   "matched": 0.9462,
+   "with_nonfiction": 0.9892
+  },
+  {
+   "model": "o3-mini",
+   "form": "short-stories",
+   "n": 93,
+   "plain": 0.0,
+   "matched": 0.9462,
+   "with_nonfiction": 0.9892
+  },
+  {
+   "model": "o3",
+   "form": "non-fiction",
+   "n": 46,
+   "plain": 0.0,
+   "matched": 0.0652,
+   "with_nonfiction": 0.4348
+  },
+  {
+   "model": "unknown",
+   "form": null,
+   "n": 168,
+   "plain": 0.0417,
+   "matched": 0.619,
+   "with_nonfiction": 0.6786
+  },
+  {
+   "model": "unknown",
+   "form": "non-fiction",
+   "n": 48,
+   "plain": 0.0,
+   "matched": 0.0417,
+   "with_nonfiction": 0.2292
+  },
+  {
+   "model": "unknown",
+   "form": "novels",
+   "n": 90,
+   "plain": 0.0222,
+   "matched": 0.8222,
+   "with_nonfiction": 0.8111
+  },
+  {
+   "model": "unknown",
+   "form": "short-stories",
+   "n": 30,
+   "plain": 0.1667,
+   "matched": 0.9333,
+   "with_nonfiction": 1.0
+  }
+ ],
+ "who": {
+  "models": {
+   "classes": [
+    "claude-fable-5.2",
+    "claude-opus-4",
+    "claude-opus-4.1",
+    "claude-opus-4.5",
+    "claude-sonnet-4.5",
+    "gemini",
+    "o1",
+    "o1-pro",
+    "o3-mini"
+   ],
+   "n": {
+    "claude-fable-5.2": 43,
+    "claude-opus-4": 128,
+    "claude-opus-4.1": 160,
+    "claude-opus-4.5": 116,
+    "claude-sonnet-4.5": 160,
+    "gemini": 96,
+    "o1": 157,
+    "o1-pro": 158,
+    "o3-mini": 93
+   },
+   "shared_prompts": {
+    "n": 126,
+    "models": [
+     "gemini",
+     "o1-pro",
+     "o3-mini"
+    ],
+    "correct": 0.7857
+   },
+   "correct": 0.7786,
+   "per_class": {
+    "claude-fable-5.2": 0.2558,
+    "claude-opus-4": 0.4844,
+    "claude-opus-4.1": 0.8562,
+    "claude-opus-4.5": 0.6207,
+    "claude-sonnet-4.5": 0.9,
+    "gemini": 0.6667,
+    "o1": 0.8599,
+    "o1-pro": 0.9367,
+    "o3-mini": 0.9892
+   },
+   "confusion": {
+    "claude-fable-5.2": {
+     "claude-fable-5.2": 11,
+     "claude-opus-4": 0,
+     "claude-opus-4.1": 29,
+     "claude-opus-4.5": 1,
+     "claude-sonnet-4.5": 2,
+     "gemini": 0,
+     "o1": 0,
+     "o1-pro": 0,
+     "o3-mini": 0
+    },
+    "claude-opus-4": {
+     "claude-fable-5.2": 0,
+     "claude-opus-4": 62,
+     "claude-opus-4.1": 20,
+     "claude-opus-4.5": 28,
+     "claude-sonnet-4.5": 17,
+     "gemini": 0,
+     "o1": 0,
+     "o1-pro": 1,
+     "o3-mini": 0
+    },
+    "claude-opus-4.1": {
+     "claude-fable-5.2": 0,
+     "claude-opus-4": 5,
+     "claude-opus-4.1": 137,
+     "claude-opus-4.5": 3,
+     "claude-sonnet-4.5": 14,
+     "gemini": 0,
+     "o1": 1,
+     "o1-pro": 0,
+     "o3-mini": 0
+    },
+    "claude-opus-4.5": {
+     "claude-fable-5.2": 0,
+     "claude-opus-4": 10,
+     "claude-opus-4.1": 25,
+     "claude-opus-4.5": 72,
+     "claude-sonnet-4.5": 9,
+     "gemini": 0,
+     "o1": 0,
+     "o1-pro": 0,
+     "o3-mini": 0
+    },
+    "claude-sonnet-4.5": {
+     "claude-fable-5.2": 0,
+     "claude-opus-4": 1,
+     "claude-opus-4.1": 9,
+     "claude-opus-4.5": 0,
+     "claude-sonnet-4.5": 144,
+     "gemini": 0,
+     "o1": 1,
+     "o1-pro": 5,
+     "o3-mini": 0
+    },
+    "gemini": {
+     "claude-fable-5.2": 0,
+     "claude-opus-4": 0,
+     "claude-opus-4.1": 0,
+     "claude-opus-4.5": 0,
+     "claude-sonnet-4.5": 0,
+     "gemini": 64,
+     "o1": 0,
+     "o1-pro": 11,
+     "o3-mini": 21
+    },
+    "o1": {
+     "claude-fable-5.2": 0,
+     "claude-opus-4": 1,
+     "claude-opus-4.1": 0,
+     "claude-opus-4.5": 1,
+     "claude-sonnet-4.5": 7,
+     "gemini": 0,
+     "o1": 135,
+     "o1-pro": 13,
+     "o3-mini": 0
+    },
+    "o1-pro": {
+     "claude-fable-5.2": 0,
+     "claude-opus-4": 1,
+     "claude-opus-4.1": 0,
+     "claude-opus-4.5": 0,
+     "claude-sonnet-4.5": 1,
+     "gemini": 1,
+     "o1": 4,
+     "o1-pro": 148,
+     "o3-mini": 3
+    },
+    "o3-mini": {
+     "claude-fable-5.2": 0,
+     "claude-opus-4": 0,
+     "claude-opus-4.1": 0,
+     "claude-opus-4.5": 0,
+     "claude-sonnet-4.5": 0,
+     "gemini": 0,
+     "o1": 0,
+     "o1-pro": 1,
+     "o3-mini": 92
+    }
+   }
+  },
+  "families": {
+   "classes": [
+    "claude",
+    "gemini",
+    "openai"
+   ],
+   "n": {
+    "claude": 607,
+    "gemini": 96,
+    "openai": 408
+   },
+   "shared_prompts": {
+    "n": 126,
+    "models": [
+     "gemini",
+     "o1-pro",
+     "o3-mini"
+    ],
+    "correct": 0.8175
+   },
+   "correct": 0.9532,
+   "per_class": {
+    "claude": 0.9868,
+    "gemini": 0.6979,
+    "openai": 0.9632
+   },
+   "confusion": {
+    "claude": {
+     "claude": 599,
+     "gemini": 1,
+     "openai": 7
+    },
+    "gemini": {
+     "claude": 0,
+     "gemini": 67,
+     "openai": 29
+    },
+    "openai": {
+     "claude": 10,
+     "gemini": 5,
+     "openai": 393
+    }
+   }
+  }
+ },
+ "style": {
+  "o1-pro": {
+   "files": 86,
+   "words": 651073,
+   "em dashes": 7.59,
+   "semicolons": 0.47,
+   "ellipses": 1.92,
+   "contractions (n't)": 2.77,
+   "-ly adverbs": 15.76,
+   "“I”": 9.67,
+   "“you”": 5.24,
+   "“said”": 1.47,
+   "fancy speech tags": 1.19,
+   "“not X but Y”": 0.19,
+   "“perhaps”": 0.83,
+   "“maybe”": 0.56,
+   "testament, tapestry, delve…": 0.3,
+   "numbers": 2.13,
+   "words per sentence": 10.9,
+   "sentences of 5 words or fewer (%)": 24,
+   "paragraphs of 10 words or fewer (%)": 12
+  },
+  "gemini": {
+   "files": 8,
+   "words": 27813,
+   "em dashes": 1.8,
+   "semicolons": 1.15,
+   "ellipses": 10.07,
+   "contractions (n't)": 4.06,
+   "-ly adverbs": 21.25,
+   "“I”": 4.78,
+   "“you”": 4.75,
+   "“said”": 0.9,
+   "fancy speech tags": 0.5,
+   "“not X but Y”": 1.51,
+   "“perhaps”": 0.97,
+   "“maybe”": 0.32,
+   "testament, tapestry, delve…": 0.68,
+   "numbers": 1.73,
+   "words per sentence": 12.7,
+   "sentences of 5 words or fewer (%)": 23,
+   "paragraphs of 10 words or fewer (%)": 3
+  },
+  "claude-sonnet-3.5": {
+   "files": 1,
+   "words": 14006,
+   "em dashes": 11.14,
+   "semicolons": 0.07,
+   "ellipses": 2.28,
+   "contractions (n't)": 6.0,
+   "-ly adverbs": 25.56,
+   "“I”": 6.71,
+   "“you”": 6.07,
+   "“said”": 6.5,
+   "fancy speech tags": 2.43,
+   "“not X but Y”": 0.43,
+   "“perhaps”": 0.86,
+   "“maybe”": 0.07,
+   "testament, tapestry, delve…": 0.07,
+   "numbers": 13.14,
+   "words per sentence": 10.7,
+   "sentences of 5 words or fewer (%)": 31,
+   "paragraphs of 10 words or fewer (%)": 16
+  },
+  "claude-opus-4": {
+   "files": 9,
+   "words": 198662,
+   "em dashes": 11.03,
+   "semicolons": 0.08,
+   "ellipses": 2.18,
+   "contractions (n't)": 7.07,
+   "-ly adverbs": 13.23,
+   "“I”": 7.98,
+   "“you”": 8.3,
+   "“said”": 3.56,
+   "fancy speech tags": 1.15,
+   "“not X but Y”": 0.45,
+   "“perhaps”": 0.51,
+   "“maybe”": 0.55,
+   "testament, tapestry, delve…": 0.18,
+   "numbers": 5.12,
+   "words per sentence": 9.4,
+   "sentences of 5 words or fewer (%)": 33,
+   "paragraphs of 10 words or fewer (%)": 19
+  },
+  "claude-opus-3": {
+   "files": 1,
+   "words": 33618,
+   "em dashes": 0.03,
+   "semicolons": 0.09,
+   "ellipses": 0.74,
+   "contractions (n't)": 2.47,
+   "-ly adverbs": 7.38,
+   "“I”": 7.41,
+   "“you”": 8.3,
+   "“said”": 1.93,
+   "fancy speech tags": 0.36,
+   "“not X but Y”": 0.18,
+   "“perhaps”": 0.12,
+   "“maybe”": 0.15,
+   "testament, tapestry, delve…": 0.33,
+   "numbers": 3.39,
+   "words per sentence": 21.9,
+   "sentences of 5 words or fewer (%)": 10,
+   "paragraphs of 10 words or fewer (%)": 8
+  },
+  "claude-sonnet-4.5": {
+   "files": 243,
+   "words": 1011149,
+   "em dashes": 8.47,
+   "semicolons": 0.21,
+   "ellipses": 1.12,
+   "contractions (n't)": 10.55,
+   "-ly adverbs": 13.73,
+   "“I”": 25.45,
+   "“you”": 15.18,
+   "“said”": 3.56,
+   "fancy speech tags": 0.22,
+   "“not X but Y”": 0.29,
+   "“perhaps”": 0.1,
+   "“maybe”": 1.95,
+   "testament, tapestry, delve…": 0.02,
+   "numbers": 16.48,
+   "words per sentence": 8.2,
+   "sentences of 5 words or fewer (%)": 44,
+   "paragraphs of 10 words or fewer (%)": 33
+  },
+  "claude-opus-4.1": {
+   "files": 61,
+   "words": 137662,
+   "em dashes": 7.09,
+   "semicolons": 0.04,
+   "ellipses": 1.68,
+   "contractions (n't)": 9.56,
+   "-ly adverbs": 11.51,
+   "“I”": 26.22,
+   "“you”": 13.74,
+   "“said”": 2.88,
+   "fancy speech tags": 0.48,
+   "“not X but Y”": 0.34,
+   "“perhaps”": 0.41,
+   "“maybe”": 1.68,
+   "testament, tapestry, delve…": 0.04,
+   "numbers": 17.21,
+   "words per sentence": 7.4,
+   "sentences of 5 words or fewer (%)": 52,
+   "paragraphs of 10 words or fewer (%)": 43
+  },
+  "o3-mini": {
+   "files": 4,
+   "words": 28306,
+   "em dashes": 10.56,
+   "semicolons": 0.64,
+   "ellipses": 0.11,
+   "contractions (n't)": 0.25,
+   "-ly adverbs": 11.48,
+   "“I”": 2.54,
+   "“you”": 1.52,
+   "“said”": 0.6,
+   "fancy speech tags": 0.57,
+   "“not X but Y”": 0.85,
+   "“perhaps”": 0.21,
+   "“maybe”": 0.0,
+   "testament, tapestry, delve…": 0.85,
+   "numbers": 0.39,
+   "words per sentence": 20.0,
+   "sentences of 5 words or fewer (%)": 5,
+   "paragraphs of 10 words or fewer (%)": 1
+  },
+  "o1": {
+   "files": 6,
+   "words": 35278,
+   "em dashes": 10.54,
+   "semicolons": 0.48,
+   "ellipses": 3.09,
+   "contractions (n't)": 2.15,
+   "-ly adverbs": 12.64,
+   "“I”": 4.56,
+   "“you”": 4.65,
+   "“said”": 1.28,
+   "fancy speech tags": 1.9,
+   "“not X but Y”": 0.09,
+   "“perhaps”": 0.96,
+   "“maybe”": 0.37,
+   "testament, tapestry, delve…": 0.2,
+   "numbers": 1.59,
+   "words per sentence": 9.8,
+   "sentences of 5 words or fewer (%)": 26,
+   "paragraphs of 10 words or fewer (%)": 10
+  },
+  "claude-opus-4.5": {
+   "files": 10,
+   "words": 32804,
+   "em dashes": 11.22,
+   "semicolons": 0.21,
+   "ellipses": 0.43,
+   "contractions (n't)": 5.12,
+   "-ly adverbs": 17.13,
+   "“I”": 7.71,
+   "“you”": 7.9,
+   "“said”": 3.26,
+   "fancy speech tags": 0.49,
+   "“not X but Y”": 0.21,
+   "“perhaps”": 0.76,
+   "“maybe”": 0.37,
+   "testament, tapestry, delve…": 0.37,
+   "numbers": 10.46,
+   "words per sentence": 10.8,
+   "sentences of 5 words or fewer (%)": 31,
+   "paragraphs of 10 words or fewer (%)": 25
+  },
+  "claude-fable-5.2": {
+   "files": 3,
+   "words": 12666,
+   "em dashes": 0.0,
+   "semicolons": 0.0,
+   "ellipses": 0.08,
+   "contractions (n't)": 1.18,
+   "-ly adverbs": 4.03,
+   "“I”": 1.82,
+   "“you”": 4.5,
+   "“said”": 7.11,
+   "fancy speech tags": 0.08,
+   "“not X but Y”": 0.0,
+   "“perhaps”": 0.47,
+   "“maybe”": 0.16,
+   "testament, tapestry, delve…": 0.0,
+   "numbers": 5.61,
+   "words per sentence": 12.4,
+   "sentences of 5 words or fewer (%)": 27,
+   "paragraphs of 10 words or fewer (%)": 23
+  }
+ },
+ "unknown": [
+  {
+   "date": "2025.05.15",
+   "form": "non-fiction",
+   "n": 20,
+   "top": "o1-pro",
+   "top_share": 0.4,
+   "claude_share": 0.35,
+   "caught": 0.45
+  },
+  {
+   "date": "2025.10.02",
+   "form": "short-stories",
+   "n": 30,
+   "top": "claude-opus-4.5",
+   "top_share": 0.6333,
+   "claude_share": 1.0,
+   "caught": 1.0
+  },
+  {
+   "date": "2025.10.27",
+   "form": "novels",
+   "n": 30,
+   "top": "claude-sonnet-4.5",
+   "top_share": 0.6333,
+   "claude_share": 1.0,
+   "caught": 0.9667
+  },
+  {
+   "date": "2025.10.27",
+   "form": "novels",
+   "n": 30,
+   "top": "claude-fable-5.2",
+   "top_share": 0.5,
+   "claude_share": 0.8667,
+   "caught": 0.5
+  },
+  {
+   "date": "2025.10.30",
+   "form": "non-fiction",
+   "n": 27,
+   "top": "o1",
+   "top_share": 0.7778,
+   "claude_share": 0.2222,
+   "caught": 0.0741
+  },
+  {
+   "date": "2025.11.09",
+   "form": "novels",
+   "n": 30,
+   "top": "claude-opus-4.1",
+   "top_share": 0.5667,
+   "claude_share": 1.0,
+   "caught": 0.9667
+  }
+ ]
+}
