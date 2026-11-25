@@ -227,7 +227,9 @@ export function gaitParams(B, v, cad = 1) {
   // almost no back-swing - 'offering'. The shoulder swings about a point behind the vertical (more extension than flexion) and the elbow runs from nearly straight behind to ~30 deg in front.)
   P.elbow = (9 + 9 * Math.min(kv, 1.5)) * D2R; P.elbowAmp = (5 + 5 * Math.min(kv, 1.5)) * D2R;
   P.stepHalf = 0.5 * 0.10 * (Lh / 0.92);   // (step width, heel centre to heel centre: about 0.08 - 0.13 m in adults at an easy pace)                             // the heels land this far either side of the line of travel
-  P.clear = 0.032 * (Lh / 0.92) * (0.5 + 0.5 * kv);                                      // height of the swing foot's lowest point at its peak
+  P.clear = 0.032 * (Lh / 0.92) * Math.max(1, 0.5 + 0.5 * kv);     // height of the swing foot's lowest point at its peak: more at a brisk pace, where the knee folds further
+  // in early swing (60 - 65 deg, where a fixed lift gave 50 - 54), and never less than 3.2 cm per 0.92 m of leg: below that a slow walker's swinging shoe skimmed within the 8 mm the
+  // instrument counts as standing, which read as 9 - 12 mm of slip at 0.4 m/s
   P.lean = (1.5 + 2.0 * Math.min(kv, 1.5)) * D2R;                     // forward lean of the thorax
   // no leg is ever asked to stretch further than a knee bent by `minKnee`; at mid-stance the pelvis is as high as that allows (a little less than the standing height)
   P.cL = B.legLen * Math.cos(0.5 * 9 * D2R);                          // the longest reach a leg is asked for
