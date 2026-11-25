@@ -11,12 +11,13 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { gzipSync } from 'node:zlib';
 import { PLATFORM_HEIGHT, railSegments, twinRails } from '../core/scene.ts';
-import { GAUGE, RAIL_HEAD_WIDTH, buildingsUnderStation, concourseCanopy, platformReport, pointInPolygon, shedLayout, stationBuilding, stationPlatforms } from '../core/station.ts';
+import { GAUGE, RAIL_HEAD_WIDTH, buildingsUnderStation, concourseCanopy, platformReport, pointInPolygon, shedLayout, shedToWorld, worldToShed, stationBuilding, stationPlatforms } from '../core/station.ts';
 import { REPLACED_BUILDING_IDS } from '../core/landmarks.ts';
 import { planBuilding } from '../core/city.ts';
 import { createTerrain } from '../core/terrain.ts';
 import { ALL_KINDS, FIGURES, EMU_FIGURES, trainLayout } from '../core/train.ts';
 import { FLICKER_GAP_MS, compareFrames, flickerSummary } from './flicker.mjs';
+import { readPng } from './axis01-pixels.mjs';
 import { PIN_TIME, PIN_WEATHER, WEATHER_NAMES, pinHonoured, pinParameters, scenePinFrom, withPin } from './scene-pin.mjs';
 import { HUD_NOTE, HUD_SELECTORS, hudController, hudMode } from './hud.mjs';
 import { stationData } from './station-scene.mjs';
@@ -130,7 +131,7 @@ export function relayUrl(value) {
   return u;
 }
 export function optionsFrom(args) {
-  const values = new Map(), switches = new Set(['--gpu', '--help']);
+  const values = new Map(), switches = new Set(['--gpu', '--help', '--orbit']);
   const names = new Set(['--dist', '--out', '--relay', '--chrome', '--date', '--speed', '--signal-at', '--raw-osm', '--live-window', '--live-report', '--views', '--time', '--weather', '--sky', '--hud', '--scene', '--commit']);
   for (let i = 0; i < args.length; i++) {
     const key = args[i];
@@ -171,7 +172,7 @@ export function optionsFrom(args) {
   const pin = scenePinFrom({ time: values.get('--time'), weather: values.get('--weather'), sky: values.get('--sky') });
   const hud = hudMode(values.get('--hud'));
   return { dist: path.resolve(values.get('--dist') ?? path.join(repoRoot, '.scratch/kx-dist')), out, views, pin, hud, scene, commit,
-    rawOsm: path.resolve(values.get('--raw-osm') ?? path.join(os.homedir(), 'kx-data/osm/kx-osm.json')), relay: relayUrl(values.get('--relay')), chrome: values.get('--chrome'), gpu: values.has('--gpu'), help: values.has('--help'), date, iso, speed, signalAt, liveWindow, liveReport };
+    rawOsm: path.resolve(values.get('--raw-osm') ?? path.join(os.homedir(), 'kx-data/osm/kx-osm.json')), relay: relayUrl(values.get('--relay')), chrome: values.get('--chrome'), gpu: values.has('--gpu'), help: values.has('--help'), orbit: values.has('--orbit'), date, iso, speed, signalAt, liveWindow, liveReport };
 }
 export async function safeOutputDirectory(root, directory) {
   if (!within(root, directory)) throw new Error('output escapes its root');
@@ -232,6 +233,69 @@ export async function runStationEvidenceShots(cameras, shot, attempt, select = n
     await attempt('02', `${pair.cameraName}-xray`, () => shot('02', `${pair.cameraName}-xray`, pair.xray.camera, { twoFrame: true, ...overlays, roofMaterialEvidence: pair.xray.roofMaterialEvidence }));
   if (hud === 'off' && cameras.overview && wanted('overview'))
     await attempt('02', 'overview-hud-on', () => shot('02', 'overview-hud-on', cameras.overview, { twoFrame: true, hud: 'on', label: 'The overview as a user sees the page: its overlays are shown (every other station view has them hidden).' }));
+}
+
+/**
+ * Round F10 (front A7): the glass-order orbit. Two short camera paths of ORBIT.frames each, orbiting a station view's own target at its own range and height,
+ * set out in the shed's frame (worldToShed: u east from its west side, v north from the south front) so each crosses the plane where the glazings' order
+ * switches (shed.ts glassOrder): `front` starts at front-oblique and swings ORBIT.front degrees north across the front's plane (v = 0); `gable` starts at
+ * gable-oblique and swings ORBIT.gable degrees (south) across the gables' (v = length). Each runs in auto and in x-ray. In no element's views: only
+ * `--orbit` shoots it.
+ */
+export const ORBIT = { frames: 12, front: 60, gable: -80, spike: 3, floor: 0.5 };
+export function orbitPaths(layout, cameras) {
+  const path = (view, sweep) => {
+    const { pos, target } = cameras[view], eye = worldToShed(layout, [pos[0], pos[2]]), at = worldToShed(layout, [target[0], target[2]]);
+    const range = Math.hypot(eye.u - at.u, eye.v - at.v), from = Math.atan2(eye.v - at.v, eye.u - at.u);
+    return Array.from({ length: ORBIT.frames }, (_, i) => {
+      const a = from + (sweep * Math.PI / 180) * i / (ORBIT.frames - 1), u = at.u + range * Math.cos(a), v = at.v + range * Math.sin(a), [x, z] = shedToWorld(layout, u, v);
+      return { pos: [x, pos[1], z], target: [...target], v };
+    });
+  };
+  return { front: path('front-oblique', ORBIT.front), gable: path('gable-oblique', ORBIT.gable) };
+}
+/**
+ * The mean absolute difference (0-255, over R, G and B) between two decoded frames ({width, height, channels, pixels}, axis01-pixels readPng) inside
+ * `rects` ([left, top, right, bottom] pixels, inclusive, clamped to the frame; their union): the glass mask, each glazing's bounding box projected to the
+ * screen (orbitGlassRects in the page). null if the mask is empty.
+ */
+export function maskedMeanDiff(a, b, rects) {
+  if (a.width !== b.width || a.height !== b.height || a.channels !== b.channels) throw new Error('orbit frames differ in format');
+  const { width, height, channels } = a, inside = new Uint8Array(width * height);
+  for (const [l, t, r, btm] of rects) for (let y = Math.max(0, Math.floor(t)); y <= Math.min(height - 1, Math.ceil(btm)); y++) for (let x = Math.max(0, Math.floor(l)); x <= Math.min(width - 1, Math.ceil(r)); x++) inside[y * width + x] = 1;
+  let sum = 0, n = 0;
+  for (let p = 0; p < width * height; p++) {
+    if (!inside[p]) continue;
+    for (let c = 0; c < 3; c++) sum += Math.abs(a.pixels[p * channels + c] - b.pixels[p * channels + c]);
+    n++;
+  }
+  return n ? sum / (3 * n) : null;
+}
+/**
+ * The frames whose difference from the one before is a spike: more than ORBIT.spike times the median of its neighbours' (up to two either side, those that
+ * have one) and over ORBIT.floor, so a still path's noise is not one. `diffs[i]` is frame i's difference from frame i - 1 (null for the first, or no mask).
+ */
+export function orbitSpikes(diffs, { factor = ORBIT.spike, floor = ORBIT.floor } = {}) {
+  const out = [];
+  diffs.forEach((d, i) => {
+    if (d === null || d === undefined) return;
+    const near = [i - 2, i - 1, i + 1, i + 2].map(j => diffs[j]).filter(x => x !== null && x !== undefined).sort((p, q) => p - q);
+    if (!near.length) return;
+    const m = near.length % 2 ? near[(near.length - 1) / 2] : (near[near.length / 2 - 1] + near[near.length / 2]) / 2;
+    if (d > floor && d > factor * m) out.push(i);
+  });
+  return out;
+}
+/** The orbit's record (orbit-<path>[-xray].json): per frame its view name, camera, glass order in use and masked difference, and the spikes. */
+export function orbitRecord(path, mode, frames) {
+  const spikes = orbitSpikes(frames.map(f => f.diff));
+  const name = i => `orbit-${path}-${String(i).padStart(2, '0')}${mode === 'xray' ? '-xray' : ''}`;
+  return {
+    path, mode, mask: 'the union of the gable, roof and front glazings\' bounding boxes projected to the screen; mean absolute RGB difference (0-255) from the previous frame',
+    spikeRule: `more than ${ORBIT.spike}x the median of up to two neighbours either side, and over ${ORBIT.floor}`,
+    frames: frames.map((f, i) => ({ name: name(i), camera: { pos: f.pos, target: f.target }, glassOrder: f.glassOrder, diff: f.diff, spike: spikes.includes(i) })),
+    spikes: spikes.map(name),
+  };
 }
 
 /** Capture the physical slate view while an async begin/restore bridge holds the serialized page helper open. */
@@ -1351,6 +1415,7 @@ export async function main(args = process.argv.slice(2)) {
   const options = optionsFrom(args);
   if (options.help) { console.log(`node tools/evidence.mjs --gpu --dist <built dir> --out <worktree/.scratch/pack> [--relay http://127.0.0.1:8787] [--date YYYYMMDD] [--speed 8] [--signal-at HH:mm:ss] [--live-window <1..3600 seconds> | --live-report <path>] [--raw-osm <OSM extract.json>] [--chrome <path>]
 node tools/evidence.mjs --gpu --dist <built dir> --out <worktree/.scratch/pack> --views <element|view>[,<element|view>...]   (station views only: no trains, relay, tests or performance run)
+  add --orbit (King's Cross only) for the glass-order orbit: 12 frames each round front-oblique and gable-oblique, auto and x-ray, as axis-02/orbit-*.png with orbit-<path>[-xray].json
   elements: ${Object.keys(ELEMENT_VIEWS).join(', ')}; or station for every fixed station view
 node tools/evidence.mjs --gpu --scene waverley --dist <built dir> --out <worktree/.scratch/dir> [--views <element|view>,...] [--commit <sha>]   (the frozen Edinburgh Waverley cameras; no relay or EB data)
   elements: ${Object.keys(WAVERLEY_ELEMENT_VIEWS).join(', ')}; views: ${Object.keys(FROZEN_WAVERLEY_CAMERAS).join(', ')}
@@ -1550,6 +1615,45 @@ The page draws its own overlays (station switcher, status and attribution panels
     // Fixed offline views deliberately keep the station intact; only measuring views are bare.
     await navigate('?trains=none&board=0', 'station');
     await runStationEvidenceShots(cameras, shot, attempt, selected, options.hud);
+    // round F10: the glass-order orbit (--orbit only), in auto and x-ray; frames and a JSON per path and mode in axis-02
+    if (options.orbit) await attempt('02', 'orbit', async () => {
+      const paths = orbitPaths(shedLayout(data), stationCameras(data));
+      for (const mode of ['auto', 'xray']) for (const [pathName, frames] of Object.entries(paths)) {
+        await evaluate(`(() => { window.__kx.parts.shed.userData.roofMode=${JSON.stringify(mode)}; return true; })()`);
+        let previous = null; const done = [];
+        try {
+          for (const [i, c] of frames.entries()) {
+            await setCamera(c);
+            const page = await evaluate(`(() => {
+              const k=window.__kx, shed=k.parts.shed, cam=k.camera, dpr=window.devicePixelRatio||1, w=innerWidth, h=innerHeight, order={}, rects=[];
+              for (const [key,n] of [['gable','shed-gable-glass'],['roof','shed-roof-glass'],['front','shed-front-glass']]) {
+                const m=shed.getObjectByName(n); order[key]=m.renderOrder; m.geometry.computeBoundingBox(); const b=m.geometry.boundingBox;
+                let l=Infinity,t=Infinity,r=-Infinity,bt=-Infinity,front=false;
+                for (const x of [b.min.x,b.max.x]) for (const y of [b.min.y,b.max.y]) for (const z of [b.min.z,b.max.z]) {
+                  const p=m.localToWorld(new cam.position.constructor(x,y,z)).project(cam); if (p.z<1) front=true;
+                  const sx=(p.x+1)/2*w*dpr, sy=(1-p.y)/2*h*dpr; l=Math.min(l,sx); r=Math.max(r,sx); t=Math.min(t,sy); bt=Math.max(bt,sy);
+                }
+                if (front && r>=0 && bt>=0 && l<w*dpr && t<h*dpr) rects.push([l,t,r,bt]);
+              }
+              return {order,rects};
+            })()`);
+            const png = await S('Page.captureScreenshot', { format: 'png' }), bytes = Buffer.from(png.data, 'base64');
+            const name = `orbit-${pathName}-${String(i).padStart(2, '0')}${mode === 'xray' ? '-xray' : ''}`;
+            await mkdir(path.join(options.out, 'axis-02'), { recursive: true });
+            await writePrivateFile(path.join(options.out, 'axis-02', `${name}.png`), bytes);
+            const decoded = readPng(bytes);
+            done.push({ pos: c.pos, target: c.target, glassOrder: page.order, diff: previous ? maskedMeanDiff(previous, decoded, page.rects) : null });
+            previous = decoded;
+          }
+        } finally {
+          await evaluate(`(() => { window.__kx.parts.shed.userData.roofMode='auto'; return true; })()`);
+        }
+        const record = orbitRecord(pathName, mode, done);
+        await writePrivateFile(path.join(options.out, 'axis-02', `orbit-${pathName}${mode === 'xray' ? '-xray' : ''}.json`), JSON.stringify(record, null, 2));
+        (report.orbit ??= []).push({ path: pathName, mode, spikes: record.spikes });
+        if (record.spikes.length) gap('02', `orbit ${pathName} (${mode}): a glass-region difference spike at ${record.spikes.join(', ')}`);
+      }
+    });
     if (!cameras['gasworks-portals'] && (!selected || selected.has('gasworks-portals'))) gap('02', 'Gasworks south mouth could not be located in public geometry');
     const gridViews = Object.entries(cameras).filter(([name, c]) => c.grid && (!selected || selected.has(name)));
     if (gridViews.length) {
