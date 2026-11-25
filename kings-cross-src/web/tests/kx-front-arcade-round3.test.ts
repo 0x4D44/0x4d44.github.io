@@ -17,7 +17,9 @@ const layout = shedLayout(data);
 const R = SHED_SPAN_WIDTH / 2;
 const group = shed.buildShed(layout, { range: false });
 const A = shed.SOUTH_FRONT_ARCADES, T = shed.PORCH_TONES, D = shed.PORCH_DEPTH;
-const G = (shed as unknown as { PORCH_GLASS: { band: { v: readonly number[]; colour: readonly number[] }; reflect: { colour: readonly number[]; top: number; door: number; doors: readonly number[] } } }).PORCH_GLASS;
+type V = readonly number[];
+const G = (shed as unknown as { PORCH_GLASS: { band: { v: V; colour: V }; day: { v: V; feather: number; base: number; pools: V; width: number; colour: V };
+  signs: { boxes: readonly V[]; colour: V }; lift: { v: V; colour: V }; reflect: { forecourt: V; sky: V; door: number; doors: V }; gpu: number } }).PORCH_GLASS;
 const F = (T as unknown as { figureDay: { t: readonly number[]; k: readonly number[]; hips: number; legs: number } }).figureDay;
 const entryFoot = GROUND_Y + A.footAboveGround;
 const infill = group.getObjectByName('shed-front-infill') as THREE.Mesh;
@@ -38,58 +40,105 @@ const kAt = (t: number): number => {
   const lerp = (a: number, b: number, x: number): number => a + (b - a) * Math.min(1, Math.max(0, x));
   return t <= t1 ? lerp(k0, k1, (t - t0) / (t1 - t0)) : t <= t2 ? lerp(k1, k2, (t - t1) / (t2 - t1)) : lerp(k2, k3, (t - t2) / (t3 - t2));
 };
-const reflect = (v: number): number => lum(G.reflect.colour) * (1 + (G.reflect.top - 1) * v);
+// Round 3b: the GPU's emissive add measured at about G.gpu of the model's (the round-3 reflection: +3 predicted, +0.3 seen), so a day term adds G.gpu times
+// itself here (ASSUMED). The lift's share at v, the reflection's luminance at v (forecourt at the foot, sky at the transom).
+const g = G.gpu;
+const ss = (a: number, b: number, x: number): number => { const y = Math.min(1, Math.max(0, (x - a) / (b - a))); return y * y * (3 - 2 * y); };
+const liftAt = (v: number): number => lum(G.lift.colour) * (1 - ss(G.lift.v[0]!, G.lift.v[1]!, v));
+const reflAt = (v: number): number => lum(G.reflect.forecourt) + (lum(G.reflect.sky) - lum(G.reflect.forecourt)) * Math.min(1, Math.max(0, v));
+const tOf = (H: number): number => (H - E) / C;
 
-test('A3 round 3: each figure\'s upper body sits about 12 levels under the hall (glass reflection and all), never under about 6, its legs a second darker tone', () => {
+test('A3 round 3b: each figure\'s upper body sits about 12 levels under the hall behind it (the lower hall lit, the figures not), the dark-zone floor as measured, its legs darker', () => {
   const defs = fig.defines as Record<string, string>;
   assert.deepEqual(nums(defs.KX_FIG_T), [...F.t], 'the knots in the shader');
   assert.deepEqual(nums(defs.KX_FIG_KS), [...F.k]);
   assert.ok(Math.abs(Number(defs.KX_FIG_HIPS) - (entryFoot + 0.3 + F.hips)) < 1e-3 && F.hips > 0.6 && F.hips < 1.1 && Number(defs.KX_FIG_LEGS) === F.legs && F.legs >= 0.6 && F.legs <= 0.85, 'the legs\' tone under the hips');
   const src = frag(fig);
   assert.ok(src.includes('kxK *= vFrontY < KX_FIG_HIPS ? KX_FIG_LEGS : 1.0;') && src.includes('mix( KX_FIG_KS.y, KX_FIG_KS.z, ( kxT - KX_FIG_T.y ) / ( KX_FIG_T.z - KX_FIG_T.y ) )'), 'the knots and the legs in the shader');
-  const r = reflect(0.5), out: string[] = [];
-  for (const h of [7, 9, 13, 16, 19, 22, 25, 30, 37]) {
-    const H = inv(h), k = kAt((H - E) / C), hall = show(H + r), up = show(k * H + r), legs = show(F.legs * k * H + r);
-    out.push(`${hall.toFixed(0)}:${up.toFixed(0)}/${legs.toFixed(0)}`);
-    assert.ok(up >= 6 && up <= hall - 2, `a hall of ${hall.toFixed(1)}: the figure ${up.toFixed(1)}, not crushed, not lighter`);
-    assert.ok(hall < 21 || hall - up >= 11, `a hall of ${hall.toFixed(1)}: the figure ${up.toFixed(1)}, a floor about 12 under`);
-    assert.ok(hall >= 19 || up <= 9.5, `a dark hall of ${hall.toFixed(1)}: the figure ${up.toFixed(1)}, clamped near 7`);
-    assert.ok(legs <= up - 1 && legs >= 3, `the legs ${legs.toFixed(1)} under the upper body ${up.toFixed(1)}`);
+  for (const k of ['KX_REFLECT', 'KX_LIFT', 'KX_DAYBAND', 'KX_SIGN0', 'KX_BAND']) assert.ok(!defs[k], `no ${k} on the figures: they are not lifted`);
+  const v = 0.25, out: string[] = []; // a figure's upper body, about a quarter up the hall
+  // the floor: the model reads the darkest hall's figure under 6 (4.9-5.4 on halls of 7-13) where the GPU measured about 7.5 with the reflection's +0.3, so
+  // the knots stay as measured and the model's floor in the dark zone here is 4.5
+  for (const h of [7, 9, 10, 13, 16, 19, 22, 25, 30, 37]) {
+    const H = inv(h), k = kAt(tOf(H)), hall = show(H + g * (liftAt(v) + reflAt(v))), up = show(k * H), legs = show(F.legs * k * H);
+    out.push(`${h}->${hall.toFixed(0)}:${up.toFixed(0)}/${legs.toFixed(0)}`);
+    assert.ok(up >= (h < 19 ? 4.5 : 6) && up <= hall - 2, `a hall of ${hall.toFixed(1)}: the figure ${up.toFixed(1)}, not crushed, not lighter`);
+    assert.ok(hall - up >= 12, `a hall of ${hall.toFixed(1)}: the figure ${up.toFixed(1)}, about 12 or more under`);
+    assert.ok(hall >= 20, `the lower hall lit to ${hall.toFixed(1)} from ${h}`);
+    const lit = show(H + g * liftAt(v));
+    assert.ok(h < 9 || lit >= 19, `the lift alone takes a hall of ${h} to ${lit.toFixed(1)}`);
+    assert.ok(h < 25 || up <= h - 10, `a figure ${up.toFixed(1)} 10 or more under the unlit hall of ${h}, as in round 3`);
+    assert.ok(h >= 19 || up <= 9.5, `a dark hall of ${h}: the figure ${up.toFixed(1)}, clamped near 7`);
+    assert.ok(legs <= up - 1 && legs >= (h < 19 ? 2.5 : 3), `the legs ${legs.toFixed(1)} under the upper body ${up.toFixed(1)}`);
   }
-  console.log('hall:upper/legs', out.join(' '));
+  console.log('hall->lit:upper/legs', out.join(' '));
+  const [l0, l1] = G.lift.v as [number, number];
+  assert.ok(l0 >= 0.35 && l1 <= 0.6 && l1 > l0, `the lift fades from ${l0} to ${l1} of the hall, under the band`);
 });
 
-test('A3 round 3: a lit back-wall band deeper in the hall, about 15 levels over a mid hall by day, and a small share of the night glow', () => {
-  const defs = interior.defines as Record<string, string>, [v0, v1] = G.band.v as [number, number];
-  assert.ok(v0 >= 0.3 && v1 <= 0.85 && v1 - v0 >= 0.15, `the band from ${v0} to ${v1} of the hall`);
-  assert.deepEqual(nums(defs.KX_BAND), [v0, v1]);
+test('A3 round 3b: by day the back-wall band feathered top and bottom, in two or three brighter pools, about 50-70 at a pool; at night the round-3 band unchanged', () => {
+  const defs = interior.defines as Record<string, string>, d = G.day, src = frag(interior);
+  assert.deepEqual(nums(defs.KX_BAND), [...G.band.v], 'the night band as before');
   assert.deepEqual(nums(defs.KX_BAND_COLOUR), [...G.band.colour]);
-  assert.ok(frag(interior).includes('totalEmissiveRadiance += KX_BAND_COLOUR * texture2D( map, vMapUv ).g * step( KX_BAND.x, vMapUv.y ) * step( vMapUv.y, KX_BAND.y );'), 'the band in the shader');
-  assert.ok(!(fig.defines as Record<string, string>).KX_BAND, 'on the hall only');
-  for (const h of [20, 23, 26]) {
-    const H = inv(h), t = (H - E) / C, band = show(H + lum(G.band.colour) * t);
-    assert.ok(band - h >= 12 && band - h <= 25, `the band over a hall of ${h}: ${band.toFixed(1)}`);
-  }
+  assert.ok(src.includes('totalEmissiveRadiance += uWinNight * KX_BAND_COLOUR * texture2D( map, vMapUv ).g * step( KX_BAND.x, vMapUv.y ) * step( vMapUv.y, KX_BAND.y );'), 'the round-3 band, night only');
   const glow = new THREE.Color(shed.FRONT_NIGHT.glass[0]).multiplyScalar(shed.FRONT_NIGHT.glass[1]);
-  assert.ok(lum(G.band.colour) < 0.12 * lum(glow.toArray()), 'at night under a tenth or so of the hall\'s glow');
+  assert.ok(lum(G.band.colour) < 0.12 * lum(glow.toArray()) && lum(G.band.colour) > 0.02 * lum(glow.toArray()), 'at night a tenth or so of the hall\'s glow, as in round 3');
+  assert.deepEqual(nums(defs.KX_DAYBAND), [...d.v, d.feather, d.base]);
+  assert.deepEqual(nums(defs.KX_DAYBAND_POOLS), [...d.pools]);
+  assert.ok(Number(defs.KX_DAYBAND_W) === d.width && nums(defs.KX_DAYBAND_COLOUR).join() === d.colour.join(), 'the pools\' width and the colour');
+  assert.ok(src.includes('totalEmissiveRadiance += ( 1.0 - uWinNight ) * KX_DAYBAND_COLOUR * texture2D( map, vMapUv ).g * mix( KX_DAYBAND.w, 1.0, kxPool )')
+    && src.includes('* smoothstep( KX_DAYBAND.x, KX_DAYBAND.x + KX_DAYBAND.z, vMapUv.y ) * ( 1.0 - smoothstep( KX_DAYBAND.y - KX_DAYBAND.z, KX_DAYBAND.y, vMapUv.y ) );')
+    && src.includes('exp( -pow( ( vMapUv.x - KX_DAYBAND_POOLS.z ) / KX_DAYBAND_W, 2.0 ) )'), 'the feathered, pooled band, day only, in the shader');
+  assert.ok(d.feather >= 0.08 && d.feather <= 0.1 && d.v[0]! >= 0.3 && d.v[1]! <= 0.85 && d.v[1]! - d.v[0]! >= 2.5 * d.feather, `feathered over ${d.feather} of the hall`);
+  assert.ok(d.pools.length === 3 && d.pools.every((p, i) => p > 0.1 && p < 0.9 && (i === 0 || p - d.pools[i - 1]! >= 2 * d.width)) && d.width >= 0.08 && d.width <= 0.16 && d.base >= 0.25 && d.base <= 0.5, 'three pools along it');
+  const out: string[] = [];
+  for (const h of [20, 23, 26, 30]) {
+    const H = inv(h), add = g * lum(d.colour) * tOf(H), pool = show(H + add), between = show(H + d.base * add), edge = show(H + ss(0, d.feather, d.feather / 3) * add);
+    out.push(`${h}: ${pool.toFixed(0)}/${between.toFixed(0)}/${edge.toFixed(0)}`);
+    assert.ok(pool >= 45 && pool <= 72, `a pool over a hall of ${h}: ${pool.toFixed(1)}`);
+    assert.ok(between - h >= 6 && pool - between >= 12, `between the pools ${between.toFixed(1)}, under the pool ${pool.toFixed(1)}`);
+    assert.ok(edge - h < (pool - h) / 2, `a third into the feather ${edge.toFixed(1)}, under half the lift`);
+  }
+  console.log('hall: pool/between/feather', out.join(' '));
+  for (const k of ['KX_SIGN0', 'KX_LIFT', 'KX_REFLECT']) assert.ok(src.includes(`#if defined( ${k} ) && defined( USE_MAP )\ntotalEmissiveRadiance += ( 1.0 - uWinNight )`), `${k} by day only`);
 });
 
-test('A3 round 3: a faint day reflection on the lower panes, on the hall and the figures alike, falling to the transom, weaker on the door leaves, gone at night', () => {
-  for (const m of [interior, fig]) {
-    const d = m.defines as Record<string, string>;
-    assert.deepEqual(nums(d.KX_REFLECT), [...G.reflect.colour]);
-    assert.ok(Number(d.KX_REFLECT_TOP) === G.reflect.top && Number(d.KX_REFLECT_DOOR) === G.reflect.door && nums(d.KX_REFLECT_DOORS).join() === G.reflect.doors.join(), 'the same reflection');
-    assert.ok(frag(m).includes('totalEmissiveRadiance += KX_REFLECT * ( 1.0 - uWinNight ) * mix( 1.0, KX_REFLECT_TOP, clamp( vMapUv.y, 0.0, 1.0 ) )'), 'by day only, in the shader');
+test('A3 round 3b: two small blue signs in the band, by day', () => {
+  const defs = interior.defines as Record<string, string>, S = G.signs, d = G.day, src = frag(interior);
+  assert.equal(S.boxes.length, 2);
+  S.boxes.forEach((b, i) => {
+    assert.deepEqual(nums(defs[`KX_SIGN${i}`]), [...b]);
+    const [u0, u1, v0, v1] = b as [number, number, number, number];
+    assert.ok(u1 > u0 && u1 - u0 <= 0.15 && v1 > v0 && v1 - v0 <= 0.08 && v0 >= d.v[0]! + d.feather && v1 <= d.v[1]! - d.feather, `sign ${i} small, inside the band`);
+  });
+  assert.ok(S.boxes[0]![1]! < S.boxes[1]![0]!, 'apart');
+  assert.ok(src.includes('+ step( KX_SIGN1.x, vMapUv.x ) * step( vMapUv.x, KX_SIGN1.y ) * step( KX_SIGN1.z, vMapUv.y ) * step( vMapUv.y, KX_SIGN1.w ) );'), 'in the shader');
+  const c = S.colour;
+  assert.ok(c[2]! > 2 * c[1]! && c[1]! > c[0]!, 'blue');
+  const sign = show(inv(30) + g * lum(c));
+  assert.ok(sign >= 55 && sign <= 85, `a sign over a hall of 30: ${sign.toFixed(1)}`);
+});
+
+test('A3 round 3b: the glass reflects by day, forecourt at the foot to sky under the transom, about +8 to +15 on the fixed panes, half that on the door leaves', () => {
+  const d = interior.defines as Record<string, string>, R = G.reflect;
+  assert.deepEqual(nums(d.KX_REFLECT), [...R.forecourt]);
+  assert.deepEqual(nums(d.KX_REFLECT_SKY), [...R.sky]);
+  assert.ok(Number(d.KX_REFLECT_DOOR) === R.door && nums(d.KX_REFLECT_DOORS).join() === R.doors.join(), 'the doors');
+  assert.ok(frag(interior).includes('totalEmissiveRadiance += ( 1.0 - uWinNight ) * mix( KX_REFLECT, KX_REFLECT_SKY, clamp( vMapUv.y, 0.0, 1.0 ) )')
+    && frag(interior).includes('* mix( 1.0, KX_REFLECT_DOOR, step( KX_REFLECT_DOORS.x, vMapUv.x ) * step( vMapUv.x, KX_REFLECT_DOORS.y ) );'), 'by day only, the doors, in the shader');
+  assert.ok(R.sky[2]! > R.sky[0]! && R.forecourt[0]! >= R.forecourt[2]! && lum(R.sky) > lum(R.forecourt), 'a cool, brighter sky over a warmer forecourt');
+  assert.ok(R.door >= 0.4 && R.door <= 0.6, `the doors at ${R.door}`);
+  assert.ok(Math.abs(R.doors[0]! - 0.3) < 1e-9 && Math.abs(R.doors[1]! - 0.7) < 1e-9, 'the doors under the rail');
+  const out: string[] = [];
+  for (const h of [10, 18, 25]) {
+    for (const v of [0, 1]) {
+      const base = show(inv(h) + g * liftAt(v)), pane = show(inv(h) + g * (liftAt(v) + reflAt(v))) - base, door = show(inv(h) + g * (liftAt(v) + R.door * reflAt(v))) - base;
+      out.push(`${h}@${v}: +${pane.toFixed(1)}/+${door.toFixed(1)}`);
+      assert.ok(pane >= 7.5 && pane <= 16, `a hall of ${h} at v ${v}: the pane +${pane.toFixed(1)}`);
+      assert.ok(door >= 0.4 * pane && door <= 0.65 * pane, `the door +${door.toFixed(1)}, about half the pane's +${pane.toFixed(1)}`);
+    }
   }
-  const c = G.reflect.colour;
-  assert.ok(c[2]! > c[0]!, 'a cool sky tint');
-  assert.ok(G.reflect.top <= 0.6 && G.reflect.door <= 0.6 && G.reflect.door >= 0.3, `falling to ${G.reflect.top}, ${G.reflect.door} on the doors`);
-  // the door leaves are the middle two bays' width under the push rail: 0.4 of the hall's width, centred
-  assert.ok(Math.abs(G.reflect.doors[0]! - 0.3) < 1e-9 && Math.abs(G.reflect.doors[1]! - 0.7) < 1e-9, 'the doors under the rail');
-  for (const h of [7, 13, 20, 25]) {
-    const lift = show(inv(h) + reflect(0)) - h, top = show(inv(h) + reflect(1)) - h;
-    assert.ok(lift >= 2 && lift <= 5 && top < lift && top >= 0.5, `a hall of ${h}: +${lift.toFixed(1)} at the foot, +${top.toFixed(1)} at the transom`);
-  }
+  console.log('hall@v: pane/door', out.join(' '));
 });
 
 test('A3 round 3: no new draw or triangle: the infill keeps its eight materials and its triangle count', () => {

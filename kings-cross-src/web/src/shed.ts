@@ -147,15 +147,25 @@ export const PORCH_TONES = { soffit: 0x3a3f45, figure: 0x4a4540, figureNight: [0
 // Arcade round 3 (the 2c score: the middle figures faint at -7, the end ones black cut-outs): a contrast floor, not a ratio. The factor is piecewise linear
 // in t through the knots `t` -> `k` (constant outside), fitted on the same model so a figure's upper body reads about 12 levels under the hall (glass
 // reflection included, PORCH_GLASS) and never under about 7: hall 9 -> 7, 13 -> 7, 19 -> 9, 25 -> 15, 37 -> 27 (sRGB); below `hips` m over the figure's foot
-// (its legs, a barrier's base) `legs` times that, a second, darker tone. ASSUMED.
+// (its legs, a barrier's base) `legs` times that, a second, darker tone. ASSUMED. Round 3b: the reflection is off the figures (the GPU gave it +0.3),
+// so the knots hold their measured ~7 floor.
 /**
- * Arcade round 3 (A3, the 2c score: the hall a flat brown gradient, the glass not reading as glass): behind the screens a lit back-wall band, the hall's
- * map times `band.colour` (linear) added as light from `band.v[0]` to `band.v[1]` of the hall's height (about +17 levels on a mid hall of 23 by day,
- * a few on its dark sides; under a tenth of the night glow after dark); and over the hall and the figures by day a faint forecourt/sky reflection on the
- * lower panes, `reflect.colour` falling to `reflect.top` of itself at the transom, `reflect.door` of it on the door leaves (`reflect.doors`, the hall's
- * width share; the middle bays under the push rail), about +3 levels on a hall of 20, gone at night. All ASSUMED on tests/aces.ts at the day exposure.
+ * Arcade round 3 (A3): behind the screens a lit back-wall band, the hall's map times `band.colour` (linear) over `band.v` of the hall's height; since round
+ * 3b night only (unchanged there). Round 3b (the round-3 GPU score: the band a hard flat stripe, the reflection +0.3 where the model said +3, the dark
+ * zone hall 10-12 behind figures of 7): the GPU's emissive add measured at about `gpu` of tests/aces.ts's, so these day terms are sized for it (ASSUMED):
+ * `day`, the band feathered over `feather` at each end of `v` and pooled along u (gaussians at `pools`, `width` wide, `base` between), about 55 at a
+ * pool (71 on the brightest hall, 30) and 35 between on a mid hall of 23; `signs`, two blue boxes (u0, u1, v0, v1) in it, about 70; `lift`, light over the hall below `lift.v` (full to
+ * v0, gone by v1), a dark-zone hall of 10 to about 20; `reflect`, the glass from `forecourt` at the hall's foot to `sky` at the transom (about +8.5 to
+ * +14), `door` of it on the door leaves (`doors`, the hall's u share). All on the hall only, all gone at night; the figures get none.
  */
-export const PORCH_GLASS = { band: { v: [0.45, 0.72] as const, colour: [0.0285, 0.0249, 0.0205] as const }, reflect: { colour: [0.00195, 0.00213, 0.00245] as const, top: 0.4, door: 0.45, doors: [0.3, 0.7] as const } } as const;
+export const PORCH_GLASS = {
+  band: { v: [0.45, 0.72] as const, colour: [0.0285, 0.0249, 0.0205] as const },
+  day: { v: [0.42, 0.75] as const, feather: 0.09, base: 0.35, pools: [0.18, 0.5, 0.82] as const, width: 0.12, colour: [0.58, 0.505, 0.417] as const },
+  signs: { boxes: [[0.3, 0.42, 0.58, 0.64], [0.58, 0.7, 0.58, 0.64]] as const, colour: [0.159, 0.37, 1.057] as const },
+  lift: { v: [0.45, 0.55] as const, colour: [0.0876, 0.0647, 0.0409] as const },
+  reflect: { forecourt: [0.0711, 0.0675, 0.0626] as const, sky: [0.096, 0.108, 0.126] as const, door: 0.5, doors: [0.3, 0.7] as const },
+  gpu: 0.1,
+} as const;
 /**
  * The front's relief (rubric A2). R-kx-front-a (2026) and R-kx-front-b (2016) show each great arch's reveal in three brick orders stepping
  * back to the glass (MEASURED: three orders in both photographs; their width and depth ASSUMED, held to the old stone ring's 1.2 m, since the
@@ -298,12 +308,25 @@ function frontNightGlow(m: THREE.MeshLambertMaterial, [colour, gain]: readonly [
         + `kxK *= vFrontY < KX_FIG_HIPS ? KX_FIG_LEGS : 1.0;\n`
         + `diffuseColor.rgb = mix( kxK * KX_FIG_DAY * kxHall, KX_FIG_NIGHT, uWinNight );\n`
         + `totalEmissiveRadiance = mix( kxK * KX_FIG_DAY_EMIT, totalEmissiveRadiance, uWinNight );\n#endif`
-        // arcade round 3 (PORCH_GLASS): a material defining KX_BAND (vec2 v range, vec3 KX_BAND_COLOUR) adds its map times the colour as light over that
-        // band of its v; one defining KX_REFLECT (vec3, with KX_REFLECT_TOP, KX_REFLECT_DOOR, vec2 KX_REFLECT_DOORS) a day-only reflection over its v and u
+        // arcade round 3/3b (PORCH_GLASS): a material defining KX_BAND (vec2 v range, vec3 KX_BAND_COLOUR) adds its map times the colour as light over that
+        // band of its v after dark (the round-3 band, unchanged at night); by day KX_DAYBAND (vec4 v0, v1, feather, base; vec3 pools, KX_DAYBAND_W, vec3
+        // KX_DAYBAND_COLOUR) a feathered band pooled along u, KX_SIGN0/1 (vec4 u0, u1, v0, v1; vec3 KX_SIGN_COLOUR) blue sign boxes in it, KX_LIFT (vec2,
+        // vec3 KX_LIFT_COLOUR) light over the lower hall, and KX_REFLECT (vec3 forecourt, KX_REFLECT_SKY, KX_REFLECT_DOOR, vec2 KX_REFLECT_DOORS) the glass
         + `\n#if defined( KX_BAND ) && defined( USE_MAP )\n`
-        + `totalEmissiveRadiance += KX_BAND_COLOUR * texture2D( map, vMapUv ).g * step( KX_BAND.x, vMapUv.y ) * step( vMapUv.y, KX_BAND.y );\n#endif`
+        + `totalEmissiveRadiance += uWinNight * KX_BAND_COLOUR * texture2D( map, vMapUv ).g * step( KX_BAND.x, vMapUv.y ) * step( vMapUv.y, KX_BAND.y );\n#endif`
+        + `\n#if defined( KX_DAYBAND ) && defined( USE_MAP )\n`
+        + `float kxPool = max( max( exp( -pow( ( vMapUv.x - KX_DAYBAND_POOLS.x ) / KX_DAYBAND_W, 2.0 ) ), exp( -pow( ( vMapUv.x - KX_DAYBAND_POOLS.y ) / KX_DAYBAND_W, 2.0 ) ) ),\n`
+        + `  exp( -pow( ( vMapUv.x - KX_DAYBAND_POOLS.z ) / KX_DAYBAND_W, 2.0 ) ) );\n`
+        + `totalEmissiveRadiance += ( 1.0 - uWinNight ) * KX_DAYBAND_COLOUR * texture2D( map, vMapUv ).g * mix( KX_DAYBAND.w, 1.0, kxPool )\n`
+        + `  * smoothstep( KX_DAYBAND.x, KX_DAYBAND.x + KX_DAYBAND.z, vMapUv.y ) * ( 1.0 - smoothstep( KX_DAYBAND.y - KX_DAYBAND.z, KX_DAYBAND.y, vMapUv.y ) );\n#endif`
+        + `\n#if defined( KX_SIGN0 ) && defined( USE_MAP )\n`
+        + `totalEmissiveRadiance += ( 1.0 - uWinNight ) * KX_SIGN_COLOUR * min( 1.0,\n`
+        + `  step( KX_SIGN0.x, vMapUv.x ) * step( vMapUv.x, KX_SIGN0.y ) * step( KX_SIGN0.z, vMapUv.y ) * step( vMapUv.y, KX_SIGN0.w )\n`
+        + `  + step( KX_SIGN1.x, vMapUv.x ) * step( vMapUv.x, KX_SIGN1.y ) * step( KX_SIGN1.z, vMapUv.y ) * step( vMapUv.y, KX_SIGN1.w ) );\n#endif`
+        + `\n#if defined( KX_LIFT ) && defined( USE_MAP )\n`
+        + `totalEmissiveRadiance += ( 1.0 - uWinNight ) * KX_LIFT_COLOUR * ( 1.0 - smoothstep( KX_LIFT.x, KX_LIFT.y, vMapUv.y ) );\n#endif`
         + `\n#if defined( KX_REFLECT ) && defined( USE_MAP )\n`
-        + `totalEmissiveRadiance += KX_REFLECT * ( 1.0 - uWinNight ) * mix( 1.0, KX_REFLECT_TOP, clamp( vMapUv.y, 0.0, 1.0 ) )\n`
+        + `totalEmissiveRadiance += ( 1.0 - uWinNight ) * mix( KX_REFLECT, KX_REFLECT_SKY, clamp( vMapUv.y, 0.0, 1.0 ) )\n`
         + `  * mix( 1.0, KX_REFLECT_DOOR, step( KX_REFLECT_DOORS.x, vMapUv.x ) * step( vMapUv.x, KX_REFLECT_DOORS.y ) );\n#endif`
         // arcade round 1: a material defining KX_SOFFIT (a linear vec3) takes that diffuse on its faces turned down (the canopy's soffit, PORCH_TONES);
         // round 1b: by day KX_SOFFIT_FILL times it as a paving bounce, and with KX_POOL (lamps' first x, pitch, the two rows' z) a warm pool round each strip lamp at night
@@ -386,10 +409,15 @@ function glassStructureTexture(foot: number): THREE.DataTexture {
 /** Round 20: the interior plane's constant day light (sRGB hex). */
 const PORCH_INTERIOR_EMIT = 0x140e08;
 /** Arcade round 2: the figures' defines (frontNightGlow KX_FIG_DAY): by day the interior's diffuse (its colour, day-darkened) and emissive times PORCH_TONES.figureDay's factor (KX_FIG_K, round 2c); at night their own colour. */
-/** Arcade round 3: the reflection's defines (frontNightGlow KX_REFLECT), on the hall and the figures alike (PORCH_GLASS.reflect). */
-function porchReflect(): Record<string, string> {
-  const r = PORCH_GLASS.reflect;
-  return { KX_REFLECT: `vec3(${r.colour.join(', ')})`, KX_REFLECT_TOP: r.top.toFixed(3), KX_REFLECT_DOOR: r.door.toFixed(3), KX_REFLECT_DOORS: `vec2(${r.doors.join(', ')})` };
+/** Arcade round 3b: the hall's day defines (frontNightGlow KX_DAYBAND, KX_SIGN0/1, KX_LIFT, KX_REFLECT; PORCH_GLASS), on the hall only. */
+function porchDay(): Record<string, string> {
+  const g = PORCH_GLASS, d = g.day, f = (v: readonly number[]) => v.map((x) => x.toFixed(4)).join(', ');
+  return {
+    KX_DAYBAND: `vec4(${f([...d.v, d.feather, d.base])})`, KX_DAYBAND_POOLS: `vec3(${f(d.pools)})`, KX_DAYBAND_W: d.width.toFixed(4), KX_DAYBAND_COLOUR: `vec3(${f(d.colour)})`,
+    KX_SIGN0: `vec4(${f(g.signs.boxes[0])})`, KX_SIGN1: `vec4(${f(g.signs.boxes[1])})`, KX_SIGN_COLOUR: `vec3(${f(g.signs.colour)})`,
+    KX_LIFT: `vec2(${f(g.lift.v)})`, KX_LIFT_COLOUR: `vec3(${f(g.lift.colour)})`,
+    KX_REFLECT: `vec3(${f(g.reflect.forecourt)})`, KX_REFLECT_SKY: `vec3(${f(g.reflect.sky)})`, KX_REFLECT_DOOR: g.reflect.door.toFixed(3), KX_REFLECT_DOORS: `vec2(${f(g.reflect.doors)})`,
+  };
 }
 function figureDay(entryFoot: number): Record<string, string> {
   const v = (c: THREE.Color): string => `vec3(${c.r.toFixed(5)}, ${c.g.toFixed(5)}, ${c.b.toFixed(5)})`, k = PORCH_TONES.figureDay;
@@ -397,7 +425,7 @@ function figureDay(entryFoot: number): Record<string, string> {
     KX_FIG_DAY: v(new THREE.Color(PORCH_DEPTH.interior).multiplyScalar(PORCH_DEPTH.dayDark)),
     KX_FIG_DAY_EMIT: v(new THREE.Color(PORCH_INTERIOR_EMIT)),
     KX_FIG_T: `vec4(${k.t.map(x => x.toFixed(4)).join(', ')})`, KX_FIG_KS: `vec4(${k.k.map(x => x.toFixed(4)).join(', ')})`,
-    KX_FIG_HIPS: (entryFoot + 0.3 + k.hips).toFixed(4), KX_FIG_LEGS: k.legs.toFixed(3), ...porchReflect(),
+    KX_FIG_HIPS: (entryFoot + 0.3 + k.hips).toFixed(4), KX_FIG_LEGS: k.legs.toFixed(3),
     KX_FIG_NIGHT: v(new THREE.Color(PORCH_TONES.figure)),
   };
 }
@@ -2069,7 +2097,7 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
     frontNightGlow(Object.assign(fasciaMaterial(), { defines: { KX_GLOW_BY_MAP: '' } }), FRONT_NIGHT.fascia, 'kx-front-infill-fascia'), // round 25: its glow by its map, so the pale lettering glows and the navy hardly (blue on blue before)
     frontNightGlow(new THREE.MeshLambertMaterial({ color: FRONT_COLOURS.downlight, emissive: 0x141414 }), FRONT_NIGHT.downlight, 'kx-front-downlight'),
     // round 20: the concourse behind the screens, dim and warm by day, glowing warm after dark (the glass's night colour and its fade)
-    frontNightGlow(Object.assign(new THREE.MeshLambertMaterial({ color: PORCH_DEPTH.interior, emissive: PORCH_INTERIOR_EMIT, map: interiorMap }), { defines: { KX_DAY_DARK: PORCH_DEPTH.dayDark.toFixed(3), KX_BAND: `vec2(${PORCH_GLASS.band.v.join(', ')})`, KX_BAND_COLOUR: `vec3(${PORCH_GLASS.band.colour.join(', ')})`, ...porchReflect() } }), FRONT_NIGHT.glass, 'kx-front-infill-interior', [entryFoot + FRONT_GLOW_FADE.from, entryFoot + FRONT_GLOW_FADE.to, FRONT_GLOW_FADE.head]),
+    frontNightGlow(Object.assign(new THREE.MeshLambertMaterial({ color: PORCH_DEPTH.interior, emissive: PORCH_INTERIOR_EMIT, map: interiorMap }), { defines: { KX_DAY_DARK: PORCH_DEPTH.dayDark.toFixed(3), KX_BAND: `vec2(${PORCH_GLASS.band.v.join(', ')})`, KX_BAND_COLOUR: `vec3(${PORCH_GLASS.band.colour.join(', ')})`, ...porchDay() } }), FRONT_NIGHT.glass, 'kx-front-infill-interior', [entryFoot + FRONT_GLOW_FADE.from, entryFoot + FRONT_GLOW_FADE.to, FRONT_GLOW_FADE.head]),
     // round 23: the heads' soffits, pale stone lit from inside by day, warm after dark (the downlights' night colour)
     frontNightGlow(new THREE.MeshLambertMaterial({ color: PORCH_DEPTH.soffit }), FRONT_NIGHT.downlight, 'kx-front-infill-soffit'), // round 24: no day emissive (it read as a light tan shelf)
     frontNightGlow(new THREE.MeshLambertMaterial({ color: FRONT_COLOURS.steel, emissive: FRONT_COLOURS.steelLift }), FRONT_NIGHT.shade, 'kx-front-infill-shade'),

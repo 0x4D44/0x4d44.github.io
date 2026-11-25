@@ -1,5 +1,5 @@
-"""Catch arcade round 3's regressions (the figures a contrast floor about 12 levels under the hall in two tones, the hall's lit back-wall band, the
-lower panes' day reflection, no new triangle) through web/tests/kx-front-arcade-round3.test.ts only.
+"""Catch arcade round 3/3b's regressions (the figures a contrast floor about 12 levels under the lit lower hall in two tones, the feathered pooled day
+band and the night band, the blue signs, the glass's sky-to-forecourt day reflection, no new triangle) through web/tests/kx-front-arcade-round3.test.ts only.
 Usage: python3 -I -u tools/mutation/kx-front-arcade-round3.py SOURCE WORKTREE_SCRATCH
 Source stays untouched; all baseline and mutation logs go to WORKTREE_SCRATCH.
 """
@@ -27,16 +27,30 @@ MUTATIONS = [
     ('one tone', 'web/src/shed.ts', 'hips: 0.85, legs: 0.75 }', 'hips: 0.85, legs: 1 }', 'upper body sits'),
     ('the legs on top', 'web/src/shed.ts', 'kxK *= vFrontY < KX_FIG_HIPS ? KX_FIG_LEGS : 1.0;', 'kxK *= vFrontY > KX_FIG_HIPS ? KX_FIG_LEGS : 1.0;', 'upper body sits'),
     ('the middle knot skipped', 'web/src/shed.ts', ': kxT <= KX_FIG_T.z ? mix( KX_FIG_KS.y, KX_FIG_KS.z, ( kxT - KX_FIG_T.y ) / ( KX_FIG_T.z - KX_FIG_T.y ) )', ': kxT <= KX_FIG_T.z ? KX_FIG_KS.y', 'upper body sits'),
-    ('a faint band', 'web/src/shed.ts', 'colour: [0.0285, 0.0249, 0.0205] as const', 'colour: [0.0085, 0.0075, 0.006] as const', 'back-wall band'),
-    ('a glaring band', 'web/src/shed.ts', 'colour: [0.0285, 0.0249, 0.0205] as const', 'colour: [0.1, 0.09, 0.07] as const', 'back-wall band'),
-    ('a sliver of a band', 'web/src/shed.ts', 'band: { v: [0.45, 0.72] as const', 'band: { v: [0.45, 0.5] as const', 'back-wall band'),
-    ('no band in the shader', 'web/src/shed.ts', 'totalEmissiveRadiance += KX_BAND_COLOUR * texture2D( map, vMapUv ).g', 'totalEmissiveRadiance += 0.0 * KX_BAND_COLOUR * texture2D( map, vMapUv ).g', 'back-wall band'),
-    ('the reflection at night too', 'web/src/shed.ts', 'totalEmissiveRadiance += KX_REFLECT * ( 1.0 - uWinNight ) *', 'totalEmissiveRadiance += KX_REFLECT *', 'day reflection'),
-    ('a strong reflection', 'web/src/shed.ts', 'reflect: { colour: [0.00195, 0.00213, 0.00245] as const', 'reflect: { colour: [0.006, 0.0065, 0.0075] as const', 'day reflection'),
-    ('a warm reflection', 'web/src/shed.ts', 'reflect: { colour: [0.00195, 0.00213, 0.00245] as const', 'reflect: { colour: [0.00245, 0.00213, 0.00195] as const', 'day reflection'),
-    ('even to the transom', 'web/src/shed.ts', 'top: 0.4, door: 0.45,', 'top: 1, door: 0.45,', 'day reflection'),
-    ('the doors as the panes', 'web/src/shed.ts', 'top: 0.4, door: 0.45,', 'top: 0.4, door: 1,', 'day reflection'),
-    ('the reflection off the figures', 'web/src/shed.ts', "KX_FIG_LEGS: k.legs.toFixed(3), ...porchReflect(),", "KX_FIG_LEGS: k.legs.toFixed(3),", 'day reflection'),
+    ('a glaring night band', 'web/src/shed.ts', 'colour: [0.0285, 0.0249, 0.0205] as const', 'colour: [0.1, 0.09, 0.07] as const', 'back-wall band feathered'),
+    ('the night band by day too', 'web/src/shed.ts', 'totalEmissiveRadiance += uWinNight * KX_BAND_COLOUR', 'totalEmissiveRadiance += KX_BAND_COLOUR', 'back-wall band feathered'),
+    ('a hard-edged band', 'web/src/shed.ts', 'feather: 0.09, base: 0.35,', 'feather: 0.01, base: 0.35,', 'back-wall band feathered'),
+    ('a flat band', 'web/src/shed.ts', 'feather: 0.09, base: 0.35,', 'feather: 0.09, base: 1,', 'back-wall band feathered'),
+    ('one pool', 'web/src/shed.ts', 'pools: [0.18, 0.5, 0.82] as const', 'pools: [0.5, 0.5, 0.5] as const', 'back-wall band feathered'),
+    ('a dim day band', 'web/src/shed.ts', 'colour: [0.58, 0.505, 0.417] as const', 'colour: [0.3, 0.26, 0.21] as const', 'back-wall band feathered'),
+    ('a blown day band', 'web/src/shed.ts', 'colour: [0.58, 0.505, 0.417] as const', 'colour: [0.8, 0.7, 0.58] as const', 'back-wall band feathered'),
+    ('the day band at night too', 'web/src/shed.ts', 'totalEmissiveRadiance += ( 1.0 - uWinNight ) * KX_DAYBAND_COLOUR', 'totalEmissiveRadiance += KX_DAYBAND_COLOUR', 'back-wall band feathered'),
+    ('the feather inverted', 'web/src/shed.ts', '* smoothstep( KX_DAYBAND.x, KX_DAYBAND.x + KX_DAYBAND.z, vMapUv.y )', '* smoothstep( KX_DAYBAND.x + KX_DAYBAND.z, KX_DAYBAND.x, vMapUv.y )', 'back-wall band feathered'),
+    ('the lift at night too', 'web/src/shed.ts', 'totalEmissiveRadiance += ( 1.0 - uWinNight ) * KX_LIFT_COLOUR', 'totalEmissiveRadiance += KX_LIFT_COLOUR', 'back-wall band feathered'),
+    ('the signs at night too', 'web/src/shed.ts', 'totalEmissiveRadiance += ( 1.0 - uWinNight ) * KX_SIGN_COLOUR', 'totalEmissiveRadiance += KX_SIGN_COLOUR', 'back-wall band feathered'),
+    ('a weak lift', 'web/src/shed.ts', 'lift: { v: [0.45, 0.55] as const, colour: [0.0876, 0.0647, 0.0409] as const }', 'lift: { v: [0.45, 0.55] as const, colour: [0.03, 0.022, 0.014] as const }', 'upper body sits'),
+    ('the lift on the figures', 'web/src/shed.ts', 'KX_FIG_LEGS: k.legs.toFixed(3),', 'KX_FIG_LEGS: k.legs.toFixed(3), ...porchDay(),', 'upper body sits'),
+    ('the lift into the band', 'web/src/shed.ts', 'lift: { v: [0.45, 0.55] as const', 'lift: { v: [0.6, 0.8] as const', 'upper body sits'),
+    ('a sign off the band', 'web/src/shed.ts', '[0.58, 0.7, 0.58, 0.64]]', '[0.58, 0.7, 0.68, 0.74]]', 'blue signs'),
+    ('a grey sign', 'web/src/shed.ts', 'colour: [0.159, 0.37, 1.057] as const', 'colour: [0.4, 0.4, 0.4] as const', 'blue signs'),
+    ('a glaring sign', 'web/src/shed.ts', 'colour: [0.159, 0.37, 1.057] as const', 'colour: [0.4, 0.9, 2.6] as const', 'blue signs'),
+    ('one sign in the shader', 'web/src/shed.ts', '+ step( KX_SIGN1.x, vMapUv.x )', '+ 0.0 * step( KX_SIGN1.x, vMapUv.x )', 'blue signs'),
+    ('the reflection at night too', 'web/src/shed.ts', 'totalEmissiveRadiance += ( 1.0 - uWinNight ) * mix( KX_REFLECT, KX_REFLECT_SKY', 'totalEmissiveRadiance += mix( KX_REFLECT, KX_REFLECT_SKY', 'glass reflects'),
+    ('the round-3 reflection', 'web/src/shed.ts', 'forecourt: [0.0711, 0.0675, 0.0626] as const', 'forecourt: [0.00195, 0.00213, 0.00245] as const', 'glass reflects'),
+    ('a glaring sky', 'web/src/shed.ts', 'sky: [0.096, 0.108, 0.126] as const', 'sky: [0.2, 0.22, 0.26] as const', 'glass reflects'),
+    ('the gradient upside down', 'web/src/shed.ts', 'sky: [0.096, 0.108, 0.126] as const', 'sky: [0.0711, 0.0675, 0.0626] as const', 'glass reflects'),
+    ('the doors as the panes', 'web/src/shed.ts', 'door: 0.5, doors: [0.3, 0.7]', 'door: 1, doors: [0.3, 0.7]', 'glass reflects'),
+    ('the doors in the shader dropped', 'web/src/shed.ts', '* mix( 1.0, KX_REFLECT_DOOR, step(', '* mix( 1.0, 1.0, step(', 'glass reflects'),
     ('a third figure', 'web/src/shed.ts', 'barrier: [0.22, 1.0] as const, figures: 2,', 'barrier: [0.22, 1.0] as const, figures: 3,', 'no new draw or triangle'),
 ]
 
@@ -80,4 +94,4 @@ with tempfile.TemporaryDirectory(prefix='kx-front-arcade-round3-', dir=out) as t
             failures.append(label)
             print(f'[SURVIVED] {label}', flush=True)
     print(f'{caught}/{len(MUTATIONS)} mutations caught; baseline {len(passing)} tests passed; survivors: {failures}')
-    raise SystemExit(1 if failures or len(passing) != 4 else 0)
+    raise SystemExit(1 if failures or len(passing) != 5 else 0)
