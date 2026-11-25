@@ -54,7 +54,7 @@ test('B7 round 2 day: the floor by a vault wall at about 0.6 of the floor under 
     const wall = shedFloorLight(layout, heads, ...shedToWorld(layout, layout.spine - 2 * R + 1.5, v)).day;
     const east = shedFloorLight(layout, heads, ...shedToWorld(layout, layout.spine + 2 * R - 1.5, v)).day;
     assert.ok(Math.abs(crown - 1) < 1e-9, `under the crown ${crown}`);
-    // re-pinned in round 3 (the wall at about 0.35, not 0.6), the band its old width: was 0.57-0.66
-    for (const k of [wall, east]) assert.ok(k >= 0.32 && k <= 0.41, `by the wall ${k.toFixed(3)} at v ${v}`);
+    // round 3 re-pinned this to 0.32-0.41 (the wall at 0.35); round 3b (the round-3 score: the wrong way against R-a) restores round 2's band
+    for (const k of [wall, east]) assert.ok(k >= 0.57 && k <= 0.66, `by the wall ${k.toFixed(3)} at v ${v}`);
   }
 });
