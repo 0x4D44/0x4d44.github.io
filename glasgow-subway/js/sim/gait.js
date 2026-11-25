@@ -356,6 +356,7 @@ const WK_UP = 0.7, WK_DN = 0.5;   // s: the walking body language builds up over
  *  The first CAP_SETTLE seconds of a walk are not logged: the body is still speeding up, its feet are placed for a pelvis that has not got there yet, and a log that held those strides
  *  (caps 5 - 11 cm lower than any later stride) kept the whole walk 20 mm too low for the 15 s it took to forget them. Until the log is whole the bob is lowered by CAP_PRIOR of its
  *  own size, which is what it was found to need at every speed (0.4 - 0.5 of the bob), and the hand-over to the measured fit is the same smooth following. */
+const CAP_VMIN = 0, CAP_FLOOR = 0.06;   // m/s: no reach is logged slower than this; m: nor any more than this below the bob's foot
 const CAP_NB = 96, CAP_REC = 0.003, CAP_RK = 0.3, CAP_RD = 0.03, CAP_MARG = 0.002, CAP_SPAN = 0.08, CAP_EVERY = 6, CAP_TAU = 0.3, CAP_SETTLE = 2.5, CAP_PRIOR = 0.42;
 const CAP_CS = new Float64Array(CAP_NB), CAP_SN = new Float64Array(CAP_NB);
 for (let b = 0; b < CAP_NB; b++) { CAP_CS[b] = Math.cos(4 * PI * (b + 0.5) / CAP_NB); CAP_SN[b] = Math.sin(4 * PI * (b + 0.5) / CAP_NB); }
@@ -363,7 +364,8 @@ function trackReach(g, dt) {
   const P = g.P;
   if (g.walkT < CAP_SETTLE) g.fitT = { hp: P.hPeak - CAP_PRIOR * P.bob0 * g.var.bob, bp: P.bobPh };   // (no log yet: what the bob has been found to need)
   else {
-    const R = lowerForReach(g, gaitTargets(g), P, 10);
+    if (g.v < CAP_VMIN) return;   // (slowing to a stop or held up, the feet are placed for a pace the body no longer has: logged, those reaches sank the whole walk into a lunge for seconds - review 60, a 4 s queue crouch)
+    const R = Math.max(lowerForReach(g, gaitTargets(g), P, 10), P.hPeak - P.bob0 * g.var.bob - CAP_FLOOR);   // (no lower than REACH_DROP lets the pelvis go anyway, and a little more than a normal fit: review 60)
     if (!g.capG) { g.capG = new Float32Array(CAP_NB).fill(Infinity); g.capN = 0; }
     const b0 = Math.floor(wrap1(g.phase) * CAP_NB) % CAP_NB, G = g.capG;
     if (g.capB == null || g.capB === b0) G[b0] = Math.min(R, G[b0]);            // (still in the same bin: it has been given its recovery already)
