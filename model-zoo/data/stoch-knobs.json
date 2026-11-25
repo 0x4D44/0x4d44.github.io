@@ -1,0 +1,428 @@
+{
+ "models": {
+  "chat-latest": {
+   "endpoint": "responses",
+   "cost": 0.0,
+   "temperature": false,
+   "temperature_error": "400 {\"code\": null, \"message\": \"Unsupported parameter: 'temperature' is not supported with this model.\", \"param\": \"temperature\", \"type\": \"invalid_request_error\"}",
+   "effort": false,
+   "effort_error": "400 {\"code\": \"unsupported_value\", \"message\": \"Unsupported value: 'low' is not supported with the 'chat-latest' model. Supported values are: 'medium'.\", \"param\": \"reasoning.effort\", \"type\": \"invalid_request_error\"}",
+   "knob": null
+  },
+  "claude-fable-5": {
+   "endpoint": "anthropic",
+   "cost": 0.00092,
+   "temperature": false,
+   "temperature_error": "400 {\"type\": \"invalid_request_error\", \"message\": \"`temperature` is deprecated for this model.\"}",
+   "effort": true,
+   "effort_reply": "42",
+   "knob": "effort"
+  },
+  "claude-fable-5-1": {
+   "endpoint": "anthropic",
+   "cost": 0.00044,
+   "temperature": false,
+   "temperature_error": "400 {\"type\": \"invalid_request_error\", \"message\": \"`temperature` is deprecated for this model.\"}",
+   "effort": true,
+   "effort_reply": "37",
+   "knob": "effort"
+  },
+  "claude-fable-5-1@thinking": {
+   "endpoint": "anthropic",
+   "cost": 0.00044,
+   "temperature": false,
+   "temperature_error": "400 {\"type\": \"invalid_request_error\", \"message\": \"`temperature` may only be set to 1 when thinking is enabled. Please consult our documentation at https://platform.claude.com/docs/en/build-with-claude/extended-thinking\"}",
+   "effort": true,
+   "effort_reply": "37",
+   "knob": "effort"
+  },
+  "claude-fable-5-2": {
+   "endpoint": "anthropic",
+   "cost": 0.000352,
+   "temperature": false,
+   "temperature_error": "400 {\"type\": \"invalid_request_error\", \"message\": \"`temperature` is deprecated for this model.\"}",
+   "effort": true,
+   "effort_reply": "47",
+   "knob": "effort"
+  },
+  "claude-fable-5-2@thinking": {
+   "endpoint": "anthropic",
+   "cost": 0.000352,
+   "temperature": false,
+   "temperature_error": "400 {\"type\": \"invalid_request_error\", \"message\": \"`temperature` may only be set to 1 when thinking is enabled. Please consult our documentation at https://platform.claude.com/docs/en/build-with-claude/extended-thinking\"}",
+   "effort": true,
+   "effort_reply": "47",
+   "knob": "effort"
+  },
+  "claude-haiku-4-5-20251001": {
+   "endpoint": "anthropic",
+   "cost": 5e-05,
+   "temperature": true,
+   "temperature_reply": "42",
+   "effort": false,
+   "effort_error": "400 {\"type\": \"invalid_request_error\", \"message\": \"This model does not support the effort parameter.\"}",
+   "knob": "temperature"
+  },
+  "claude-haiku-5-5": {
+   "endpoint": "anthropic",
+   "cost": 4e-06,
+   "temperature": false,
+   "temperature_error": "400 {\"type\": \"invalid_request_error\", \"message\": \"`temperature` is deprecated for this model.\"}",
+   "effort": true,
+   "effort_reply": "47",
+   "knob": "effort"
+  },
+  "claude-haiku-5-5@thinking": {
+   "endpoint": "anthropic",
+   "cost": 4e-06,
+   "temperature": false,
+   "temperature_error": "400 {\"type\": \"invalid_request_error\", \"message\": \"`temperature` may only be set to 1 when thinking is enabled. Please consult our documentation at https://platform.claude.com/docs/en/build-with-claude/extended-thinking\"}",
+   "effort": true,
+   "effort_reply": "37",
+   "knob": "effort"
+  },
+  "claude-opus-4-5-20251101": {
+   "endpoint": "anthropic",
+   "cost": 0.001005,
+   "temperature": true,
+   "temperature_reply": "42",
+   "effort": true,
+   "effort_reply": "42",
+   "knob": "temperature"
+  },
+  "claude-opus-4-6": {
+   "endpoint": "anthropic",
+   "cost": 0.0005,
+   "temperature": true,
+   "temperature_reply": "42",
+   "effort": true,
+   "effort_reply": "42",
+   "knob": "temperature"
+  },
+  "claude-opus-4-7": {
+   "endpoint": "anthropic",
+   "cost": 0.00031,
+   "temperature": false,
+   "temperature_error": "400 {\"type\": \"invalid_request_error\", \"message\": \"`temperature` is deprecated for this model.\"}",
+   "effort": true,
+   "effort_reply": "73",
+   "knob": "effort"
+  },
+  "claude-opus-4-8": {
+   "endpoint": "anthropic",
+   "cost": 0.00021,
+   "temperature": false,
+   "temperature_error": "400 {\"type\": \"invalid_request_error\", \"message\": \"`temperature` is deprecated for this model.\"}",
+   "effort": true,
+   "effort_reply": "47",
+   "knob": "effort"
+  },
+  "claude-opus-5": {
+   "endpoint": "anthropic",
+   "cost": 0.00076,
+   "temperature": false,
+   "temperature_error": "400 {\"type\": \"invalid_request_error\", \"message\": \"`temperature` is deprecated for this model.\"}",
+   "effort": true,
+   "effort_reply": "73",
+   "knob": "effort"
+  },
+  "claude-opus-5-5": {
+   "endpoint": "anthropic",
+   "cost": 0.000176,
+   "temperature": false,
+   "temperature_error": "400 {\"type\": \"invalid_request_error\", \"message\": \"`temperature` is deprecated for this model.\"}",
+   "effort": true,
+   "effort_reply": "42",
+   "knob": "effort"
+  },
+  "claude-opus-5-5@thinking": {
+   "endpoint": "anthropic",
+   "cost": 0.000176,
+   "temperature": false,
+   "temperature_error": "400 {\"type\": \"invalid_request_error\", \"message\": \"`temperature` may only be set to 1 when thinking is enabled. Please consult our documentation at https://platform.claude.com/docs/en/build-with-claude/extended-thinking\"}",
+   "effort": true,
+   "effort_reply": "42",
+   "knob": "effort"
+  },
+  "claude-sonnet-4-5-20250929": {
+   "endpoint": "anthropic",
+   "cost": 0.0,
+   "temperature": false,
+   "temperature_error": "404 {\"type\": \"not_found_error\", \"message\": \"model: claude-sonnet-4-5-20250929\"}",
+   "effort": false,
+   "effort_error": "404 {\"type\": \"not_found_error\", \"message\": \"model: claude-sonnet-4-5-20250929\"}",
+   "knob": null
+  },
+  "claude-sonnet-4-6": {
+   "endpoint": "anthropic",
+   "cost": 0.0003,
+   "temperature": true,
+   "temperature_reply": "42",
+   "effort": true,
+   "effort_reply": "42",
+   "knob": "temperature"
+  },
+  "claude-sonnet-5": {
+   "endpoint": "anthropic",
+   "cost": 8.4e-05,
+   "temperature": false,
+   "temperature_error": "400 {\"type\": \"invalid_request_error\", \"message\": \"`temperature` is deprecated for this model.\"}",
+   "effort": true,
+   "effort_reply": "47",
+   "knob": "effort"
+  },
+  "claude-sonnet-5-5": {
+   "endpoint": "anthropic",
+   "cost": 8.8e-05,
+   "temperature": false,
+   "temperature_error": "400 {\"type\": \"invalid_request_error\", \"message\": \"`temperature` is deprecated for this model.\"}",
+   "effort": true,
+   "effort_reply": "37",
+   "knob": "effort"
+  },
+  "claude-sonnet-5-5@thinking": {
+   "endpoint": "anthropic",
+   "cost": 8.8e-05,
+   "temperature": false,
+   "temperature_error": "400 {\"type\": \"invalid_request_error\", \"message\": \"`temperature` may only be set to 1 when thinking is enabled. Please consult our documentation at https://platform.claude.com/docs/en/build-with-claude/extended-thinking\"}",
+   "effort": true,
+   "effort_reply": "37",
+   "knob": "effort"
+  },
+  "gpt-4.1": {
+   "endpoint": "responses",
+   "cost": 6.4e-05,
+   "temperature": true,
+   "temperature_reply": "47",
+   "effort": false,
+   "effort_error": "400 {\"message\": \"Unsupported parameter: 'reasoning.effort' is not supported with this model.\", \"type\": \"invalid_request_error\", \"param\": \"reasoning.effort\", \"code\": \"unsupported_parameter\"}",
+   "knob": "temperature"
+  },
+  "gpt-4.1-mini": {
+   "endpoint": "responses",
+   "cost": 1.3e-05,
+   "temperature": true,
+   "temperature_reply": "57",
+   "effort": false,
+   "effort_error": "400 {\"message\": \"Unsupported parameter: 'reasoning.effort' is not supported with this model.\", \"type\": \"invalid_request_error\", \"param\": \"reasoning.effort\", \"code\": \"unsupported_parameter\"}",
+   "knob": "temperature"
+  },
+  "gpt-4o": {
+   "endpoint": "chat",
+   "cost": 7e-05,
+   "temperature": true,
+   "temperature_reply": "42",
+   "effort": false,
+   "effort_error": "400 {\"message\": \"Unrecognized request argument supplied: reasoning_effort\", \"type\": \"invalid_request_error\", \"param\": null, \"code\": null}",
+   "knob": "temperature"
+  },
+  "gpt-4o-mini": {
+   "endpoint": "responses",
+   "cost": 5e-06,
+   "temperature": true,
+   "temperature_reply": "42",
+   "effort": false,
+   "effort_error": "400 {\"message\": \"Unsupported parameter: 'reasoning.effort' is not supported with this model.\", \"type\": \"invalid_request_error\", \"param\": \"reasoning.effort\", \"code\": \"unsupported_parameter\"}",
+   "knob": "temperature"
+  },
+  "gpt-5": {
+   "endpoint": "responses",
+   "cost": 0.001129,
+   "temperature": false,
+   "temperature_error": "400 {\"message\": \"Unsupported parameter: 'temperature' is not supported with this model.\", \"type\": \"invalid_request_error\", \"param\": \"temperature\", \"code\": null}",
+   "effort": true,
+   "effort_reply": "73",
+   "knob": "effort"
+  },
+  "gpt-5-mini": {
+   "endpoint": "responses",
+   "cost": 0.000218,
+   "temperature": false,
+   "temperature_error": "400 {\"message\": \"Unsupported parameter: 'temperature' is not supported with this model.\", \"type\": \"invalid_request_error\", \"param\": \"temperature\", \"code\": null}",
+   "effort": true,
+   "effort_reply": "57",
+   "knob": "effort"
+  },
+  "gpt-5-nano": {
+   "endpoint": "responses",
+   "cost": 3e-05,
+   "temperature": false,
+   "temperature_error": "400 {\"message\": \"Unsupported parameter: 'temperature' is not supported with this model.\", \"type\": \"invalid_request_error\", \"param\": \"temperature\", \"code\": null}",
+   "effort": true,
+   "effort_reply": "57",
+   "knob": "effort"
+  },
+  "gpt-5-search-api": {
+   "endpoint": "chat",
+   "cost": 0.0,
+   "temperature": false,
+   "temperature_error": "400 {\"message\": \"Model incompatible request argument supplied: temperature\", \"type\": \"invalid_request_error\", \"param\": null, \"code\": null}",
+   "effort": false,
+   "effort_error": "400 {\"message\": \"Unrecognized request argument supplied: reasoning_effort\", \"type\": \"invalid_request_error\", \"param\": null, \"code\": null}",
+   "knob": null
+  },
+  "gpt-5.1": {
+   "endpoint": "responses",
+   "cost": 0.000318,
+   "temperature": true,
+   "temperature_reply": "73",
+   "effort": true,
+   "effort_reply": "73",
+   "knob": "temperature"
+  },
+  "gpt-5.2": {
+   "endpoint": "responses",
+   "cost": 0.000416,
+   "temperature": true,
+   "temperature_reply": "73",
+   "effort": true,
+   "effort_reply": "73",
+   "knob": "temperature"
+  },
+  "gpt-5.3-codex": {
+   "endpoint": "responses",
+   "cost": 0.000402,
+   "temperature": true,
+   "temperature_reply": "73",
+   "effort": true,
+   "effort_reply": "73",
+   "knob": "temperature"
+  },
+  "gpt-5.4": {
+   "endpoint": "responses",
+   "cost": 0.000415,
+   "temperature": true,
+   "temperature_reply": "73",
+   "effort": true,
+   "effort_reply": "47",
+   "knob": "temperature"
+  },
+  "gpt-5.4-mini": {
+   "endpoint": "responses",
+   "cost": 0.000129,
+   "temperature": true,
+   "temperature_reply": "37",
+   "effort": true,
+   "effort_reply": "37",
+   "knob": "temperature"
+  },
+  "gpt-5.4-nano": {
+   "endpoint": "responses",
+   "cost": 5.8e-05,
+   "temperature": true,
+   "temperature_reply": "42",
+   "effort": true,
+   "effort_reply": "42",
+   "knob": "temperature"
+  },
+  "gpt-5.5": {
+   "endpoint": "responses",
+   "cost": 0.000745,
+   "temperature": false,
+   "temperature_error": "400 {\"code\": null, \"message\": \"Unsupported parameter: 'temperature' is not supported with this model.\", \"param\": \"temperature\", \"type\": \"invalid_request_error\"}",
+   "effort": true,
+   "effort_reply": "42",
+   "knob": "effort"
+  },
+  "gpt-5.6-luna": {
+   "endpoint": "responses",
+   "cost": 1.1e-05,
+   "temperature": false,
+   "temperature_error": "400 {\"code\": null, \"message\": \"Unsupported parameter: 'temperature' is not supported with this model.\", \"param\": \"temperature\", \"type\": \"invalid_request_error\"}",
+   "effort": true,
+   "effort_reply": "37",
+   "knob": "effort"
+  },
+  "gpt-5.6-sol": {
+   "endpoint": "responses",
+   "cost": 0.000412,
+   "temperature": false,
+   "temperature_error": "400 {\"code\": null, \"message\": \"Unsupported parameter: 'temperature' is not supported with this model.\", \"param\": \"temperature\", \"type\": \"invalid_request_error\"}",
+   "effort": true,
+   "effort_reply": "47",
+   "knob": "effort"
+  },
+  "gpt-5.6-terra": {
+   "endpoint": "responses",
+   "cost": 0.000274,
+   "temperature": false,
+   "temperature_error": "400 {\"code\": null, \"message\": \"Unsupported parameter: 'temperature' is not supported with this model.\", \"param\": \"temperature\", \"type\": \"invalid_request_error\"}",
+   "effort": true,
+   "effort_reply": "57",
+   "knob": "effort"
+  },
+  "gpt-6-astra": {
+   "endpoint": "responses",
+   "cost": 0.00048,
+   "temperature": false,
+   "temperature_error": "400 {\"code\": null, \"message\": \"Unsupported parameter: 'temperature' is not supported with this model.\", \"param\": \"temperature\", \"type\": \"invalid_request_error\"}",
+   "effort": true,
+   "effort_reply": "37",
+   "knob": "effort"
+  },
+  "gpt-6-luna": {
+   "endpoint": "responses",
+   "cost": 5e-06,
+   "temperature": false,
+   "temperature_error": "400 {\"code\": null, \"message\": \"Unsupported parameter: 'temperature' is not supported with this model.\", \"param\": \"temperature\", \"type\": \"invalid_request_error\"}",
+   "effort": true,
+   "effort_reply": "47",
+   "knob": "effort"
+  },
+  "gpt-6-sol": {
+   "endpoint": "responses",
+   "cost": 9.6e-05,
+   "temperature": false,
+   "temperature_error": "400 {\"code\": null, \"message\": \"Unsupported parameter: 'temperature' is not supported with this model.\", \"param\": \"temperature\", \"type\": \"invalid_request_error\"}",
+   "effort": true,
+   "effort_reply": "37",
+   "knob": "effort"
+  },
+  "gpt-6.1-sol": {
+   "endpoint": "responses",
+   "cost": 0.000206,
+   "temperature": false,
+   "temperature_error": "400 {\"code\": null, \"message\": \"Unsupported parameter: 'temperature' is not supported with this model.\", \"param\": \"temperature\", \"type\": \"invalid_request_error\"}",
+   "effort": true,
+   "effort_reply": "47",
+   "knob": "effort"
+  },
+  "gpt-6.1-terra": {
+   "endpoint": "responses",
+   "cost": 4.8e-05,
+   "temperature": false,
+   "temperature_error": "400 {\"code\": null, \"message\": \"Unsupported parameter: 'temperature' is not supported with this model.\", \"param\": \"temperature\", \"type\": \"invalid_request_error\"}",
+   "effort": true,
+   "effort_reply": "73",
+   "knob": "effort"
+  },
+  "gpt-6.2-astra": {
+   "endpoint": "responses",
+   "cost": 0.000384,
+   "temperature": false,
+   "temperature_error": "400 {\"code\": null, \"message\": \"Unsupported parameter: 'temperature' is not supported with this model.\", \"param\": \"temperature\", \"type\": \"invalid_request_error\"}",
+   "effort": true,
+   "effort_reply": "37",
+   "knob": "effort"
+  },
+  "gpt-6.2-sol": {
+   "endpoint": "responses",
+   "cost": 9.6e-05,
+   "temperature": false,
+   "temperature_error": "400 {\"code\": null, \"message\": \"Unsupported parameter: 'temperature' is not supported with this model.\", \"param\": \"temperature\", \"type\": \"invalid_request_error\"}",
+   "effort": true,
+   "effort_reply": "47",
+   "knob": "effort"
+  },
+  "o3": {
+   "endpoint": "responses",
+   "cost": 0.000646,
+   "temperature": false,
+   "temperature_error": "400 {\"message\": \"Unsupported parameter: 'temperature' is not supported with this model.\", \"type\": \"invalid_request_error\", \"param\": \"temperature\", \"code\": null}",
+   "effort": true,
+   "effort_reply": "73",
+   "knob": "effort"
+  }
+ },
+ "note": "One probe per model with the number prompt: temperature=0, then low reasoning effort (OpenAI reasoning.effort, Anthropic output_config.effort). knob = what the dial turns."
+}
