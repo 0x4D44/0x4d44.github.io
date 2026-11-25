@@ -647,17 +647,25 @@ export class AnimCrowd {
     if (clip && mid && p.cur) { const o = this._action(p, prev); o.enabled = true; o.play(); o.time = pt; p.fadeEnd = fe; p.fadeDur = fd; p.yFrom = yF; p.prevAct = o; p.manFade = { o, n: p.cur }; this._manFade(p); } p.mixer.update(0.0001); p.dirty = false; if (p.hold) { p.hold.rig = null; this._holdStep(p, 0, true); } this._place(p, true); this._bagOn(p); if (mid && p.manFade) this._floorFeet(p);
   }
   /** a blend carried across a model swap, weighted by hand to the end it would have had (three's own cross-fade cannot be resumed part-way) */
-  _manFade(p) {
-    const f = p.manFade; if (!f) return; const w = Math.min(1, Math.max(0, 1 - (p.fadeEnd - this._clock) / p.fadeDur));
-    f.n.setEffectiveWeight(w); f.o.setEffectiveWeight(1 - w); if (w >= 1) { f.o.setEffectiveWeight(0); p.manFade = null; }
+  /** how far a clip change has blended, 0..1: eased (smoothstep), so that a limb the two clips put in different places sets off and comes to rest gently. Three's own cross-fade moves the
+   *  weights at a constant rate and stops them dead: a hand coming down from a phone clip moved 5 cm a frame and stopped in one frame (review 61). Every clip change is weighted here. */
+  _fadeE(p) { const w = Math.min(1, Math.max(0, 1 - (p.fadeEnd - this._clock) / p.fadeDur)); return w * w * (3 - 2 * w); }
+  _manFade(p, end = false) {
+    const f = p.manFade; if (!f) return; const e = end ? 1 : this._fadeE(p);
+    if (f.olds) { f.n.setEffectiveWeight(f.n0 + (1 - f.n0) * e); for (const [a, w0] of f.olds) a.setEffectiveWeight(w0 * (1 - e)); }   // (every clip still showing at the change goes out together: sum of weights stays 1)
+    else { f.n.setEffectiveWeight(e); f.o.setEffectiveWeight(1 - e); }
+    if (e >= 1) { if (f.o) f.o.setEffectiveWeight(0); p.manFade = null; }
   }
   _action(p, clip) { let a = p.act.get(clip.name); if (!a) { a = p.mixer.clipAction(clip); a.setEffectiveWeight(0); a.play(); p.act.set(clip.name, a); } return a; }
   _play(p, clip, fade = this.crossfade, speed = 1) {
     if (!clip) return; const n = this._action(p, clip), o = p.cur; if (o === n) { n.timeScale = speed; return; }
     n.timeScale = speed; n.enabled = true;
-    if (o && fade > 0) { n.reset().setEffectiveWeight(1).play(); n.crossFadeFrom(o, fade, false); } else { if (o) o.setEffectiveWeight(0); n.setEffectiveWeight(1); }
-    p.prevAct = o && fade > 0 ? o : null; p.manFade = null;
-    p.cur = n; p.curClip = clip; p.m = this.measure(p.char, clip); p.dirty = true; p.fadeEnd = o && fade > 0 ? this._clock + fade : 0; p.fadeDur = fade; p.yFrom = p.yOff;   // (until fadeEnd the pose is a blend of two clips: audits leave it alone)
+    p.manFade = null;
+    if (o && fade > 0) { const olds = []; for (const a of p.act.values()) { a.stopFading(); if (a !== n && a.getEffectiveWeight() > 0) olds.push([a, a.getEffectiveWeight()]); } const n0 = Math.min(1, n.getEffectiveWeight()); n.reset().play(); p.manFade = { n, n0, olds }; }
+    else { for (const a of p.act.values()) { a.stopFading(); if (a !== n) a.setEffectiveWeight(0); } n.setEffectiveWeight(1); }
+    p.prevAct = o && fade > 0 ? o : null;
+    p.cur = n; p.curClip = clip; p.m = this.measure(p.char, clip); p.dirty = true; p.fadeEnd = o && fade > 0 ? this._clock + fade : 0; p.fadeDur = fade; p.yFrom = p.yOff;
+    if (p.manFade) this._manFade(p);   // (until fadeEnd the pose is a blend of two clips: audits leave it alone)
   }
   /** state -> clip choice (idle variants rotate, phone/talk/pole/fidget when the asset has them) */
   _enter(p, state, fade = this.crossfade) {
@@ -757,7 +765,7 @@ export class AnimCrowd {
     const tgt = this._yOffset(p);
     // into or out of a sit the body's height follows the pose's own blend: eased in a quarter of a second, the body sat down before the legs had bent (the feet 22 - 28 cm under
     // the floor) and stood up before they had straightened (the feet 10 - 12 cm off it) - review 44
-    if ((!snap || p.manFade) && p.yFrom != null && p.fadeEnd && this._clock < p.fadeEnd && p.fadeDur > 0 && (p.state === 'sit' || p.wasSit)) { const w = Math.min(1, Math.max(0, 1 - (p.fadeEnd - this._clock) / p.fadeDur)); p.yOff = p.yFrom + (tgt - p.yFrom) * w; }
+    if ((!snap || p.manFade) && p.yFrom != null && p.fadeEnd && this._clock < p.fadeEnd && p.fadeDur > 0 && (p.state === 'sit' || p.wasSit)) { const w = this._fadeE(p); p.yOff = p.yFrom + (tgt - p.yFrom) * w; }
     else p.yOff = snap || p.yOff == null ? tgt : p.yOff + (tgt - p.yOff) * 0.25;
     if (!(p.fadeEnd && this._clock < p.fadeEnd)) p.wasSit = p.state === 'sit';
     let x = p.x, z = p.z;
@@ -1098,7 +1106,7 @@ export class AnimCrowd {
       if (upd && hold && hold.rig) hold.rig.restore();   // the layers come off in the reverse order they went on: the hold's (arms, phone), then the gait's, leaving the mixer's own pose on the bones before it advances (see gait_three.js)
       if (upd && p.gait && p.gait.rig) p.gait.rig.restore();
       if (p.manFade) this._manFade(p);
-      if (animate) { p.mixer.update(dt); p.dirty = false; if (this.gaitOn && !p.static) { this._carryStep(p, dt); this._gaitStep(p, dt); } else if (this.gaitOn && (p.state === 'stand' || p.state === 'pole' || p.gait) && !(p.tween && !p.settleGait && !p.gait)) this._gaitStep(p, dt);   /* (not while a rider is carried by a tween with no gait of their own - standing up out of a seat: made then, it skated a foot 24 - 39 cm as the body left the seat - review 50) */   /* (a standing rider too: the idle clips turn the pelvis but never move it, so the shoes slid 8 - 12 cm side to side together every few seconds - review 49; planted by the gait they stay, and step when the body has drifted off them) */ } else if (p.dirty) { p.mixer.update(this.crossfade + 0.05); p.dirty = false; }
+      if (animate) { p.mixer.update(dt); p.dirty = false; if (this.gaitOn && !p.static) { this._carryStep(p, dt); this._gaitStep(p, dt); } else if (this.gaitOn && (p.state === 'stand' || p.state === 'pole' || p.gait) && !(p.tween && !p.settleGait && !p.gait)) this._gaitStep(p, dt);   /* (not while a rider is carried by a tween with no gait of their own - standing up out of a seat: made then, it skated a foot 24 - 39 cm as the body left the seat - review 50) */   /* (a standing rider too: the idle clips turn the pelvis but never move it, so the shoes slid 8 - 12 cm side to side together every few seconds - review 49; planted by the gait they stay, and step when the body has drifted off them) */ } else if (p.dirty) { if (p.manFade) this._manFade(p, true); p.mixer.update(this.crossfade + 0.05); p.dirty = false; }
       // (a far person is animated until the walk has wound down and the clip's fade is over, and for a second after any clip change, so the feet step to the new stance: frozen at the moment they slowed below
       // 0.2 m/s, then switched to the idle clip with the gait stripped off, the hand jumped 0.28 - 0.35 m in one frame - review 60's grip snap at a stop, caught 40 m out at Partick; the gait re-applied in no time over the new clip instead held a 0.28 m straddle; and anyone setting off: frozen until 0.2 m/s, the first step was caught up in one frame, a 0.12 - 0.15 m foot pop at half of all far starts - review 61)
       if (p.poseFrom) { if (animate) this._poseBlend(p, dt); else { p.poseFrom = null; p.rootOff = null; } }
@@ -1108,7 +1116,7 @@ export class AnimCrowd {
       // the look goes on after the hold (put on first, it sent a texting arm to 97% of full stretch at a full turn of the head). Someone holding a phone turns head and neck only: the shoulders, and so the hands, stay put
       if (animate && p.att && dist < 14) {
         const a = p.att, still = p.state !== 'walk' && p.state !== 'go', chest = still && dist < 8 ? Math.sin(a.breath) * 0.011 + a.bob * 0.03 : 0, pitch = a.pitch - (a.drop || 0) * 0.13;
-        if (Math.abs(a.yaw) > 0.004 || Math.abs(pitch) > 0.004 || chest) { if (!p.look || p.look.obj !== p.obj) p.look = new LookRig(this.THREE, p.obj); const held = hold && hold.w > 0.02 ? (hold.kind === 'call' ? 0.3 : 1) : 0; p.look.apply(held ? a.yaw * held : a.yaw, held ? pitch * held : pitch, held ? 0 : chest, held ? 0 : 1); }
+        if (Math.abs(a.yaw) > 0.004 || Math.abs(pitch) > 0.004 || chest) { if (!p.look || p.look.obj !== p.obj) p.look = new LookRig(this.THREE, p.obj); const e = hold && hold.w > 0 ? hold.w * hold.w * (3 - 2 * hold.w) : 0, hk = 1 - e * (hold && hold.kind === 'call' ? 0.7 : 0); p.look.apply(a.yaw * hk, pitch * hk, chest * (1 - e), 1 - e); }   // (held to the hold's own eased weight: switched on whole when the weight fell under 0.02, the shoulders turned back with the head in one frame and the hand jumped 0.12 m as the phone went away - review 61)
       }
     }
   }
