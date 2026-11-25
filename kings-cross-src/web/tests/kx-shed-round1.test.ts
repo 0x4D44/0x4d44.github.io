@@ -61,7 +61,7 @@ test('B1: a ring in each rib\'s haunch, both feet of every rib, instanced in the
   assert.ok(across >= 0.8 && across <= 1.4 && H.tube * 2 >= 0.08 && H.tube * 2 <= 0.16, `ring ${across} across, section ${2 * H.tube}`);
   const rings = group.getObjectByName('shed-haunch-rings') as THREE.InstancedMesh, ribs = group.getObjectByName('shed-ribs') as THREE.InstancedMesh;
   assert.ok(rings && rings.isInstancedMesh, 'an instanced mesh');
-  assert.equal(rings.count, 2 * ribs.count, 'two to a rib');
+  assert.equal(rings.count, ribs.count, 'one to a rib'); // re-pinned round S2b (shed-round-2 score): the spine's feet carry none, its brick rising above the springing (kx-shed-round2)
   assert.equal(rings.material, ribs.material, 'the ribs\' own paint by day');
   assert.equal(buildingNightMaterialsOf(rings)?.night, material('ribPaint'), 'and at night');
   assert.ok(!rings.castShadow && !SHADOW_CASTERS.has('shed-haunch-rings'), 'not a caster');

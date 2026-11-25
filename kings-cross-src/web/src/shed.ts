@@ -1307,10 +1307,12 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   group.add(ribs);
   // round S1 (B1): a ring in each rib's haunch, both feet (HAUNCH_RING, haunchRingCentres): instanced, in the ribs' paint, not a shadow caster
   const ringCentres = haunchRingCentres(sp);
-  const haunch = new THREE.InstancedMesh(new THREE.TorusGeometry(HAUNCH_RING.radius, HAUNCH_RING.tube, 4, 16), ribDay(), ribPos.length * centres.length * ringCentres.length);
+  const haunch = new THREE.InstancedMesh(new THREE.TorusGeometry(HAUNCH_RING.radius, HAUNCH_RING.tube, 4, 16), ribDay(), ribPos.length * centres.length);
   withBuildingNightMaterial(haunch, material('ribPaint'));
   k = 0;
-  for (const uc of centres) for (const v of ribPos) for (const [u, y] of ringCentres) haunch.setMatrixAt(k++, mat.makeTranslation(uc + u, y, -v));
+  // round S2b (shed-round-2 score: on the spine, whose brick rises above the springing to the valley, the foot-panel rings sat half in the wall): only the
+  // outer foot of each rib, on the east or west arcade, whose wall stops at the springing, carries a ring
+  for (const uc of centres) for (const v of ribPos) for (const [u, y] of ringCentres) if (Math.sign(u) !== Math.sign(spine - uc)) haunch.setMatrixAt(k++, mat.makeTranslation(uc + u, y, -v));
   haunch.name = 'shed-haunch-rings';
   haunch.castShadow = false;
   haunch.instanceMatrix.needsUpdate = true;

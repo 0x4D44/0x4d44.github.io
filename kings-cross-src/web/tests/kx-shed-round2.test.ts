@@ -85,3 +85,33 @@ test('B3: each impost 0.25-0.35 m proud in a paler cream than the dressings, a s
     for (const { vc, r } of opens) assert.ok(Math.abs(v - vc) >= r + I.margin - 1e-6, `an impost vertex at v ${v.toFixed(2)} over the opening ${vc.toFixed(1)} +- ${r.toFixed(1)}`);
   }
 });
+
+test('B1 (round S2b): no haunch ring cuts into any wall or masonry, on either side of either vault; the rings on the arcades\' feet, none on the spine\'s', () => {
+  const H = S.HAUNCH_RING as { radius: number; tube: number }, out = H.radius + 2 * H.tube; // the ring's outer edge, and a tube's radius more clear
+  const masonry = ['shed-brick', 'shed-spine', 'shed-east-arcade', 'shed-west-arcade', 'shed-spine-stone', 'shed-stone', 'shed-arcade-imposts']
+    .map(n => group.getObjectByName(n)).filter((o): o is THREE.Object3D => !!o);
+  assert.ok(masonry.length >= 6, `${masonry.length} masonry meshes`);
+  const rings = group.getObjectByName('shed-haunch-rings') as THREE.InstancedMesh, ribs = group.getObjectByName('shed-ribs') as THREE.InstancedMesh;
+  const m = new THREE.Matrix4(), c = new THREE.Vector3();
+  const zs = new Set<number>(), sides = new Set<string>();
+  for (let i = 0; i < ribs.count; i++) { ribs.getMatrixAt(i, m); zs.add(c.setFromMatrixPosition(m).z); }
+  const sorted = [...zs].sort((a, b) => a - b), pick = new Set([sorted[0], sorted[Math.floor(sorted.length / 2)], sorted[sorted.length - 1]].map(z => Math.round(z! * 100)));
+  let checked = 0;
+  for (let i = 0; i < rings.count; i++) {
+    rings.getMatrixAt(i, m); c.setFromMatrixPosition(m);
+    sides.add(c.x < layout.spine ? (c.x < layout.spine - R ? 'west vault, west foot' : 'west vault, spine foot') : (c.x > layout.spine + R ? 'east vault, east foot' : 'east vault, spine foot'));
+    if (!pick.has(Math.round(c.z * 100))) continue;
+    checked++;
+    for (let k = 0; k < 24; k++) {
+      const a = (2 * Math.PI * k) / 24, d = new THREE.Vector3(Math.cos(a), Math.sin(a), 0);
+      const o = group.localToWorld(c.clone()), e = group.localToWorld(c.clone().addScaledVector(d, out));
+      const dw = e.clone().sub(o).normalize();
+      for (const [from, dir] of [[o, dw], [e, dw.clone().negate()]] as const) {
+        const h = new THREE.Raycaster(from, dir, 0, out).intersectObjects(masonry, false)[0];
+        assert.ok(!h, `the ring at (${c.x.toFixed(2)}, ${c.y.toFixed(2)}, ${c.z.toFixed(1)}) meets ${h?.object.name} ${h?.distance.toFixed(2)} m along ${(a * 180 / Math.PI).toFixed(0)} deg`);
+      }
+    }
+  }
+  assert.ok(checked >= 6, `${checked} rings checked`);
+  assert.deepEqual([...sides].sort(), ['east vault, east foot', 'west vault, west foot'], 'on the arcades\' feet only');
+});

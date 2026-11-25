@@ -25,6 +25,8 @@ MUTATIONS = [
     ('the ring up in the next panel', 'web/src/shed.ts', 'HAUNCH_RING = { radius: 0.4, tube: 0.05, rise: 1.5 }', 'HAUNCH_RING = { radius: 0.4, tube: 0.05, rise: 4.5 }', 'B1: each haunch ring'),
     ('a ring too big for the panel', 'web/src/shed.ts', 'HAUNCH_RING = { radius: 0.4, tube: 0.05,', 'HAUNCH_RING = { radius: 0.6, tube: 0.05,', 'B1: each haunch ring'),
     ('the ring on the inner boom', 'web/src/shed.ts', 'const cx = (xi + xo) / 2;', 'const cx = xi;', 'B1: each haunch ring'),
+    ('rings back on the spine feet', 'web/src/shed.ts', 'if (Math.sign(u) !== Math.sign(spine - uc)) haunch.setMatrixAt', 'if (true) haunch.setMatrixAt', 'B1 (round S2b)'),
+    ('rings on the spine feet only', 'web/src/shed.ts', 'if (Math.sign(u) !== Math.sign(spine - uc)) haunch.setMatrixAt', 'if (Math.sign(u) === Math.sign(spine - uc)) haunch.setMatrixAt', 'B1 (round S2b)'),
     ('the ribs at 1.38 again', 'web/src/shed.ts', 'export const RIB_DAY_LIFT = 2.0;', 'export const RIB_DAY_LIFT = 1.38;', 'B1: the ribs and rings'),
     ('the ribs too pale', 'web/src/shed.ts', 'export const RIB_DAY_LIFT = 2.0;', 'export const RIB_DAY_LIFT = 3.0;', 'B1: the ribs and rings'),
     ('imposts flat again', 'web/src/shed.ts', 'ARCADE_IMPOST = { tall: 0.35, out: 0.3,', 'ARCADE_IMPOST = { tall: 0.35, out: 0.08,', 'B3: each impost'),
@@ -76,4 +78,4 @@ with tempfile.TemporaryDirectory(prefix='kx-front-round25-', dir=out) as tmp:
             failures.append(label)
             print(f'[SURVIVED] {label}', flush=True)
     print(f'{caught}/{len(MUTATIONS)} mutations caught; baseline {len(passing)} tests passed; survivors: {failures}')
-    raise SystemExit(1 if failures or len(passing) != 3 else 0)
+    raise SystemExit(1 if failures or len(passing) != 4 else 0)
