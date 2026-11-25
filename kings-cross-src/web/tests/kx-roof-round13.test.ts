@@ -38,6 +38,15 @@ test('A5 (A5-1): from outside by day in auto and solid the crown glass is drawn 
     assert.equal(tint(under, layout, m), 0, `${m}: none inside`);
   }
   assert.ok(Math.abs(alpha(above, layout, 'xray') - 0.85 * 0.5) < 1e-9, 'x-ray: as before');
+  // round A5-1b: one day factor through dusk: the raise between its day and night values at a mid night level, and the depth write still on there
+  const day = S.crownDay as ((n: number) => number) | undefined;
+  assert.ok(day, 'crownDay is exported');
+  assert.equal(day(0), 1); assert.equal(day(1), 0);
+  const a0 = (alpha as (c: V3, l: typeof layout, m: string, n: number) => number)(above, layout, 'auto', 0), a6 = (alpha as (c: V3, l: typeof layout, m: string, n: number) => number)(above, layout, 'auto', 0.6), a1 = (alpha as (c: V3, l: typeof layout, m: string, n: number) => number)(above, layout, 'auto', 1);
+  assert.ok(a1 < a6 && a6 < a0 && a0 === alpha(above, layout, 'auto'), `alpha ${a0} by day, ${a6} at dusk, ${a1} at night`);
+  assert.equal(depth(above, layout, 0.6, 'auto'), true, 'dusk: still writes depth, no lattice');
+  assert.equal(depth(above, layout, 0.6, 'xray'), false, 'dusk in x-ray: none');
+  assert.ok(Math.abs((alpha as (c: V3, l: typeof layout, m: string, n: number) => number)(above, layout, 'xray', 0.6) - 0.85 * 0.5) < 1e-9, 'x-ray at dusk: as before');
   assert.equal(alpha(under, layout, 'auto'), 0, 'inside: as before');
   assert.equal(depth(above, layout, 0, 'xray'), false, 'x-ray writes none');
   assert.equal(tint(above, layout, 'xray'), 0, 'x-ray takes no tint');
@@ -58,11 +67,16 @@ test('A5 (A5-1): the crown\'s tone from outside goes most of the way to a pale g
   assert.ok(t.every((v, i) => Math.abs(v - (want[i] as number)) < 0.03), `tint ${t}`);
   assert.ok(Math.abs(C.bars.pitch - 1.2) < 0.15 && Math.abs(C.bars.width - 0.06) < 0.015, 'bars 0.06 m every 1.2 m');
   const glsl = new Glsl(L.CROWN_OUTSIDE_GLSL as string), env = { vars: {}, fns: {} };
-  const tone = (c: number[], k: number, bar: number): number[] => glsl.call('crownOutsideTone', [c, k, bar, 0.6], env) as number[];
+  const tone = (c: number[], k: number, bar: number, light = 1): number[] => glsl.call('crownOutsideTone', [c, k, bar, 0.6, light], env) as number[];
   const dark = [0.08, 0.1, 0.12], toned = tone(dark, 1, 0);
   const gap = (a: number[]): number => Math.abs(luma(a) - luma(want)) / Math.abs(luma(dark) - luma(want));
   assert.ok(gap(toned) < 0.4, `the dark glass taken most of the way to the tint (${gap(toned).toFixed(2)} of the gap left)`);
   assert.deepEqual(tone(dark, 0, 1), dark, 'level 0: as before');
+  // round A5-1b: the tint is lit by the glass's own light: a dusk's fifth of a day's takes it well under the day's tone, not to daylight-white
+  const dusk = tone(dark, 1, 0, 0.2);
+  assert.ok(luma(dusk) < 0.45 * luma(toned) && luma(dusk) > luma(dark) * 0.2, `at a fifth of the day's light the tone ${luma(dusk).toFixed(3)}, the day's ${luma(toned).toFixed(3)}`);
+  assert.deepEqual(tone(dark, 1, 0, 3), toned, 'more than a day\'s light: the day\'s tone');
+  assert.ok((L.CROWN_OUTSIDE_LINE as string).includes('reflectedLight.directDiffuse + reflectedLight.indirectDiffuse'), 'the light the program passes is the fragment\'s own');
   const barred = tone(dark, 1, 1);
   assert.ok(luma(barred) < 0.8 * luma(toned) && luma(barred) > 0.2 * luma(toned), 'a bar darker, not black');
   const bar = (s: number, fw: number): number => glsl.call('crownBar', [s, fw], env) as number;
@@ -87,14 +101,15 @@ test('A5 (A5-1): the intermediate rib caps 0.12-0.18 m wide in about #4a5058; th
   assert.ok(caps > 1000, `${caps} cap vertices in the cap colour`);
 });
 
-test('A5 (A5-1): from outside in the physical modes the slate flank is a smooth #3c4148 with fine seams every 0.5 m that fade to their mean, not the speckled tile', () => {
+test('A5 (A5-1): from outside in the physical modes the slate flank is a smooth grey about #5a616b (A5-1b, was #3c4148) with fine seams every 0.5 m that fade to their mean, not the speckled tile', () => {
   const F = L.SLATE_FLANK as { color: number; pitch: number; width: number } | undefined;
   assert.ok(F, 'SLATE_FLANK is exported');
-  assert.equal(F.color, 0x3c4148);
+  // round A5-1b: lifted toward #5a616b (the scorer: the flank read darker than front-d)
+  assert.ok(lin(F.color).every((v, i) => Math.abs(v - (lin(0x5a616b)[i] as number)) < 0.03), `flank ${F.color.toString(16)}`);
   assert.ok(Math.abs(F.pitch - 0.5) < 0.1, 'seams about 0.5 m apart');
   const glsl = new Glsl(L.SLATE_FLANK_GLSL as string), env = { vars: {}, fns: {} };
   const speckle = [0.3, 0.12, 0.2], flat = glsl.call('slateFlank', [speckle, 1, 0], env) as number[];
-  assert.ok(flat.every((v, i) => Math.abs(v - (lin(0x3c4148)[i] as number)) < 1e-4), 'level 1, off a seam: the flat colour, whatever the texel');
+  assert.ok(flat.every((v, i) => Math.abs(v - (lin(F.color)[i] as number)) < 1e-4), 'level 1, off a seam: the flat colour, whatever the texel');
   assert.deepEqual(glsl.call('slateFlank', [speckle, 0, 1], env), speckle, 'level 0 (x-ray, inside): the texture as before');
   const seamed = glsl.call('slateFlank', [speckle, 1, 1], env) as number[];
   assert.ok(luma(seamed) < 0.85 * luma(flat), 'a seam darker');

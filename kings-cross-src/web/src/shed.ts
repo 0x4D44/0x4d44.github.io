@@ -881,8 +881,13 @@ export function roofBarsOpacity(cam: V3, layout: Pick<ShedLayout, 'width' | 'len
  * mode multiplies the roof's opacity by (XRAY_OPACITY in 'xray'; 1 in 'auto' and 'solid', where the glazing's own opacity is already GLASS_OPACITY.near).
  */
 // round A5-1: in the physical modes CROWN_OUTSIDE.alpha (0.9), not CROWN_ALPHA (0.85); x-ray as before
-export function crownAlpha(cam: V3, layout: Pick<ShedLayout, 'width' | 'length' | 'crown'>, mode: RoofMode = 'auto'): number {
-  return crownOutside(cam, layout) * (mode === 'xray' ? CROWN_ALPHA * XRAY_OPACITY : CROWN_OUTSIDE.alpha);
+// round A5-1b: in the physical modes times crownDay, so the raise fades out through dusk (at night the program skips it, as before)
+export function crownAlpha(cam: V3, layout: Pick<ShedLayout, 'width' | 'length' | 'crown'>, mode: RoofMode = 'auto', night = 0): number {
+  return crownOutside(cam, layout) * (mode === 'xray' ? CROWN_ALPHA * XRAY_OPACITY : CROWN_OUTSIDE.alpha * crownDay(night));
+}
+/** Round A5-1b (the scorer: at dusk the far arcs showed again, the depth write cut at a night level of 0.5): the one day factor the crown's outside raise and depth write follow, 1 by day to 0 at full night. */
+export function crownDay(night: number): number {
+  return 1 - smoothstep(0.2, 1, night);
 }
 /** Round A5-1: the level of CROWN_OUTSIDE's tint and bars, and of SLATE_FLANK, for `cam`: crownOutside in the physical modes, 0 in x-ray (as before there). */
 export function crownTint(cam: V3, layout: Pick<ShedLayout, 'width' | 'length' | 'crown'>, mode: RoofMode = 'auto'): number {
@@ -892,10 +897,10 @@ export function crownTint(cam: V3, layout: Pick<ShedLayout, 'width' | 'length' |
  * Round A5-1 (gap-scan-2, A5 item 1: the far slope's rib caps showed through the crown as a crossed-arc lattice): whether the crown glass writes depth. The caps
  * and bars (shed-roof-bars) draw after it, transparent, so with no depth from the glass the far slope's drew over the near slope's glass at full strength. From
  * outside by day in the physical modes it writes depth, so they are hidden behind it and the near ones (proud of it) still draw; inside, at night and in x-ray
- * it writes none, as before.
+ * it writes none, as before. Round A5-1b: by day and through dusk, while crownDay is above 0.02, not cut at a night level of 0.5.
  */
 export function crownDepth(cam: V3, layout: Pick<ShedLayout, 'width' | 'length' | 'crown'>, night: number, mode: RoofMode = 'auto'): boolean {
-  return mode !== 'xray' && night < 0.5 && crownOutside(cam, layout) > 0;
+  return mode !== 'xray' && crownDay(night) > 0.02 && crownOutside(cam, layout) > 0;
 }
 
 /** How far outside the shed `cam` is, 0 anywhere inside it to 1 ROOF_EXTERIOR.fade metres out (a camera rising above the crown counts four times), in every roof mode. */
@@ -1437,7 +1442,7 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
     inverse.copy(group.matrixWorld).invert();
     local.copy(camera.position).applyMatrix4(inverse);
     crownAbove.value = crownOutside([local.x, local.y, local.z], layout);
-    glassAlpha.value = crownAlpha([local.x, local.y, local.z], layout, roofMode());
+    glassAlpha.value = crownAlpha([local.x, local.y, local.z], layout, roofMode(), windowNight.value);
     glassTint.value = crownTint([local.x, local.y, local.z], layout, roofMode());
     glassMat.depthWrite = crownDepth([local.x, local.y, local.z], layout, windowNight.value, roofMode());
   };

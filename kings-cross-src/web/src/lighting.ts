@@ -558,7 +558,10 @@ export const CROWN_ABOVE_LINE = `#ifdef USE_MAP\nfloat crownTexel = dot( sampled
  * by Schlick's Fresnel as CROWN_ABOVE's does, and fine bars `bars.width` wide every `bars.pitch` metres along the shed cross it down the slope, darkened by
  * `bars.shade`: a box-filtered stripe on the pixel's footprint, faded to its mean as the footprint nears half a pitch, so it never aliases. ASSUMED amounts.
  */
-export const CROWN_OUTSIDE = { alpha: 0.9, tint: 0xa9b6c2, weight: 0.7, bars: { pitch: 1.2, width: 0.06, shade: 0.45 } } as const;
+// round A5-1b (the scorer on c17d4b20: at dusk the crown went daylight-white, 87/109/136 -> 180/186/193 on shed-east-flank and front-oblique): the tint and its
+// sky are a reflectance lit by the light the glass actually takes, `light`, the fragment's diffuse irradiance over pi (Lambert's reflected light over its
+// albedo) as a share of `lightDay`, held to 1: a full day as A5-1, a dusk dimmed with its sky (ASSUMED reference: a day's sun and sky give 0.6-1.2)
+export const CROWN_OUTSIDE = { alpha: 0.9, tint: 0xa9b6c2, weight: 0.7, bars: { pitch: 1.2, width: 0.06, shade: 0.45 }, lightDay: 0.5 } as const;
 const crownTintRgb = new THREE.Color(CROWN_OUTSIDE.tint);
 const gl3 = (c: THREE.Color): string => `vec3( ${c.r.toFixed(4)}, ${c.g.toFixed(4)}, ${c.b.toFixed(4)} )`;
 /** a pitch-periodic stripe's coverage over [s - fw/2, s + fw/2] (the stripe on [0, width) of each pitch), faded to its mean `width / pitch` as fw nears half a pitch */
@@ -573,22 +576,24 @@ float ${name}( float s, float fw ) {
 }
 `;
 export const CROWN_OUTSIDE_GLSL = stripeGlsl('crownBar', CROWN_OUTSIDE.bars.pitch, CROWN_OUTSIDE.bars.width) + /* glsl */`
-vec3 crownOutsideTone( vec3 c, float k, float bar, float ndv ) {
+vec3 crownOutsideTone( vec3 c, float k, float bar, float ndv, float light ) {
   float fresnel = ${CROWN_ABOVE.f0.toFixed(2)} + ${(1 - CROWN_ABOVE.f0).toFixed(2)} * pow( 1.0 - clamp( ndv, 0.0, 1.0 ), 5.0 );
   vec3 t = mix( ${gl3(crownTintRgb)}, vec3( ${CROWN_ABOVE.sky.map((v) => v.toFixed(2)).join(', ')} ), ${CROWN_ABOVE.reflect.toFixed(2)} * fresnel );
-  vec3 toned = mix( c, t, ${CROWN_OUTSIDE.weight.toFixed(2)} ) * ( 1.0 - ${CROWN_OUTSIDE.bars.shade.toFixed(2)} * bar );
+  vec3 toned = mix( c, t * clamp( light, 0.0, 1.0 ), ${CROWN_OUTSIDE.weight.toFixed(2)} ) * ( 1.0 - ${CROWN_OUTSIDE.bars.shade.toFixed(2)} * bar );
   return mix( c, toned, k );
 }
 `;
 /** what addCrownAbove puts after CROWN_ABOVE_LINE when given a tint level: the glass's along-shed metres are its map's v times the shedGlass tile's 1.8 m */
-export const CROWN_OUTSIDE_LINE = `#ifdef USE_MAP\nfloat crownAlong = vMapUv.y * 1.8;\n#else\nfloat crownAlong = 0.0;\n#endif\nif ( uCrownTint * uCrownAbove * uCrownBelow > 0.0 ) outgoingLight = crownOutsideTone( outgoingLight, uCrownTint * uCrownAbove * uCrownBelow * smoothstep( 0.0, ${CROWN_ABOVE.full.toFixed(2)}, clamp( dot( normal, viewMatrix[ 1 ].xyz ), 0.0, 1.0 ) ), crownBar( crownAlong, fwidth( crownAlong ) ), dot( normal, normalize( vViewPosition ) ) );`;
+export const CROWN_OUTSIDE_LINE = `#ifdef USE_MAP\nfloat crownAlong = vMapUv.y * 1.8;\n#else\nfloat crownAlong = 0.0;\n#endif\nif ( uCrownTint * uCrownAbove * uCrownBelow > 0.0 ) outgoingLight = crownOutsideTone( outgoingLight, uCrownTint * uCrownAbove * uCrownBelow * smoothstep( 0.0, ${CROWN_ABOVE.full.toFixed(2)}, clamp( dot( normal, viewMatrix[ 1 ].xyz ), 0.0, 1.0 ) ), crownBar( crownAlong, fwidth( crownAlong ) ), dot( normal, normalize( vViewPosition ) ), dot( reflectedLight.directDiffuse + reflectedLight.indirectDiffuse, vec3( 0.2126, 0.7152, 0.0722 ) ) / max( dot( diffuseColor.rgb, vec3( 0.2126, 0.7152, 0.0722 ) ), 0.001 ) / ${CROWN_OUTSIDE.lightDay.toFixed(2)} );`;
 
 /**
  * Round A5-1 (gap-scan-2, A5 item 3: the slate flanks read as mottled speckle; R-kx-front-d shows them smooth dark grey with fine standing seams down the
  * slope). In the physical roof modes (the level shed.ts sets: 0 in x-ray, so the x-rayed roof is as before) the cladding's colour is `color`, flat, crossed
  * every `pitch` metres along the shed by a seam `width` wide, `shade` darker, box-filtered and faded as CROWN_OUTSIDE's bars are. ASSUMED amounts.
  */
-export const SLATE_FLANK = { color: 0x3c4148, pitch: 0.5, width: 0.03, shade: 0.35 } as const;
+// round A5-1b (the scorer: by day 59/66/73 -> 35/37/41 on shed-east-flank, darker than front-d): #3c4148 -> #626973, the brief's #5a616b lifted a step for the day
+// mean of 55-65 a channel (ASSUMED from the measured fall, not rendered)
+export const SLATE_FLANK = { color: 0x626973, pitch: 0.5, width: 0.03, shade: 0.35 } as const;
 export const SLATE_FLANK_GLSL = stripeGlsl('slateSeam', SLATE_FLANK.pitch, SLATE_FLANK.width) + /* glsl */`
 vec3 slateFlank( vec3 c, float k, float seam ) {
   return mix( c, ${gl3(new THREE.Color(SLATE_FLANK.color))} * ( 1.0 - ${SLATE_FLANK.shade.toFixed(2)} * seam ), k );

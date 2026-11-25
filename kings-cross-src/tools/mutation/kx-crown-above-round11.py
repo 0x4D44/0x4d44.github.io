@@ -39,12 +39,12 @@ MUTATIONS = [
     ('alpha lowered, not raised', 'web/src/lighting.ts', 'diffuseColor.a = mix( max( diffuseColor.a, uCrownAlpha ),', 'diffuseColor.a = mix( uCrownAlpha,', "the shed's glass carries it"),
     ('alpha raised at night too', 'web/src/lighting.ts', 'if ( uCrownAlpha * uCrownBelow > 0.0 )', 'if ( uCrownAlpha > 0.0 )', "the shed's glass carries it"),
     # re-anchored round A5-1: crownAlpha takes CROWN_OUTSIDE.alpha outside x-ray
-    ('alpha raised inside', 'web/src/shed.ts', "  return crownOutside(cam, layout) * (mode === 'xray' ? CROWN_ALPHA * XRAY_OPACITY : CROWN_OUTSIDE.alpha);", "  return (mode === 'xray' ? CROWN_ALPHA * XRAY_OPACITY : CROWN_OUTSIDE.alpha);", "the shed's glass carries it"),
+    ('alpha raised inside', 'web/src/shed.ts', "  return crownOutside(cam, layout) * (mode === 'xray' ? CROWN_ALPHA * XRAY_OPACITY : CROWN_OUTSIDE.alpha * crownDay(night));", "  return (mode === 'xray' ? CROWN_ALPHA * XRAY_OPACITY : CROWN_OUTSIDE.alpha * crownDay(night));", "the shed's glass carries it"),
     # re-anchored round A5-1: as above
-    ('x-ray mode ignored', 'web/src/shed.ts', "(mode === 'xray' ? CROWN_ALPHA * XRAY_OPACITY : CROWN_OUTSIDE.alpha)", "(mode === 'xray' ? CROWN_OUTSIDE.alpha : CROWN_OUTSIDE.alpha)", "the shed's glass carries it"),
+    ('x-ray mode ignored', 'web/src/shed.ts', "(mode === 'xray' ? CROWN_ALPHA * XRAY_OPACITY : CROWN_OUTSIDE.alpha * crownDay(night))", "(mode === 'xray' ? CROWN_OUTSIDE.alpha * crownDay(night) : CROWN_OUTSIDE.alpha * crownDay(night))", "the shed's glass carries it"),
     ('alpha too low', 'web/src/lighting.ts', 'export const CROWN_ALPHA = 0.85;', 'export const CROWN_ALPHA = 0.5;', "the shed's glass carries it"),
-    ('alpha never set', 'web/src/shed.ts', '    glassAlpha.value = crownAlpha([local.x, local.y, local.z], layout, roofMode());\n', '', "the shed's glass carries it"),
-    ('alpha through the material opacity', 'web/src/shed.ts', '    glassAlpha.value = crownAlpha([local.x, local.y, local.z], layout, roofMode());\n', '    glassAlpha.value = 0; glassMat.opacity = Math.max(glassMat.opacity, crownAlpha([local.x, local.y, local.z], layout, roofMode()));\n', "the shed's glass carries it"),
+    ('alpha never set', 'web/src/shed.ts', '    glassAlpha.value = crownAlpha([local.x, local.y, local.z], layout, roofMode(), windowNight.value);\n', '', "the shed's glass carries it"),
+    ('alpha through the material opacity', 'web/src/shed.ts', '    glassAlpha.value = crownAlpha([local.x, local.y, local.z], layout, roofMode(), windowNight.value);\n', '    glassAlpha.value = 0; glassMat.opacity = Math.max(glassMat.opacity, crownAlpha([local.x, local.y, local.z], layout, roofMode(), windowNight.value));\n', "the shed's glass carries it"),
     ('no sky reflection', 'web/src/lighting.ts', 'f0: 0.04, reflect: 0.35', 'f0: 0.04, reflect: 0.0', 'round 12'),
     # re-anchored round A5-1: CROWN_OUTSIDE_GLSL has a Fresnel of its own; this one is CROWN_ABOVE's
     ('reflection inverted', 'web/src/lighting.ts', 'pow( 1.0 - clamp( ndv, 0.0, 1.0 ), 5.0 );\n  vec3 lifted', 'pow( clamp( ndv, 0.0, 1.0 ), 5.0 );\n  vec3 lifted', 'round 12'),
