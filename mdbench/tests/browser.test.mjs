@@ -111,7 +111,7 @@ const CM = (realIndex.pages || []).find((p) => p.id === "code-mode");
 if (CM) {
   const cm = JSON.parse(await readFile(join(ROOT, "mdbench/data", CM.file), "utf8"));
   PAGES.push({ name: "code-mode", url: "/mdbench/code-mode.html", expect: `({ tiles: document.querySelectorAll("#tiles .tile").length, tasks: document.querySelectorAll("#task-table tbody tr").length, runs: document.querySelectorAll("#run-table tbody tr").length, current: document.querySelector("nav a[aria-current]")?.textContent })`,
-    check: (r) => r.tiles === 7 && r.tasks === cm.tasks.length && r.runs === cm.runs.length && r.current === CM.title });
+    check: (r) => r.tiles === 6 && r.tasks === cm.tasks.length && r.runs === cm.runs.length && r.current === CM.title });
 }
 
 const failures = [];

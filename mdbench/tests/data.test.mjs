@@ -63,7 +63,7 @@ test("code-mode: every run has an arm, a known task and the numbers the page rea
   for (const r of d.runs) {
     assert.ok(["plain", "code"].includes(r.arm), r.arm);
     assert.ok(tasks.has(r.task), r.task);
-    for (const k of ["cost_usd", "wall_secs", "api_secs", "turns", "cache_read_tokens", "output_tokens"])
+    for (const k of ["cost_usd", "wall_secs", "api_secs", "cache_read_tokens", "output_tokens"])
       assert.equal(typeof r[k], "number", `${r.task} ${r.arm} ${k}`);
   }
 });

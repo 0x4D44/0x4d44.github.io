@@ -36,7 +36,7 @@ td.d { font-family: var(--mono); font-size: 0.86em; white-space: nowrap; }
 
 <section id="per-task">
   <div class="stack col"><div class="eyebrow">02 · Per exercise</div><h2>Mean per run, plain → Code Mode</h2>
-  <p class="note">Each cell is the mean over that arm's runs of the exercise; the change is Code Mode against plain. Green is better (lower cost, tokens, turns or time; higher score).</p></div>
+  <p class="note">Each cell is the mean over that arm's runs of the exercise; the change is Code Mode against plain. Green is better (lower cost, tokens or time; higher score).</p></div>
   <div class="panel"><div class="tw" id="task-table"></div></div>
 </section>
 
@@ -70,7 +70,6 @@ const M = [
   ["cost_usd", "Cost", true, (v) => "$" + v.toFixed(2)],
   ["cache_read_tokens", "Cache read", true, (v) => (v / 1e6).toFixed(2) + "M"],
   ["output_tokens", "Output", true, (v) => (v / 1e3).toFixed(1) + "k"],
-  ["turns", "Turns", true, (v) => v.toFixed(0)],
   ["api_secs", "Model time", true, (v) => (v / 60).toFixed(1) + " min"],
   ["wall_secs", "Wall time", true, (v) => (v / 60).toFixed(1) + " min"],
 ];
