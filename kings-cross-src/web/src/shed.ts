@@ -673,7 +673,9 @@ export function lunetteBars(uc: number, springing: number, r = R, spacing = 1.6)
  * strips): `split` transoms to each third of the radius where the lunette has one, the new ones `width` m deep (a little lighter than the 0.09 m bars), so
  * seven rows of panes over the crown, each GLAZING.tier / 3 tall (materials.ts GABLE_SHEET.row: a pane's own tone is held over these).
  */
-export const GABLE_TRANSOM = { split: 3, width: 0.07 } as const;
+// round F16b (front-round-16 score, B3: from inside an even graph paper of near-square cells, where shed-a shows about 3 main transoms and tall lights): a
+// tier split in 2, not 3, so 5 rows over the crown and panes 1.67 times as tall as wide, and the new transoms 0.045 m deep, about half the mullions' 0.09
+export const GABLE_TRANSOM = { split: 2, width: 0.045 } as const;
 /** The bars of one north gable: the window bars above `from`, mullions trimmed to start there, and GABLE_TRANSOM's transoms between the lunette's. */
 export function gableBars(uc: number, springing: number, from: number, r = R): BarSpec[] {
   const out: BarSpec[] = [];

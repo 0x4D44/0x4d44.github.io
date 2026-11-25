@@ -70,10 +70,11 @@ test('A6 (F12): with glintEven 0 (inside, on the plane, night, every other windo
   // re-pinned round F13: two more new lines, the secondary bars (gq, and gt darkened by them); it was three. Re-pinned round F13b: and the thickening alpha
   // last (kx-front-round33), six
   // re-pinned round F16 (front-round-15c score, A6: pane-to-pane life): and the pane cell of the gables' new rows (gn) before gt, seven
-  const oldBody = body.split('\n').filter(l => !/^vec2 gn =|^vec3 gt =|^float gq =|^gt \*=|^float gr =|uGlintEven \);$/.test(l)).join('\n');
-  assert.ok(oldBody.split('\n').length === body.split('\n').length - 7, 'seven new lines');
+  // re-pinned round F16b: the pane's index (gi) and its offset, leaning from its neighbours' (go), eight
+  const oldBody = body.split('\n').filter(l => !/^vec2 gi =|^float go =|^vec3 gt =|^float gq =|^gt \*=|^float gr =|uGlintEven \);$/.test(l)).join('\n');
+  assert.ok(oldBody.split('\n').length === body.split('\n').length - 8, 'eight new lines');
   const lines = body.split('\n').filter(l => l.trim());
-  assert.deepEqual(lines.slice(-8).map(l => l.split(' ')[0]), ['gl_FragColor.a', 'vec2', 'vec3', 'float', 'gt', 'float', 'gl_FragColor.rgb', 'gl_FragColor.a'], 'the new lines come last, after the old alpha');
+  assert.deepEqual(lines.slice(-9).map(l => l.split(' ')[0]), ['gl_FragColor.a', 'vec2', 'float', 'vec3', 'float', 'gt', 'float', 'gl_FragColor.rgb', 'gl_FragColor.a'], 'the new lines come last, after the old alpha');
   for (const fog of [day, night]) for (const [x, y, cos] of [[3, 15, 1], [-12, 20, 0.3], [20, 11, 0.7]] as const) {
     const run = (src: string, g: Glsl): number[] => {
       const view = [Math.sqrt(1 - cos * cos), 0, cos];

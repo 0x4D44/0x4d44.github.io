@@ -21,15 +21,15 @@ if out == src or out.is_relative_to(src) or src.is_relative_to(out):
 out.mkdir(parents=True, exist_ok=True)
 
 MUTATIONS = [
-    ('per pixel, not per pane', 'web/src/materials.ts', 'vec2 gn = ( floor( vec2(', 'vec2 gn = ( ( vec2(', 'holds its own tone'),
-    ('the old tall panes', 'web/src/materials.ts', 'row: GLAZING.tier / 3,', 'row: GLAZING.tier,', 'holds its own tone'),
-    ('loud panes', 'web/src/materials.ts', 'pane: 0.12, graze:', 'pane: 0.2, graze:', 'holds its own tone'),
-    ('faint panes', 'web/src/materials.ts', 'pane: 0.12, graze:', 'pane: 0.07, graze:', 'holds its own tone'),
+    ('per pixel, not per pane', 'web/src/materials.ts', 'vec2 gi = floor( vec2(', 'vec2 gi = ( vec2(', 'holds its own tone'),
+    ('the old tall panes', 'web/src/materials.ts', 'row: GLAZING.tier / 2,', 'row: GLAZING.tier,', 'holds its own tone'),
+    ('loud panes', 'web/src/materials.ts', 'pane: 0.07, apart:', 'pane: 0.14, apart:', 'holds its own tone'),
+    ('faint panes', 'web/src/materials.ts', 'pane: 0.07, apart:', 'pane: 0.03, apart:', 'holds its own tone'),
     ('no more aslant', 'web/src/materials.ts', 'graze: 0.25,', 'graze: 0,', 'holds its own tone'),
     ('the rows inside too', 'web/src/materials.ts', '${GLAZING.tier} ) ) + 0.5 ) * vec2( ${GLAZING.spacing}, ${GLAZING.tier} ) + vec2( uPaneX', '${glslFloat(GABLE_SHEET.row)} ) ) + 0.5 ) * vec2( ${GLAZING.spacing}, ${glslFloat(GABLE_SHEET.row)} ) + vec2( uPaneX', 'holds its own tone'),
-    ('no new transoms', 'web/src/shed.ts', 'if (k % GABLE_TRANSOM.split === 0) continue;', 'continue;', 'transoms every third'),
-    ('heavy transoms', 'web/src/shed.ts', 'split: 3, width: 0.07 }', 'split: 3, width: 0.15 }', 'transoms every third'),
-    ('transoms off the grid', 'web/src/shed.ts', '(r * k) / (3 * GABLE_TRANSOM.split), half', '(r * k) / (3 * GABLE_TRANSOM.split) + 0.3, half', 'transoms every third'),
+    ('no new transoms', 'web/src/shed.ts', 'if (k % GABLE_TRANSOM.split === 0) continue;', 'continue;', 'carries transoms'),
+    ('heavy transoms', 'web/src/shed.ts', 'split: 2, width: 0.045 }', 'split: 2, width: 0.15 }', 'carries transoms'),
+    ('transoms off the grid', 'web/src/shed.ts', '(r * k) / (3 * GABLE_TRANSOM.split), half', '(r * k) / (3 * GABLE_TRANSOM.split) + 0.3, half', 'carries transoms'),
 ]
 
 def run(work: Path) -> subprocess.CompletedProcess[str]:
