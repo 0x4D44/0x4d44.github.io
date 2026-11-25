@@ -40,7 +40,8 @@ test('B7 round 2 night: distinct pools, the floor midway between lamps at most 6
     const at = (t: number) => night(x + dx * t, z + dz * t);
     const peak = at(0), mid = at(6.1);
     assert.ok(peak >= 150 && peak <= 182, `peak ${peak.toFixed(1)} at ${x.toFixed(1)}, ${z.toFixed(1)}`);
-    assert.ok(mid >= 45 && mid <= 0.6 * peak, `midway ${mid.toFixed(1)} against peak ${peak.toFixed(1)}`);
+    // re-pinned in round 3 (the round-2 score: darker gaps, spill 0.2 -> 0.1): the floor was 45, now 25 (round 3's own test holds a quarter of the peak)
+    assert.ok(mid >= 25 && mid <= 0.6 * peak, `midway ${mid.toFixed(1)} against peak ${peak.toFixed(1)}`);
     // a pool, not a swell: by 3 m out the floor is already under 60% of the peak, and it falls all the way to the midway point
     assert.ok(at(3) <= 0.6 * peak && at(3) >= mid, `3 m out ${at(3).toFixed(1)}`);
     assert.ok(at(1) >= 0.85 * peak, `1 m out ${at(1).toFixed(1)}: the pool's own width`);
@@ -53,6 +54,7 @@ test('B7 round 2 day: the floor by a vault wall at about 0.6 of the floor under 
     const wall = shedFloorLight(layout, heads, ...shedToWorld(layout, layout.spine - 2 * R + 1.5, v)).day;
     const east = shedFloorLight(layout, heads, ...shedToWorld(layout, layout.spine + 2 * R - 1.5, v)).day;
     assert.ok(Math.abs(crown - 1) < 1e-9, `under the crown ${crown}`);
+    // round 3 re-pinned this to 0.32-0.41 (the wall at 0.35); round 3b (the round-3 score: the wrong way against R-a) restores round 2's band
     for (const k of [wall, east]) assert.ok(k >= 0.57 && k <= 0.66, `by the wall ${k.toFixed(3)} at v ${v}`);
   }
 });

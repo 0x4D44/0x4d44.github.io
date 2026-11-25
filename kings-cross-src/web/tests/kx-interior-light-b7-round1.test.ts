@@ -50,9 +50,9 @@ const block = shedFloorGlsl().replaceAll('reflectedLight.directDiffuse', 'rlDire
 const run = new Glsl('uniform vec4 uShedFloorRect;').snippet(block);
 
 /** The floor's outgoing light at (x, z) as the patched shader works it out: night and day are the levels of uShedFloorNight and uShedFloorDay. */
-function shade(x: number, z: number, night: number, day: number, albedo = ALBEDO): { out: number[]; emissive: number[]; direct: number[]; indirect: number[] } {
+function shade(x: number, z: number, night: number, day: number, albedo = ALBEDO, back = 1): { out: number[]; emissive: number[]; direct: number[]; indirect: number[] } {
   const cam = new THREE.PerspectiveCamera(60, 1.5, 0.1, 1000);
-  cam.position.set(x - 5, PLATFORM_HEIGHT + 1.7, z + 3);
+  cam.position.set(x - 5 * back, PLATFORM_HEIGHT + 1.7, z + 3 * back);
   cam.lookAt(x, PLATFORM_HEIGHT, z);
   cam.updateMatrixWorld(true);
   const v = new THREE.Vector3(x, PLATFORM_HEIGHT, z).applyMatrix4(cam.matrixWorldInverse).negate();
@@ -87,10 +87,12 @@ test('B7 night: a pool under each shed lamp, brighter than midway along the row 
   const under = shade(...lamp, 1, 0), between = shade(...mid, 1, 0), edge = shade(...across, 1, 0);
   // round 1b: on the screen (the lead: 2.5-3:1, under a lamp 150-170 so it does not clip, midway 55-65)
   const u = screen(luma(under.out)), m = screen(luma(between.out)), ratio = u / m;
-  assert.ok(ratio >= 2.2 && ratio <= 3.2, `under a lamp / midway on the screen ${u.toFixed(1)} / ${m.toFixed(1)} = ${ratio.toFixed(3)} (a pool, not a flat wash, nor a spot)`);
-  assert.ok(u >= 140 && u <= 180 && m >= 45 && m <= 75, `under ${u.toFixed(1)}, midway ${m.toFixed(1)}`);
+  // re-pinned in round 3 (the round-2 score asked for darker gaps, spill 0.2 -> 0.1), each band its old width: ratio was 2.2-3.2, midway 45-75, across 1.5-3.2;
+  // and in round 3b (gaps near 0.3 of the peak, at least 45: sigma 1.2, spill 0.18): ratio was 5.1-6.1, midway 20-50, across 4.5-6.2
+  assert.ok(ratio >= 3.0 && ratio <= 4.0, `under a lamp / midway on the screen ${u.toFixed(1)} / ${m.toFixed(1)} = ${ratio.toFixed(3)} (a pool, not a flat wash, nor a spot)`);
+  assert.ok(u >= 140 && u <= 180 && m >= 40 && m <= 70, `under ${u.toFixed(1)}, midway ${m.toFixed(1)}`);
   const side = u / screen(luma(edge.out));
-  assert.ok(side >= 1.5 && side <= 3.2, `under a lamp / 4.5 m across ${side.toFixed(3)}`);
+  assert.ok(side >= 2.8 && side <= 4.5, `under a lamp / 4.5 m across ${side.toFixed(3)}`);
   assert.ok(luma(between.out) > luma(BASE) * 2, 'midway is still lamp-lit, not dark');
   const e = under.emissive;
   assert.ok(e[0]! > e[1]! && e[1]! > e[2]! && e[2]! / e[0]! > 0.45 && e[2]! / e[0]! < 0.8, `warm white, not amber nor cool: ${e.map((c) => c.toFixed(4))}`);
@@ -103,6 +105,12 @@ test('B7 night: a pool under each shed lamp, brighter than midway along the row 
   // the shader matches its CPU model (shedFloorLight) at the lamp, to the map's 8 bits
   const cpu = shedFloorLight(layout, heads, ...lamp);
   assert.ok(Math.abs(e[1]! / ALBEDO[1]! / new THREE.Color(SHED_POOL.tint).g - cpu.pool) < 0.02, `shader ${e[1]! / ALBEDO[1]!} against CPU ${cpu.pool}`);
+  // round 3b: and midway, seen from near and from about 70 m (the far gaps' darkening, SHED_POOL.far, is the shader's, by the camera's distance)
+  for (const back of [1, 12]) {
+    const seen = shade(...mid, 1, 0, ALBEDO, back), dist = Math.hypot(5 * back, 1.7, 3 * back);
+    const want = shedFloorLight(layout, heads, ...mid, dist).pool;
+    assert.ok(Math.abs(seen.emissive[1]! / ALBEDO[1]! / new THREE.Color(SHED_POOL.tint).g - want) < 0.02, `midway from ${dist.toFixed(1)} m: shader ${(seen.emissive[1]! / ALBEDO[1]! / new THREE.Color(SHED_POOL.tint).g).toFixed(4)} against CPU ${want.toFixed(4)}`);
+  }
 });
 
 test('B7: no pools by day, and none outside the shed (the open platform ends keep their own lamps)', () => {
@@ -126,7 +134,7 @@ test('B7 day: the floor\'s light is full under the crown and falls toward the va
   const crown = shade(cx, cz, 0, 1), flank = shade(wx, wz, 0, 1);
   assert.ok(Math.abs(crown.indirect[1]! - BASE[1]!) < 1e-4, 'under the crown, as before');
   const k = flank.indirect[1]! / BASE[1]!;
-  // re-pinned in round 2 (b7-round-1-score: wall about 0.6, not 0.78), same width of band: was 0.75-0.86
+  // re-pinned in round 2 (b7-round-1-score: wall about 0.6, not 0.78), same width of band: was 0.75-0.86; round 3 moved it to 0.32-0.43 and round 3b (the round-3 score: the wrong way against R-a) restores round 2's
   assert.ok(k >= 0.57 && k <= 0.68 && Math.abs(k - SHED_CROWN_FLOOR.flank) < 0.03, `by the wall ${k.toFixed(3)}`);
   // round 1b: the floor's day light in the shade is mostly the direct term (the sun's, lifted by lighting.ts SHED_GLASS), so the factor takes it too
   assert.ok(Math.abs(flank.direct[1]! / BASE[1]! - k) < 1e-6, 'the direct light falls with it');
