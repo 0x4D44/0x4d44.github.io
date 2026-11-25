@@ -128,8 +128,8 @@ test('A6 (F11b): with glintEven at 1 the glint is one even sheen: over a 60 m by
   const streaked = worst(0), flat = worst(1);
   assert.ok(streaked > 30, `the streaks as round six made them: ${streaked.toFixed(1)} levels between neighbours`);
   // re-pinned round F12 (front-round-11b score, A6: the panes want a little life): GABLE_SHEET offsets each pane by up to 4%, so neighbours may differ by up to
-  // 7 levels (kx-front-round32 pins it); the streaks' tens of levels stay out. Was 2. Re-pinned round F13: 9% offsets and an 8% band, so 16 levels
-  assert.ok(flat <= 16, `even: ${flat.toFixed(2)} levels between neighbouring points`);
+  // 7 levels (kx-front-round32 pins it); the streaks' tens of levels stay out. Was 2. Re-pinned round F13: 9% offsets and an 8% band, so 16 levels. Re-pinned round F13b: 12% panes and an 8% cloud, 26
+  assert.ok(flat <= 26, `even: ${flat.toFixed(2)} levels between neighbouring points`);
   const mid = shade(1, 30, 15);
   assert.ok(Math.max(...mid) < 140 && mid[2]! > mid[0]!, `still dark blue-grey with a sheen: ${mid.map(v => v.toFixed(0)).join(', ')}`);
   // round F12: GABLE_SHEET now sets the colour where glintEven is 1, so the flattening shows in the alpha: what of the room behind shows through must not
@@ -146,5 +146,7 @@ test('A6 (F11b): with glintEven at 1 the glint is one even sheen: over a 60 m by
     aw = Math.max(aw, Math.abs(a - alpha(1, x + 0.75, y)), Math.abs(a - alpha(1, x, y + 0.75)));
   }
   assert.ok(aw < 0.01, `the alpha even between neighbours: ${aw.toFixed(4)}`);
-  assert.ok(lo >= 0.86 && hi <= 0.91, `the alpha near the sheet's own: ${lo.toFixed(3)} to ${hi.toFixed(3)}`);
+  // re-pinned round F13b (front-round-13 score, A6: the ribs showed through aslant): GABLE_THICKEN cuts what comes through by up to 0.57 off the normal
+  // (kx-front-round33), so from this oblique eye the glint's 0.86-0.89 thickens to at most about 0.954; it was 0.91
+  assert.ok(lo >= 0.86 && hi <= 0.96, `the alpha near the sheet's own: ${lo.toFixed(3)} to ${hi.toFixed(3)}`);
 });

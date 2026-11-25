@@ -42,27 +42,29 @@ test('A6 (F12): from outside by day head-on the gable glass sits at front-d\'s s
 
 // re-pinned round F13 (front-round-12 score, A6: at 4% the life was barely seen): the pane offset is 9% and the band 8%, so within 18% of the mean, and
 // neighbours within 16 levels (two panes at either end of 9% on the bluest channel, about 86); it was 8% and 7 levels
-test('A6 (F12): some life in the panes, no mosaic: within 18% of the sheet\'s mean everywhere, neighbours within 16 levels, and not all the same', () => {
+// re-pinned round F13b: 12% panes and an 8% cloud, so within 21% and neighbours within 26 levels (kx-front-round33); were 18% and 16
+test('A6 (F12): some life in the panes, no mosaic: within 21% of the sheet\'s mean everywhere, neighbours within 26 levels, and not all the same', () => {
   for (const cos of [1, 0.5]) {
     const g = grid((x, y) => shade(1, x, y, cos)).flat();
     const mean = [0, 1, 2].map(c => g.reduce((a, p) => a + p[c]!, 0) / g.length);
-    for (const p of g) for (const c of [0, 1, 2]) assert.ok(Math.abs(p[c]! / mean[c]! - 1) <= 0.18, `within 18%: ${p[c]} against ${mean[c]}`);
+    for (const p of g) for (const c of [0, 1, 2]) assert.ok(Math.abs(p[c]! / mean[c]! - 1) <= 0.21, `within 21%: ${p[c]} against ${mean[c]}`);
     const spread = Math.max(...g.map(p => p[1]!)) - Math.min(...g.map(p => p[1]!));
     assert.ok(spread >= 4, `some life: ${spread.toFixed(1)} levels`);
     const rows = grid((x, y) => shade(1, x, y, cos));
     let worst = 0;
     rows.forEach((col, i) => col.forEach((p, j) => { for (const q of [rows[i + 1]?.[j], col[j + 1]]) if (q) worst = Math.max(worst, ...p.map((v, c) => Math.abs(v - q[c]!))); }));
-    assert.ok(worst <= 16, `neighbours ${worst.toFixed(1)} levels apart at most`);
+    assert.ok(worst <= 26, `neighbours ${worst.toFixed(1)} levels apart at most`);
   }
 });
 
 test('A6 (F12): with glintEven 0 (inside, on the plane, night, every other window) the colour and alpha are exactly the old glint\'s', () => {
   const old = new Glsl('');
-  // re-pinned round F13: two more new lines, the secondary bars (gq, and gt darkened by them); it was three
+  // re-pinned round F13: two more new lines, the secondary bars (gq, and gt darkened by them); it was three. Re-pinned round F13b: and the thickening alpha
+  // last (kx-front-round33), six
   const oldBody = body.split('\n').filter(l => !/^vec3 gt =|^float gq =|^gt \*=|^float gr =|uGlintEven \);$/.test(l)).join('\n');
-  assert.ok(oldBody.split('\n').length === body.split('\n').length - 5, 'five new lines');
+  assert.ok(oldBody.split('\n').length === body.split('\n').length - 6, 'six new lines');
   const lines = body.split('\n').filter(l => l.trim());
-  assert.deepEqual(lines.slice(-6).map(l => l.split(' ')[0]), ['gl_FragColor.a', 'vec3', 'float', 'gt', 'float', 'gl_FragColor.rgb'], 'the new lines come last, after the old alpha, and only the last writes the colour');
+  assert.deepEqual(lines.slice(-7).map(l => l.split(' ')[0]), ['gl_FragColor.a', 'vec3', 'float', 'gt', 'float', 'gl_FragColor.rgb', 'gl_FragColor.a'], 'the new lines come last, after the old alpha');
   for (const fog of [day, night]) for (const [x, y, cos] of [[3, 15, 1], [-12, 20, 0.3], [20, 11, 0.7]] as const) {
     const run = (src: string, g: Glsl): number[] => {
       const view = [Math.sqrt(1 - cos * cos), 0, cos];
@@ -82,5 +84,6 @@ test('A6 (F12): the gables\' lattice girder is front-d\'s: 2.2-2.6 m deep, chord
   const bars = shed.gableGirder(0, 0, 9.5);
   const n = Math.max(2, Math.round((2 * (Math.sqrt((SHED_SPAN_WIDTH / 2) ** 2 - (9.5 - G.depth) ** 2) - 0.12)) / G.panel));
   // re-pinned round F13 (front-round-12 score: twice the diagonals and a vertical at each panel point; kx-front-round33): it was a chord and one diagonal a panel
-  assert.equal(bars.length, 3 * n + 2, 'a chord, two diagonals a panel and a vertical at each panel point');
+  // re-pinned round F13b: one diagonal a panel again, at half the panel (n follows G.panel); it was 3n + 2
+  assert.equal(bars.length, 2 * n + 2, 'a chord, a diagonal a panel and a vertical at each panel point');
 });

@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import type { KxData } from '../../core/osm.ts';
 import { readFileSync } from 'node:fs';
 import { SHED_SPAN_WIDTH, shedLayout } from '../../core/station.ts';
+import * as materials from '../src/materials.ts';
 import { GLAZING, material, windowNight } from '../src/materials.ts';
 import * as shed from '../src/shed.ts';
 import { Glsl, Mat } from './glsl.ts';
@@ -41,20 +42,23 @@ test('A6 (F13): from outside by day the gable glass lets through half the room i
   assert.ok(run(1, 0.4, 15)[3]! >= 0.93, 'and the glint keeps it at least that');
 });
 
-test('A6 (F13): the panes carry 6-10% of life each and an 8% diagonal band spans several panes; neighbouring panes stay within 16 levels', () => {
+// re-pinned round F13b (front-round-13 score, A6: life still modest): the pane offset is 12% and the band a cloud of up to 8%, so no more than 21% off the
+// mean, neighbours within 26 levels (two panes at either end of 12% on the bluest channel, about 86, and the cloud's slope over a pane); were 19% and 16
+test('A6 (F13): the panes carry 10-12% of life each and a cloud of up to 8% spans several panes; neighbouring panes stay within 26 levels', () => {
   const tone = (i: number, j: number): number => run(1, (i + 0.25) * P, GLAZING.springing + (j + 0.5) * GLAZING.tier)[2]!;
   const t = Array.from({ length: 40 }, (_, i) => Array.from({ length: 5 }, (_, j) => tone(i - 20, j)));
   const all = t.flat(), mean = all.reduce((a, b) => a + b, 0) / all.length;
   assert.ok(Math.max(...all) / mean - 1 >= 0.1 && 1 - Math.min(...all) / mean >= 0.1, `life: ${(Math.min(...all) / mean).toFixed(3)} to ${(Math.max(...all) / mean).toFixed(3)}`);
-  assert.ok(Math.max(...all) / mean - 1 <= 0.19 && 1 - Math.min(...all) / mean <= 0.19, 'and no more than pane plus band');
+  assert.ok(Math.max(...all) / mean - 1 <= 0.21 && 1 - Math.min(...all) / mean <= 0.21, 'and no more than pane plus band');
   let worst = 0;
   t.forEach((col, i) => col.forEach((v, j) => { for (const q of [t[i + 1]?.[j], col[j + 1]]) if (q !== undefined) worst = Math.max(worst, Math.abs(v - q)); }));
-  assert.ok(worst <= 16, `neighbours ${worst.toFixed(1)} levels apart at most`);
-  // the band: averaged over 3 by 3 panes (so the panes' own offsets mostly cancel) the tone still swings 8% or more, slowly: neighbouring blocks within 6 levels
+  assert.ok(worst <= 26, `neighbours ${worst.toFixed(1)} levels apart at most`);
+  // the cloud: averaged over 3 by 3 panes (so the panes' own offsets mostly cancel) the tone still swings, slowly (re-pinned round F13b: the cloud's swing along
+  // one row is under the old band's, 5% or more where it was 8%; and with 12% panes neighbouring blocks within 9 levels, where it was 6)
   const block = (i: number, j: number): number => { let a = 0; for (let di = 0; di < 3; di++) for (let dj = 0; dj < 3; dj++) a += t[i + di]![j + dj]!; return a / 9; };
   const blocks = Array.from({ length: 38 }, (_, i) => block(i, 1));
-  assert.ok((Math.max(...blocks) - Math.min(...blocks)) / mean >= 0.08, `a band across the panes: ${((Math.max(...blocks) - Math.min(...blocks)) / mean).toFixed(3)}`);
-  blocks.slice(1).forEach((b, i) => assert.ok(Math.abs(b - blocks[i]!) <= 6, `soft: ${Math.abs(b - blocks[i]!).toFixed(1)}`));
+  assert.ok((Math.max(...blocks) - Math.min(...blocks)) / mean >= 0.05, `a cloud across the panes: ${((Math.max(...blocks) - Math.min(...blocks)) / mean).toFixed(3)}`);
+  blocks.slice(1).forEach((b, i) => assert.ok(Math.abs(b - blocks[i]!) <= 9, `soft: ${Math.abs(b - blocks[i]!).toFixed(1)}`));
 });
 
 test('A6 (F13): from outside a light secondary bar runs down the middle of each pane (twice the panes), darker by a fifth or more over about 0.1 m; none from inside', () => {
@@ -70,15 +74,65 @@ test('A6 (F13): from outside a light secondary bar runs down the middle of each 
   assert.ok(Math.abs(a[2]! - b[2]!) < 1, `no bar from inside: ${a[2]} against ${b[2]}`);
 });
 
-test('A6/B3 (F13): the girder has both diagonals in every panel and a vertical at each panel point, its webs 0.15 m at most so it stays an open truss', () => {
+// re-pinned round F13b (front-round-13 score, B3: the X read as cross-hatching; R-a is a Warren with open V panels): one diagonal a panel, alternating, the
+// panel half F12's, so twice its diagonals and none crossing; it was two a panel
+test('A6/B3 (F13): the girder is a Warren of single diagonals at half F12\'s panel, twice its diagonals, none crossing, and a vertical at each panel point, its webs 0.15 m at most', () => {
   const G = shed.GABLE_GIRDER, bars = shed.gableGirder(0, 0, 9.5);
   const n = Math.max(2, Math.round((2 * (Math.sqrt((SHED_SPAN_WIDTH / 2) ** 2 - (9.5 - G.depth) ** 2) - 0.12)) / G.panel));
   const verticals = bars.filter(b => b.kind === 'mullion' && b.rotZ === 0), diagonals = bars.filter(b => b.kind === 'mullion' && b.rotZ !== 0);
-  assert.equal(diagonals.length, 2 * n, 'two diagonals a panel');
-  assert.equal(diagonals.filter(b => b.rotZ > 0).length, n, 'one each way');
+  assert.equal(diagonals.length, n, 'one diagonal a panel');
+  assert.ok(Math.abs(G.panel - 2.3 / 2) < 1e-9, `half F12's 2.3 m panel: ${G.panel}`);
+  const n12 = Math.max(2, Math.round((2 * (Math.sqrt((SHED_SPAN_WIDTH / 2) ** 2 - (9.5 - G.depth) ** 2) - 0.12)) / 2.3));
+  assert.ok(diagonals.length >= 2 * n12 - 1 && diagonals.length <= 2 * n12 + 1, `about twice F12's ${n12}: ${diagonals.length}`);
+  const sorted = [...diagonals].sort((p, q) => p.c[0] - q.c[0]);
+  sorted.forEach((d, i) => { if (i) assert.ok(Math.sign(d.rotZ) === -Math.sign(sorted[i - 1]!.rotZ), 'alternating, a Warren'); });
+  const span = Math.max(...verticals.map(v => v.c[0])) - Math.min(...verticals.map(v => v.c[0]));
+  assert.ok(Math.abs(span / n - G.panel) < 0.1 * G.panel, `panels of about ${G.panel} m: ${(span / n).toFixed(3)}`);
+  sorted.slice(1).forEach((d, i) => assert.ok(Math.abs(d.c[0] - sorted[i]!.c[0] - span / n) < 1e-9, 'one to a panel, a panel apart: none crossing'));
   assert.equal(verticals.length, n + 1, 'a vertical at each panel point');
   for (const v of verticals) assert.ok(Math.abs(v.s[1] - G.depth) < 1e-9 && Math.abs(v.c[1] - (9.5 - G.depth / 2)) < 1e-9, 'chord to chord');
   const xs = verticals.map(v => v.c[0]).sort((p, q) => p - q);
   xs.slice(1).forEach((x, i) => assert.ok(Math.abs(x - xs[i]! - (xs[n]! - xs[0]!) / n) < 1e-9, 'at the panel points'));
   assert.ok(Math.max(...G.web) <= 0.15, `webs ${G.web}`);
+});
+
+test('A6 (F13b): from outside by day the glass thickens off the normal: its alpha head-on as F13 had it, about 0.97 aslant; and exactly as before with glintEven 0', () => {
+  const C = (materials as Record<string, unknown>).GABLE_THICKEN as { thicken: number; straight: number; aslant: number } | undefined;
+  assert.ok(C, 'GABLE_THICKEN exported');
+  const lines = body.split('\n'), last = lines.filter(l => l.trim()).at(-1)!;
+  assert.ok(last.startsWith('gl_FragColor.a = mix( gl_FragColor.a, gl_FragColor.a + ( 1.0 - gl_FragColor.a )'), 'the thickening is the last line');
+  const f13 = lines.filter(l => l !== last).join('\n'), old = new Glsl('');
+  const alpha = (src: string, g: Glsl, even: number, cos: number, a = 0.93): number => {
+    const view = [Math.sqrt(1 - cos * cos), 0, cos];
+    const env = { vars: { gl_FragColor: [0.45, 0.47, 0.5, a], gl_FrontFacing: true, fogColor: day, cameraPosition: [0, 0, 0], viewMatrix: identity, vViewPosition: view.map(v => v * 50), normal: [0, 0, 1], vGlassPos: [0.4, 15], uPaneX: 0, uGlintEven: even } };
+    g.run(src, env);
+    return (env.vars.gl_FragColor as number[])[3]!;
+  };
+  assert.equal(alpha(body, glsl, 1, 1), alpha(f13, old, 1, 1), 'head-on as F13');
+  assert.equal(alpha(body, glsl, 1, 0.99), alpha(f13, old, 1, 0.99), 'and near it');
+  const aslant = alpha(body, glsl, 1, 0.75);
+  assert.ok(aslant >= 0.965 && aslant <= 0.985, `aslant ${aslant.toFixed(3)}`);
+  assert.ok(alpha(body, glsl, 1, 0.87) > alpha(body, glsl, 1, 0.97) + 0.01, 'thickening as the view turns (gable-oblique is about 0.87)');
+  for (const cos of [1, 0.87, 0.5]) for (const a of [0.42, 0.93, 0.35]) assert.equal(alpha(body, glsl, 0, cos, a), alpha(f13, old, 0, cos, a), `glintEven 0 at ${cos}, ${a}: as before`);
+  // relative, so the x-ray mode's dimming still thins it: a third as opaque stays well under the sheet's own aslant
+  assert.ok(alpha(body, glsl, 1, 0.75, 0.35) < 0.8, 'x-ray still thin');
+});
+
+test('A6 (F13b): each pane is offset by up to 11-13% (the score\'s 12%), and the cloud\'s patches span 4-8 panes, soft', () => {
+  const B = (materials as Record<string, unknown>).GABLE_SHEET as { band: readonly number[]; pane: number };
+  assert.ok(B.pane >= 0.11 && B.pane <= 0.13, `pane offset ${B.pane}`);
+  const across = Math.PI / Math.abs(B.band[0]!) / GLAZING.spacing;
+  assert.ok(across >= 4 && across <= 8, `a patch ${across.toFixed(1)} panes across`);
+  // inside one pane (its own offset fixed) only the cloud moves the tone: somewhere it swings 5% or more down a pane's height, and nowhere faster across a
+  // pane than its slope allows (0.32 m between a quarter-pane and the bar's edge: under 1.5%)
+  let down = 0, across1 = 0;
+  for (let k = -20; k < 20; k++) for (let j = 0; j < 5; j++) {
+    const y0 = GLAZING.springing + j * GLAZING.tier + 0.3, x = (k + 0.1) * P;
+    const col = Array.from({ length: 10 }, (_, m) => run(1, x, y0 + m * 0.5)[2]!);
+    down = Math.max(down, (Math.max(...col) - Math.min(...col)) / col[0]!);
+    const a = run(1, (k + 0.1) * P, y0 + 2)[2]!, b = run(1, (k + 0.1) * P + 0.32, y0 + 2)[2]!;
+    across1 = Math.max(across1, Math.abs(a - b) / a);
+  }
+  assert.ok(down >= 0.05, `the cloud within a pane: ${down.toFixed(3)}`);
+  assert.ok(across1 <= 0.015, `and soft across it: ${across1.toFixed(4)}`);
 });
