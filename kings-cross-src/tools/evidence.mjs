@@ -57,11 +57,11 @@ export const AXES = [
 /**
  * The fixed station views each graphical-fidelity element is scored from (gfx-rubrics/rubric-<element>.md, "Fixed views"),
  * so an iterator can capture only its own: `node tools/evidence.mjs --gpu --views kx-front ...`. A view may belong to
- * several elements. `<camera>-solid-slate` names are the physical-slate override shot of that camera.
+ * several elements. `<camera>-solid-slate` names are the physical-slate override shot of that camera, `<camera>-xray` its x-ray roof mode shot (round F8, A7).
  */
 export const ELEMENT_VIEWS = {
   'lighting-materials': ['overview', 'south-front', 'front-oblique-solid-slate', 'platform-eye', 'concourse', 'great-northern-hotel', 'midland-grand-front', 'gasworks-portals', 'facade-brick-close'],
-  'kx-front': ['south-front', 'front-oblique', 'front-oblique-solid-slate', 'roof-above-solid-slate', 'north-gable', 'tower-close', 'front-southwest-pedestrian', 'shed-east-flank', 'gable-oblique', 'porch-close'],
+  'kx-front': ['south-front', 'front-oblique', 'front-oblique-solid-slate', 'roof-above-solid-slate', 'front-oblique-xray', 'roof-above-xray', 'north-gable', 'tower-close', 'front-southwest-pedestrian', 'shed-east-flank', 'gable-oblique', 'porch-close'],
   'shed-interior': ['platform-eye', 'platform-eye-south', 'shed-interior', 'platform-eye-p1-north', 'platform-eye-p8-south', 'roof-underside', 'furniture-close', 'suburban-p9', 'platform-clock', 'platform-furniture'],
   'western-concourse': ['concourse', 'concourse-roof-detail', 'western-range', 'western-range-gateline', 'concourse-hotel-junction', 'concourse-exterior-square', 'concourse-funnel-up', 'western-range-full', 'concourse-exterior-west'],
   'historic-neighbours': ['great-northern-hotel', 'midland-grand-front', 'st-pancras-shed', 'st-pancras-shed-oblique', 'gnh-from-square', 'midland-euston-road', 'midland-clock-tower', 'barlow-interior'],
@@ -95,9 +95,10 @@ export function scoringViewsNote(records) {
   return lines.length ? `Scoring views: a criterion is scored from its official view; a context view is in the pack for what it shows around the subject, not for the score.\n\n${lines.join('\n')}\n\n` : '';
 }
 
-/** Every fixed station view a pack can capture: each camera, plus the solid-slate override shot of the two paired cameras. */
+/** Every fixed station view a pack can capture: each camera, plus the solid-slate and x-ray mode shots of the two paired cameras. */
 export function stationViewNames(cameras) {
-  return [...Object.keys(cameras), ...roofMaterialEvidencePairs(cameras).map(pair => `${pair.cameraName}-solid-slate`)];
+  const pairs = roofMaterialEvidencePairs(cameras);
+  return [...Object.keys(cameras), ...pairs.map(pair => `${pair.cameraName}-solid-slate`), ...pairs.map(pair => `${pair.cameraName}-xray`)];
 }
 
 /**
@@ -194,13 +195,18 @@ export function realMetal(renderer) { return typeof renderer === 'string' && /\b
 
 export const ROOF_MATERIAL_AUTO = 'auto';
 export const ROOF_MATERIAL_SOLID = 'solid slate (evidence override)';
+/** Round F8 (A7): the shed's RoofMode forced to 'xray' (its userData.roofMode, read each frame), all else as the context shot. */
+export const ROOF_MATERIAL_XRAY = 'xray roof mode (evidence override)';
+/** shed.ts XRAY_OPACITY (the page check's expected cladding opacity in x-ray mode; kx-front-round28.test.ts holds the two equal): this file loads no web module. */
+export const XRAY_EVIDENCE_OPACITY = 0.5;
 
-/** The comparison pair shares each fixed context camera; only the slate material state changes. */
+/** The comparison pair shares each fixed context camera; only the slate material state changes (the solid slate, and the x-ray mode, round F8). */
 export function roofMaterialEvidencePairs(cameras) {
   return ['roof-above', 'front-oblique'].map(cameraName => ({
     cameraName,
     context: { camera: cameras[cameraName], roofMaterialEvidence: ROOF_MATERIAL_AUTO },
     solid: { camera: cameras[cameraName], roofMaterialEvidence: ROOF_MATERIAL_SOLID },
+    xray: { camera: cameras[cameraName], roofMaterialEvidence: ROOF_MATERIAL_XRAY },
   }));
 }
 
@@ -222,13 +228,15 @@ export async function runStationEvidenceShots(cameras, shot, attempt, select = n
     await attempt('02', name, () => shot('02', name, camera, { twoFrame: true, ...overlays, ...viewScoring(name), ...(contextEvidence.has(name) ? { roofMaterialEvidence: contextEvidence.get(name) } : {}) }));
   for (const pair of pairs.filter(pair => wanted(`${pair.cameraName}-solid-slate`)))
     await attempt('02', `${pair.cameraName}-solid-slate`, () => shot('02', `${pair.cameraName}-solid-slate`, pair.solid.camera, { twoFrame: true, ...overlays, roofMaterialEvidence: pair.solid.roofMaterialEvidence }));
+  for (const pair of pairs.filter(pair => wanted(`${pair.cameraName}-xray`)))
+    await attempt('02', `${pair.cameraName}-xray`, () => shot('02', `${pair.cameraName}-xray`, pair.xray.camera, { twoFrame: true, ...overlays, roofMaterialEvidence: pair.xray.roofMaterialEvidence }));
   if (hud === 'off' && cameras.overview && wanted('overview'))
     await attempt('02', 'overview-hud-on', () => shot('02', 'overview-hud-on', cameras.overview, { twoFrame: true, hud: 'on', label: 'The overview as a user sees the page: its overlays are shown (every other station view has them hidden).' }));
 }
 
 /** Capture the physical slate view while an async begin/restore bridge holds the serialized page helper open. */
 export async function captureEvidencePng(roofMaterialEvidence, { prepare, capture, restore }) {
-  if (roofMaterialEvidence !== ROOF_MATERIAL_SOLID) return await capture();
+  if (roofMaterialEvidence !== ROOF_MATERIAL_SOLID && roofMaterialEvidence !== ROOF_MATERIAL_XRAY) return await capture();
   await prepare();
   try { return await capture(); }
   finally { await restore(); }
@@ -1462,7 +1470,11 @@ The page draws its own overlays (station switcher, status and attribution panels
       try {
         if (extra.signalId !== undefined) await twoFrames();
         png = await captureEvidencePng(extra.roofMaterialEvidence, {
-          prepare: async () => evaluate(`(() => {
+          prepare: async () => extra.roofMaterialEvidence === ROOF_MATERIAL_XRAY ? evaluate(`(() => {
+            const k=window.__kx, shed=k.parts?.shed;
+            if(!shed?.getObjectByName('shed-roof-cladding')) throw new Error('shed roof cladding unavailable');
+            k.__xrayCapture={shed,before:shed.userData.roofMode}; shed.userData.roofMode='xray'; return true;
+          })()`) : evaluate(`(() => {
             const k=window.__kx, cladding=k.parts?.shed?.getObjectByName('shed-roof-cladding');
             if(!cladding) throw new Error('shed roof cladding unavailable');
             const materials=Array.isArray(cladding.material)?cladding.material:[cladding.material];
@@ -1471,6 +1483,14 @@ The page draws its own overlays (station switcher, status and attribution panels
             k.__solidSlateCapture=state; return true;
           })()`),
           capture: async () => {
+            if (extra.roofMaterialEvidence === ROOF_MATERIAL_XRAY) {
+              await twoFrames();
+              captureRender = await evaluate(`(() => {
+                const k=window.__kx,shed=k.parts.shed,cladding=shed.getObjectByName('shed-roof-cladding'),glass=shed.getObjectByName('shed-roof-glass'),bars=shed.getObjectByName('shed-roof-bars');
+                if (shed.userData.roofMode!=='xray' || cladding.material.opacity!==${XRAY_EVIDENCE_OPACITY}) throw new Error('x-ray roof mode was not active after two rendered frames');
+                return {drawCalls:k.renderer.info.render.calls,triangles:k.renderer.info.render.triangles,roofMode:'xray',roofCladding:{opacity:cladding.material.opacity,depthWrite:cladding.material.depthWrite,glassOpacity:glass.material.opacity,barsOpacity:bars.material.opacity},overrideFrames:2};
+              })()`);
+            }
             if (extra.roofMaterialEvidence === ROOF_MATERIAL_SOLID) {
               await until('window.__kx.__solidSlateCapture?.ready === true');
               await twoFrames();
@@ -1489,6 +1509,11 @@ The page draws its own overlays (station switcher, status and attribution panels
             return first;
           },
           restore: async () => {
+            if (extra.roofMaterialEvidence === ROOF_MATERIAL_XRAY) {
+              const back = await evaluate(`(() => { const s=window.__kx.__xrayCapture; s.shed.userData.roofMode=s.before; delete window.__kx.__xrayCapture; return s.shed.userData.roofMode==='auto'; })()`);
+              if (!back) throw new Error('x-ray evidence failed to restore the auto roof mode');
+              return;
+            }
             await evaluate('window.__kx.__solidSlateCapture?.release?.(true); true');
             await evaluate('window.__kx.__solidSlateCapture.promise');
             const restored = await evaluate(`(() => {

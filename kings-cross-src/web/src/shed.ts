@@ -1187,7 +1187,10 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   const cladMat = (material('slate') as THREE.MeshLambertMaterial).clone();
   cladMat.transparent = true; // its opacity changes with the view, see roofOpacity
   const cladding = mesh(mergeGeometries(flanks, false), cladMat, 'shed-roof-cladding');
-  const roofMode = opts.roof ?? 'auto';
+  // round F8 (A7): the mode is read each frame off the group's userData.roofMode, so it can be switched at run time (tools/evidence.mjs's x-ray shots) and
+  // the switch touches the opacities alone, as a build in that mode would draw them
+  group.userData.roofMode = opts.roof ?? 'auto';
+  const roofMode = (): RoofMode => group.userData.roofMode as RoofMode;
   const local = new THREE.Vector3();
   const inverse = new THREE.Matrix4();
   // the glazing follows the cladding: a bright daylit panel from inside or close up, a see-through tint from far off
@@ -1199,7 +1202,7 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   cladding.onBeforeRender = (_renderer, _scene, camera) => {
     inverse.copy(group.matrixWorld).invert();
     local.copy(camera.position).applyMatrix4(inverse);
-    const o = roofOpacity([local.x, local.y, local.z], layout, roofMode);
+    const o = roofOpacity([local.x, local.y, local.z], layout, roofMode());
     cladMat.opacity = o;
     cladMat.depthWrite = o > 0.98;
     glassMat.opacity = glazingOpacity(o);
@@ -1275,7 +1278,7 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   roofBars.onBeforeRender = (_renderer, _scene, camera) => {
     inverse.copy(group.matrixWorld).invert();
     local.copy(camera.position).applyMatrix4(inverse);
-    const o = roofBarsOpacity([local.x, local.y, local.z], layout, roofMode);
+    const o = roofBarsOpacity([local.x, local.y, local.z], layout, roofMode());
     barsMat.opacity = o;
     // round 12 (the gable-oblique stipple): it draws after the glass (renderOrder 4) and, from outside, often partly transparent (0.82 at gable-oblique); without
     // depth its own faces (rail posts, caps' sides, seams) overdrew one another in index order, far over near. Outside it writes depth at any opacity; inside
@@ -1293,7 +1296,7 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
     inverse.copy(group.matrixWorld).invert();
     local.copy(camera.position).applyMatrix4(inverse);
     crownAbove.value = crownOutside([local.x, local.y, local.z], layout);
-    glassAlpha.value = crownAlpha([local.x, local.y, local.z], layout, roofMode);
+    glassAlpha.value = crownAlpha([local.x, local.y, local.z], layout, roofMode());
   };
   group.add(glassMesh);
   group.add(mesh(mergeGeometries(lining, false), material('lining'), 'shed-roof-lining'));

@@ -39,14 +39,14 @@ MUTATIONS = [
     ('alpha raised inside', 'web/src/shed.ts', '  return crownOutside(cam, layout) * CROWN_ALPHA * (', '  return CROWN_ALPHA * (', "the shed's glass carries it"),
     ('x-ray mode ignored', 'web/src/shed.ts', "CROWN_ALPHA * (mode === 'xray' ? XRAY_OPACITY : 1);", 'CROWN_ALPHA * 1;', "the shed's glass carries it"),
     ('alpha too low', 'web/src/lighting.ts', 'export const CROWN_ALPHA = 0.85;', 'export const CROWN_ALPHA = 0.5;', "the shed's glass carries it"),
-    ('alpha never set', 'web/src/shed.ts', '    glassAlpha.value = crownAlpha([local.x, local.y, local.z], layout, roofMode);\n', '', "the shed's glass carries it"),
-    ('alpha through the material opacity', 'web/src/shed.ts', '    glassAlpha.value = crownAlpha([local.x, local.y, local.z], layout, roofMode);\n', '    glassAlpha.value = 0; glassMat.opacity = Math.max(glassMat.opacity, crownAlpha([local.x, local.y, local.z], layout, roofMode));\n', "the shed's glass carries it"),
+    ('alpha never set', 'web/src/shed.ts', '    glassAlpha.value = crownAlpha([local.x, local.y, local.z], layout, roofMode());\n', '', "the shed's glass carries it"),
+    ('alpha through the material opacity', 'web/src/shed.ts', '    glassAlpha.value = crownAlpha([local.x, local.y, local.z], layout, roofMode());\n', '    glassAlpha.value = 0; glassMat.opacity = Math.max(glassMat.opacity, crownAlpha([local.x, local.y, local.z], layout, roofMode()));\n', "the shed's glass carries it"),
     ('no sky reflection', 'web/src/lighting.ts', 'f0: 0.04, reflect: 0.35', 'f0: 0.04, reflect: 0.0', 'round 12'),
     ('reflection inverted', 'web/src/lighting.ts', 'pow( 1.0 - clamp( ndv, 0.0, 1.0 ), 5.0 )', 'pow( clamp( ndv, 0.0, 1.0 ), 5.0 )', 'round 12'),
     ('reflection to the sky', 'web/src/lighting.ts', 'f0: 0.04, reflect: 0.35', 'f0: 0.04, reflect: 1.0', 'round 12'),
     ('pane tone back to 1.05', 'web/src/lighting.ts', 'pane: 0.75, share: 0.9,', 'pane: 1.05, share: 0.9,', 'round 12'),
     ('down faces not faded from outside', 'web/src/lighting.ts', 'diffuseColor.a * ( 1.0 - uCrownAbove )', 'diffuseColor.a', "the shed's glass carries it"),
-    ('level the cladding opacity', 'web/src/shed.ts', '    crownAbove.value = crownOutside([local.x, local.y, local.z], layout);\n', '    crownAbove.value = roofOpacity([local.x, local.y, local.z], layout, roofMode);\n', "the shed's glass carries it"),
+    ('level the cladding opacity', 'web/src/shed.ts', '    crownAbove.value = crownOutside([local.x, local.y, local.z], layout);\n', '    crownAbove.value = roofOpacity([local.x, local.y, local.z], layout, roofMode());\n', "the shed's glass carries it"),
 ]
 
 def run(work: Path) -> subprocess.CompletedProcess[str]:
