@@ -20,7 +20,7 @@ if out == src or out.is_relative_to(src) or src.is_relative_to(out):
 out.mkdir(parents=True, exist_ok=True)
 
 MUTATIONS = [
-    ('no splay', 'web/src/shed.ts', 'splay: 0.15, innerOrder', 'splay: 0, innerOrder', 'A2: square-on'),
+    ('no splay', 'web/src/shed.ts', 'splay: 0.22, innerOrder', 'splay: 0, innerOrder', 'A2: square-on'),
     ('the orders from the back of the wall again', 'web/src/shed.ts', 'zBack = FRONT_THICK + Math.max(0, frontOrderZ(i - 1)),', 'zBack = 0,', 'A2: square-on'),
     ('the splay inward', 'web/src/shed.ts', 'pos.setXY(k, uc - fx0 + (dx * (r0 + sw)) / r, sp + (dy * (r0 + sw)) / r)', 'pos.setXY(k, uc - fx0 + (dx * (r0 - sw)) / r, sp + (dy * (r0 - sw)) / r)', 'A2: square-on'),
     ('the splay on the back edge', 'web/src/shed.ts', 'Math.abs(pos.getZ(k) - zFace) < 1e-6 && Math.abs(r - r0) < 1e-4', 'Math.abs(pos.getZ(k) - zBack) < 1e-6 && Math.abs(r - r0) < 1e-4', 'A2: square-on'),

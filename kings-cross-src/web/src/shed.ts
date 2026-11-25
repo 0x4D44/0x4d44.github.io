@@ -151,11 +151,13 @@ export const PORCH_TONES = { soffit: 0x3a3f45, figure: 0x4a4540, figureNight: [0
  * order steps `orderStep` 0.4 m (was 0.28) and the whole stack is set `set` m back (frontOrderZ): the inner order's face 0.18 m proud (in front of
  * the end piers' 0.15 m face strip under its feet), the middle one's 0.58 (in front of the spandrel frame's 0.5 band, which crosses it at the crown),
  * the outer one's 0.98 (was 0.84; the impost it stands on now 1.1 m proud, was 1.0), and the fourth order's face `set` m behind the wall's face, the
- * wall's own reveal over it a square soffit: 1.2 m from the outer face to the fourth's. The splay 0.15 (was 0.22), so each step is a soffit that throws an arc
- * shadow onto the face inside it once the sun is above about 21 degrees (0.4 tan e > 0.15; at 0.28 and 0.22 it needed 38). Values ASSUMED, read
- * in memory from the photographs; no new triangle, only vertices move.
+ * wall's own reveal over it a square soffit: 1.2 m from the outer face to the fourth's. The splay stays 0.22 (round A2a's 0.15 thinned the returns
+ * to a lit line on the GPU), so square-on each return is as wide a band as before and obliquely wider, with FRONT_ORDER_SHADE painted on it; each
+ * step still a soffit that would throw an arc shadow onto the face inside it with the sun above about 29 degrees (0.4 tan e > 0.22), though under
+ * the default sun (high in the south-west, world.ts LIGHTS) only the crown and the haunches facing away from it can take one, and the round A2a
+ * capture showed none. Values ASSUMED, read in memory from the photographs; no new triangle, only vertices move.
  */
-export const FRONT_RELIEF = { orders: 3, orderWidth: 0.4, orderStep: 0.4, set: 0.22, splay: 0.15, innerOrder: true, bedMould: { height: 0.25, out: 0.35 }, impost: { height: 0.35, out: 1.1, past: 0.15 }, shadowLine: 0.25, springing: { height: 0.3, out: 1.0 }, corona: { height: 0.3, out: 1.1 }, impostAboveGround: 4.95, impostHeight: 0.25, impostOut: 0.2 } as const;
+export const FRONT_RELIEF = { orders: 3, orderWidth: 0.4, orderStep: 0.4, set: 0.22, splay: 0.22, innerOrder: true, bedMould: { height: 0.25, out: 0.35 }, impost: { height: 0.35, out: 1.1, past: 0.15 }, shadowLine: 0.25, springing: { height: 0.3, out: 1.0 }, corona: { height: 0.3, out: 1.1 }, impostAboveGround: 4.95, impostHeight: 0.25, impostOut: 0.2 } as const;
 /** The face of great-arch order `i` in metres proud of the front's wall face (negative: behind it); -1 is the fourth order, inside the opening. */
 export const frontOrderZ = (i: number): number => (i + 1) * FRONT_RELIEF.orderStep - FRONT_RELIEF.set;
 /**
@@ -184,6 +186,9 @@ export const FRONT_RETURN = 0.55;
 /** Round 27 (front-round-6 score, A2: the rings should read light, with shadow lines): the orders' faces this much lighter than the front's brick
  * (toward front-a's light stock brick; ASSUMED), the splayed steps staying in FRONT_RETURN. */
 export const FRONT_ORDER_FACE = 1.25;
+/** Round A2b (the GPU capture: the deeper steps' returns read lit, the rings one pale band; no arc shadow showed, and the haunches toward the sun cannot): a contact shade painted on the great arches' returns (the orders' splayed steps and the opening's soffit over the fourth order), by vertex
+ * colour on the day return material only (ASSUMED 0.5; the night wash keeps its own soffit lift, so no black line at night). */
+export const FRONT_ORDER_SHADE = 0.5;
 /** Round 27 (A2: the spandrel's head showed no shadow square-on): the panel's top `height` m, under the frame's band, in the return tone. */
 export const FRONT_PANEL_HEAD = { height: 0.4 } as const;
 export const FRONT_TYMPANUM = { out: 0.5, band: 0.45, strip: 0.5, recess: 0.6 } as const; // round 22 (A2: 0.15 m read about 1 px square-on): 0.3; round 23b (the painted line was black at night): 0.5, the band's own soffit casting the shadow line
@@ -1289,6 +1294,7 @@ function frontReturn(): THREE.MeshLambertMaterial {
   const m = original.clone();
   m.defines = { ...original.defines };
   m.color.multiplyScalar(FRONT_RETURN);
+  m.vertexColors = true; // round A2b: the great arches' returns carry FRONT_ORDER_SHADE (1 on every other return)
   frontReturnMaterial = m;
   return m;
 }
@@ -1727,6 +1733,16 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   }
   const frontGeo = mergeGeometries([mergeGeometries(faces, false), mergeGeometries(returns, false), mergeGeometries(orderFaces, false)], true);
   frontGeo.translate(0, 0, -FRONT_THICK);
+  {
+    // round A2b: FRONT_ORDER_SHADE on the returns round the great arches (from the opening out to the outer order); 1 elsewhere
+    const pos = frontGeo.getAttribute('position'), col = new Float32Array(pos.count * 3).fill(1), ret = frontGeo.groups.find(g => g.materialIndex === 1)!;
+    const rMax = R + FRONT_RELIEF.orders * FRONT_RELIEF.orderWidth + 0.01;
+    for (let k = ret.start; k < ret.start + ret.count; k++) {
+      const x = pos.getX(k), y = pos.getY(k) - sp;
+      if (centres.some(uc => { const r = Math.hypot(x - (uc - fx0), y); return r > R - 0.01 && r < rMax; })) col.fill(FRONT_ORDER_SHADE, 3 * k, 3 * k + 3);
+    }
+    frontGeo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  }
   disposables.push(...frontParts);
   const frontMesh = withBuildingNightMaterial(mesh(frontGeo, [material('brickFoot'), frontReturn(), frontOrderFace()], 'shed-front'), [frontWash('brickFoot', 'front', FW), frontWash('brickFoot', 'front', FW, FRONT_RETURN), frontWash('brickFoot', 'front', FW, FRONT_ORDER_FACE)]);
   frontMesh.position.x = fx0;

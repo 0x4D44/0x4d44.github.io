@@ -27,7 +27,13 @@ MUTATIONS = [
     ('the impost back at 1.0 m', 'web/src/shed.ts', 'impost: { height: 0.35, out: 1.1,', 'impost: { height: 0.35, out: 1.0,', 'four stepped orders'),
     ('the fourth order flush with the face', 'web/src/shed.ts', 'zi = FRONT_THICK + frontOrderZ(-1);', 'zi = FRONT_THICK;', 'four stepped orders'),
     ('set back too far: the frame band over the crown', 'web/src/shed.ts', 'orderStep: 0.4, set: 0.22,', 'orderStep: 0.4, set: 0.38,', "face is foremost"),
-    ('round 26\'s wide splay', 'web/src/shed.ts', 'set: 0.22, splay: 0.15,', 'set: 0.22, splay: 0.22,', 'arc shadow'),
+    ('a splay too wide to cast', 'web/src/shed.ts', 'set: 0.22, splay: 0.22,', 'set: 0.22, splay: 0.38,', 'arc shadow'),
+    ('round A2a\'s thin splay: the returns a lit line', 'web/src/shed.ts', 'set: 0.22, splay: 0.22,', 'set: 0.22, splay: 0.15,', 'band 0.17 m'),
+    ('no contact shade', 'web/src/shed.ts', 'export const FRONT_ORDER_SHADE = 0.5;', 'export const FRONT_ORDER_SHADE = 1;', 'band 0.17 m'),
+    ('the day returns ignore the shade', 'web/src/shed.ts', '  m.vertexColors = true; // round A2b', '  m.vertexColors = false; // round A2b', 'band 0.17 m'),
+    ('the outer order unshaded', 'web/src/shed.ts', 'const rMax = R + FRONT_RELIEF.orders * FRONT_RELIEF.orderWidth + 0.01;', 'const rMax = R + FRONT_RELIEF.orderWidth;', 'band 0.17 m'),
+    ('the soffit over the fourth order unshaded', 'web/src/shed.ts', 'return r > R - 0.01 && r < rMax;', 'return r > R + 0.05 && r < rMax;', 'band 0.17 m'),
+    ('the porches shaded too', 'web/src/shed.ts', 'return r > R - 0.01 && r < rMax;', 'return r > 0 && r < rMax;', 'band 0.17 m'),
     ('a flat chamfer for the shallow order', 'web/src/shed.ts', 'sw = (splay * (zFace - zBack)) / FRONT_RELIEF.orderStep;', 'sw = splay;', 'each step is a soffit'),
     ('a sliver at the soffit\'s foot', 'web/src/shed.ts', 'const ro = R / Math.cos(Math.PI / (2 * n));', 'const ro = R;', 'arc shadow'),
     ('the glass forward in the opening', 'web/src/shed.ts', 'g.translate(0, 0, -FRONT_THICK / 2 - 0.1);', 'g.translate(0, 0, -0.1);', 'glazing screen'),
@@ -76,4 +82,4 @@ with tempfile.TemporaryDirectory(prefix='kx-front-a2-orders-', dir=out) as tmp:
             failures.append(label)
             print(f'[SURVIVED] {label}', flush=True)
     print(f'{caught}/{len(MUTATIONS)} mutations caught; baseline {len(passing)} tests passed; survivors: {failures}')
-    raise SystemExit(1 if failures or len(passing) != 6 else 0)
+    raise SystemExit(1 if failures or len(passing) != 7 else 0)

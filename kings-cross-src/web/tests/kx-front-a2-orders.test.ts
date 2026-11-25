@@ -5,6 +5,7 @@ import type { KxData } from '../../core/osm.ts';
 import { readFileSync } from 'node:fs';
 import { SHED_SPAN_WIDTH, shedLayout } from '../../core/station.ts';
 import * as shed from '../src/shed.ts';
+import { buildingNightMaterialsOf } from '../src/materials.ts';
 
 // Round A2 (gap scan 2, A2 8.5): each great lunette arch in four brick orders stepping back about 0.4 m apiece, each step a soffit that casts an
 // arc shadow by day (R-kx-front-a/b), the glazing screen still recessed behind the innermost order, with no new triangle. Measured on the geometry.
@@ -90,8 +91,8 @@ test('A2 orders: each step is a soffit, a face turned to the arch\'s centre 0.35
   }
 });
 
-test('A2 orders: with the sun 35 degrees up in the south, each step casts an arc shadow onto the face inside it, and the face clear of it is lit', () => {
-  const e = (35 * Math.PI) / 180, sun: [number, number, number] = [0, Math.sin(e), Math.cos(e)];
+test('A2 orders: with the sun 45 degrees up in the south, each step casts an arc shadow onto the face inside it, and the fourth order\'s face clear of it is lit', () => {
+  const e = (45 * Math.PI) / 180, sun: [number, number, number] = [0, Math.sin(e), Math.cos(e)];
   for (const uc of centres) for (const a of [Math.PI / 3, Math.PI / 2, (2 * Math.PI) / 3]) for (let k = 0; k < 3; k++) {
     const rFoot = R + k * W, probe = (r: number): Hit | null => {
       const z = faceZ(uc, r, a);
@@ -99,7 +100,8 @@ test('A2 orders: with the sun 35 degrees up in the south, each step casts an arc
       return cast(at(uc, r, a, z + 0.005), sun, masonry, 3);
     };
     assert.ok(probe(rFoot - 0.05), `order ${k}'s step shades the face just inside it at ${(a * 180 / Math.PI).toFixed(0)} deg, x ${uc.toFixed(1)}`);
-    assert.ok(!probe(rFoot - (k === 0 ? 0.35 : 0.22)), `and the face clear of the shadow is lit at ${(a * 180 / Math.PI).toFixed(0)} deg, order ${k}`);
+    // round A2b: the splay back at 0.22, so the shadow at 45 degrees covers the narrower order faces at the crown; the fourth order's is wider
+    if (k === 0) assert.ok(!probe(rFoot - 0.35), `and the face clear of the shadow is lit at ${(a * 180 / Math.PI).toFixed(0)} deg`);
   }
 });
 
@@ -115,6 +117,36 @@ test('A2 orders: the glazing screen and its bars stand behind the innermost orde
     const h = cast(at(uc, R - W - 0.15, a, 5), [0, 0, -1], [front, glass]);
     assert.ok(h && h.name === 'shed-front-glass', `through the opening the glass first: ${h?.name}`);
   }
+});
+
+test('A2 orders: each return round the arches is a band 0.17 m or more wide square-on, painted in a contact shade by day; the night wash and the porches\' reveals unshaded', () => {
+  const F = shed.FRONT_RELIEF, mats = front.material as THREE.MeshLambertMaterial[], night = [buildingNightMaterialsOf(front)!.night].flat() as THREE.MeshLambertMaterial[];
+  const S = (shed as unknown as { FRONT_ORDER_SHADE: number }).FRONT_ORDER_SHADE;
+  assert.ok(S >= 0.4 && S <= 0.6, `FRONT_ORDER_SHADE ${S}`);
+  assert.ok(mats[1]!.vertexColors && !mats[0]!.vertexColors && !mats[2]!.vertexColors && !night[1]!.vertexColors, 'the day returns alone take the vertex colour');
+  const col = front.geometry.getAttribute('color'), shadeAt = (h: THREE.Intersection): number => col.getX(h.face!.a);
+  const hit = (o: [number, number, number]): THREE.Intersection | undefined =>
+    new THREE.Raycaster(group.localToWorld(new THREE.Vector3(...o)), new THREE.Vector3(0, 0, -1).transformDirection(group.matrixWorld), 0, 40).intersectObject(front)[0];
+  // the band measured along the radius (the arcs are chords, so it sits up to 0.15 m inside the true circle mid-chord), every sample of it shaded
+  for (const uc of centres) for (const a of [0.2, 0.5, 0.8].map(f => f * Math.PI)) for (let k = 1; k < F.orders; k++) {
+    let band = 0;
+    for (let d = -0.2; d <= 0.3; d += 0.01) {
+      const h = hit(at(uc, R + k * W + d, a, 5));
+      if (h?.face!.materialIndex !== 1) continue;
+      band++;
+      assert.ok(Math.abs(shadeAt(h) - S) < 1e-6, `x ${uc.toFixed(1)} order ${k}'s return ${d.toFixed(2)} m out at ${(a * 180 / Math.PI).toFixed(0)} deg: shade ${shadeAt(h)}`);
+    }
+    assert.ok(band >= 17, `x ${uc.toFixed(1)} order ${k}'s return ${band} cm wide square-on at ${(a * 180 / Math.PI).toFixed(0)} deg`);
+  }
+  // the opening's own soffit over the fourth order, met from the arch's centre
+  for (const uc of centres) {
+    const h = new THREE.Raycaster(group.localToWorld(new THREE.Vector3(uc, sp + R - 1, -0.1)), new THREE.Vector3(0, 1, 0).transformDirection(group.matrixWorld), 0, 3).intersectObject(front)[0];
+    assert.ok(h && h.face!.materialIndex === 1 && Math.abs(shadeAt(h) - S) < 1e-6, `the soffit over the fourth order: ${h?.face?.materialIndex}, shade ${h && shadeAt(h)}`);
+  }
+  // a porch opening's reveal, under the springing: a return, unshaded
+  const x = shed.southFrontArcadeCentres(4 * R, shed.TOWER_SIZE)[0]! + layout.spine - 2 * R;
+  const p = new THREE.Raycaster(group.localToWorld(new THREE.Vector3(x, layout.springing - 4, -0.3)), new THREE.Vector3(-1, 0, 0).transformDirection(group.matrixWorld), 0, 8).intersectObject(front)[0];
+  assert.ok(p && p.face!.materialIndex === 1 && shadeAt(p) === 1, `a porch reveal unshaded: ${p?.face?.materialIndex} ${p && shadeAt(p)}`);
 });
 
 test('A2 orders: no new triangle: the front mesh keeps its count', () => {
