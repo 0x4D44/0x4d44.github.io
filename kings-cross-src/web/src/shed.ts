@@ -130,12 +130,13 @@ export const PORCH_FANLIGHT = { bar: 0.08, headSegments: 12 } as const;
  * lamps are linear strips (FRONT_CANOPY.lamp). The porch interiors' figures and barriers take `figure`, a mid tone, by day and a warm glow after
  * dark (`figureNight`, below the interior's FRONT_NIGHT.glass) in place of the frames' charcoal (they read as flat black slabs at night). ASSUMED.
  */
-export const PORCH_TONES = { soffit: 0x3a3f45, figure: 0x4a4540, figureNight: [0xffc98a, 0.22] as const, soffitFill: 0.85, figureLift: 0.55, pool: { colour: 0xffe2b8, gain: 0.05, radius: 0.7 } as const } as const;
+export const PORCH_TONES = { soffit: 0x3a3f45, figure: 0x4a4540, figureNight: [0xffc98a, 0.22] as const, soffitFill: 0.85, figureLift: 0.22, pool: { colour: 0xffe2b8, gain: 0.05, radius: 0.7 } as const } as const;
 // round 1b (the GPU captures: the soffit still 5/5/6 by day in porch-close, the figures near black, the lamps white boxes on a dark soffit at night): by day
 // the soffit's faces turned down take a paving bounce, `soffitFill` times their own colour as light (gone at night: there it is as before), about 45-58
 // sRGB at the clear day's exposure (ACES); at night each strip lamp throws a warm pool on the soffit round it (`pool`: its colour times `gain`, falling
 // off over `radius` m from the strip, about 95 at its peak at the night exposure); and the figures carry `figureLift` times their colour as a constant
-// light, about 43 by day behind the glass (ASSUMED, all three tuned on three's ACES curve, tests/aces.ts, not measured on the GPU)
+// light (round 1c, the scorer: at 0.55 they read 47/40/32 on the GPU, paler than the interior's ~30/23/16 round them, tonally inverted; now 0.22,
+// about 19/16/13 by day, some 10 levels under the interior) (ASSUMED, all three tuned on three's ACES curve, tests/aces.ts, not measured on the GPU)
 /**
  * The front's relief (rubric A2). R-kx-front-a (2026) and R-kx-front-b (2016) show each great arch's reveal in three brick orders stepping
  * back to the glass (MEASURED: three orders in both photographs; their width and depth ASSUMED, held to the old stone ring's 1.2 m, since the

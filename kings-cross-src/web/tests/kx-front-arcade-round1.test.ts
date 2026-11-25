@@ -161,7 +161,9 @@ test('A3: the figures and barriers behind the glass are a lit mid tone, warm aft
   const lum = (c: THREE.Color): number => 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
   assert.ok(lum(fig.color) >= 2 * lum(frames.color) && lum(fig.color) <= lum(interior.color), 'lighter than the frames, no lighter than the interior');
   const dayFig = toSrgb(acesFilmic([fig.emissive.r, fig.emissive.g, fig.emissive.b], DAY_EXPOSURE)).map(v => Math.round(v * 255)); // round 1b: not black by day behind the glass
-  assert.ok(Math.max(...dayFig) >= 35 && Math.max(...dayFig) <= 50, `the figures' own lift by day ${dayFig}`);
+  // round 1c: on the GPU (porch-close, day) the figures showed their lift alone (47/40/32 at 0.55, 47/42/37 here) and the interior round them ~30/23/16:
+  // the figures 8-12 or more levels darker than that, but not black (the base was ~5)
+  assert.ok(Math.max(...dayFig) >= 12 && Math.max(...dayFig) <= 30 - 8, `the figures' own lift by day ${dayFig}, under the interior's ~30/23/16`);
   const glow = fig.userData.nightGlow as THREE.Color, inGlow = interior.userData.nightGlow as THREE.Color;
   assert.ok(glow && lum(glow) > 0.25 * lum(inGlow) && lum(glow) < 0.75 * lum(inGlow), 'a warm glow after dark, below the interior\'s');
   const D = shed.PORCH_DEPTH;
