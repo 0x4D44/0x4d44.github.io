@@ -126,7 +126,8 @@ test('B7 day: the floor\'s light is full under the crown and falls toward the va
   const crown = shade(cx, cz, 0, 1), flank = shade(wx, wz, 0, 1);
   assert.ok(Math.abs(crown.indirect[1]! - BASE[1]!) < 1e-4, 'under the crown, as before');
   const k = flank.indirect[1]! / BASE[1]!;
-  assert.ok(k >= 0.75 && k <= 0.86 && Math.abs(k - SHED_CROWN_FLOOR.flank) < 0.03, `by the wall ${k.toFixed(3)}`);
+  // re-pinned in round 2 (b7-round-1-score: wall about 0.6, not 0.78), same width of band: was 0.75-0.86
+  assert.ok(k >= 0.57 && k <= 0.68 && Math.abs(k - SHED_CROWN_FLOOR.flank) < 0.03, `by the wall ${k.toFixed(3)}`);
   // round 1b: the floor's day light in the shade is mostly the direct term (the sun's, lifted by lighting.ts SHED_GLASS), so the factor takes it too
   assert.ok(Math.abs(flank.direct[1]! / BASE[1]! - k) < 1e-6, 'the direct light falls with it');
   assert.ok(Math.abs(crown.direct[1]! - BASE[1]!) < 1e-4, 'under the crown, the direct as before');
