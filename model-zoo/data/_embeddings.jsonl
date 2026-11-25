@@ -14,3 +14,10 @@
 {"n": 100, "tokens": 41479, "cost": 0.00082958}
 {"n": 100, "tokens": 41433, "cost": 0.0008286599999999999}
 {"n": 68, "tokens": 27511, "cost": 0.00055022}
+{"n": 100, "tokens": 38942, "cost": 0.00077884, "for": "detect"}
+{"n": 100, "tokens": 43496, "cost": 0.00086992, "for": "detect"}
+{"n": 100, "tokens": 38421, "cost": 0.00076842, "for": "detect"}
+{"n": 100, "tokens": 42164, "cost": 0.00084328, "for": "detect"}
+{"n": 100, "tokens": 39001, "cost": 0.00078002, "for": "detect"}
+{"n": 100, "tokens": 36420, "cost": 0.0007283999999999999, "for": "detect"}
+{"n": 40, "tokens": 15400, "cost": 0.000308, "for": "detect"}

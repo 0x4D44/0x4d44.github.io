@@ -165,5 +165,102 @@ class EndToEnd(unittest.TestCase):
                 self.assertIn(k, out)
 
 
+_dspec = importlib.util.spec_from_file_location(
+    "detect", os.path.join(os.path.dirname(HERE), "tools", "detect.py"))
+D = importlib.util.module_from_spec(_dspec)
+_dspec.loader.exec_module(D)
+
+
+def _items():
+    """Two models with free stories and topic-matched texts, Reddit writers on those topics, an author."""
+    items = []
+    for m in ("m1", "m1@thinking", "m2"):
+        items += [{"group": D.model_group(m), "y": 1, "topic": None} for _ in range(3)]
+        items += [{"group": D.model_group(m), "y": 1, "topic": "wp-%03d" % t} for t in range(12)]
+    items += [{"group": "h:wp-%02d" % (t // 4), "y": 0, "topic": "wp-%03d" % t} for t in range(12)]
+    items += [{"group": "h:wp-09", "y": 0, "topic": None} for _ in range(5)]
+    items += [{"group": "h:Saki", "y": 0, "topic": None} for _ in range(4)]
+    return items
+
+
+class GroupedSplit(unittest.TestCase):
+    def test_no_group_or_topic_in_both_train_and_test(self):
+        items = _items()
+        seen = []
+        for train, test in D.splits(items, list(range(len(items)))):
+            self.assertTrue(test)
+            self.assertEqual(D.leaks(items, train, test), set(), "leak in a test unit")
+            seen += test
+        self.assertEqual(sorted(seen), list(range(len(items))))  # every text is tested exactly once
+
+    def test_thinking_variant_is_the_same_group(self):
+        self.assertEqual(D.model_group("m1@thinking"), D.model_group("m1"))
+
+    def test_leak_check_sees_a_random_split(self):
+        items = _items()
+        idx = list(range(len(items)))
+        test, train = idx[::3], [i for i in idx if i % 3]
+        self.assertTrue(D.leaks(items, train, test))
+
+    def test_logreg_separates_and_scores(self):
+        rng = np.random.default_rng(3)
+        x = np.vstack([rng.normal(size=(40, 6)) + 2, rng.normal(size=(40, 6)) - 2])
+        y = np.array([1] * 40 + [0] * 40, dtype=float)
+        s = D.fit_logreg(x, y)(x)
+        self.assertGreater((s[:40] >= 0.5).mean(), 0.95)
+        self.assertLess((s[40:] >= 0.5).mean(), 0.05)
+        self.assertAlmostEqual(D.auc([0.1, 0.2], [0.3, 0.2]), 0.875)
+
+    def test_build_publishes_no_human_text(self):
+        with tempfile.TemporaryDirectory() as d:
+            os.makedirs(os.path.join(d, "human", "prompts"))
+            os.makedirs(os.path.join(d, "embeddings"))
+            rng = np.random.default_rng(5)
+            emb = {}
+            def put(i, ai):
+                emb[i] = (rng.normal(size=8) + (1.5 if ai else -1.5)).tolist()
+            q = [{"model": m, "sample": s, "ok": True, "text": "Title\nA model story %d." % s}
+                 for m in ("gpt-a", "claude-b", "claude-c") for s in range(4)]
+            for r in q:
+                put("%s-s%s" % (r["model"], r["sample"]), True)
+            with open(os.path.join(d, "q33-story.jsonl"), "w") as f:
+                f.write("\n".join(json.dumps(r) for r in q) + "\n")
+            wp = [{"group": "wp-%02d" % (i // 3), "id": "wp-%03d" % i, "text": "Quentin said %s %d." % (WP_SENTENCE, i)}
+                  for i in range(9)]
+            ax = [{"group": "0x4D44", "id": "ax-%d" % i, "article": "2025.01.01 - Private title %d" % i,
+                   "text": "Marmalade passage %d." % i} for i in range(3)]
+            gb = [{"group": "Saki", "id": "pg-%d" % i, "text": "Clovis %d." % i} for i in range(3)]
+            for name, rows in (("writingprompts", wp), ("author", ax), ("gutenberg", gb)):
+                with open(os.path.join(d, "human", name + ".jsonl"), "w") as f:
+                    f.write("\n".join(json.dumps(r) for r in rows) + "\n")
+                for r in rows:
+                    put(r["id"], False)
+            gen = [{"set": "wp", "model": m, "topic": "wp-%03d" % t, "sample": 0, "ok": True, "text": "Matched %d" % t}
+                   for m in ("gpt-a", "claude-b") for t in range(0, 9, 2)]
+            gen += [{"set": "essay", "model": m, "topic": "ax-%d" % t, "sample": 0, "ok": True, "text": "Essay %d" % t}
+                    for m in ("gpt-a", "claude-b") for t in range(3)]
+            for kind in ("wp", "essay"):
+                with open(os.path.join(d, "detect-%s.jsonl" % kind), "w") as f:
+                    f.write("\n".join(json.dumps(r) for r in gen if r["set"] == kind) + "\n")
+            for r in gen:
+                put(D.gen_id(r), True)
+            with open(os.path.join(d, "embeddings", "stories.json"), "w") as f:
+                json.dump(emb, f)
+
+            out = D.build(data_dir=d)
+            blob = json.dumps(out).lower()
+            for w in ("lighthouse", "quentin", "marmalade", "private title", "clovis", "wp-0", "ax-"):
+                self.assertNotIn(w, blob)
+            self.assertEqual(out["base"]["kinds"]["reddit"]["n_human"], 9)
+            self.assertEqual(out["base"]["kinds"]["claude"]["n_model"], 8)
+            self.assertEqual(out["base"]["kinds"]["reddit"]["fpr"], 0.0)
+            self.assertEqual(out["models_matched"], ["claude-b", "gpt-a"])
+            stories_row = [r for r in out["matched"]["rows"] if r["genre"] == "stories" and r["family"] == "gpt"][0]
+            self.assertEqual(stories_row["matched_new"]["n_human"], 5)   # the Reddit stories whose prompts were used
+            self.assertEqual(stories_row["matched_new"]["n_model"], 5)
+            self.assertEqual(len(out["map"]), len(gen))
+            self.assertIn("stories", out["distances"])
+
+
 if __name__ == "__main__":
     unittest.main()
