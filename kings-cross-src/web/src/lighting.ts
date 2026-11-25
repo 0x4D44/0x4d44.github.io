@@ -418,8 +418,16 @@ export const SHED_GLASS = { fill: 0.25 } as const;
  * The night, the moon, the outside, the roof above the springing and every other scene are untouched (the factor is exactly 1).
  */
 export const SHED_WALL_SUN = { gain: 2.4, vertical: [0.5, 0.9] } as const;
+/**
+ * UNDER THE ROOF (B7 round 5: the GPU diff of round 4b by day lit porch-close, south-front, tower-close, front-southwest-pedestrian and front-oblique). The shed's
+ * frame starts at the south front's outer face (z 0) and the front wall is 1.2 m thick, so `shedInside` (whose edge fades over 5 cm outside the line) takes the
+ * front's outer face, the porch arches and the tower's foot as inside. The walls' sun (SHED_WALL_SUN) takes
+ * `shedUnder`: `shedInside` times a fade from `ends[0]` to `ends[1]` metres in from either end, so the front and its porch, the tower and the north end's
+ * outer face draw as before round 4b. `shedInside` itself, the crown's fill in the shade (SHED_GLASS), is as it was.
+ */
+export const SHED_UNDER = { ends: [1.3, 1.5] } as const;
 /** GLSL (after the roof's shade in every roof-shaded Lambert program): SHED_WALL_SUN on the direct light. */
-export const SHED_WALL_SUN_GLSL = `if ( uShedDiffuse > 0.0 ) reflectedLight.directDiffuse *= 1.0 + ${(SHED_WALL_SUN.gain - 1).toFixed(4)} * shedInside( cameraPosition - vViewPosition * mat3( viewMatrix ) ) * ( 1.0 - smoothstep( ${SHED_WALL_SUN.vertical[0].toFixed(2)}, ${SHED_WALL_SUN.vertical[1].toFixed(2)}, abs( ( normal * mat3( viewMatrix ) ).y ) ) );`;
+export const SHED_WALL_SUN_GLSL = `if ( uShedDiffuse > 0.0 ) reflectedLight.directDiffuse *= 1.0 + ${(SHED_WALL_SUN.gain - 1).toFixed(4)} * shedUnder( cameraPosition - vViewPosition * mat3( viewMatrix ) ) * ( 1.0 - smoothstep( ${SHED_WALL_SUN.vertical[0].toFixed(2)}, ${SHED_WALL_SUN.vertical[1].toFixed(2)}, abs( ( normal * mat3( viewMatrix ) ).y ) ) );`;
 
 /** GLSL: how far the world point `p` is in the shed's two vaults, 0 to 1 (1 from the inner faces of their walls in, up to 1.5 m under the springing, where the eaves' gutters hang; 0 outside the walls' line, above the springing, in the east aisle, or before a shed is set). */
 export const SHED_GLASS_GLSL = /* glsl */`
@@ -428,6 +436,10 @@ float shedInside( vec3 p ) {
   vec3 q = ( uShedFrame * vec4( p, 1.0 ) ).xyz;
   float e = min( min( q.x - uShedSize.x, uShedSize.y - q.x ), min( -q.z, uShedSize.w + q.z ) );
   return smoothstep( -0.05, 0.0, e ) * ( 1.0 - smoothstep( uShedSize.z - 0.1, uShedSize.z, q.y ) );
+}
+float shedUnder( vec3 p ) {
+  vec3 q = ( uShedFrame * vec4( p, 1.0 ) ).xyz;
+  return shedInside( p ) * smoothstep( ${SHED_UNDER.ends[0].toFixed(2)}, ${SHED_UNDER.ends[1].toFixed(2)}, min( -q.z, uShedSize.w + q.z ) );
 }
 `;
 

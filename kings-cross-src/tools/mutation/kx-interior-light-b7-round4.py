@@ -76,7 +76,7 @@ MUTATIONS = [
     ('no fade on tilted faces', 'web/src/lighting.ts', 'vertical: [0.5, 0.9] }', 'vertical: [0.0, 0.2] }', 'round 4b'),
     ('the floor takes the wall sun', 'web/src/lighting.ts', '* ( 1.0 - smoothstep( ${SHED_WALL_SUN.vertical[0]', '* ( 1.0 - 0.0 * smoothstep( ${SHED_WALL_SUN.vertical[0]', 'round 4b'),
     ('the wall sun at night', 'web/src/lighting.ts', '`if ( uShedDiffuse > 0.0 ) reflectedLight.directDiffuse *=', '`reflectedLight.directDiffuse *=', 'round 4b'),
-    ('the wall sun outside the shed', 'web/src/lighting.ts', '* shedInside( cameraPosition - vViewPosition * mat3( viewMatrix ) ) * ( 1.0 - smoothstep(', '* ( 1.0 - smoothstep(', 'round 4b'),
+    ('the wall sun outside the shed', 'web/src/lighting.ts', '* shedUnder( cameraPosition - vViewPosition * mat3( viewMatrix ) ) * ( 1.0 - smoothstep(', '* ( 1.0 - smoothstep(', 'round 4b'),
     ('the wall sun on the shade light', 'web/src/lighting.ts', '`if ( uShedDiffuse > 0.0 ) reflectedLight.directDiffuse *=', '`if ( uShedDiffuse > 0.0 ) reflectedLight.indirectDiffuse *=', 'round 4b'),
     ('the wall sun not in the programs', 'web/src/lighting.ts', '  ${SHED_WALL_SUN_GLSL}\n', '', 'round 4b'),
 ]
