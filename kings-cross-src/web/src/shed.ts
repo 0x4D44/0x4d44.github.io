@@ -130,7 +130,7 @@ export const PORCH_FANLIGHT = { bar: 0.08, headSegments: 12 } as const;
  * lamps are linear strips (FRONT_CANOPY.lamp). The porch interiors' figures and barriers take `figure`, a mid tone, by day and a warm glow after
  * dark (`figureNight`, below the interior's FRONT_NIGHT.glass) in place of the frames' charcoal (they read as flat black slabs at night). ASSUMED.
  */
-export const PORCH_TONES = { soffit: 0x3a3f45, figure: 0x4a4540, figureNight: [0xffc98a, 0.22] as const, soffitFill: 0.85, figureLift: 0.22, figureDay: 0.75, pool: { colour: 0xffe2b8, gain: 0.05, radius: 0.7 } as const } as const;
+export const PORCH_TONES = { soffit: 0x3a3f45, figure: 0x4a4540, figureNight: [0xffc98a, 0.22] as const, soffitFill: 0.85, figureLift: 0.22, figureDay: { dark: 0.2, light: 0.75, from: 0.12, to: 0.59 } as const, pool: { colour: 0xffe2b8, gain: 0.05, radius: 0.7 } as const } as const;
 // round 1b (the GPU captures: the soffit still 5/5/6 by day in porch-close, the figures near black, the lamps white boxes on a dark soffit at night): by day
 // the soffit's faces turned down take a paving bounce, `soffitFill` times their own colour as light (gone at night: there it is as before), about 45-58
 // sRGB at the clear day's exposure (ACES); at night each strip lamp throws a warm pool on the soffit round it (`pool`: its colour times `gain`, falling
@@ -140,7 +140,10 @@ export const PORCH_TONES = { soffit: 0x3a3f45, figure: 0x4a4540, figureNight: [0
 // Arcade round 2 (the GPU: a figure 41/35/28 against the interior's 24/16/7 beside it; the interior runs 5-37 across its gradient and vignette, so no
 // constant sits under it everywhere): by day the figures and barriers are the interior's own material at their spot (its colour, day darkening, map at the
 // same UV, emissive) times `figureDay` (linear; round 2b: 0.75, was 0.65, so the silhouettes hold; on three's ACES curve at the day exposure, tests/aces.ts, 0.67-0.76 of the interior's level in display sRGB over its 15-37 range, ASSUMED), so they read darker than the hall round them
-// wherever they stand; at night their colour, `figureLift` and glow as before
+// wherever they stand; at night their colour, `figureLift` and glow as before.
+// Round 2c (the GPU: in the hall's dark zone a figure read 5-7 on a hall of 7-13, a 2-6 level gap): the factor follows the hall's own tone at the spot (its
+// map's linear value t): `dark` at t <= `from`, rising linearly to `light` at t >= `to`. The model (tests/aces.ts at the day exposure, the hall's 5-37 sRGB
+// range set at t's two ends) gives figures about 0 on a hall of 7, 1 on 10, 2 on 13, 10 on 20, 18 on 25 and 28 on 37 (ASSUMED calibration)
 /**
  * The front's relief (rubric A2). R-kx-front-a (2026) and R-kx-front-b (2016) show each great arch's reveal in three brick orders stepping
  * back to the glass (MEASURED: three orders in both photographs; their width and depth ASSUMED, held to the old stone ring's 1.2 m, since the
@@ -271,10 +274,13 @@ function frontNightGlow(m: THREE.MeshLambertMaterial, [colour, gain]: readonly [
         + `#ifdef KX_GLOW_DOWN\nfrontGlowAdd *= max( -vFrontNy, 0.0 );\n#endif\ntotalEmissiveRadiance += frontGlowAdd;`
         // round 27: a material defining KX_DAY_DARK has its diffuse scaled by that factor by day, back to 1 at night (its night glow as it was)
         + `\n#ifdef KX_DAY_DARK\ndiffuseColor.rgb *= mix( KX_DAY_DARK, 1.0, uWinNight );\n#endif`
-        // arcade round 2: a material defining KX_FIG_DAY (linear vec3s KX_FIG_DAY, KX_FIG_DAY_EMIT, KX_FIG_NIGHT) takes by day a diffuse of KX_FIG_DAY
-        // times its map and the emissive KX_FIG_DAY_EMIT, at night its own colour KX_FIG_NIGHT (no map) and emissive, as before
-        + `\n#if defined( KX_FIG_DAY ) && defined( USE_MAP )\ndiffuseColor.rgb = mix( KX_FIG_DAY * texture2D( map, vMapUv ).rgb, KX_FIG_NIGHT, uWinNight );\n`
-        + `totalEmissiveRadiance = mix( KX_FIG_DAY_EMIT, totalEmissiveRadiance, uWinNight );\n#endif`
+        // arcade round 2: a material defining KX_FIG_DAY (linear vec3s KX_FIG_DAY, KX_FIG_DAY_EMIT, KX_FIG_NIGHT; vec4 KX_FIG_K) takes by day the hall's
+        // diffuse KX_FIG_DAY times its map and emissive KX_FIG_DAY_EMIT, both times a factor of the map's value (round 2c: KX_FIG_K.x at or under KX_FIG_K.z,
+        // rising to .y at .w), at night its own colour KX_FIG_NIGHT (no map) and emissive, as before
+        + `\n#if defined( KX_FIG_DAY ) && defined( USE_MAP )\nvec3 kxHall = texture2D( map, vMapUv ).rgb;\n`
+        + `float kxK = mix( KX_FIG_K.x, KX_FIG_K.y, clamp( ( kxHall.g - KX_FIG_K.z ) / ( KX_FIG_K.w - KX_FIG_K.z ), 0.0, 1.0 ) );\n`
+        + `diffuseColor.rgb = mix( kxK * KX_FIG_DAY * kxHall, KX_FIG_NIGHT, uWinNight );\n`
+        + `totalEmissiveRadiance = mix( kxK * KX_FIG_DAY_EMIT, totalEmissiveRadiance, uWinNight );\n#endif`
         // arcade round 1: a material defining KX_SOFFIT (a linear vec3) takes that diffuse on its faces turned down (the canopy's soffit, PORCH_TONES);
         // round 1b: by day KX_SOFFIT_FILL times it as a paving bounce, and with KX_POOL (lamps' first x, pitch, the two rows' z) a warm pool round each strip lamp at night
         + `\n#ifdef KX_SOFFIT\nfloat kxDown = step( 0.5, -vFrontNy );\ndiffuseColor.rgb = mix( diffuseColor.rgb, KX_SOFFIT, kxDown );\n`
@@ -355,12 +361,13 @@ function glassStructureTexture(foot: number): THREE.DataTexture {
 /** Round 22 (A3: a flat interior plane): the concourse behind the porch glass darker at the floor and brighter toward its ceiling, a 1 x 16 map over the plane's 0..1 v. */
 /** Round 20: the interior plane's constant day light (sRGB hex). */
 const PORCH_INTERIOR_EMIT = 0x140e08;
-/** Arcade round 2: the figures' defines (frontNightGlow KX_FIG_DAY): by day the interior's diffuse (its colour, day-darkened) and emissive times PORCH_TONES.figureDay; at night their own colour. */
+/** Arcade round 2: the figures' defines (frontNightGlow KX_FIG_DAY): by day the interior's diffuse (its colour, day-darkened) and emissive times PORCH_TONES.figureDay's factor (KX_FIG_K, round 2c); at night their own colour. */
 function figureDay(): Record<string, string> {
   const v = (c: THREE.Color): string => `vec3(${c.r.toFixed(5)}, ${c.g.toFixed(5)}, ${c.b.toFixed(5)})`, k = PORCH_TONES.figureDay;
   return {
-    KX_FIG_DAY: v(new THREE.Color(PORCH_DEPTH.interior).multiplyScalar(PORCH_DEPTH.dayDark * k)),
-    KX_FIG_DAY_EMIT: v(new THREE.Color(PORCH_INTERIOR_EMIT).multiplyScalar(k)),
+    KX_FIG_DAY: v(new THREE.Color(PORCH_DEPTH.interior).multiplyScalar(PORCH_DEPTH.dayDark)),
+    KX_FIG_DAY_EMIT: v(new THREE.Color(PORCH_INTERIOR_EMIT)),
+    KX_FIG_K: `vec4(${k.dark.toFixed(4)}, ${k.light.toFixed(4)}, ${k.from.toFixed(4)}, ${k.to.toFixed(4)})`,
     KX_FIG_NIGHT: v(new THREE.Color(PORCH_TONES.figure)),
   };
 }
@@ -1861,7 +1868,12 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
     // arcade round 2: the ring's side walls (its returns and its soffit, the extrusion's group 1) shaded by day, its face 1; round 2b: graded by
     // depth, PORCH_RETURN_SHADE.back at the wall (z 0) to .face at the ring's face
     const pos = g.getAttribute('position'), col = new Float32Array(pos.count * 3).fill(1), depth = (i + 1) * PORCH_ORDERS.step, { back, face } = PORCH_RETURN_SHADE;
-    for (const grp of g.groups) if (grp.materialIndex === 1) for (let k = grp.start; k < grp.start + grp.count; k++) col.fill(back + ((face - back) * pos.getZ(k)) / depth, 3 * k, 3 * k + 3);
+    // round 2c (the GPU: the graded soffit lost its brick speckle, darker than BASE): the inner ring's soffit, its side turned to the opening's axis, stays 1
+    const nrm = g.getAttribute('normal'), soffit = (k: number): boolean => {
+      const px = pos.getX(k), py = pos.getY(k), spring = entryFoot + SOUTH_FRONT_ARCADES.jambHeight;
+      return i === 0 && nrm.getX(k) * (x - px) + nrm.getY(k) * Math.min(0, spring - py) > 1e-6; // toward the axis: the centre over the head, across in the jambs
+    };
+    for (const grp of g.groups) if (grp.materialIndex === 1) for (let k = grp.start; k < grp.start + grp.count; k++) col.fill(soffit(k) ? 1 : back + ((face - back) * pos.getZ(k)) / depth, 3 * k, 3 * k + 3);
     g.setAttribute('color', new THREE.BufferAttribute(col, 3));
     return g;
   }));

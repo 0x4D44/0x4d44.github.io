@@ -52,10 +52,16 @@ test('A3 round 2b: the porch rings\' returns and soffits are graded shadowed bri
     // the inner ring's soffit over the crown, met from under the head; its outer order's return over the crown, met from just above the inner one's face
     const soffit = hits([c, entryFoot + 1.0, O.step / 2], [-1, 0, 0], [porch], entryR + 0.2)[0]; // the inner order's soffit down the west jamb, under the canopy
     const grade = (z: number, depth: number): number => P.back + ((P.face - P.back) * z) / depth;
-    assert.ok(soffit && soffit.face!.materialIndex === 0 && Math.abs(shadeIn(soffit) - grade(O.step / 2, O.step)) < 1e-4, `the soffit at x ${c.toFixed(1)}: ${soffit && shadeAt(soffit)} mat ${soffit?.face?.materialIndex} n ${soffit?.face?.normal.toArray()} at ${soffit && group.worldToLocal(soffit.point.clone()).toArray().map(v => v.toFixed(2))}`);
+    // re-pinned round 2c (the GPU: the graded soffit lost its brick speckle, darker than BASE): the inner ring's soffit unshaded; the returns graded
+    assert.ok(soffit && soffit.face!.materialIndex === 0 && Math.abs(shadeIn(soffit) - 1) < 1e-4, `the soffit at x ${c.toFixed(1)}: ${soffit && shadeAt(soffit)} mat ${soffit?.face?.materialIndex} n ${soffit?.face?.normal.toArray()} at ${soffit && group.worldToLocal(soffit.point.clone()).toArray().map(v => v.toFixed(2))}`);
     for (const z of [O.step * 1.15, O.step * 1.85]) {
       const ret = hits([c, crown + O.depth / 2, z], [0, 1, 0], [porch], 2)[0];
       assert.ok(ret && Math.abs(shadeIn(ret) - grade(z, 2 * O.step)) < 1e-4, `the outer order's return at x ${c.toFixed(1)}, z ${z.toFixed(2)}: ${ret && shadeIn(ret)}`);
+    }
+    // the outer ring's outer return over the crown, met from above, graded too
+    for (const z of [O.step * 0.3, O.step * 1.7]) {
+      const out = hits([c, crown + 2 * O.depth + 0.3, z], [0, -1, 0], [porch], 1)[0];
+      assert.ok(out && Math.abs(shadeIn(out) - grade(z, 2 * O.step)) < 1e-4, `the outer return at x ${c.toFixed(1)}, z ${z.toFixed(2)}: ${out && shadeIn(out)}`);
     }
     for (const k of [0.5, 1.5]) {
       const face = hits([c, crown + O.depth * k, 5], [0, 0, -1], [porch])[0];
@@ -77,21 +83,26 @@ test('A3 round 2: the porch openings\' brick reveals in the front carry the grea
 
 test('A3 round 2: by day each figure and barrier is the interior\'s tone at its own spot times figureDay, about 0.6 of it in display; at night as before', () => {
   const mats = infill.material as THREE.MeshLambertMaterial[], fig = mats[7]!, interior = mats[4]!;
-  const k = (T as typeof T & { figureDay: number }).figureDay;
-  assert.ok(k >= 0.5 && k <= 0.8, `figureDay ${k}`);
+  // round 2c: the factor follows the hall's own tone (its map's linear value t): `dark` up to `from`, rising to `light` at `to`
+  const K = (T as unknown as { figureDay: { dark: number; light: number; from: number; to: number } }).figureDay;
+  assert.ok(K.dark >= 0.1 && K.dark <= 0.3 && K.light >= 0.7 && K.light <= 0.8 && K.from < K.to, `figureDay ${JSON.stringify(K)}`);
+  const kAt = (t: number): number => K.dark + (K.light - K.dark) * Math.min(1, Math.max(0, (t - K.from) / (K.to - K.from)));
   assert.ok(fig.map && fig.map === interior.map, 'the figures sample the interior\'s map');
   const vec = (s: string): number[] => s.replace(/vec3\(|\)/g, '').split(',').map(Number);
   const defs = fig.defines as Record<string, string>, dark = Number((interior.defines as Record<string, string>).KX_DAY_DARK);
   const close = (a: number[], b: number[]): boolean => a.every((v, i) => Math.abs(v - b[i]!) < 2e-5);
-  assert.ok(close(vec(defs.KX_FIG_DAY!), interior.color.toArray().map(v => v * dark * k)), `day diffuse ${defs.KX_FIG_DAY}`);
-  assert.ok(close(vec(defs.KX_FIG_DAY_EMIT!), interior.emissive.toArray().map(v => v * k)), `day emissive ${defs.KX_FIG_DAY_EMIT}`);
+  assert.ok(close(vec(defs.KX_FIG_DAY!), interior.color.toArray().map(v => v * dark)), `day diffuse ${defs.KX_FIG_DAY}`);
+  assert.ok(close(vec(defs.KX_FIG_DAY_EMIT!), interior.emissive.toArray()), `day emissive ${defs.KX_FIG_DAY_EMIT}`);
+  assert.ok(close(defs.KX_FIG_K!.replace(/vec4\(|\)/g, '').split(',').map(Number), [K.dark, K.light, K.from, K.to]), `KX_FIG_K ${defs.KX_FIG_K}`);
   assert.ok(close(vec(defs.KX_FIG_NIGHT!), fig.color.toArray()), 'at night their own colour, unmapped');
   assert.ok(new THREE.Color(T.figure).equals(fig.color) && fig.emissive.equals(new THREE.Color(T.figure).multiplyScalar(T.figureLift)), 'their night colour and lift as before');
   // the shader: by day the interior's map times KX_FIG_DAY and KX_FIG_DAY_EMIT, at night their own
   const sh = { uniforms: {}, vertexShader: THREE.ShaderLib.lambert.vertexShader, fragmentShader: THREE.ShaderLib.lambert.fragmentShader } as unknown as THREE.WebGLProgramParametersWithUniforms;
   fig.onBeforeCompile(sh, undefined as unknown as THREE.WebGLRenderer);
-  assert.ok(sh.fragmentShader.includes('diffuseColor.rgb = mix( KX_FIG_DAY * texture2D( map, vMapUv ).rgb, KX_FIG_NIGHT, uWinNight )')
-    && sh.fragmentShader.includes('totalEmissiveRadiance = mix( KX_FIG_DAY_EMIT, totalEmissiveRadiance, uWinNight )'), 'the day tone in the shader');
+  assert.ok(sh.fragmentShader.includes('vec3 kxHall = texture2D( map, vMapUv ).rgb;')
+    && sh.fragmentShader.includes('float kxK = mix( KX_FIG_K.x, KX_FIG_K.y, clamp( ( kxHall.g - KX_FIG_K.z ) / ( KX_FIG_K.w - KX_FIG_K.z ), 0.0, 1.0 ) );')
+    && sh.fragmentShader.includes('diffuseColor.rgb = mix( kxK * KX_FIG_DAY * kxHall, KX_FIG_NIGHT, uWinNight )')
+    && sh.fragmentShader.includes('totalEmissiveRadiance = mix( kxK * KX_FIG_DAY_EMIT, totalEmissiveRadiance, uWinNight )'), 'the day tone in the shader');
   // each figure's and barrier's UV is the interior plane's behind it, so it samples the interior's tone at its own spot
   let seen = 0;
   for (const c of centres) for (const [x, y] of [[c - 0.35 * entryR, entryFoot + 0.3 + D.figure[1] * 0.5], [c + 0.55 * entryR, entryFoot + 0.3 + D.figure[1] * 0.8], [c - entryR + (0.5 * 2 * entryR) / D.barriers, entryFoot + 0.3 + D.barrier[1] * 0.4]] as const) {
@@ -100,11 +111,13 @@ test('A3 round 2: by day each figure and barrier is the interior\'s tone at its 
     seen++;
   }
   assert.ok(seen >= 9);
-  // in display: across the interior's measured range (5-37 sRGB) the figures read about 0.6 of it, never lighter
-  for (let l = 0.0005; l < 0.2; l *= 1.15) {
-    const i = show(l), f = show(k * l);
-    if (i < 5 || i > 37) continue;
-    // re-pinned round 2b (figureDay 0.65 -> 0.75, so the silhouettes hold): the same 0.27 band, moved up with it
-    assert.ok(f < i && (i < 15 || (f >= 0.55 * i && f <= 0.82 * i)), `interior ${i.toFixed(1)}: figure ${f.toFixed(1)}`); // in the toe a darker share, but darker
+  // in display (re-pinned round 2c: the GPU's dark-zone figures read 5-7 on a hall of 7-13): the hall's radiance t C + E, C and E set so its map's two
+  // ends read 5 and 37 sRGB as measured; the figure k(t) times it. Where the hall reads 20 or less the figure sits 9.5 or more levels under it, or near black (1 or less), (about
+  // 10), where it reads 25 or more the figure holds round 2b's 0.67-0.76 of it, and it is never lighter
+  const s2l = (c: number): number => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+  const G = D.gradient, V = D.vignette, tMin = s2l(G[0] * V.edge * V.top), C = (inv(37) - inv(5)) / (1 - tMin), E = inv(37) - C;
+  for (const h of [7, 10, 13, 16, 20, 25, 30, 37]) {
+    const H = inv(h), f = show(kAt((H - E) / C) * H);
+    assert.ok(f < h && (h > 20 || f <= Math.max(1, h - 9.5)) && (h < 25 || (f >= 0.67 * h && f <= 0.8 * h)), `a hall of ${h}: figure ${f.toFixed(1)}`);
   }
 });
