@@ -563,3 +563,26 @@ Part 8 left `adult_heel_boots` walking 5-10 cm low and said the cause was not fo
 **The change** (`js/sim/motion_metrics.mjs`, `GRD.clear`). The item used to take the lowest point of the swing foot over a window placed after the Zeni toe-off event, which is the moment the ankle is furthest behind the pelvis. For a heel boot that event comes about 0.33 s before the boot actually leaves the floor, because the ankle sits 239 mm above the toe and the boot rolls onto its tip before it lifts. So the window caught the boot still standing on its toe and read about 1 mm of clearance for a boot that clears the floor by 25-28 mm in every swing. That answers the question part 10 left open: the item was misplacing its window, not fairly reading a late lift-off. Now the swing is the foot's own time off the floor on the instrument's contact channel (from its last frame in contact to its next). The lowest point is taken over 35-80 % of that span. If a foot never meets the contact threshold in a recording, the old Zeni windows are kept as a fallback, so a hovering shoe still gets a reading rather than none.
 
 **Effect, re-scored on the 495 recordings of the full-roster run before this change:** mean clearance falls by 2.2 mm, because ordinary shoes lift soon after the Zeni event and the window now starts a little later in their swing. `adult_heel_boots` goes from 1.0 / 7.3 / 11.4 / 16.5 / 21.7 mm at 0.4-1.9 m/s to between 24 and 29 mm at every speed, which matches the trace. No recording reads under 10 mm afterwards. The unit test for the rendered-shoe channel now raises the shoe only while it is in the air (above `CONTACT_M`), so the raised shoe lands and leaves on the same frames as the landmarks and the two are compared over the same swing.
+
+### Round 2, part 11: the whole roster (99 people) with the earlier toe-off at speed and revision 13 - the instrument's gate is met
+The gait change in `68b4ffed`: above 1.25 m/s the trailing foot leaves the floor before the leg would bind the pelvis, and the swing foot lifts briefly, so the walk no longer jolts at the stride where the trailing leg reaches furthest. This is the first full-roster run with that change and with the clearance item of revision 13 (`--people all`, five speeds, steady, rendered-shoe floor).
+
+| category | score | p10 |
+|---|---|---|
+| GRD | 9.8 | 9.5 |
+| STR | 9.9 | 10.0 |
+| TIM | 10.0 | 10.0 |
+| LEG | 9.1 | 8.1 |
+| PEL | 9.9 | 9.7 |
+| ARM | 9.5 | 8.4 |
+| HEA | 10.0 | 10.0 |
+| SMO | 9.3 | 8.0 |
+| TRN | 9.8 | 9.7 |
+| RNG | 10.0 | 10.0 |
+
+**Overall 9.69, the 55 points 9.59. Worst recording: `adult_heel_boots` at 1.6 m/s, 8.4. Gate: PASS.** The margin is thin. LEG p10 is 8.1 and SMO p10 is 8.0. The weakest single categories in a recording:
+- LEG for `adult_heel_boots` at 1.6 m/s (5.8: hip extension and knee flexion short);
+- LEG for `adult_cyclist` at 0.8 m/s (6.4: stance knee too bent);
+- SMO for the fast walkers at 1.2-1.9 m/s (6.6-7.0). Here the pelvis still jerks at 14-15.5 m/s³ (`pelAcc`).
+
+Those are what remain to work on. The instrument's gate is not the goal's gate on its own: the adversarial reviewer must also co-sign.
