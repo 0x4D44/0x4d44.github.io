@@ -297,22 +297,13 @@ export function stepBag(rig, sit, pole, fresh, o) {
       mesh.position.set(kx, Math.min(v.y, u.y) - 0.09 * rig.s, ff + fz * (rig.d / 2 + 0.03)); mesh.rotation.set(0, yaw + Math.PI, 0); if (rig.handle) rig.handle.position.y = -rig.travel; return;
     }
     at(rig.grip, v); const hx = sd0 * (v.x - fit.midx);
-    if (lift) {   // carried by the top handle, broadside to the leg
-      mesh.position.set(fit.midx + sd0 * Math.max(hx, fit.hip + rig.d / 2 + 0.03), Math.max(0.04, v.y - rig.h - 0.035), v.z); mesh.rotation.set(0, yaw + Math.PI / 2, 0); if (rig.handle) rig.handle.position.y = -rig.travel; return;
-    }
-    if (rig.handle) rig.handle.position.y = 0;
-    // standing: upright beside the leg and a little behind.  Towed: tipped on to the wheels under the handle, the grip in the hand, the case rolling behind and outside the heel
-    if (rig.tow > 0.99 && walk > 0.5 && !(o && o.settle)) rig.park = null;   // (walking off, once it is fully in tow - not drawn standing then - it goes back to its place beside the leg when next stood; cleared at once, the standing case jumped 0.13 - 0.35 m in a frame, review 58)
-    // after a turn on the spot it stays where it was towed to, and is stood up there: moved back to its place beside the leg it slid 0.3 - 0.5 m with no hand on it (reviews 53 - 57)
-    const sx = rig.park ? rig.park[0] : fit.midx + sd0 * (fit.hip + rig.w / 2 + 0.06), sz = rig.park ? rig.park[1] : -fz * 0.1, t = rig.tow;
-    if (t < 0.01) { mesh.position.set(sx, 0, sz); mesh.rotation.set(0, yaw, 0); return; }
-    const th = Math.acos(Math.min(0.985, Math.max(0.55, (v.y + 0.02) / rig.gripH))) * t, c = Math.cos(th), sn = Math.sin(th);
-    const gx = fit.midx + sd0 * Math.max(hx, 0.15 + rig.w / 2), gzw = v.z;   // where the grip is
-    // the case's own (0, gripH, gz) is at the grip; its wheels (0, 0, pz) are on the floor
-    const lz = rig.gripH * sn + rig.gz * c, wy = -rig.pz * sn;
-    const tx = gx, tz = gzw - fz * lz, ty = -wy;   // towed
-    if (o && o.settle && (sit || pole ? 0 : walk) === 0 && !rig.park && t > 0.5) rig.park = [tx, tz];
-    mesh.position.set(sx + (tx - sx) * t, ty * t, sz + (tz - sz) * t); mesh.rotation.set(th, yaw, 0);
+    // carried by the top handle, broadside to the leg, on the stairs.  Blended in and out (lw): put straight down on to its wheels at the foot of the stairs it jumped 0.24 - 0.67 m in a frame (review 59)
+    const lt = lift ? 1 : 0; rig.lw = rig.lw === undefined ? lt : rig.lw + (lt - rig.lw) * (lift ? 0.15 : 0.12); if (Math.abs(rig.lw - lt) < 0.004) rig.lw = lt;
+    const lw = rig.lw;
+    if (lw > 0) { rig.lp = rig.lp || [0, 0, 0]; rig.lp[0] = fit.midx + sd0 * Math.max(hx, fit.hip + rig.d / 2 + 0.03); rig.lp[1] = Math.max(0.04, v.y - rig.h - 0.035); rig.lp[2] = v.z; }
+    if (lw >= 1) { mesh.position.set(rig.lp[0], rig.lp[1], rig.lp[2]); mesh.rotation.set(0, yaw + Math.PI / 2, 0); if (rig.handle) rig.handle.position.y = -rig.travel; return; }
+    floorPose(rig, o, walk, sit, pole, yaw, sd0, hx, v);
+    if (lw > 0) { const P = mesh.position, k = lw; P.set(P.x + (rig.lp[0] - P.x) * k, P.y + (rig.lp[1] - P.y) * k, P.z + (rig.lp[2] - P.z) * k); mesh.rotation.set(mesh.rotation.x * (1 - k), yaw + k * Math.PI / 2, 0); if (rig.handle) rig.handle.position.y = -rig.travel * k; }
     return;
   }
   if (where === 'lap') {
@@ -340,6 +331,24 @@ export function stepBag(rig, sit, pole, fresh, o) {
   const off = fit.hip + rig.d / 2 + BAGS.clear, x = v.x - fit.midx, L = rig.drop + rig.h * 0.6, def = off - sd * x;
   // a bag too wide to hang straight beside the hip keeps its handle in the hand and swings its body out, rather than the whole bag sliding sideways off the fingers
   mesh.position.set(v.x, Math.max(v.y + (rig.lug ? -0.004 : 0.014), rig.drop + rig.h + 0.012), v.z); mesh.rotation.set(0, 0, def > 0 ? sd * Math.asin(Math.min(0.42, def / L)) : 0);
+}
+
+/** the case on the floor: standing beside the leg, or towed on its wheels (v: the grip, in the body's frame) */
+function floorPose(rig, o, walk, sit, pole, yaw, sd0, hx, v) {
+  const { mesh, fit } = rig, fz = fit.fz;
+  if (rig.handle) rig.handle.position.y = 0;
+  // standing: upright beside the leg and a little behind.  Towed: tipped on to the wheels under the handle, the grip in the hand, the case rolling behind and outside the heel
+  if (rig.tow > 0.99 && walk > 0.5 && !(o && o.settle)) rig.park = null;   // (walking off, once it is fully in tow - not drawn standing then - it goes back to its place beside the leg when next stood; cleared at once, the standing case jumped 0.13 - 0.35 m in a frame, review 58)
+  // after a turn on the spot it stays where it was towed to, and is stood up there: moved back to its place beside the leg it slid 0.3 - 0.5 m with no hand on it (reviews 53 - 57)
+  const sx = rig.park ? rig.park[0] : fit.midx + sd0 * (fit.hip + rig.w / 2 + 0.06), sz = rig.park ? rig.park[1] : -fz * 0.1, t = rig.tow;
+  if (t < 0.01) { mesh.position.set(sx, 0, sz); mesh.rotation.set(0, yaw, 0); return; }
+  const th = Math.acos(Math.min(0.985, Math.max(0.55, (v.y + 0.02) / rig.gripH))) * t, c = Math.cos(th), sn = Math.sin(th);
+  const gx = fit.midx + sd0 * Math.max(hx, 0.15 + rig.w / 2), gzw = v.z;   // where the grip is
+  // the case's own (0, gripH, gz) is at the grip; its wheels (0, 0, pz) are on the floor
+  const lz = rig.gripH * sn + rig.gz * c, wy = -rig.pz * sn;
+  const tx = gx, tz = gzw - fz * lz, ty = -wy;   // towed
+  if (o && o.settle && (sit || pole ? 0 : walk) === 0 && !rig.park && t > 0.5) rig.park = [tx, tz];
+  mesh.position.set(sx + (tx - sx) * t, ty * t, sz + (tz - sz) * t); mesh.rotation.set(th, yaw, 0);
 }
 
 /** take a bag off a clone (the clone is being thrown away; the geometries and the material are shared and stay) */

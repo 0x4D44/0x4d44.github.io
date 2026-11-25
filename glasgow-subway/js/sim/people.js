@@ -523,7 +523,7 @@ export class AnimCrowd {
     if (p.bagRig) stepBag(p.bagRig, p.state === 'sit', p.state === 'pole', true, this._bagHow(p));
     // the same bag on the other model (a near/far swap): it carries on as it was - placed afresh from the new skeleton, which the gait has not posed yet this frame, a towed
     // case flickered 0.2 - 0.5 m for a frame (review 58)
-    if (p.bagRig && old && old.kind === p.bagRig.kind && old.mesh && p.bagRig.mesh) { p.bagRig.tow = old.tow; p.bagRig.park = old.park; if (old.where === p.bagRig.where) { p.bagRig.mesh.position.copy(old.mesh.position); p.bagRig.mesh.rotation.copy(old.mesh.rotation); if (old.handle && p.bagRig.handle) p.bagRig.handle.position.copy(old.handle.position); } }
+    if (p.bagRig && old && old.kind === p.bagRig.kind && old.mesh && p.bagRig.mesh) { p.bagRig.tow = old.tow; p.bagRig.park = old.park; p.bagRig.lw = old.lw; if (old.where === p.bagRig.where) { p.bagRig.mesh.position.copy(old.mesh.position); p.bagRig.mesh.rotation.copy(old.mesh.rotation); if (old.handle && p.bagRig.handle) p.bagRig.handle.position.copy(old.handle.position); } }
   }
   /** Seated, a skirt or dress hung straight down from the hips as a ring round the knees, the bare thighs inside it (review 9: ya_smile_dress, elder_woman_dress,
    *  teen_skirt). A seated wearer's garment meshes take a second set of skin weights, made once per character and model: below the hips each vertex is
@@ -595,6 +595,8 @@ export class AnimCrowd {
     return false;
   }
   /** test hook: give a person a bag by hand ({ kind, colour, hand } or null) */
+  /** a person handed over from another crowd (on to a train) keeps their case's tow and lift, and it is placed from there now rather than stood up afresh */
+  bagCarry(p, old) { const r = p.bagRig; if (!r || !old || old.kind !== r.kind || r.kind !== 'trolley') return; r.tow = old.tow || 0; r.lw = old.lw || 0; r.park = null; p.obj.updateMatrixWorld(true); stepBag(r, p.state === 'sit', p.state === 'pole', false, this._bagHow(p)); }
   _bagSet(p, bag) { dropBag(p.bagRig); p.bag = bag; if (p.gait) { if (p.gait.rig) p.gait.rig.restore(); p.gait = null; } this._bagOn(p); return !!p.bagRig; }
   /** how a wheeled case is handled this frame: towed as far as the person is walking, carried on the stairs */
   _bagHow(p) { if (!p.bagRig || p.bagRig.kind !== 'trolley') return null; const w = p.settleTurn || p.settleGait ? 1 : p.gait ? p.gait.wU : (p.cur && /^walk/.test(p.cur.getClip().name) ? 1 : 0);   /* (stepping round or to a new spot, the case is taken by the handle: left standing, it swept round its owner on the floor untouched - review 52) */ this._bh = this._bh || {}; this._bh.walk = w; this._bh.lift = !!p.stair; this._bh.turn = !!(p.settleTurn || p.settleGait); this._bh.settle = !p.walking && p.state !== 'walk' && p.state !== 'go'; return this._bh; }
