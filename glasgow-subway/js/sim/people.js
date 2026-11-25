@@ -17,6 +17,7 @@ import { LookRig } from './look_three.js';
 export const PET_OWNER = 'adult_string_vest';   // the man in the string vest walks a haggis (haggis.js)
 import { dressTee, undressTee, takePrint, releasePrint, printAtlas, teeColour, TEE } from './tees.js';
 // ?gait=clip: the captured clip walk the game had before the procedural gait (to compare, and the baseline of research/people-motion-rubric.md)
+const POSE_FADE = 0.4;   // s: a person handed over between crowds goes from their old pose to their new one in this long
 const SIT_FEET = 0.07;   // how far below the floor a seated person's soles may reach before they are lifted off the seat (people audit: 0.08)
 const CLIP_WALK = typeof location !== 'undefined' && /[?&]gait=clip(&|$)/.test(location.search || '');
 // ?phones=0: nobody uses a mobile phone (to compare; the walking metrics of research/people-motion-rubric.md are measured without them)
@@ -502,6 +503,7 @@ export class AnimCrowd {
     if (p.cur) p.cur.time = this.rng() * p.cur.getClip().duration;
     p.mixer.update(0.0001); p.dirty = false;   // pose the skeleton now (far people are frozen, never in the bind pose)
     if (p.hold) this._holdStep(p, 0, true);
+    if (p.pose) { p.poseFrom = p.pose; p.pose = null; p.poseT = 0; this._poseBlend(p, 0); }
     this.people.push(p); this._place(p, true);
     this._bagOn(p);
     if (ch.id === PET_OWNER) { p.pet = makeHaggis(this.THREE); this._petStep(p, 0); }
@@ -749,6 +751,7 @@ export class AnimCrowd {
     if (p.state === 'sit' && p.m) { // hips over the seat position (not the root): root = seat - R(yaw) * hipsLocalXZ
       const c = Math.cos(p.yaw), s = Math.sin(p.yaw), hx = p.m.hips[0], hz = p.m.hips[2]; x -= c * hx + s * hz; z -= -s * hx + c * hz;
     }
+    if (p.rootOff && p.poseFrom) { const u = Math.min(1, p.poseT / POSE_FADE), w = 1 - u * u * (3 - 2 * u); x += p.rootOff.x * w; z += p.rootOff.z * w; }   // (handed over a little way from where they stood: drawn there first, then eased across)
     p.obj.position.set(x, p.y + p.yOff, z); p.obj.rotation.set(0, p.yaw, 0);
   }
   /** the first-person user (crowd-group local frame): nobody spawns within 2.5 m or in the near view cone, and people step around them */
@@ -908,7 +911,17 @@ export class AnimCrowd {
   }
   // ------------------------------------------------------------------ riders changing place (used by the game's boarding / alighting: index.js _exchange)
   /** hand a person over to another crowd: they are removed here and what makes them recognisable (who they are, their print and shirt colour) is returned, to be given to add() there */
-  take(q) { const i = this.people.indexOf(q); if (i < 0) return null; const look = { char: q.char, print: q.print, teeColour: q.teeColour, bag: q.bag, force: true }; q.print = null; this._drop(q); this.people.splice(i, 1); return look; }
+  /** the pose a person has now (each bone's local rotation and position, by name), for whoever takes them over in another crowd to start from */
+  snapPose(q) { if (!q || !q.obj) return null; const m = new Map(); q.obj.traverse((o) => { if (o.isBone && !m.has(o.name)) m.set(o.name, [o.quaternion.x, o.quaternion.y, o.quaternion.z, o.quaternion.w, o.position.x, o.position.y, o.position.z]); }); return m; }
+  /** handed over from another crowd (getting on or off a train): the new body starts in the old one's pose and where it stood, and goes over to its own in POSE_FADE s.
+   *  Made afresh in its own clip's pose, the whole body jumped in one frame at the door - feet 0.20 - 0.44 m, hands up to 0.53 m, 11 of 11 people (review 60) */
+  _poseBlend(p, dt) {
+    p.poseT += dt; const u = Math.min(1, p.poseT / POSE_FADE), w = 1 - u * u * (3 - 2 * u); if (w <= 0.001) { p.poseFrom = null; p.rootOff = null; return; }
+    const tr = p.curClip ? (p._poseTr && p._poseTr.clip === p.curClip ? p._poseTr : (p._poseTr = { clip: p.curClip, set: new Set(p.curClip.tracks.map((t) => t.name.split('.')[0])) })).set : null;
+    const Q = this._pq || (this._pq = new this.THREE.Quaternion()), V = this._pv || (this._pv = new this.THREE.Vector3());
+    p.obj.traverse((o) => { if (!o.isBone || (tr && !tr.has(o.name))) return; const a = p.poseFrom.get(o.name); if (!a) return; o.quaternion.slerp(Q.set(a[0], a[1], a[2], a[3]), w); o.position.lerp(V.set(a[4], a[5], a[6]), w); });   // (only bones the clip sets afresh every frame: any other would keep the blend)
+  }
+  take(q) { const i = this.people.indexOf(q); if (i < 0) return null; const look = { char: q.char, print: q.print, teeColour: q.teeColour, bag: q.bag, force: true, pose: this.snapPose(q) }; q.print = null; this._drop(q); this.people.splice(i, 1); return look; }
   /** a walking passenger who is visible from the first frame and follows a route (points in the crowd's frame); onArrive(p, reached) is called at the end, then they are removed */
   walkOn(look, from, yaw, path, y, onArrive, speed) {
     const p = this.add({ ...look, x: from.x, z: from.z, y, yaw, yawT: yaw, mode: 'go', tx: path[0].x, tz: path[0].z, rail: !!path[0].rail, ty: y, speed: speed || 1.0 + this.rng() * 0.25, delay: 0, path: path.slice(1), onArrive, routed: true });
@@ -1073,6 +1086,7 @@ export class AnimCrowd {
       if (upd && p.gait && p.gait.rig) p.gait.rig.restore();
       if (p.manFade) this._manFade(p);
       if (animate) { p.mixer.update(dt); p.dirty = false; if (this.gaitOn && !p.static) { this._carryStep(p, dt); this._gaitStep(p, dt); } else if (this.gaitOn && (p.state === 'stand' || p.state === 'pole' || p.gait) && !(p.tween && !p.settleGait && !p.gait)) this._gaitStep(p, dt);   /* (not while a rider is carried by a tween with no gait of their own - standing up out of a seat: made then, it skated a foot 24 - 39 cm as the body left the seat - review 50) */   /* (a standing rider too: the idle clips turn the pelvis but never move it, so the shoes slid 8 - 12 cm side to side together every few seconds - review 49; planted by the gait they stay, and step when the body has drifted off them) */ } else if (p.dirty) { p.mixer.update(this.crossfade + 0.05); p.dirty = false; }
+      if (p.poseFrom) { if (animate) this._poseBlend(p, dt); else { p.poseFrom = null; p.rootOff = null; } }
       if (upd && p.fadeEnd && this._clock < p.fadeEnd && (p.state === 'sit' || p.wasSit)) this._floorFeet(p);
       if (hold && upd) this._holdStep(p, dt, !animate);
       if (upd) this._fingers(p, dt, !animate);
