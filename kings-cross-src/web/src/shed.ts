@@ -67,12 +67,11 @@ export const TOWER_TOP = {
  * Tower round 2 (rubric A4, the fresh scorer against R-kx-front-c). The shaft's corners are pilasters in the panel's own brick, `width` square
  * (0.13 of the shaft's 6.7 m), standing `proud` in front of the panel between them, so only a shadow line tells them from it (they were pale
  * stone quoins). The cap is a low hipped dark metal roof (TOWER_TOP.rise 0.6 m) whose dark edge, `edge` 0.25 m deep, stands `eave` 0.15 m past
- * the corona. The soffit under the corona and the frieze between the brackets read pale and mid-shadow in the photograph, near-black in the
- * model: their normals are turned out (`soffitTilt`, `friezeTilt`, the y of the turned normal) so the sky's half of the hemisphere light reaches
- * them, an ambient lift in place of a bounce the model has no pass for. The vane carries a compass cross, arms `arm` long from the mast at
+ * the corona. Round 2b: the gaps between the brackets read mid-shadow in the photograph; the frieze runs up behind the brackets to
+ * the corona, so the gaps show its outward stone face (round 2's turned normals darkened them: reverted). The vane carries a compass cross, arms `arm` long from the mast at
  * `crossBelow` under the vane's top, with a letter at each arm's end; the banner rides above it. Sizes ASSUMED.
  */
-export const TOWER_ROUND2 = { pilaster: { width: 0.87, proud: 0.15 }, soffitTilt: -0.3, friezeTilt: 0.45, vane: { arm: 0.9, crossBelow: 1.0, letter: [0.2, 0.26] } } as const;
+export const TOWER_ROUND2 = { pilaster: { width: 0.87, proud: 0.15 }, vane: { arm: 0.9, crossBelow: 1.0, letter: [0.2, 0.26] } } as const;
 /**
  * The clock dials (round 5, tower passes 2 and 2a): the gilt bezel sits straight on the stage's brick, no stone surround (R-kx-front-a, -c).
  * The scorer measured the dial at about 0.65 of the stage's face in front-a, 0.63 to 0.72 in front-c: a 1.52 m radius is 0.66 of the
@@ -2285,7 +2284,9 @@ export function buildTower(x: number): THREE.Group {
   // the bracketed cornice (TOWER_TOP, R-kx-front-c): a stone frieze, a row of two-tier stone brackets on every face, the corona they carry,
   // then the dark metal roof's edge and its near-flat hipped top
   const { frieze, bracket, perFace, corona, overhang, edge, rise, eave } = TOWER_TOP;
-  ts.box([0, eavesY + frieze / 2, 0], [cw + 0.2, frieze, cw + 0.2], { skip: ['+x', '-x', '+z', '-z'] }); // its faces are drawn under the corona's soffit
+  // the frieze, carried up behind the brackets to the corona as a solid backing (tower round 2b): the gaps between the brackets show its
+  // outward stone face, lit by the night wash as the frieze below is, and no sky shows through the lower tier
+  ts.box([0, eavesY + (frieze + bracket.height) / 2, 0], [cw + 0.2, frieze + bracket.height, cw + 0.2], { skip: ['+y'] });
   const by = eavesY + frieze;
   for (const [nx, nz] of [[0, 1], [1, 0], [0, -1], [-1, 0]] as [number, number][]) {
     for (let k = 0; k < perFace; k++) {
@@ -2299,16 +2300,7 @@ export function buildTower(x: number): THREE.Group {
     }
   }
   const cy = by + bracket.height, span = cw + 2 * overhang;
-  ts.box([0, cy + corona / 2, 0], [span, corona, span], { skip: ['-y'] }); // the corona
-  // its soffit, a strip on each face from the brackets' heads out, and the frieze's faces between the brackets, their normals turned out (TOWER_ROUND2)
-  for (const [nx, nz] of [[0, 1], [1, 0], [0, -1], [-1, 0]] as [number, number][]) {
-    const at = (u: number, d: number, y: number): V3 => (nx === 0 ? [u, y, nz * d] : [nx * d, y, -nx * u]);
-    const out = (ny: number): V3 => { const h = Math.sqrt(1 - ny * ny); return [nx * h, ny, nz * h]; };
-    const i = cw / 2, o = span / 2;
-    ts.poly([at(-i, i, cy), at(i, i, cy), at(o, o, cy), at(-o, o, cy)], [[-i, i], [i, i], [o, o], [-o, o]], { normal: out(TOWER_ROUND2.soffitTilt) });
-    const f = cw / 2 + 0.1;
-    ts.poly([at(-f, f, eavesY), at(f, f, eavesY), at(f, f, by), at(-f, f, by)], [[-f, 0], [f, 0], [f, frieze], [-f, frieze]], { normal: out(TOWER_ROUND2.friezeTilt) });
-  }
+  ts.box([0, cy + corona / 2, 0], [span, corona, span]); // the corona, its soffit straight down as BASE's
   const capBase = cy + corona, hb = span / 2 + eave, capTop = capBase + edge + rise;
   tslate.box([0, capBase + edge / 2, 0], [2 * hb, edge, 2 * hb], { skip: ['+y'] }); // the roof's dark edge, over the corona
   const apex: V3 = [0, capTop, 0];

@@ -59,22 +59,41 @@ test('the cap is a low hipped dark metal roof, about 0.6 m high, its dark edge 0
   assert.ok(outer - corona >= 0.1, `the edge stands ${(outer - corona).toFixed(2)} m past the corona`);
 });
 
-test('the soffit under the corona and the frieze between the brackets take the sky\'s light: their normals turned out, not straight down', () => {
-  const sky = (n: THREE.Vector3): number => (1 + n.y) / 2; // the hemisphere light's sky share for a normal
-  const cw = TOWER_SIZE - 1.8;
-  let soffit = 0, frieze = 0;
-  for (const t of triangles(named('tower-stone'))) {
-    const c = t.p.reduce((s, p) => s.add(p), new THREE.Vector3()).divideScalar(3), out = Math.max(Math.abs(c.x), Math.abs(c.z));
-    if (t.n.y < -0.9 && c.y > eavesY + 1 && out > cw / 2 + 0.05) {
-      soffit++;
-      for (const n of t.vn) assert.ok(sky(n) >= 0.3 && n.x * c.x + n.z * c.z > 0, `a soffit's normal (${n.toArray().map(q => q.toFixed(2))}) takes ${sky(n).toFixed(2)} of the sky, turned out`);
-    }
-    if (Math.abs(t.n.y) < 0.1 && c.y > eavesY && c.y < eavesY + 0.3 && Math.abs(out - (cw / 2 + 0.1)) < 0.01) {
-      frieze++;
-      for (const n of t.vn) assert.ok(sky(n) >= 0.65, `the frieze between the brackets takes ${sky(n).toFixed(2)} of the sky`);
+// Round 2b (the round-2 score): round 2 turned the soffit's and the frieze's normals and the bracket gaps went black, by day and under the night wash.
+// This replaces round 2's turned-normal test: what a viewer south of the tower meets through each gap between the brackets is an outward stone face,
+// and the night wash (shed.ts frontWash, the tower's branch, modelled here) reaches it as it reaches the brackets' own faces.
+const wash = (p: THREE.Vector3, n: THREE.Vector3): number => {
+  const y = Math.max(p.y, 0), faceU = Math.abs(p.x) * Math.abs(n.z) + Math.abs(p.z) * Math.abs(n.x);
+  const rail = Math.exp(-((Math.abs(faceU - 2.6) / (0.61 + 0.078 * y)) ** 2)), shaft = (0.045 + 0.76 * rail) * Math.exp(-y / 8.5);
+  const stage = Math.exp(-((Math.abs(y - (CLOCK_TOWER_HEIGHT - 5.8)) / 1.95) ** 2)), stageEdge = 0.62 + 0.38 * Math.min(1, Math.max(0, (faceU - 0.8) / 1.5));
+  const eaves = Math.exp(-((Math.abs(y - (CLOCK_TOWER_HEIGHT - 3.0)) / 0.65) ** 2));
+  return (shaft + 0.33 * stage * stageEdge + 0.36 * eaves) * (1 - Math.max(n.y, 0));
+};
+test('through every gap between the brackets a viewer meets an outward stone face the night wash lights, no sky; the frieze under them faces straight out', () => {
+  const cw = TOWER_SIZE - 1.8, by = eavesY + 0.3, top = by + 0.8, pitch = (cw - 0.5) / 6;
+  const vertexNormal = (h: THREE.Intersection): THREE.Vector3 => new THREE.Vector3().fromBufferAttribute((h.object as THREE.Mesh).geometry.getAttribute('normal'), h.face!.a);
+  let gaps = 0;
+  for (let k = 0; k < 6; k++) {
+    const u = -cw / 2 + 0.25 + pitch * (k + 0.5);
+    for (let y = by + 0.05; y < top - 0.02; y += 0.1) for (const rise of [0, 0.25, 0.5]) {
+      const dir = new THREE.Vector3(0, rise, -1).normalize(), o = new THREE.Vector3(u, y, cw / 2 + 0.3).addScaledVector(dir, -30);
+      const h = new THREE.Raycaster(o, dir, 0, 60).intersectObject(tower, true)[0];
+      assert.ok(h, `sky through the gap at u ${u.toFixed(2)}, ${(y - by).toFixed(2)} m up, looking up ${rise}`);
+      const n = vertexNormal(h);
+      assert.ok((h.object as THREE.Mesh).name === 'tower-stone' && n.dot(dir) < -0.2, `the gap shows ${(h.object as THREE.Mesh).name}, a face turned ${n.toArray().map(q => q.toFixed(2))}`);
+      // against a bracket's front face at the same point (a soffit's faceU is 0 in the shader, so it misses the corner rail: 0.75, not 1)
+      const bracketFace = wash(h.point, new THREE.Vector3(0, 0, 1));
+      assert.ok(wash(h.point, n) >= 0.75 * bracketFace, `the night wash in the gap ${wash(h.point, n).toFixed(3)} against a bracket face's ${bracketFace.toFixed(3)}`);
+      gaps++;
     }
   }
-  assert.ok(soffit >= 8 && frieze >= 8, `the corona's soffit (${soffit}) and the frieze's faces (${frieze}) are drawn`);
+  assert.ok(gaps >= 100, `${gaps} rays through the gaps`);
+  for (const x of [-1.5, 0, 1.5]) {
+    const h = new THREE.Raycaster(new THREE.Vector3(x, eavesY + 0.15, 30), new THREE.Vector3(0, 0, -1), 0, 60).intersectObject(tower, true)[0];
+    assert.ok(h && (h.object as THREE.Mesh).name === 'tower-stone', 'the frieze under the brackets is stone');
+    const n = vertexNormal(h);
+    assert.ok(n.z > 0.99, `and faces straight out, the wash's whole share (normal ${n.toArray().map(q => q.toFixed(2))})`);
+  }
 });
 
 test('the vane carries a compass cross well under its banner, arms about 0.9 m each way, a letter over each arm\'s end, clear of the cap', () => {
