@@ -1,6 +1,6 @@
 /* Chapter: Stories. Ten free stories per model against ten-story human groups:
    a 2-D map of every story, two sameness measures, and per-model habits. */
-Zoo.chapter("stories", ["stories"], function (el, data) {
+Zoo.chapter("stories", ["stories", "detect"], function (el, data) {
   var h = Zoo.h, S = data.stories, G = S.groups || {}, NS = "http://www.w3.org/2000/svg";
 
   Zoo.head(el, "Chapter 7", "Stories",
@@ -232,7 +232,158 @@ Zoo.chapter("stories", ["stories"], function (el, data) {
     return h("div", { class: "card" }, kids);
   }
 
-  // ---- 4. Method ---------------------------------------------------------------------
+  // ---- 4. Could a simple detector tell? --------------------------------------------
+  var D = data.detect;
+  if (D && D.base && D.base.kinds) detector(D);
+
+  function detector(D) {
+    var K = D.base.kinds;
+    function frac(r, f) { return r && r[f] != null ? Math.round(r[f] * (f === "fpr" ? r.n_human : r.n_model)) : null; }
+    function rate(r, f) { return r && r[f] != null ? (r[f] * 100).toFixed(r[f] > 0 && r[f] < 0.1 ? 1 : 0) + "%" : "–"; }
+    el.appendChild(h("h3", { class: "part", text: "Could a simple detector tell?" }));
+    el.appendChild(h("p", { class: "note", text: "On the map the two kinds of writing sit apart, so we tried the plainest detector there is: " +
+      "a logistic regression, one straight cut through the same 1,536 numbers that place each story on the map. " +
+      "Every text was scored by a detector that had never seen its writer. We held out one writer at a time (a model with its thinking variant, " +
+      "a group of ten Reddit writers, a classic author, this site’s author), trained on everything else, and scored only what was held out. " +
+      "A score of 50% or more means “written by AI”." }));
+    var krows = [["reddit", "Reddit writers", "wp", "fpr", "humans called AI"], ["gutenberg", "Classic authors", "gb", "fpr", "humans called AI"],
+      ["author", AUTHOR, "ax", "fpr", "humans called AI"], ["gpt", "GPT stories", "openai", "fnr", "models called human"],
+      ["claude", "Claude stories", "anthropic", "fnr", "models called human"]];
+    el.appendChild(h("div", { class: "table-wrap" }, [h("table", { class: "data detect" }, [
+      h("thead", null, [h("tr", null, [h("th", { text: "Writer" }), h("th", { class: "num", text: "Texts" }), h("th", { text: "Mistake" }),
+        h("th", { class: "num", text: "Wrong" }), h("th", { class: "num", text: "Rate" })])]),
+      h("tbody", null, krows.filter(function (r) { return K[r[0]] && (K[r[0]].n_human || K[r[0]].n_model); }).map(function (r) {
+        var g = K[r[0]], n = r[3] === "fpr" ? g.n_human : g.n_model;
+        return h("tr", null, [h("td", null, [h("span", { class: "who" }, [h("span", { class: "dot " + r[2] }), r[1]])]),
+          h("td", { class: "num", text: String(n) }), h("td", { text: r[4] }),
+          h("td", { class: "num", text: String(frac(g, r[3])) }), h("td", { class: "num", text: rate(g, r[3]) })]);
+      }))])]));
+    var ms = (D.base.models || []).slice().sort(function (a, b) { return (b.fnr || 0) - (a.fnr || 0) || a.mean_p_model - b.mean_p_model; });
+    if (ms.length) el.appendChild(h("p", { class: "note" }, ["Hardest to catch, by the detector’s average score for their ten stories: "].concat(
+      ms.slice(0, 5).map(function (m, i) {
+        return h("span", null, [i ? ", " : "", Zoo.name(m.model), " " + Math.round(m.mean_p_model * 100) + "%" + (m.fnr ? " (" + frac(m, "fnr") + " of " + m.n_model + " missed)" : "")]);
+      }), [ms[0].fnr ? "." : ". No model had a story missed, so these are only the least certain calls."])));
+
+    var M = D.matched;
+    if (!M) return;
+    el.appendChild(h("h4", { class: "sub", text: "Is it the writer, or the subject?" }));
+    var nWpP = (M.humans_new && M.humans_new.reddit.n_human) || 0, nM = (D.models_matched || []).length;
+    el.appendChild(h("p", { class: "note", text: "That test is easy in a way that has nothing to do with authorship. Every model answered the same one-line request, " +
+      "while each Reddit writer answered a different prompt and the classic authors and this site’s author wrote about other things entirely. " +
+      "So we built a topic-matched set. " + nM + " models, old and new from both families, each wrote a story of about 300 words for the actual prompts of " +
+      nWpP + " of the Reddit stories, and three 300-word essay passages for each title of this site’s author’s ten sampled essays (they saw only the titles). " +
+      "No prompt or title was on both sides of a split: each one went into one of " + D.k_topic + " folds, and a detector being tested on a fold never trained on any text from it." }));
+    function aucF(x) { return x == null ? "–" : x > 0.9995 && x < 1 ? x.toFixed(4) : x.toFixed(3); }
+    function cellR(r, f) { return r && r[f] != null ? rate(r, f) + " (" + frac(r, f) + "/" + (f === "fpr" ? r.n_human : r.n_model) + ")" : "–"; }
+    var hdr = ["", "Free stories: models missed", "Matched, same detector: models missed", "Matched, retrained: models missed", "Matched, retrained: humans called AI", "Retrained AUC"];
+    el.appendChild(h("div", { class: "table-wrap" }, [h("table", { class: "data detect" }, [
+      h("thead", null, [h("tr", null, hdr.map(function (t, i) { return h("th", { class: i ? "num wrap" : "", text: t }); }))]),
+      h("tbody", null, M.rows.map(function (r) {
+        var who = (r.family === "gpt" ? "GPT" : "Claude") + (r.genre === "stories" ? " stories on the Reddit prompts" : " essays on the author’s titles");
+        return h("tr", null, [h("td", null, [h("span", { class: "who" }, [h("span", { class: "dot " + (r.family === "gpt" ? "openai" : "anthropic") }), who])]),
+          h("td", { class: "num", text: cellR(r.unmatched, "fnr") }), h("td", { class: "num", text: cellR(r.matched_old, "fnr") }),
+          h("td", { class: "num", text: cellR(r.matched_new, "fnr") }), h("td", { class: "num", text: cellR(r.matched_new, "fpr") }),
+          h("td", { class: "num", text: aucF(r.matched_new.auc) })]);
+      }))])]));
+    el.appendChild(h("p", { class: "note", text: "“Same detector” is the one from the table above, trained only on the free stories and the human texts. " +
+      "“Retrained” also learns from the matched texts of the other models and the other folds. " +
+      "AUC is the chance that a random model text scores above a random human one: 1.000 is a perfect ranking, 0.5 a coin toss. " +
+      "Human rates in each row are for the Reddit stories whose prompts were used, or for this site’s ten passages." }));
+
+    var mh = (M.models || []).map(function (m) {
+      var n = 0, newMiss = 0, oldMiss = 0;
+      ["stories", "essays"].forEach(function (g) { n += m[g].new.n_model; newMiss += frac(m[g].new, "fnr"); oldMiss += frac(m[g].old, "fnr"); });
+      return { model: m.model, n: n, newMiss: newMiss, oldMiss: oldMiss };
+    }).sort(function (a, b) { return b.newMiss - a.newMiss || b.oldMiss - a.oldMiss; });
+    if (mh.length) el.appendChild(h("p", { class: "note" }, ["Hardest to catch on the matched texts: "].concat(mh.slice(0, 3).map(function (m, i) {
+      return h("span", null, [i ? "; " : "", Zoo.name(m.model), " " + m.newMiss + " of " + m.n + " missed after retraining, " + m.oldMiss + " by the first detector"]);
+    }), ["."])));
+
+    var Ds = D.distances || {};
+    var dl = [];
+    if (Ds.stories) dl.push("a Reddit story sits " + Ds.stories.unmatched.toFixed(2) + " from the models’ free stories but " + Ds.stories.matched.toFixed(2) +
+      " from model stories written to its own prompt; two Reddit stories sit " + Ds.stories.human_human.toFixed(2) + " apart");
+    if (Ds.essays) dl.push("a passage by this site’s author sits " + Ds.essays.unmatched.toFixed(2) + " from the free stories and " + Ds.essays.matched.toFixed(2) +
+      " from model essays on its own title; two of the author’s passages sit " + Ds.essays.human_human.toFixed(2) + " apart");
+    if (dl.length) el.appendChild(h("p", { class: "note", text: "In the full 1,536 numbers (cosine distance: 0 is the same direction, larger is further), " + dl.join("; ") + "." }));
+
+    var mp = D.map || [];
+    if (mp.length && pts.length) {
+      el.appendChild(h("div", { class: "legend" }, [
+        h("span", null, [h("span", { class: "dot openai" }), "GPT, matched"]),
+        h("span", null, [h("span", { class: "dot anthropic" }), "Claude, matched"]),
+        h("span", null, [h("span", { class: "dot sq" }), "squares: essays"]),
+        h("span", null, [h("span", { class: "dot bgpt" }), "grey: the free stories"]),
+        h("span", null, [h("span", { class: "dot wp faint" }), "faint: the human texts"])]));
+      var all2 = pts.concat(mp);
+      var X0 = Math.min.apply(null, all2.map(function (p) { return p.x; })), X1 = Math.max.apply(null, all2.map(function (p) { return p.x; }));
+      var Y0 = Math.min.apply(null, all2.map(function (p) { return p.y; })), Y1 = Math.max.apply(null, all2.map(function (p) { return p.y; }));
+      var MW = 720, MH = 440, MP = 14;
+      var tx = function (v) { return (MP + (MW - 2 * MP) * (v - X0) / ((X1 - X0) || 1)).toFixed(1); };
+      var ty = function (v) { return (MH - MP - (MH - 2 * MP) * (v - Y0) / ((Y1 - Y0) || 1)).toFixed(1); };
+      var s2 = document.createElementNS(NS, "svg");
+      s2.setAttribute("viewBox", "0 0 " + MW + " " + MH);
+      s2.setAttribute("class", "map");
+      s2.setAttribute("role", "img");
+      s2.setAttribute("aria-label", "The story map again, with " + mp.length + " topic-matched model texts added");
+      pts.forEach(function (p) {
+        var c = document.createElementNS(NS, "circle");
+        c.setAttribute("cx", tx(p.x)); c.setAttribute("cy", ty(p.y)); c.setAttribute("r", 3);
+        var g = G[p.group] || { kind: "model" };
+        c.setAttribute("class", g.kind === "model" ? "pt bg" : "pt faint " + cls(p.group));
+        s2.appendChild(c);
+      });
+      mp.forEach(function (p) {
+        var c, cx = tx(p.x), cy = ty(p.y);
+        if (p.set === "essay") {
+          c = document.createElementNS(NS, "rect");
+          c.setAttribute("x", (cx - 3.5).toFixed(1)); c.setAttribute("y", (cy - 3.5).toFixed(1)); c.setAttribute("width", 7); c.setAttribute("height", 7);
+        } else {
+          c = document.createElementNS(NS, "circle");
+          c.setAttribute("cx", cx); c.setAttribute("cy", cy); c.setAttribute("r", 4);
+        }
+        c.setAttribute("class", "pt " + (p.kind === "gpt" ? "openai" : "anthropic"));
+        c.setAttribute("data-tip", Zoo.model(p.model).label + (p.set === "essay" ? ", an essay passage on one of the author’s titles" : ", a story for a Reddit prompt"));
+        s2.appendChild(c);
+      });
+      el.appendChild(h("div", { class: "mapwrap" }, [s2]));
+      el.appendChild(h("p", { class: "note", text: "The same two axes as the map above, with its free model stories in grey and its human texts faint. " +
+        "The axes were fitted without the matched texts, so this shows where they land, not a new layout." }));
+    }
+    el.appendChild(h("div", { class: "how one" }, [para("What this does and does not show", HONEST(D))]));
+  }
+
+  // The closing paragraph's numbers come from the data, so it stays true if the data is rebuilt.
+  function HONEST(D) {
+    var R = D.matched.rows, Ds = D.distances || {};
+    function span(f) {
+      var v = R.map(f).filter(function (x) { return x != null; });
+      return [Math.min.apply(null, v), Math.max.apply(null, v)];
+    }
+    var miss = span(function (r) { return r.matched_old.fnr; }), au = span(function (r) { return r.matched_new.auc; });
+    var auOld = span(function (r) { return r.matched_old.auc; });
+    var f3 = function (x) { return x > 0.9995 && x < 1 ? x.toFixed(4) : x.toFixed(3); };
+    var axNew = D.matched.humans_new.author, axWrong = Math.round((axNew.fpr || 0) * axNew.n_human);
+    var p100 = function (x) { return Math.round(x * 100) + "%"; };
+    var shows = "On these texts, a plain linear cut through the embeddings finds a signal that survives topic matching, but the clean split on the map is partly topic and format. ";
+    if (Ds.stories) shows += "Given the same prompt, model stories move much closer to the human ones: a Reddit story sits nearer the model stories written to its own prompt (" +
+      Ds.stories.matched.toFixed(2) + ") than to another Reddit story (" + Ds.stories.human_human.toFixed(2) + "). ";
+    shows += "The detector trained on the free stories looked perfect, yet missed " + p100(miss[0]) + " to " + p100(miss[1]) +
+      " of the matched model texts. It still ranked most model texts above the humans (AUC " + f3(auOld[0]) + " to " + f3(auOld[1]) +
+      "), so what broke was where its 50% line sat: the line had been placed partly by subject. Retrained with matched texts, it again ranked model above human almost every time (AUC " +
+      f3(au[0]) + " to " + f3(au[1]) + ") and put its line back in the gap.";
+    return [
+      ["What it shows.", shows],
+      ["What it does not show.", "This is not a usable detector. The humans are few: 50 Reddit stories and ten passages by one author on the matched side, against " +
+        D.map.length + " model texts. The models wrote at their default settings, with no attempt to sound human, and every text is about 300 words. " +
+        (axWrong ? "After retraining, " + axWrong + " of this site’s author’s ten passages was called AI. One in ten, from ten, is not a rate to rely on either way. " : "") +
+        "A different group of human writers, a model told to write like a person, edited or mixed text, or a different embedding model could each move these numbers."],
+      ["How real detectors differ.", "Dedicated detectors, Pangram for example, train much larger classifiers on human and AI texts matched for topic, with hard-negative mining: " +
+        "they seek out the human texts their model gets wrong and train on those. The second half of this test is a small version of the first idea, and it shows why it matters. " +
+        "We make no claim about any product’s accuracy."]];
+  }
+
+  // ---- 5. Method ---------------------------------------------------------------------
   var m = S.method || {};
   var terms = [["self_overlap", "Self-overlap"], ["distinct_2", "Distinct-2"], ["distinct_1", "Distinct-1"], ["distinct_3", "Distinct-3"],
     ["mattr", "MATTR"], ["mtld", "MTLD"], ["yule_k", "Yule’s K"], ["openers", "Openings"], ["names", "Names"], ["title_repeat", "Titles"],

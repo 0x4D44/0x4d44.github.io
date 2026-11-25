@@ -55,7 +55,9 @@ test('A6 (F13): the panes carry 10-12% of life each and a cloud of up to 8% span
   let worst = 0;
   t.forEach((col, i) => col.forEach((v, j) => { for (const q of [t[i + 1]?.[j], col[j + 1]]) if (q !== undefined) worst = Math.max(worst, Math.abs(v - q)); }));
   // re-pinned round F14: the cloud's brighter cores add up to about 10 levels a pane to the 12% panes' 21: 32; was 26
-  assert.ok(worst <= 32, `neighbours ${worst.toFixed(1)} levels apart at most`);
+  // re-pinned round F15 (front-round-14 score: the cloud still weak; lift 0.095 -> 0.2, kx-front-round35 pins it): the cores' slope adds about 20 levels a
+  // pane to the panes' 21: 44; was 32
+  assert.ok(worst <= 44, `neighbours ${worst.toFixed(1)} levels apart at most`);
   // the cloud: averaged over 3 by 3 panes (so the panes' own offsets mostly cancel) the tone still swings, slowly (re-pinned round F13b: the cloud's swing along
   // one row is under the old band's, 5% or more where it was 8%; and with 12% panes neighbouring blocks within 9 levels, where it was 6)
   const block = (i: number, j: number): number => { let a = 0; for (let di = 0; di < 3; di++) for (let dj = 0; dj < 3; dj++) a += t[i + di]![j + dj]!; return a / 9; };
@@ -136,5 +138,6 @@ test('A6 (F13b): each pane is offset by up to 11-13% (the score\'s 12%), and the
   }
   assert.ok(down >= 0.05, `the cloud within a pane: ${down.toFixed(3)}`);
   // re-pinned round F14: the cloud's brighter cores (smoothstep) rise faster: under 4% over 0.32 m; was 1.5%
-  assert.ok(across1 <= 0.04, `and soft across it: ${across1.toFixed(4)}`);
+  // re-pinned round F15: with the cloud's cores at 35-50% the slope over 0.32 m is under 6%; was 4%
+  assert.ok(across1 <= 0.06, `and soft across it: ${across1.toFixed(4)}`);
 });

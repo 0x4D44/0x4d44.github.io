@@ -55,7 +55,9 @@ test('A6 (F12): some life in the panes, no mosaic: within 42% over and 25% under
     let worst = 0;
     rows.forEach((col, i) => col.forEach((p, j) => { for (const q of [rows[i + 1]?.[j], col[j + 1]]) if (q) worst = Math.max(worst, ...p.map((v, c) => Math.abs(v - q[c]!))); }));
     // re-pinned round F14: the cloud's cores add about 10 levels a pane: 32; was 26
-    assert.ok(worst <= 32, `neighbours ${worst.toFixed(1)} levels apart at most`);
+    // re-pinned round F15b (front-round-15 score, A6: the cloud a glow, not shapes): the cores' sharper edge (kx-front-round36) steepens the step between
+    // two panes on it: 36; was 32
+    assert.ok(worst <= 36, `neighbours ${worst.toFixed(1)} levels apart at most`);
   }
 });
 

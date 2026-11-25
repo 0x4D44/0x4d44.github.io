@@ -77,7 +77,7 @@ M = [
  ('the rib caps a metre off the skin', 'const capR = (rs + ROOF_EXTERIOR.ribCap[1] / 2) / Math.cos((a1 - a0) / (ARC_STEPS * 4));', 'const capR = rs + 1;'),
  ('the roof bars seen from inside again: the ghost lattice', 'return roofOpacity(cam, layout, mode) * smoothstep(0, ROOF_EXTERIOR.fade, Math.hypot(dx, dy, dz));', 'return roofOpacity(cam, layout, mode);'),
  ('the pop at the shed\'s edge back', 'return roofOpacity(cam, layout, mode) * smoothstep(0, ROOF_EXTERIOR.fade, Math.hypot(dx, dy, dz));', 'return Math.hypot(dx, dy, dz) > 0 ? roofOpacity(cam, layout, mode) : 0;'),
- ('the roof bars drawn under the crown glass again', 'roofBars.renderOrder = 4;', 'roofBars.renderOrder = 2;'),
+ ('the roof bars drawn under the crown glass again', 'ROOF_BARS_ORDER = { after: 4,', 'ROOF_BARS_ORDER = { after: 2,'),
  ('the roof bars without their own opacity callback', 'roofBars.onBeforeRender = (', 'roofBars.userData.unused = ('),
 ]
 def run(name):
