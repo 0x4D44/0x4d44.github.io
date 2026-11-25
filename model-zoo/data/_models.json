@@ -410,6 +410,14 @@
   "created": "2026-10-13",
   "provider": "openai"
  },
+ "gpt-6.2-astra": {
+  "created": "2026-10-31",
+  "provider": "openai"
+ },
+ "gpt-6.2-sol": {
+  "created": "2026-11-02",
+  "provider": "openai"
+ },
  "gpt-audio": {
   "created": "2025-08-28",
   "provider": "openai"

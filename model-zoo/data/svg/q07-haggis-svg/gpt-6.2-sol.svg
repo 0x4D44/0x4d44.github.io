@@ -1,0 +1,203 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-labelledby="title desc">
+  <title id="title">The Great Haggis Chase</title>
+  <desc id="desc">A wild haggis with tiny galloping legs chases a red-haired Scottish gamekeeper in a tartan kilt across a blooming Highland moor.</desc>
+  <defs>
+    <linearGradient id="sky" x2="0" y2="1">
+      <stop stop-color="#8896bc"/>
+      <stop offset=".65" stop-color="#e4afb6"/>
+      <stop offset="1" stop-color="#f6d1a8"/>
+    </linearGradient>
+    <linearGradient id="moor" x2=".15" y2="1">
+      <stop stop-color="#82906b"/>
+      <stop offset="1" stop-color="#354f45"/>
+    </linearGradient>
+    <linearGradient id="haggis" x2=".3" y2="1">
+      <stop stop-color="#bf8c64"/>
+      <stop offset="1" stop-color="#765044"/>
+    </linearGradient>
+    <pattern id="tartan" width="18" height="18" patternUnits="userSpaceOnUse" patternTransform="rotate(-9)">
+      <rect width="18" height="18" fill="#315952"/>
+      <path d="M5 0v18M0 5h18" stroke="#843e4c" stroke-width="6"/>
+      <path d="M11 0v18M0 11h18" stroke="#203c3b" stroke-width="2"/>
+      <path d="M15 0v18M0 15h18" stroke="#dbc28a" stroke-width=".8"/>
+    </pattern>
+    <g id="heather">
+      <path d="M0 0Q-5-13-15-23M0 0Q4-21 1-34M1 0Q10-15 18-21M1 0Q-8-8-22-10" fill="none" stroke="#3a5344" stroke-width="2" stroke-linecap="round"/>
+      <g fill="#a35d91">
+        <ellipse cx="-13" cy="-21" rx="4" ry="6" transform="rotate(-35 -13 -21)"/>
+        <ellipse cx="1" cy="-30" rx="4" ry="7"/>
+        <ellipse cx="16" cy="-20" rx="4" ry="6" transform="rotate(40 16 -20)"/>
+        <ellipse cx="-19" cy="-10" rx="6" ry="3.5"/>
+      </g>
+      <g fill="#dda0be">
+        <circle cx="-16" cy="-25" r="2.5"/><circle cx="-9" cy="-20" r="2"/>
+        <circle cx="1" cy="-36" r="2.5"/><circle cx="4" cy="-29" r="2.3"/>
+        <circle cx="19" cy="-24" r="2.6"/><circle cx="17" cy="-17" r="2"/>
+        <circle cx="-24" cy="-11" r="2.2"/>
+      </g>
+    </g>
+    <g id="grass" fill="none" stroke="#b4ac78" stroke-width="1.5" stroke-linecap="round">
+      <path d="M0 0q-2-10-8-15M0 0q1-15 6-20M1 0q6-9 11-10"/>
+    </g>
+    <g id="boot">
+      <path d="M0 0L-5 21 5 42" fill="none" stroke="#353e36" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M-5 22L4 40" stroke="#d7c6a2" stroke-width="8"/>
+      <path d="M-4 25l7-3" stroke="#8f494d" stroke-width="3"/>
+      <path d="M-1 38q6 0 10 2l8 3q5 5-2 7H2q-6-2-3-12Z" fill="#302a30"/>
+    </g>
+    <g id="paw">
+      <path d="M0 0q-4 8 0 16l7 4" fill="none" stroke="#593d36" stroke-width="6" stroke-linecap="round"/>
+      <path d="M4 20h7" stroke="#3c3031" stroke-width="5" stroke-linecap="round"/>
+    </g>
+  </defs>
+
+  <rect width="800" height="600" fill="url(#sky)"/>
+  <circle cx="618" cy="151" r="71" fill="#ffdbad" opacity=".23"/>
+  <circle cx="618" cy="151" r="53" fill="#ffe1b0"/>
+  <g fill="none" stroke="#ffe9d1" stroke-linecap="round" opacity=".48">
+    <path d="M38 110h137m-107 10h168M344 79h89m-69 9h112M553 173h141m-97 10h126" stroke-width="3"/>
+    <path d="M84 158h110m527-56h49" stroke-width="1.5"/>
+    <animateTransform attributeName="transform" type="translate" values="-13 0;13 0;-13 0" dur="22s" repeatCount="indefinite"/>
+  </g>
+  <g fill="none" stroke="#5d5871" stroke-width="1.6" stroke-linecap="round">
+    <path d="M268 145q7-4 13 3 6-7 13-4m8-13q5-3 10 2 5-5 10-2m11 18q4-2 8 2 4-4 8-2"/>
+    <animateTransform attributeName="transform" type="translate" values="0 0;18 -5;0 0" dur="11s" repeatCount="indefinite"/>
+  </g>
+  <path d="M0 267L52 234l33 4 60-55 36 26 23-5 68 56 32-10 39 23 47-40 43-10 59-51 46 42 28 4 66 42 47-18 48 17 73-28v144H0Z" fill="#8c829e"/>
+  <path d="M0 291q66-4 144-45t155 25q50 34 111 8t122-26q63 1 114 31t154-21v114H0Z" fill="#a190a9"/>
+  <path d="M0 304q126 47 245 18t225-5q119 33 207-3t123-17v105H0Z" fill="#746f89"/>
+  <path d="M0 339q117-32 232 2t270 0q177-35 298 22v237H0Z" fill="url(#moor)"/>
+  <path d="M0 358q110-27 226 8t247 3q165-38 327 11v28q-159-32-306-11t-271-7Q94 365 0 401Z" fill="#916e90" opacity=".75"/>
+  <path d="M0 382q128-25 232 4t253-1q143-26 315 12" fill="none" stroke="#bd8ba9" stroke-width="3" stroke-dasharray="2 7 12 9" opacity=".67"/>
+  <path d="M0 432q130-29 275-8t267-2q125-24 258-2v72q-137-19-260 3t-258-3Q133 475 0 506Z" fill="#b8a081"/>
+  <path d="M0 447q142-29 279-9t264-3q128-22 257-4M0 489q145-29 275-13t262 4q146-24 263-4" fill="none" stroke="#d6bc95" stroke-width="2" stroke-dasharray="49 11 5 8" opacity=".55"/>
+
+  <g opacity=".83">
+    <use href="#heather" transform="translate(44 426) scale(.6)"/>
+    <use href="#heather" transform="translate(81 414) scale(.42)"/>
+    <use href="#heather" transform="translate(151 409) scale(.55)"/>
+    <use href="#heather" transform="translate(235 419) scale(.45)"/>
+    <use href="#heather" transform="translate(348 430) scale(.47)"/>
+    <use href="#heather" transform="translate(427 426) scale(.55)"/>
+    <use href="#heather" transform="translate(574 410) scale(.53)"/>
+    <use href="#heather" transform="translate(672 405) scale(.58)"/>
+    <use href="#heather" transform="translate(763 414) scale(.54)"/>
+  </g>
+
+  <g>
+    <animateTransform attributeName="transform" type="translate" values="-85 0;1060 0" dur="7.5s" repeatCount="indefinite"/>
+    <ellipse cx="0" cy="469" rx="34" ry="6" fill="#57484a" opacity=".28"/>
+    <ellipse cx="-117" cy="471" rx="34" ry="5" fill="#57484a" opacity=".25"/>
+    <g fill="#e9caa0">
+      <circle cx="-173" cy="464" r="4"/>
+      <circle cx="-190" cy="459" r="3"/>
+      <circle cx="-203" cy="465" r="2"/>
+      <animateTransform attributeName="transform" type="translate" values="8 4;-13 -5" dur=".38s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0;.75;0" dur=".38s" repeatCount="indefinite"/>
+    </g>
+
+    <g transform="translate(-119 430)">
+      <g>
+        <animateTransform attributeName="transform" type="translate" values="0 0;1 -10;0 0" dur=".38s" repeatCount="indefinite"/>
+        <g opacity=".75">
+          <use href="#paw" x="-20" y="16">
+            <animateTransform attributeName="transform" type="rotate" values="39 -20 16;-45 -20 16;39 -20 16" dur=".38s" repeatCount="indefinite"/>
+          </use>
+          <use href="#paw" x="20" y="16">
+            <animateTransform attributeName="transform" type="rotate" values="-49 20 16;35 20 16;-49 20 16" dur=".38s" repeatCount="indefinite"/>
+          </use>
+        </g>
+        <path d="M-30-2q-12-8-21-1l10 5-10 7q15 2 23-4" fill="#825c4c" stroke="#593d36" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M-37 3C-36-15-19-27 4-23Q24-23 35-10q8 1 10 9 4 10-5 17Q24 27-4 25-34 24-37 3Z" fill="url(#haggis)" stroke="#593d36" stroke-width="2.5"/>
+        <path d="M-29-9q7-10 20-12m-15 36 3 2m7-20 2 2m2 19 3-1m6-30 3 2m-3 15 3 2m8 10 3-2" fill="none" stroke="#e0ab7b" stroke-width="2" stroke-linecap="round"/>
+        <path d="M17-15q3-12 12-11 6 4 1 14" fill="#a77657" stroke="#593d36" stroke-width="2"/>
+        <path d="M24-17q2-6 5-6" fill="none" stroke="#e5a085" stroke-width="2" stroke-linecap="round"/>
+        <ellipse cx="31" cy="-6" rx="7" ry="8" fill="#fff1cc"/>
+        <circle cx="34" cy="-5" r="3" fill="#30272a"/>
+        <ellipse cx="43" cy="2" rx="5" ry="4" fill="#4a3232"/>
+        <path d="M29 10q7 6 13-2" fill="none" stroke="#4a3232" stroke-width="2" stroke-linecap="round"/>
+        <use href="#paw" x="-18" y="20">
+          <animateTransform attributeName="transform" type="rotate" values="-48 -18 20;40 -18 20;-48 -18 20" dur=".38s" repeatCount="indefinite"/>
+        </use>
+        <use href="#paw" x="16" y="20">
+          <animateTransform attributeName="transform" type="rotate" values="33 16 20;-49 16 20;33 16 20" dur=".38s" repeatCount="indefinite"/>
+        </use>
+      </g>
+    </g>
+
+    <g transform="translate(0 377)">
+      <g>
+        <animateTransform attributeName="transform" type="translate" values="0 0;0 -6;0 0;0 -6;0 0" dur=".68s" repeatCount="indefinite"/>
+        <g transform="translate(4 44)" opacity=".78">
+          <use href="#boot">
+            <animateTransform attributeName="transform" type="rotate" values="-38;44;-38" dur=".68s" repeatCount="indefinite"/>
+          </use>
+        </g>
+        <g transform="translate(-6 44)">
+          <use href="#boot">
+            <animateTransform attributeName="transform" type="rotate" values="44;-38;44" dur=".68s" repeatCount="indefinite"/>
+          </use>
+        </g>
+        <path d="M8 0q6-2 9 5l9 10 12-9" fill="none" stroke="#37473d" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
+          <animateTransform attributeName="transform" type="rotate" values="26 8 0;-24 8 0;26 8 0" dur=".68s" repeatCount="indefinite"/>
+        </path>
+        <path d="M-16 29l31 4 9 23q-20 8-47-3Z" fill="url(#tartan)" stroke="#2d3835" stroke-width="2"/>
+        <path d="M-12 37l-6 17m17-16-2 19m14-17 4 17" fill="none" stroke="#203a37" stroke-width="1.5" opacity=".65"/>
+        <path d="M-15 28l31 4" stroke="#382f30" stroke-width="6"/>
+        <path d="M9 33q10-1 10 11-1 6-7 5-7-2-3-16Z" fill="#c8ad86" stroke="#4a3a35" stroke-width="1.6"/>
+        <path d="M-16 29q1-16 10-31 10-9 24-1 4 10-3 34Z" fill="#627054" stroke="#33463d" stroke-width="2"/>
+        <path d="M4 0l6 9 7-10m-6 13-4 15" fill="none" stroke="#a3a87d" stroke-width="2"/>
+        <path d="M-5-2q-12 2-24-3l-18 2 7-8 15 1q9-1 18 1Z" fill="#af674e" stroke="#78433c" stroke-width="1.5">
+          <animateTransform attributeName="transform" type="rotate" values="-5 -5 -4;8 -5 -4;-5 -5 -4" dur=".68s" repeatCount="indefinite"/>
+        </path>
+        <path d="M-7 5l-9 16-13-3" fill="none" stroke="#405344" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
+          <animateTransform attributeName="transform" type="rotate" values="-29 -7 5;35 -7 5;-29 -7 5" dur=".68s" repeatCount="indefinite"/>
+        </path>
+        <circle cx="-29" cy="18" r="4.5" fill="#e5ae86">
+          <animateTransform attributeName="transform" type="rotate" values="-29 -7 5;35 -7 5;-29 -7 5" dur=".68s" repeatCount="indefinite"/>
+        </circle>
+        <g transform="rotate(-13 11 -8)">
+          <path d="M7-14l-1 10 10 3 4-13" fill="#de9b75" stroke="#774b3b" stroke-width="1.5"/>
+          <path d="M24-34q9 3 8 13l4 5-6 3q-1 11-12 9L6-10 4-26Z" fill="#efb995" stroke="#774b3b" stroke-width="1.6" stroke-linejoin="round"/>
+          <path d="M26-11q-8-1-9-11l-4 5q-5-4-6 3l4 6q-12 4-14-6-6-6 1-12-2-10 10-12 16-4 20 6l-1 6-8-4q-4 11 7 19Z" fill="#b84e31" stroke="#813e30" stroke-width="1.5"/>
+          <path d="M2-21q2-4 7-6m-6 13 4 1" fill="none" stroke="#e48149" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="27" cy="-22" r="1.55" fill="#352e31"/>
+          <path d="M24-21q-3-2-6-1m9 11 3 1" fill="none" stroke="#774b3b" stroke-width="1.2" stroke-linecap="round"/>
+          <path d="M-4-30q-5-3-1-8 6-8 20-7 14 0 16 10l9 2q3 3-2 4l-16-2q-14-1-26 1Z" fill="#5b6049" stroke="#35463c" stroke-width="2"/>
+          <path d="M0-38q10-6 23-2" fill="none" stroke="#979373" stroke-width="1.5" stroke-linecap="round"/>
+        </g>
+      </g>
+    </g>
+  </g>
+
+  <path d="M0 516q95-20 197 0t201 1q150-25 248-11t154-6v100H0Z" fill="#3f554b"/>
+  <path d="M0 552q97-38 228-3t248-1q169-39 324-7v59H0Z" fill="#364941"/>
+  <path d="M0 570q104-20 219 1t252-5q147-25 329 0v34H0Z" fill="#2e413b"/>
+
+  <g>
+    <use href="#grass" transform="translate(24 535) scale(.8)"/>
+    <use href="#grass" transform="translate(164 541) scale(.75)"/>
+    <use href="#grass" transform="translate(302 568) scale(.85)"/>
+    <use href="#grass" transform="translate(449 535) scale(.9)"/>
+    <use href="#grass" transform="translate(613 559) scale(.9)"/>
+    <use href="#grass" transform="translate(747 526) scale(.8)"/>
+    <use href="#grass" transform="translate(775 582) scale(1.2)"/>
+  </g>
+  <g>
+    <use href="#heather" transform="translate(23 586) scale(1.4)"/>
+    <use href="#heather" transform="translate(59 558) scale(1.05)"/>
+    <use href="#heather" transform="translate(91 581) scale(1.55)"/>
+    <use href="#heather" transform="translate(138 591) scale(1.1)"/>
+    <use href="#heather" transform="translate(206 555) scale(.8)"/>
+    <use href="#heather" transform="translate(246 584) scale(1.25)"/>
+    <use href="#heather" transform="translate(347 584) scale(1.14)"/>
+    <use href="#heather" transform="translate(384 567) scale(.83)"/>
+    <use href="#heather" transform="translate(480 587) scale(1.35)"/>
+    <use href="#heather" transform="translate(522 561) scale(1.04)"/>
+    <use href="#heather" transform="translate(554 590) scale(1.45)"/>
+    <use href="#heather" transform="translate(645 584) scale(1.15)"/>
+    <use href="#heather" transform="translate(682 565) scale(1.25)"/>
+    <use href="#heather" transform="translate(728 591) scale(1.65)"/>
+    <use href="#heather" transform="translate(785 560) scale(1.15)"/>
+  </g>
+</svg>

@@ -127,3 +127,5 @@
 {"model": "claude-sonnet-4-5-20250929", "endpoint": "anthropic", "reply": "ok", "usage": {"in": 14, "out": 4, "thinking_chars": 0}, "cost": 0.000102, "secs": 4.52, "resolved_model": "claude-sonnet-4-5-20250929", "price_source": "anthropic"}
 {"model": "claude-fable-5-2", "endpoint": "anthropic", "reply": "ok", "usage": {"in": 18, "out": 20, "thinking_chars": 0}, "cost": 0.000944, "secs": 3.58, "resolved_model": "claude-fable-5-2", "price_source": "anthropic"}
 {"model": "claude-fable-5-2@thinking", "endpoint": "anthropic", "reply": "ok", "usage": {"in": 18, "out": 18, "thinking_chars": 0}, "cost": 0.000864, "secs": 3.71, "resolved_model": "claude-fable-5-2", "price_source": "anthropic"}
+{"model": "gpt-6.2-sol", "endpoint": "responses", "reply": "ok", "usage": {"in": 13, "out": 5, "reasoning": 0}, "cost": 7.6e-05, "secs": 4.13, "resolved_model": "gpt-6.2-sol", "price_source": "published"}
+{"model": "gpt-6.2-astra", "endpoint": "responses", "reply": "ok", "usage": {"in": 13, "out": 5, "reasoning": 0}, "cost": 0.000304, "secs": 5.22, "resolved_model": "gpt-6.2-astra", "price_source": "published"}
