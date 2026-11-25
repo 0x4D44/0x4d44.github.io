@@ -49,16 +49,20 @@ test('A6 (F13): the panes carry 10-12% of life each and a cloud of up to 8% span
   const t = Array.from({ length: 40 }, (_, i) => Array.from({ length: 5 }, (_, j) => tone(i - 20, j)));
   const all = t.flat(), mean = all.reduce((a, b) => a + b, 0) / all.length;
   assert.ok(Math.max(...all) / mean - 1 >= 0.1 && 1 - Math.min(...all) / mean >= 0.1, `life: ${(Math.min(...all) / mean).toFixed(3)} to ${(Math.max(...all) / mean).toFixed(3)}`);
-  assert.ok(Math.max(...all) / mean - 1 <= 0.21 && 1 - Math.min(...all) / mean <= 0.21, 'and no more than pane plus band');
+  // re-pinned round F14 (front-round-13b score, A6: the cloud as sky, +20-25%, lightening only; kx-front-round34 pins it): up to 42% over the mean and 25%
+  // under it (the mean is lifted by the cloud); were 21% each way
+  assert.ok(Math.max(...all) / mean - 1 <= 0.42 && 1 - Math.min(...all) / mean <= 0.25, 'and no more than pane plus cloud');
   let worst = 0;
   t.forEach((col, i) => col.forEach((v, j) => { for (const q of [t[i + 1]?.[j], col[j + 1]]) if (q !== undefined) worst = Math.max(worst, Math.abs(v - q)); }));
-  assert.ok(worst <= 26, `neighbours ${worst.toFixed(1)} levels apart at most`);
+  // re-pinned round F14: the cloud's brighter cores add up to about 10 levels a pane to the 12% panes' 21: 32; was 26
+  assert.ok(worst <= 32, `neighbours ${worst.toFixed(1)} levels apart at most`);
   // the cloud: averaged over 3 by 3 panes (so the panes' own offsets mostly cancel) the tone still swings, slowly (re-pinned round F13b: the cloud's swing along
   // one row is under the old band's, 5% or more where it was 8%; and with 12% panes neighbouring blocks within 9 levels, where it was 6)
   const block = (i: number, j: number): number => { let a = 0; for (let di = 0; di < 3; di++) for (let dj = 0; dj < 3; dj++) a += t[i + di]![j + dj]!; return a / 9; };
   const blocks = Array.from({ length: 38 }, (_, i) => block(i, 1));
   assert.ok((Math.max(...blocks) - Math.min(...blocks)) / mean >= 0.05, `a cloud across the panes: ${((Math.max(...blocks) - Math.min(...blocks)) / mean).toFixed(3)}`);
-  blocks.slice(1).forEach((b, i) => assert.ok(Math.abs(b - blocks[i]!) <= 9, `soft: ${Math.abs(b - blocks[i]!).toFixed(1)}`));
+  // re-pinned round F14: with the stronger cloud neighbouring blocks within 12 levels; was 9
+  blocks.slice(1).forEach((b, i) => assert.ok(Math.abs(b - blocks[i]!) <= 12, `soft: ${Math.abs(b - blocks[i]!).toFixed(1)}`));
 });
 
 test('A6 (F13): from outside a light secondary bar runs down the middle of each pane (twice the panes), darker by a fifth or more over about 0.1 m; none from inside', () => {
@@ -75,24 +79,20 @@ test('A6 (F13): from outside a light secondary bar runs down the middle of each 
 });
 
 // re-pinned round F13b (front-round-13 score, B3: the X read as cross-hatching; R-a is a Warren with open V panels): one diagonal a panel, alternating, the
-// panel half F12's, so twice its diagonals and none crossing; it was two a panel
-test('A6/B3 (F13): the girder is a Warren of single diagonals at half F12\'s panel, twice its diagonals, none crossing, and a vertical at each panel point, its webs 0.15 m at most', () => {
+// panel half F12's, so twice its diagonals and none crossing; it was two a panel. Re-pinned round F14 (front-round-13b score, B3: 1.15 m too fine and steep):
+// the panel is the glazing's 1.6 m, its points on the mullions and the span's ends (kx-front-round34 pins those), so between F12's count and twice it
+test('A6/B3 (F13): the girder is a Warren of single diagonals at the glazing\'s panel, more than F12\'s, none crossing, and a vertical at each panel point, its webs 0.15 m at most', () => {
   const G = shed.GABLE_GIRDER, bars = shed.gableGirder(0, 0, 9.5);
-  const n = Math.max(2, Math.round((2 * (Math.sqrt((SHED_SPAN_WIDTH / 2) ** 2 - (9.5 - G.depth) ** 2) - 0.12)) / G.panel));
   const verticals = bars.filter(b => b.kind === 'mullion' && b.rotZ === 0), diagonals = bars.filter(b => b.kind === 'mullion' && b.rotZ !== 0);
-  assert.equal(diagonals.length, n, 'one diagonal a panel');
-  assert.ok(Math.abs(G.panel - 2.3 / 2) < 1e-9, `half F12's 2.3 m panel: ${G.panel}`);
+  assert.ok(Math.abs(G.panel - GLAZING.spacing) < 1e-9, `the glazing's ${GLAZING.spacing} m panel: ${G.panel}`);
   const n12 = Math.max(2, Math.round((2 * (Math.sqrt((SHED_SPAN_WIDTH / 2) ** 2 - (9.5 - G.depth) ** 2) - 0.12)) / 2.3));
-  assert.ok(diagonals.length >= 2 * n12 - 1 && diagonals.length <= 2 * n12 + 1, `about twice F12's ${n12}: ${diagonals.length}`);
+  assert.ok(diagonals.length > n12 && diagonals.length <= 2 * n12 + 1, `more than F12's ${n12}: ${diagonals.length}`);
   const sorted = [...diagonals].sort((p, q) => p.c[0] - q.c[0]);
   sorted.forEach((d, i) => { if (i) assert.ok(Math.sign(d.rotZ) === -Math.sign(sorted[i - 1]!.rotZ), 'alternating, a Warren'); });
-  const span = Math.max(...verticals.map(v => v.c[0])) - Math.min(...verticals.map(v => v.c[0]));
-  assert.ok(Math.abs(span / n - G.panel) < 0.1 * G.panel, `panels of about ${G.panel} m: ${(span / n).toFixed(3)}`);
-  sorted.slice(1).forEach((d, i) => assert.ok(Math.abs(d.c[0] - sorted[i]!.c[0] - span / n) < 1e-9, 'one to a panel, a panel apart: none crossing'));
-  assert.equal(verticals.length, n + 1, 'a vertical at each panel point');
-  for (const v of verticals) assert.ok(Math.abs(v.s[1] - G.depth) < 1e-9 && Math.abs(v.c[1] - (9.5 - G.depth / 2)) < 1e-9, 'chord to chord');
   const xs = verticals.map(v => v.c[0]).sort((p, q) => p - q);
-  xs.slice(1).forEach((x, i) => assert.ok(Math.abs(x - xs[i]! - (xs[n]! - xs[0]!) / n) < 1e-9, 'at the panel points'));
+  assert.equal(verticals.length, diagonals.length + 1, 'a vertical at each panel point');
+  sorted.forEach((d, i) => assert.ok(d.c[0] > xs[i]! && d.c[0] < xs[i + 1]!, 'one to a panel: none crossing'));
+  for (const v of verticals) assert.ok(Math.abs(v.s[1] - G.depth) < 1e-9 && Math.abs(v.c[1] - (9.5 - G.depth / 2)) < 1e-9, 'chord to chord');
   assert.ok(Math.max(...G.web) <= 0.15, `webs ${G.web}`);
 });
 
@@ -119,9 +119,10 @@ test('A6 (F13b): from outside by day the glass thickens off the normal: its alph
 });
 
 test('A6 (F13b): each pane is offset by up to 11-13% (the score\'s 12%), and the cloud\'s patches span 4-8 panes, soft', () => {
-  const B = (materials as Record<string, unknown>).GABLE_SHEET as { band: readonly number[]; pane: number };
+  // re-pinned round F14: the cloud's waves are GABLE_SHEET.cloud.waves (they were .band)
+  const B = (materials as Record<string, unknown>).GABLE_SHEET as { cloud: { waves: readonly number[] }; pane: number };
   assert.ok(B.pane >= 0.11 && B.pane <= 0.13, `pane offset ${B.pane}`);
-  const across = Math.PI / Math.abs(B.band[0]!) / GLAZING.spacing;
+  const across = Math.PI / Math.abs(B.cloud.waves[0]!) / GLAZING.spacing;
   assert.ok(across >= 4 && across <= 8, `a patch ${across.toFixed(1)} panes across`);
   // inside one pane (its own offset fixed) only the cloud moves the tone: somewhere it swings 5% or more down a pane's height, and nowhere faster across a
   // pane than its slope allows (0.32 m between a quarter-pane and the bar's edge: under 1.5%)
@@ -134,5 +135,6 @@ test('A6 (F13b): each pane is offset by up to 11-13% (the score\'s 12%), and the
     across1 = Math.max(across1, Math.abs(a - b) / a);
   }
   assert.ok(down >= 0.05, `the cloud within a pane: ${down.toFixed(3)}`);
-  assert.ok(across1 <= 0.015, `and soft across it: ${across1.toFixed(4)}`);
+  // re-pinned round F14: the cloud's brighter cores (smoothstep) rise faster: under 4% over 0.32 m; was 1.5%
+  assert.ok(across1 <= 0.04, `and soft across it: ${across1.toFixed(4)}`);
 });

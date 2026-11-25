@@ -1,5 +1,6 @@
 """Catch round S1 shed regressions (the north screens without the ring and with the lattice girder, the arcades impost stones, B3; the haunch rings and the ribs lighter by day, B1) through web/tests/kx-shed-round1.test.ts only.
 Usage: python3 -I -u tools/mutation/kx-shed-round1.py SOURCE WORKTREE_SCRATCH
+Anchor moved round F14 (the girder's panel points).
 Source stays untouched; all baseline and mutation logs go to WORKTREE_SCRATCH.
 """
 from pathlib import Path
@@ -22,7 +23,7 @@ out.mkdir(parents=True, exist_ok=True)
 MUTATIONS = [
     ('the ring kept in the gable bars', 'web/src/shed.ts', "} else if (b.kind !== 'ring' && b.c[1] > from + 0.2) out.push(b);", '} else if (b.c[1] > from + 0.2) out.push(b);', 'B3: the north screens'),
     ('no girder', 'web/src/shed.ts', '    addBars(gBars, gableGirder(uc, sp, GABLE_GLASS_FROM), 0, -L);', '', 'B3: a lattice girder'),
-    ('the girder without diagonals', 'web/src/shed.ts', '  for (let i = 0; i < n; i++) {\n    const xa = uc - half + i * w', '  for (let i = 0; i < 0; i++) {\n    const xa = uc - half + i * w', 'B3: a lattice girder'),
+    ('the girder without diagonals', 'web/src/shed.ts', '  for (let i = 0; i + 1 < points.length; i++) {', '  for (let i = 0; i < 0; i++) {', 'B3: a lattice girder'),
     ('a shallow girder', 'web/src/shed.ts', 'GABLE_GIRDER = { depth: 2.4,', 'GABLE_GIRDER = { depth: 0.6,', 'B3: a lattice girder'),
     ('no haunch rings', 'web/src/shed.ts', 'for (const [u, y] of ringCentres) if (Math.sign(u)', 'for (const [u, y] of ringCentres.slice(0, 0)) if (Math.sign(u)', 'B1: a ring in each'),
     ('the rings casting', 'web/src/shed.ts', '  haunch.castShadow = false;\n', '  haunch.castShadow = true;\n', 'B1: a ring in each'),
