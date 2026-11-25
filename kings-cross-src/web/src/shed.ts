@@ -827,6 +827,9 @@ export function insideShed(cam: V3, layout: Pick<ShedLayout, 'width' | 'length' 
  * B1: platform-eye-p8-south, -p1-north); from inside, the real roof's outside is not to be seen through its milky glass.
  */
 export function roofBarsOpacity(cam: V3, layout: Pick<ShedLayout, 'width' | 'length' | 'crown' | 'spine'>, mode: RoofMode = 'auto'): number {
+  // round F9 (front-round-8 score, A7: in x-ray the crown and its bars, halved with the slate, did not read from roof-above as the ribs do): in x-ray they keep
+  // their full strength outside (still 0 inside, faded over the same ROOF_EXTERIOR.fade), so the x-rayed roof shows its structure; auto and solid as before
+  if (mode === 'xray') return crownOutside(cam, layout);
   // continuous across the shed's boundary (until roof-exterior-round-2 a step there, a pop as the camera crossed the south screen): 0 anywhere inside, rising
   // smoothly to the cladding's opacity ROOF_EXTERIOR.fade metres out
   return roofOpacity(cam, layout, mode) * crownOutside(cam, layout);
@@ -849,6 +852,28 @@ export function crownOutside(cam: V3, layout: Pick<ShedLayout, 'width' | 'length
 
 /** Opacity of the roof glazing: a bright daylit panel inside and close up, the see-through tint it had before from far off. ASSUMED look. */
 export const GLASS_OPACITY = { near: 0.95, far: 0.36 } as const;
+/**
+ * Round F9 (front-round-8 score, A7): the three transparent glazings' draw order, fixed. At one renderOrder three sorted them by their bounding spheres'
+ * depth, so the order changed as the camera moved (17 of the 47 station cameras drew them otherwise than the rest). From the south and the overview (south-front,
+ * front-oblique, overview and 27 more) the north gables' glass is farthest and the south front's lunettes nearest, so back to front: the gables, the roof's
+ * glazing, the front. After the slate (renderOrder 2), before the outside's bars (4).
+ */
+export const GLASS_ORDER = { gable: 2.5, roof: 3, front: 3.5 } as const;
+
+/**
+ * Round F9 (front-round-8 score, A7: in x-ray the roof's glass thinned and the end screens' did not, a hard step in tint where they meet): the share of its own
+ * opacity the end glass (the front's lunettes, the gables) keeps in `mode`: in x-ray the roof glazing's own (glazingOpacity at XRAY_OPACITY over it at full
+ * slate), 1 otherwise, so auto and solid draw it as before.
+ */
+export function endGlassFactor(mode: RoofMode): number {
+  return mode === 'xray' ? glazingOpacity(XRAY_OPACITY) / glazingOpacity(1) : 1;
+}
+/** Dim `glass` (the shared library glass, so set for its own draw and put back after) by endGlassFactor of the shed's mode, read from `group` each frame. */
+function dimInXray(glass: THREE.Mesh, group: THREE.Group): void {
+  let was = 1;
+  glass.onBeforeRender = (_r, _s, _c, _g, mat) => { was = mat.opacity; mat.opacity = was * endGlassFactor(group.userData.roofMode as RoofMode); };
+  glass.onAfterRender = (_r, _s, _c, _g, mat) => { mat.opacity = was; };
+}
 
 /** The glazing's opacity for a roof opacity `roof` (from roofOpacity): `near` at 1 (solid roof), `far` at XRAY_OPACITY, linear between. */
 export function glazingOpacity(roof: number): number {
@@ -1291,7 +1316,7 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   cladding.renderOrder = 2;
   group.add(cladding);
   const glassMesh = mesh(mergeGeometries(glass, false), glassMat, 'shed-roof-glass');
-  glassMesh.renderOrder = 3;
+  glassMesh.renderOrder = GLASS_ORDER.roof;
   glassMesh.onBeforeRender = (_renderer, _scene, camera) => {
     inverse.copy(group.matrixWorld).invert();
     local.copy(camera.position).applyMatrix4(inverse);
@@ -1723,7 +1748,8 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   group.add(infill);
   disposables.push(...infillGlass, ...infillParts);
   const lunMesh = mesh(mergeGeometries(lunGlass, false), material('glass'), 'shed-front-glass');
-  lunMesh.renderOrder = 3;
+  lunMesh.renderOrder = GLASS_ORDER.front;
+  dimInXray(lunMesh, group);
   group.add(lunMesh, mesh(bars.build(), material('ribPaint'), 'shed-front-bars'));
 
 
@@ -1748,7 +1774,8 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
     rings.push(ring);
   }
   const gableGlass = mesh(mergeGeometries(gableGeos, false), material('glass'), 'shed-gable-glass');
-  gableGlass.renderOrder = 3;
+  gableGlass.renderOrder = GLASS_ORDER.gable;
+  dimInXray(gableGlass, group);
   group.add(gableGlass, mesh(gBars.build(), material('ribPaint'), 'shed-gable-bars'), mesh(mergeGeometries(rings, false), material('ribPaint'), 'shed-arch-rings')); // the gables' end ribs (ROOF_EXTERIOR.gableRib)
   disposables.push(...rings, ...lunGlass, ...gableGeos);
 

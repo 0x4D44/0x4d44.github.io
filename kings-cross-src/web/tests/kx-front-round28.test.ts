@@ -22,7 +22,11 @@ const cams: [string, [number, number, number]][] = [['far', [-300, 200, 150]], [
 const draw = (g: THREE.Group, at: [number, number, number]): void => {
   const camera = new THREE.PerspectiveCamera();
   camera.position.copy(g.localToWorld(new THREE.Vector3(...at)));
-  for (const m of meshes(g)) m.onBeforeRender(undefined as never, undefined as never, camera, m.geometry, m.material as THREE.Material, null as never);
+  // round F9: each draw's onAfterRender too, as the renderer calls it (the end glass dims the shared library glass for its own draw only, endGlassFactor)
+  for (const m of meshes(g)) {
+    m.onBeforeRender(undefined as never, undefined as never, camera, m.geometry, m.material as THREE.Material, null as never);
+    m.onAfterRender(undefined as never, undefined as never, camera, m.geometry, m.material as THREE.Material, null as never);
+  }
 };
 // what a mode switch may change on a material
 const FREE = new Set(['opacity', 'depthWrite', 'transparent', 'uuid', 'version', 'id', '_listeners']);
@@ -69,6 +73,17 @@ test('A7: a roof mode, built or switched at run time, changes the roof\'s opacit
   assert.deepEqual([...differs].sort(), ['shed-roof-bars', 'shed-roof-cladding', 'shed-roof-glass']);
 });
 
+test('A7 (round F9): the shed\'s objects that are not meshes (lines, points, sprites), if any, are the same in every mode', () => {
+  const others = (g: THREE.Group): unknown[] => { const out: unknown[] = []; g.traverse(o => { const r = o as THREE.Line & THREE.Points & THREE.Sprite; if (r.isLine || r.isPoints || r.isSprite) out.push({ name: o.name, type: o.type, visible: o.visible, renderOrder: o.renderOrder, verts: r.geometry?.getAttribute('position')?.count ?? null, mats: (Array.isArray(r.material) ? r.material : [r.material]).map(m => fixed(m as THREE.Material)) }); }); return out; };
+  const groups = (['auto', 'solid', 'xray'] as const).map(build);
+  const switched = build('auto'); switched.userData.roofMode = 'xray'; groups.push(switched);
+  for (const [, at] of cams) {
+    for (const g of groups) draw(g, at);
+    const [ref, ...rest] = groups.map(others);
+    for (const o of rest) assert.deepEqual(o, ref);
+  }
+});
+
 test('A7: in x-ray mode, built or switched, the opacities are the documented products (roofOpacity, glazingOpacity, roofBarsOpacity, crownAlpha), and a switch back draws auto again', () => {
   const built = build('xray'), switched = build('auto');
   const glassAlpha = (g: THREE.Group): number => {
@@ -87,7 +102,8 @@ test('A7: in x-ray mode, built or switched, the opacities are the documented pro
       assert.equal(op('shed-roof-cladding').depthWrite, o > 0.98, `${where} ${mode}: the cladding writes depth only when near solid`);
       assert.equal(op('shed-roof-glass').opacity, shed.glazingOpacity(o), `${where} ${mode}: the glass`);
       assert.equal(op('shed-roof-bars').opacity, shed.roofBarsOpacity(at, layout, mode), `${where} ${mode}: the bars`);
-      assert.equal(op('shed-roof-bars').opacity, o * shed.crownOutside(at, layout));
+      // re-pinned round F9 (front-round-8 score, A7: the x-rayed crown's bars did not read): in x-ray the bars keep their full strength outside, crownOutside alone
+      assert.equal(op('shed-roof-bars').opacity, (mode === 'xray' ? 1 : o) * shed.crownOutside(at, layout));
       assert.equal(glassAlpha(g), shed.crownAlpha(at, layout, mode), `${where} ${mode}: the crown's alpha`);
       if (mode === 'xray') assert.equal(glassAlpha(g), shed.crownOutside(at, layout) * shed.crownAlpha([layout.width / 2, layout.crown + 500, 0], layout, 'auto') * shed.XRAY_OPACITY / shed.crownOutside([layout.width / 2, layout.crown + 500, 0], layout));
     }

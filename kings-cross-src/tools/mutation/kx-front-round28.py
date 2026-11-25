@@ -22,7 +22,8 @@ out.mkdir(parents=True, exist_ok=True)
 MUTATIONS = [
     ('the cladding writes depth in x-ray', 'web/src/shed.ts', 'cladMat.depthWrite = o > 0.98;', 'cladMat.depthWrite = true;', 'A7: in x-ray mode'),
     ('x-ray tints the slate', 'web/src/shed.ts', '    cladMat.opacity = o;\n', "    cladMat.opacity = o;\n    if (roofMode() === 'xray') cladMat.color.setHex(0xff0000);\n", 'A7: a roof mode'),
-    ('x-ray reorders the glass', 'web/src/shed.ts', 'glassMesh.renderOrder = 3;', "glassMesh.renderOrder = opts.roof === 'xray' ? 5 : 3;", 'A7: a roof mode'),
+    ('x-ray reorders the glass', 'web/src/shed.ts', 'glassMesh.renderOrder = GLASS_ORDER.roof;', "glassMesh.renderOrder = opts.roof === 'xray' ? 5 : GLASS_ORDER.roof;", 'A7: a roof mode'),
+    ('x-ray adds a line', 'web/src/shed.ts', '  group.add(gableGlass,', "  if (opts.roof === 'xray') group.add(new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial()));\n  group.add(gableGlass,", 'that are not meshes'),
     ('x-ray hides the ribs', 'web/src/shed.ts', "  ribs.name = 'shed-ribs';\n", "  ribs.name = 'shed-ribs';\n  ribs.visible = opts.roof !== 'xray';\n", 'A7: a roof mode'),
     ('x-ray casts the cladding', 'web/src/shed.ts', '  cladding.renderOrder = 2;\n', "  cladding.renderOrder = 2;\n  cladding.castShadow = opts.roof === 'xray';\n", 'A7: a roof mode'),
     ('the bars ignore the mode', 'web/src/shed.ts', 'roofBarsOpacity([local.x, local.y, local.z], layout, roofMode())', "roofBarsOpacity([local.x, local.y, local.z], layout, 'auto')", 'A7: in x-ray mode'),
@@ -76,4 +77,4 @@ with tempfile.TemporaryDirectory(prefix='kx-front-round28-', dir=out) as tmp:
             failures.append(label)
             print(f'[SURVIVED] {label}', flush=True)
     print(f'{caught}/{len(MUTATIONS)} mutations caught; baseline {len(passing)} tests passed; survivors: {failures}')
-    raise SystemExit(1 if failures or len(passing) != 3 else 0)
+    raise SystemExit(1 if failures or len(passing) != 4 else 0)

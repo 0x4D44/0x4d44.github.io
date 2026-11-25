@@ -262,7 +262,8 @@ test('the roof\'s outside bars are not seen from inside the shed (roof-exterior-
   const inside: [number, number, number][] = [[layout.spine + 8, 2.5, -120], [layout.spine - 8, 2.5, -60], [layout.width / 2, layout.crown - 2, -200]];
   for (const mode of ['auto', 'solid', 'xray'] as const) {
     for (const p of inside) assert.equal(barsOpacity!(p, layout, mode), 0, `${mode}: hidden from ${p.map(v => v.toFixed(0)).join(',')}`);
-    for (const p of [[900, 600, 500], [layout.width / 2, 30, -120], [-40, 20, 10]] as [number, number, number][]) close(barsOpacity!(p, layout, mode), roofOpacity(p, layout, mode), 1e-12);
+    // re-pinned round F9 (front-round-8 score, A7: the x-rayed crown's bars, halved with the slate, did not read from roof-above): outside, x-ray keeps them whole
+    for (const p of [[900, 600, 500], [layout.width / 2, 30, -120], [-40, 20, 10]] as [number, number, number][]) close(barsOpacity!(p, layout, mode), mode === 'xray' ? 1 : roofOpacity(p, layout, mode), 1e-12);
   }
   const group = buildShed(layout);
   group.updateMatrixWorld(true);
@@ -327,7 +328,7 @@ test('the roof outside, round 2 (roof-exterior-round-2, R-kx-front-d and -e): fi
     assert.equal(last, 0, `${mode}: hidden inside`);
     for (let i = 0; i <= 700; i++) { const o = barsOpacity([layout.width / 2, 3, -5 + i * 0.05], layout, mode); worst = Math.max(worst, Math.abs(o - last)); last = o; }
     assert.ok(worst < 0.03, `${mode}: largest step ${worst.toFixed(3)} crossing the south screen`);
-    close(last, roofOpacity([layout.width / 2, 3, 30], layout, mode), 1e-6);
+    close(last, mode === 'xray' ? 1 : roofOpacity([layout.width / 2, 3, 30], layout, mode), 1e-6); // re-pinned round F9: x-ray's bars whole outside (above)
   }
 });
 
