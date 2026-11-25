@@ -7,6 +7,9 @@ import { SHED_SPAN_WIDTH, shedLayout } from '../../core/station.ts';
 import { material } from '../src/materials.ts';
 import * as shed from '../src/shed.ts';
 import { GROUND_Y } from '../src/world.ts';
+import { DAY_EXPOSURE, NIGHT_EXPOSURE } from '../../core/daylight.ts';
+import { acesFilmic, toSrgb, type V3 } from './aces.ts';
+import { Glsl } from './glsl.ts';
 
 // Arcade round 1 (A3, the lower arcade under the front canopy; bay heights, pitch and widths unchanged): the arches turned in two stepped brick orders
 // down to the paving, no stone pier base; a dark-framed fanlight in each head (a transom at the springing, one centre mullion); the canopy's soffit
@@ -111,9 +114,34 @@ test('A3: the canopy\'s soffit about #3a3f45 (its downward faces), its top and f
   assert.ok(Math.max(...srgb(steel.color)) <= 0x30, 'the canopy\'s steel itself still charcoal');
   const s = { uniforms: {} as Record<string, THREE.IUniform>, vertexShader: THREE.ShaderLib.lambert.vertexShader, fragmentShader: THREE.ShaderLib.lambert.fragmentShader };
   steel.onBeforeCompile(s as unknown as THREE.WebGLProgramParametersWithUniforms, undefined as never);
-  const f = s.fragmentShader, at = f.indexOf('diffuseColor.rgb = mix( diffuseColor.rgb, KX_SOFFIT, step( 0.5, -vFrontNy ) );');
-  assert.ok(at > f.indexOf('#include <emissivemap_fragment>') && at < f.indexOf('#include <lights_lambert_fragment>'), 'the soffit\'s diffuse set on faces turned down, before the lighting');
-  assert.ok(s.vertexShader.includes('vFrontNy = normal.y;'));
+  const f = s.fragmentShader, at = f.indexOf('#ifdef KX_SOFFIT\n');
+  assert.ok(at > f.indexOf('#include <emissivemap_fragment>') && at < f.indexOf('#include <lights_lambert_fragment>'), 'the soffit\'s switch before the lighting');
+  assert.ok(s.vertexShader.includes('vFrontNy = normal.y;') && s.vertexShader.includes('vFrontXZ = position.xz;'));
+  // round 1b (GPU: the soffit 5/5/6 by day): run the switch on the CPU, its defines substituted, for a face turned down or up, by day and at night
+  let block = f.slice(at, f.indexOf('#endif\n#endif', at)).split('\n').filter(l => !l.startsWith('#')).join('\n');
+  for (const k of Object.keys(steel.defines!).sort((a, b) => b.length - a.length)) block = block.split(k).join(String(steel.defines![k]));
+  const g = new Glsl('');
+  const run = (ny: number, x: number, z: number, night: number): { diffuse: number[]; light: V3 } => {
+    const env = { vars: { diffuseColor: [0.02, 0.02, 0.02, 1], totalEmissiveRadiance: [0, 0, 0], vFrontNy: ny, vFrontXZ: [x, z], uWinNight: night } };
+    g.run(block, env);
+    return { diffuse: env.vars.diffuseColor as number[], light: env.vars.totalEmissiveRadiance as unknown as V3 };
+  };
+  const shown = (l: V3, e: number): number[] => toSrgb(acesFilmic(l, e)).map(v => Math.round(v * 255));
+  const lampX = layout.spine - 2 * R + 0.9 + 5 * shed.FRONT_CANOPY.lightPitch, [rowA, rowB] = shed.FRONT_CANOPY.lightRows.map(r => r * shed.FRONT_CANOPY.depth) as [number, number];
+  const midX = lampX + shed.FRONT_CANOPY.lightPitch / 2, midZ = (rowA + rowB) / 2;
+  const day = shown(run(-1, midX, midZ, 0).light, DAY_EXPOSURE);
+  assert.ok(day.every(v => v >= 40 && v <= 60), `by day the soffit's bounce alone shows ${day} at the clear day's exposure`);
+  assert.ok(near(srgb(new THREE.Color(...run(-1, midX, midZ, 0).diffuse.slice(0, 3) as [number, number, number])), hexRgb(0x3a3f45), 2), 'its diffuse the soffit tone');
+  const top = run(1, lampX, rowA, 0);
+  assert.ok(top.light.every(v => v === 0) && top.diffuse[0] === 0.02, 'the top and the fascia\'s face neither tinted nor lifted');
+  const away = run(-1, midX, midZ, 1).light;
+  assert.ok(away.every(v => v < 1e-3), `at night away from the lamps nothing is added (the soffit as before): ${away.map(v => v.toFixed(4))}`);
+  const pool = shown(run(-1, lampX + 0.3, rowB, 1).light, NIGHT_EXPOSURE), edge = shown(run(-1, lampX, rowA + 1.2, 1).light, NIGHT_EXPOSURE);
+  assert.ok(pool[0]! >= 70 && pool[0]! > pool[2]! + 20, `a warm pool round a lamp at night: ${pool}`);
+  assert.ok(edge[0]! < pool[0]! / 2, `falling off within about a metre: ${edge}`);
+  const between = shown(run(-1, lampX + shed.FRONT_CANOPY.lightPitch / 2, rowA, 1).light, NIGHT_EXPOSURE);
+  assert.ok(between[0]! < 0.7 * pool[0]!, `the pools on the lamps, darker between them: ${between}`);
+  assert.ok(run(1, lampX, rowA, 1).light.every(v => v === 0), 'no pool on the canopy\'s top');
   // the lamps
   assert.deepEqual([...shed.FRONT_CANOPY.lamp], [1.2, 0.15, 0.12]);
   const grp = infill.geometry.groups.find(g => g.materialIndex === 3)!, pos = infill.geometry.getAttribute('position'), idx = infill.geometry.index;
@@ -132,6 +160,8 @@ test('A3: the figures and barriers behind the glass are a lit mid tone, warm aft
   assert.ok(near(srgb(fig.color), hexRgb(T.figure), 1), `the figures ${srgb(fig.color)}`);
   const lum = (c: THREE.Color): number => 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
   assert.ok(lum(fig.color) >= 2 * lum(frames.color) && lum(fig.color) <= lum(interior.color), 'lighter than the frames, no lighter than the interior');
+  const dayFig = toSrgb(acesFilmic([fig.emissive.r, fig.emissive.g, fig.emissive.b], DAY_EXPOSURE)).map(v => Math.round(v * 255)); // round 1b: not black by day behind the glass
+  assert.ok(Math.max(...dayFig) >= 35 && Math.max(...dayFig) <= 50, `the figures' own lift by day ${dayFig}`);
   const glow = fig.userData.nightGlow as THREE.Color, inGlow = interior.userData.nightGlow as THREE.Color;
   assert.ok(glow && lum(glow) > 0.25 * lum(inGlow) && lum(glow) < 0.75 * lum(inGlow), 'a warm glow after dark, below the interior\'s');
   const D = shed.PORCH_DEPTH;
