@@ -17,11 +17,11 @@
 window.ESSAYS = [
   {
     slug: "strange-machine",
-    title: "Strange Machine: interim results",
-    tagline: "How well do coding models design and program a one-instruction computer? The Strange Machine pilot measured the design, the emulator and the programs it could run. See the results by model, word width and cost.",
+    title: "Strange Machine: first scored round",
+    tagline: "Four coding model seats designed and programmed a one-instruction computer across three word-width envelopes. See how each seat scored on design, machine checks and programs in the first scored round.",
     url: "https://0x4d44.github.io/strange-machine/",
     illustration: "ill-strange-machine",
-    date: "2026-11-25T10:46:00",
+    date: "2026-11-25T15:30:00",
     year: 2026,
     readingMin: 4,
     tags: ["software", "engineering"],

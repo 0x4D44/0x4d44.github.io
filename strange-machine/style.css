@@ -1,7 +1,7 @@
 :root {
   --bg: #f4f6f8; --surface: #fcfcfd; --fg: #11161c; --fg2: #4a5561; --muted: #606b76;
   --rule: #dfe3e8; --axis: #a0a9b3; --accent: #0d5c86;
-  --bad: #b0352b; --warn: #8a5a00; --warn-bg: #fff4d6;
+  --bad: #b0352b;
   --seat-blue: #2a67aa; --seat-green: #24754e; --seat-orange: #b94d28; --seat-purple: #8a4991;
   --display: "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
   --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -12,7 +12,7 @@
   :root {
     --bg: #0e1114; --surface: #151a1f; --fg: #eef2f5; --fg2: #b5bec8; --muted: #9ca6b0;
     --rule: #262d34; --axis: #586572; --accent: #6cb8e6;
-    --bad: #ef7a6e; --warn: #f0c060; --warn-bg: #2e2510;
+    --bad: #ef7a6e;
     --seat-blue: #72acf5; --seat-green: #58c795; --seat-orange: #f88f66; --seat-purple: #d69de3;
     color-scheme: dark;
   }
@@ -25,18 +25,20 @@ body { background: var(--bg); color: var(--fg); font: 16px/1.6 var(--body); marg
 .hero, section { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
 .hero nav { font: 600 0.8rem/1.5 var(--mono); }
 .lede { font-size: 1.12rem; color: var(--fg2); }
-h1, h2 { font-family: var(--display); line-height: 1.12; letter-spacing: -0.02em; text-wrap: balance; margin: 0; }
+h1, h2, h3 { font-family: var(--display); line-height: 1.12; letter-spacing: -0.02em; text-wrap: balance; margin: 0; }
 h1 { font-size: clamp(2.1rem, 6vw, 3.6rem); font-weight: 800; }
 h2 { font-size: clamp(1.4rem, 3.4vw, 2rem); font-weight: 700; }
+h3 { font-size: clamp(1.15rem, 2.8vw, 1.5rem); font-weight: 700; }
 p, figure { margin: 0; }
 a { color: var(--accent); text-underline-offset: 3px; }
 code { font: 0.86em var(--mono); overflow-wrap: anywhere; }
 
-.banner { border: 2px dashed var(--warn); background: var(--warn-bg); padding: 12px 16px; border-radius: 8px; }
-.banner p + p { margin-top: 6px; }
+.banner { border: 1px solid var(--rule); border-left: 4px solid var(--accent); background: var(--surface); padding: 12px 16px; border-radius: 8px; }
 .status { margin-top: 24px; color: var(--fg2); }
 section { margin-top: 40px; padding-top: 32px; border-top: 1px solid var(--rule); }
 section[hidden] { display: none; }
+#pilot > section { margin-top: 8px; padding-top: 0; border-top: 0; }
+#round-r1 > h3:not(:first-of-type) { margin-top: 8px; }
 .panel { min-width: 0; background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 12px 16px; }
 .scroll { max-width: 100%; overflow-x: auto; }
 .scroll:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -52,6 +54,9 @@ tbody tr:last-child > * { border-bottom: 0; }
 .marker { margin-left: 6px; color: var(--muted); font-size: 0.8rem; }
 .scorebar { display: inline-block; vertical-align: middle; width: 64px; height: 6px; margin-left: 8px; border-radius: 4px; background: var(--rule); overflow: hidden; }
 .scorebar span { display: block; height: 100%; border-radius: inherit; background: var(--seat); }
+.round-grid { width: fit-content; }
+.round-grid .num { text-align: center; min-width: 4em; }
+.round-grid .flag { display: block; border: 1px dashed currentColor; border-radius: 4px; padding: 1px 4px; font: 600 0.75rem/1.4 var(--body); }
 
 .seat-0 { --seat: var(--seat-blue); }
 .seat-1 { --seat: var(--seat-green); }
@@ -72,5 +77,6 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--rule);
 @media (max-width: 600px) {
   .panel { padding-inline: 10px; }
   .scorebar { display: none; }
+  .round-grid tbody th { white-space: normal; }
   th, td { padding-inline: 7px; }
 }

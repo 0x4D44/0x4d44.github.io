@@ -6,7 +6,13 @@ const mean = (runs, field) => runs.reduce((sum, run) => sum + run[field], 0) / r
 const score = (value) => value.toFixed(1);
 const cost = (value) => "$" + value.toFixed(2);
 const envelope = ({ data_bits, word_bits }) => `${data_bits}×${word_bits}`;
-const seatClass = (index) => `seat-${index % 4}`;
+const countNonconforming = (runs) => runs.filter((run) => run.nonconforming).length;
+const seatClasses = new Map([
+  ["haiku-5.5-high", "seat-0"],
+  ["opus-5.5-medium", "seat-1"],
+  ["sonnet-5.5-high", "seat-2"],
+  ["sol-6.2-xhigh", "seat-3"],
+]);
 const numeric = new Intl.Collator("en", { numeric: true });
 const date = new Intl.DateTimeFormat("en-GB", { dateStyle: "long", timeZone: "UTC" });
 
@@ -20,9 +26,17 @@ function groupBy(runs, key) {
   return groups;
 }
 
-function renderSeats(bySeat, colors) {
-  const ranked = [...bySeat].toSorted(([, a], [, b]) => mean(b, "overall") - mean(a, "overall"));
-  el("seats").innerHTML = ranked.map(([seat, runs]) => {
+function seatColors(bySeat) {
+  return new Map([...bySeat.keys()].toSorted().map((seat, index) =>
+    [seat, seatClasses.get(seat) ?? `seat-${index % 4}`]));
+}
+
+function rankSeats(bySeat) {
+  return [...bySeat].toSorted(([, a], [, b]) => mean(b, "overall") - mean(a, "overall"));
+}
+
+function renderSeats(id, ranked, colors) {
+  el(id).innerHTML = ranked.map(([seat, runs]) => {
     const overall = mean(runs, "overall");
     return `<tr class="${colors.get(seat)}">
       <th scope="row"><span class="dot" aria-hidden="true"></span>${escape(seat)}</th>
@@ -31,10 +45,22 @@ function renderSeats(bySeat, colors) {
       <td class="num">${score(mean(runs, "machine"))}</td>
       <td class="num">${score(mean(runs, "programs"))}</td>
       <td class="num">${runs.length}</td>
-      <td class="num">${runs.filter((run) => run.nonconforming).length}</td>
+      <td class="num">${countNonconforming(runs)}</td>
       <td class="num">${cost(mean(runs, "cost_usd"))}</td>
     </tr>`;
   }).join("");
+}
+
+function renderRoundGrid(ranked, colors, envelopeNames) {
+  const rows = ranked.map(([seat, runs]) =>
+    [seat, envelopeNames.map((name) => runs.find((run) => run.envelope.name === name))]);
+  const headers = rows[0][1].map((run) => `<th scope="col" class="num">${envelope(run.envelope)}</th>`);
+  el("round-envelope-headings").insertAdjacentHTML("beforeend", headers.join(""));
+  el("round-grid").innerHTML = rows.map(([seat, runs]) => `
+    <tr class="${colors.get(seat)}">
+      <th scope="row"><span class="dot" aria-hidden="true"></span>${escape(seat)}</th>
+      ${runs.map((run) => `<td class="num"><strong>${score(run.overall)}</strong>${run.nonconforming ? '<small class="flag">Nonconforming</small>' : ""}</td>`).join("")}
+    </tr>`).join("");
 }
 
 function renderChart(runs, colors) {
@@ -80,8 +106,8 @@ function renderChart(runs, colors) {
   </svg>`;
 }
 
-function renderRuns(runs, colors) {
-  el("runs").innerHTML = runs.map((run) => {
+function renderRuns(id, runs, colors) {
+  el(id).innerHTML = runs.map((run) => {
     const wallMinutes = run.wall_s.reduce((sum, seconds) => sum + seconds, 0) / 60;
     return `<tr class="${colors.get(run.seat)}">
       <th scope="row"><code>${escape(run.run)}</code></th>
@@ -99,7 +125,25 @@ function renderRuns(runs, colors) {
   }).join("");
 }
 
-function renderFindings(runs, bySeat) {
+function renderRoundFindings(bySeat) {
+  const opus = bySeat.get("opus-5.5-medium");
+  const sonnet = bySeat.get("sonnet-5.5-high");
+  const haiku = bySeat.get("haiku-5.5-high");
+  const sol = bySeat.get("sol-6.2-xhigh");
+  const bothConforming = sonnet.filter((run) => !run.nonconforming &&
+    sol.some((other) => !other.nonconforming && other.envelope.name === run.envelope.name)).length;
+  const haikuPassed = haiku.map((run) => run.programs_passed.passed);
+  const cases = haiku[0].programs_passed.cases;
+  const strongRuns = [...opus, ...sonnet, ...sol];
+  const allCasesPassed = strongRuns.filter(({ programs_passed }) => programs_passed.passed === programs_passed.cases).length;
+  el("round-findings").innerHTML = `
+    <li><strong>Sonnet and Sol</strong> both conformed on ${bothConforming} of ${sonnet.length} envelopes and led the round with mean overall scores of ${score(mean(sonnet, "overall"))} and ${score(mean(sol, "overall"))}, respectively.</li>
+    <li><strong>Opus</strong> was nonconforming on ${countNonconforming(opus)} of ${opus.length} envelopes. The judges found its machines did not keep the brief’s program-word width. That halved its program credit on those runs.</li>
+    <li><strong>Haiku</strong> had few working programs, passing ${Math.min(...haikuPassed)}–${Math.max(...haikuPassed)} of ${cases} program cases per run. It was nonconforming on ${countNonconforming(haiku)} of ${haiku.length} envelopes.</li>
+    <li><strong>Opus, Sonnet and Sol</strong> passed every program case in ${allCasesPassed} of their ${strongRuns.length} runs. Conformance and judged scores accounted for most of the overall difference among them.</li>`;
+}
+
+function renderPilotFindings(runs, bySeat) {
   const range = (rows, field) => {
     const values = rows.map((row) => row[field]);
     return `${score(Math.min(...values))}–${score(Math.max(...values))}`;
@@ -127,29 +171,49 @@ try {
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
   const data = await response.json();
   const runs = data.runs.toSorted((a, b) => numeric.compare(a.run, b.run));
-  const bySeat = groupBy(runs, (run) => run.seat);
-  const colors = new Map([...bySeat.keys()].toSorted().map((seat, index) => [seat, seatClass(index)]));
+  const roundRuns = runs.filter((run) => run.phase === "round r1" && run.round === "r1");
+  const pilotRuns = runs.filter((run) => run.phase === "pilot");
 
   const { weights, references } = data;
-  el("pilot-count").textContent = runs.length;
   el("scoring").textContent = `The seat is scored against requirements it never sees. Opus judges score the design, documents and conformance (${weights.judged}%). Automatic machine checks count for ${weights.machine}% and the programs count for ${weights.programs}%. A nonconforming machine keeps its machine checks and gets half credit for its programs.`;
   el("scoring").hidden = false;
-  el("references").textContent = `Scored rounds draw three envelopes from data widths of ${references.data_bits.join("–")} bits and program word widths of ${references.word_bits.join("–")} bits. Each has a reference machine that scores ${references.score}.`;
-  el("rescoring").textContent = `Everything was rescored under the rules of ${date.format(new Date(data.scoring_rule))}.`;
   el("generated").dateTime = data.generated;
   el("generated").textContent = data.generated.replace("T", " ").replace(/Z$/, " UTC");
   el("source").hidden = false;
 
-  if (runs.length) {
-    renderSeats(bySeat, colors);
-    renderChart(runs, colors);
-    renderRuns(runs, colors);
-    renderFindings(runs, bySeat);
+  if (roundRuns.length) {
+    const round = data.rounds.r1;
+    el("round-date").dateTime = round.date;
+    el("round-date").textContent = date.format(new Date(round.date));
+    const bySeat = groupBy(roundRuns, (run) => run.seat);
+    const colors = seatColors(bySeat);
+    const ranked = rankSeats(bySeat);
+    renderSeats("round-seats", ranked, colors);
+    renderRoundGrid(ranked, colors, round.envelopes);
+    renderRuns("round-runs", roundRuns, colors);
+    renderRoundFindings(bySeat);
+    el("round-r1").hidden = false;
+  }
+
+  if (pilotRuns.length) {
+    el("pilot-count").textContent = pilotRuns.length;
+    el("references").textContent = `Scored draws use data widths of ${references.data_bits.join("–")} bits and program word widths of ${references.word_bits.join("–")} bits. Every reference machine scores ${references.score}.`;
+    el("rescoring").textContent = `All results use the ${date.format(new Date(data.scoring_rule))} scoring rules.`;
+    const bySeat = groupBy(pilotRuns, (run) => run.seat);
+    const colors = seatColors(bySeat);
+    renderSeats("seats", rankSeats(bySeat), colors);
+    renderChart(pilotRuns, colors);
+    renderRuns("runs", pilotRuns, colors);
+    renderPilotFindings(pilotRuns, bySeat);
+    el("pilot").hidden = false;
+  }
+
+  if (roundRuns.length || pilotRuns.length) {
     el("results").hidden = false;
     status.hidden = true;
   } else {
-    status.textContent = "No pilot runs are available.";
+    status.textContent = "No runs are available.";
   }
 } catch {
-  status.textContent = "Pilot results could not be loaded. Try reloading the page.";
+  status.textContent = "Results could not be loaded. Try reloading the page.";
 }

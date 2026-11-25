@@ -26,6 +26,7 @@ const json = readPageFile("data.json");
 check(/<script\b[^>]*\bsrc=["']\/almanac-back\.js["']/.test(html), "the shared almanac back button is included");
 check(/<script\b[^>]*\bsrc=["'](?:\.\/)?ui\.js["']/.test(html), "the page loads ui.js");
 check(/fetch\(\s*["'](?:\.\/)?data\.json["']/.test(js), "ui.js fetches the results from data.json");
+check(/<section\b[^>]*\bid=["']round-r1["']/.test(html), "the page has a Round r1 section");
 
 let data;
 try { data = JSON.parse(json); } catch { /* reported below */ }
@@ -42,16 +43,39 @@ check([judged, machine, programs].every(isScore) && judged + machine + programs 
 const references = data?.references;
 check(isRange(references?.data_bits) && isRange(references?.word_bits) && isScore(references?.score), "the reference envelopes have width ranges and a score");
 
+const r1 = data?.rounds?.r1;
+const r1Envelopes = Array.isArray(r1?.envelopes) ? r1.envelopes : [];
+check(isDate(r1?.date) && r1.seed === "r1" && r1.judges === 3, "rounds.r1 has a date, seed and three judges");
+check(r1Envelopes.length === 3 && new Set(r1Envelopes).size === 3 &&
+  r1Envelopes.every((name) => typeof name === "string" && name.trim()), "rounds.r1 has three distinct envelope names");
+check(Array.isArray(r1?.caps_min) && r1.caps_min.length === 3 &&
+  r1.caps_min.every((minutes) => Number.isInteger(minutes) && minutes > 0), "rounds.r1 has three stage caps in minutes");
+
 const runs = Array.isArray(data?.runs) ? data.runs : [];
 check(runs.length > 0, "the export has scored runs");
 for (const [index, run] of runs.entries()) {
   const label = `Run ${index + 1}`;
   check([run?.run, run?.seat].every((value) => typeof value === "string" && value.trim()), `${label} has a name and seat`);
+  check((run?.phase === "pilot" && run.round === null) ||
+    (run?.phase === "round r1" && run.round === "r1"), `${label} has a matching phase and round`);
   const envelope = run?.envelope;
   check(isWidth(envelope?.data_bits) && isWidth(envelope?.word_bits) && typeof envelope?.two_ended === "boolean", `${label} has both envelope widths and a two-ended flag`);
   check([run?.overall, run?.judged, run?.machine, run?.programs].every(isScore) && typeof run?.nonconforming === "boolean", `${label} has scores and a conformance verdict`);
   check(Number.isInteger(run?.questions) && run.questions >= 0 && Number.isFinite(run?.cost_usd) && run.cost_usd >= 0, `${label} has a question count and USD cost`);
   check(Array.isArray(run?.wall_s) && run.wall_s.length > 0 && run.wall_s.every((value) => Number.isFinite(value) && value >= 0), `${label} has stage timings in seconds`);
+}
+
+const roundRuns = runs.filter((run) => run?.phase === "round r1" && run.round === "r1");
+const roundSeats = ["opus-5.5-medium", "sonnet-5.5-high", "haiku-5.5-high", "sol-6.2-xhigh"];
+check(roundRuns.length === 12 && r1Envelopes.length === 3 && roundSeats.every((seat) =>
+  r1Envelopes.every((name) => roundRuns.filter((run) => run.seat === seat && run.envelope?.name === name).length === 1)),
+  "round r1 has one run per seat and drawn envelope");
+check(runs.some((run) => run?.phase === "pilot"), "the export has pilot runs");
+for (const run of roundRuns) {
+  const { passed, cases } = run.programs_passed ?? {};
+  check(run.judges === r1?.judges, `${run.run} has the round's judge count`);
+  check(Number.isInteger(cases) && cases > 0 && Number.isInteger(passed) && passed >= 0 && passed <= cases,
+    `${run.run} has valid program case counts`);
 }
 
 const catalog = readFileSync(join(root, "data.js"), "utf8");
