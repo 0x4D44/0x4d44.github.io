@@ -17,7 +17,7 @@ import { CLOCK_TOWER_HEIGHT, SHED_SPAN_WIDTH } from '../../core/station.ts';
 import type { ClockDial } from './clocks.ts';
 import type { ShedLayout } from '../../core/station.ts';
 import { addCrownAbove, addCrownBelow, CROWN_ALPHA, setShedGlass } from './lighting.ts';
-import { Batch, glintEven, material, paneUv, windowNight, withBuildingNightMaterial } from './materials.ts';
+import { Batch, gableDraw, glintEven, GLAZING, material, paneUv, windowNight, withBuildingNightMaterial } from './materials.ts';
 import type { V2, V3 } from './materials.ts';
 import { GROUND_Y } from './world.ts';
 
@@ -675,6 +675,9 @@ export function lunetteBars(uc: number, springing: number, r = R, spacing = 1.6)
  */
 // round F16b (front-round-16 score, B3: from inside an even graph paper of near-square cells, where shed-a shows about 3 main transoms and tall lights): a
 // tier split in 2, not 3, so 5 rows over the crown and panes 1.67 times as tall as wide, and the new transoms 0.045 m deep, about half the mullions' 0.09
+// round F17 (front-round-16b score, A6/B3: the photos' verticals are a hierarchy): every `every`th mullion from the screen's middle (the 0th, +-3rd, +-6th,
+// +-9th: symmetric on each arch) `heavy` times as wide and deep; with GABLE_FINE's fine bars in the glass between them
+export const GABLE_MULLION = { every: 3, heavy: 1.75 } as const;
 export const GABLE_TRANSOM = { split: 2, width: 0.045 } as const;
 /** The bars of one north gable: the window bars above `from`, mullions trimmed to start there, and GABLE_TRANSOM's transoms between the lunette's. */
 export function gableBars(uc: number, springing: number, from: number, r = R): BarSpec[] {
@@ -687,8 +690,8 @@ export function gableBars(uc: number, springing: number, from: number, r = R): B
   for (const b of lunetteBars(uc, springing, r)) {
     if (b.kind === 'mullion') {
       const top = b.c[1] + b.s[1] / 2;
-      const h = top - from;
-      if (h > 0.3) out.push({ ...b, c: [b.c[0], from + h / 2, b.c[2]], s: [b.s[0], h, b.s[2]] });
+      const h = top - from, heavy = Math.round((b.c[0] - uc) / GLAZING.spacing) % GABLE_MULLION.every === 0 ? GABLE_MULLION.heavy : 1;
+      if (h > 0.3) out.push({ ...b, c: [b.c[0], from + h / 2, b.c[2]], s: [b.s[0] * heavy, h, b.s[2] * heavy] });
     } else if (b.kind !== 'ring' && b.c[1] > from + 0.2) out.push(b); // round S1 (shed-gap-scan-1, B3): R-a's north screen is a mullion and transom grid only, no ring
   }
   return out;
@@ -942,7 +945,7 @@ export function gableOutside(cam: V3, layout: Pick<ShedLayout, 'length'>, night:
 }
 /** dimInXray for the gable glass, which also takes GABLE_OUTSIDE, and the glint's even panes (materials.ts glintEven), by gableOutside for the camera (set for its own draw and put back after). */
 function gableGlassView(glass: THREE.Mesh, group: THREE.Group, layout: Pick<ShedLayout, 'length'>): void {
-  let was = 1, even = 0;
+  let was = 1, even = 0, drawn = 0;
   const colour = new THREE.Color(), specular = new THREE.Color(), tint = new THREE.Color(), cam = new THREE.Vector3(), inverse = new THREE.Matrix4();
   glass.onBeforeRender = (_r, _s, camera, _g, mat) => {
     const m = mat as THREE.MeshPhongMaterial;
@@ -952,8 +955,9 @@ function gableGlassView(glass: THREE.Mesh, group: THREE.Group, layout: Pick<Shed
     m.opacity = (was * (1 - k) + GABLE_OUTSIDE.opacity * k) * endGlassFactor(group.userData.roofMode as RoofMode);
     if (k > 0) { m.color.lerp(tint.setHex(GABLE_OUTSIDE.color), k); m.specular.lerp(tint.setHex(GABLE_OUTSIDE.specular), k); }
     even = glintEven.value; glintEven.value = k; // round F11b: one even sheen, not a mosaic of streaked and clear panes
+    drawn = gableDraw.value; gableDraw.value = 1; // round F17: the fine bars (materials.ts GABLE_FINE), on this glass only
   };
-  glass.onAfterRender = (_r, _s, _c, _g, mat) => { const m = mat as THREE.MeshPhongMaterial; m.opacity = was; m.color.copy(colour); m.specular.copy(specular); glintEven.value = even; };
+  glass.onAfterRender = (_r, _s, _c, _g, mat) => { const m = mat as THREE.MeshPhongMaterial; m.opacity = was; m.color.copy(colour); m.specular.copy(specular); glintEven.value = even; gableDraw.value = drawn; };
 }
 
 /** The glazing's opacity for a roof opacity `roof` (from roofOpacity): `near` at 1 (solid roof), `far` at XRAY_OPACITY, linear between. */

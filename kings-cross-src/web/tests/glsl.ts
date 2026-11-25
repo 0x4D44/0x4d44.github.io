@@ -331,7 +331,11 @@ function componentwise(args: Value[], f: (...xs: number[]) => number): Value {
 }
 const clamp = (x: number, a: number, b: number): number => Math.min(b, Math.max(a, x));
 
+/** Round F17: what `fwidth` returns (the screen footprint of one pixel, in the argument's units); tests set it to stand for a near or a far view. */
+export const DERIVATIVES = { width: 0.002 };
+
 const BUILTINS: Record<string, (...args: Value[]) => Value> = {
+  fwidth: (x) => componentwise([x as Value], () => DERIVATIVES.width),
   abs: (x) => componentwise([x as Value], Math.abs),
   floor: (x) => componentwise([x as Value], Math.floor),
   fract: (x) => componentwise([x as Value], (v) => v - Math.floor(v)),
