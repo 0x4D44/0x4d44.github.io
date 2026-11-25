@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Strange Machine: interim results</title>
-<meta name="description" content="Pilot results for Strange Machine, a benchmark of coding models that design and program a one-instruction computer.">
+<title>Strange Machine: first scored round</title>
+<meta name="description" content="First scored round of Strange Machine, a benchmark of coding models that design and program a one-instruction computer.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;600&family=JetBrains+Mono:wght@400;600;700&display=swap">
@@ -14,59 +14,93 @@
 <main class="wrap">
   <header class="hero">
     <nav aria-label="Related benchmark"><a href="/mdbench/">mdbench: which model holds which seat</a></nav>
-    <h1>Strange Machine: interim results</h1>
+    <h1>Strange Machine: first scored round</h1>
     <p class="lede">Each model at a given effort setting (a seat) gets a loose customer brief for a one-instruction Harvard computer. The drawn envelope sets the widths of its separate data and program words at <i>D</i> and <i>P</i> bits. In stage 1 the seat writes requirements and a design and can ask the product owner up to 10 questions, answered from fixed text. In stage 2 it builds an emulator and assembler in Rust, and both are frozen. In stage 3 it writes a ladder of programs in its own assembly language and runs them on its frozen emulator against reference outputs.</p>
     <p class="col" id="scoring" hidden></p>
-    <aside class="banner" aria-label="Pilot status">
-      <p><strong>Pilot phase.</strong> These are interim results from <span id="pilot-count">the</span> pilot runs on 18–19 November 2026, before the first scored round.</p>
-      <p>Each pilot run had one judge. Scored rounds have three, with conformance decided by majority. The pilot kits had seven programs. The eighth, a game run under a per-frame step budget, came later.</p>
-      <p>Pilot envelopes were hand-picked and some were wide, for example 13-bit data and 17-bit program words. <span id="references"></span> <span id="rescoring"></span></p>
+    <aside class="banner" aria-label="Round format">
+      <p><strong>Round r1, <time id="round-date" datetime="2026-11-25">25 November 2026</time>:</strong> four seats, three envelopes drawn at random (the same three for every seat), full time caps, three judges a run. Conformance is decided by majority; every verdict in this round was unanimous.</p>
     </aside>
   </header>
 
-  <p id="results-status" class="status" role="status" hidden>Loading pilot results…</p>
-  <noscript><p class="status">Enable JavaScript to load the pilot results.</p></noscript>
+  <p id="results-status" class="status" role="status" hidden>Loading results…</p>
+  <noscript><p class="status">Enable JavaScript to load the results.</p></noscript>
 
   <div id="results" hidden>
-    <section aria-labelledby="seats-heading">
-      <h2 id="seats-heading">Mean scores by seat</h2>
-      <div class="panel scroll" role="region" aria-labelledby="seats-heading" tabindex="0">
+    <section id="round-r1" aria-labelledby="round-heading" hidden>
+      <h2 id="round-heading">Round r1</h2>
+      <h3 id="round-seats-heading">Mean scores by seat</h3>
+      <div class="panel scroll" role="region" aria-labelledby="round-seats-heading" tabindex="0">
         <table>
           <thead><tr><th scope="col">Seat</th><th scope="col" class="num">Overall</th><th scope="col" class="num">Judged</th><th scope="col" class="num">Machine</th><th scope="col" class="num">Programs</th><th scope="col" class="num">Runs</th><th scope="col" class="num">Nonconforming</th><th scope="col" class="num">Mean cost (USD)</th></tr></thead>
-          <tbody id="seats"></tbody>
+          <tbody id="round-seats"></tbody>
         </table>
       </div>
       <p class="cap">Scores are out of 100. The Programs column shows the score before the conformance adjustment. Overall includes the adjustment.</p>
-    </section>
 
-    <section aria-labelledby="chart-heading">
-      <h2 id="chart-heading">Overall score by envelope</h2>
-      <figure class="panel">
-        <div class="legend" id="legend"></div>
-        <div class="scroll" id="chart" role="region" aria-labelledby="chart-heading" tabindex="0"></div>
-        <figcaption class="cap">Envelope widths are data bits × program word bits. A hollow mark means the run was nonconforming. Hover over a mark for the run and score, or find them in the table below.</figcaption>
-      </figure>
-    </section>
-
-    <section aria-labelledby="runs-heading">
-      <h2 id="runs-heading">All pilot runs</h2>
-      <div class="panel scroll" role="region" aria-labelledby="runs-heading" tabindex="0">
+      <h3 id="round-grid-heading">Overall score by envelope</h3>
+      <div class="panel scroll round-grid" role="region" aria-labelledby="round-grid-heading" tabindex="0">
         <table>
-          <thead><tr><th scope="col">Run</th><th scope="col">Seat</th><th scope="col">Envelope</th><th scope="col" class="num">Overall</th><th scope="col" class="num">Judged</th><th scope="col" class="num">Machine</th><th scope="col" class="num">Programs</th><th scope="col">Nonconforming</th><th scope="col" class="num">Questions asked</th><th scope="col" class="num">Cost (USD)</th><th scope="col" class="num">Wall time (min)</th></tr></thead>
-          <tbody id="runs"></tbody>
+          <thead><tr id="round-envelope-headings"><th scope="col">Seat</th></tr></thead>
+          <tbody id="round-grid"></tbody>
         </table>
       </div>
+
+      <h3 id="round-runs-heading">All round r1 runs</h3>
+      <div class="panel scroll" role="region" aria-labelledby="round-runs-heading" tabindex="0">
+        <table>
+          <thead><tr><th scope="col">Run</th><th scope="col">Seat</th><th scope="col">Envelope</th><th scope="col" class="num">Overall</th><th scope="col" class="num">Judged</th><th scope="col" class="num">Machine</th><th scope="col" class="num">Programs</th><th scope="col">Nonconforming</th><th scope="col" class="num">Questions asked</th><th scope="col" class="num">Cost (USD)</th><th scope="col" class="num">Wall time (min)</th></tr></thead>
+          <tbody id="round-runs"></tbody>
+        </table>
+      </div>
+
+      <h3 id="round-findings-heading">What round r1 showed</h3>
+      <ul class="plain col" id="round-findings"></ul>
     </section>
 
-    <section aria-labelledby="findings-heading">
-      <h2 id="findings-heading">What the pilot showed</h2>
-      <ul class="plain col" id="findings"></ul>
+    <section id="pilot" aria-labelledby="pilot-heading" hidden>
+      <h2 id="pilot-heading">Pilot (18–19 November)</h2>
+      <p class="col">The <span id="pilot-count"></span> pilot runs had one judge each and seven programs. The eighth program, a game with a per-frame step budget, came later. Envelopes were hand-picked, some as wide as 13×17. <span id="references"></span> <span id="rescoring"></span></p>
+
+      <section aria-labelledby="seats-heading">
+        <h3 id="seats-heading">Mean scores by seat</h3>
+        <div class="panel scroll" role="region" aria-labelledby="seats-heading" tabindex="0">
+          <table>
+            <thead><tr><th scope="col">Seat</th><th scope="col" class="num">Overall</th><th scope="col" class="num">Judged</th><th scope="col" class="num">Machine</th><th scope="col" class="num">Programs</th><th scope="col" class="num">Runs</th><th scope="col" class="num">Nonconforming</th><th scope="col" class="num">Mean cost (USD)</th></tr></thead>
+            <tbody id="seats"></tbody>
+          </table>
+        </div>
+        <p class="cap">Scores are out of 100. The Programs column shows the score before the conformance adjustment. Overall includes the adjustment.</p>
+      </section>
+
+      <section aria-labelledby="chart-heading">
+        <h3 id="chart-heading">Overall score by envelope</h3>
+        <figure class="panel">
+          <div class="legend" id="legend"></div>
+          <div class="scroll" id="chart" role="region" aria-labelledby="chart-heading" tabindex="0"></div>
+          <figcaption class="cap">Envelope widths are data bits × program word bits. A hollow mark means the run was nonconforming. Hover over a mark for the run and score, or find them in the table below.</figcaption>
+        </figure>
+      </section>
+
+      <section aria-labelledby="runs-heading">
+        <h3 id="runs-heading">All pilot runs</h3>
+        <div class="panel scroll" role="region" aria-labelledby="runs-heading" tabindex="0">
+          <table>
+            <thead><tr><th scope="col">Run</th><th scope="col">Seat</th><th scope="col">Envelope</th><th scope="col" class="num">Overall</th><th scope="col" class="num">Judged</th><th scope="col" class="num">Machine</th><th scope="col" class="num">Programs</th><th scope="col">Nonconforming</th><th scope="col" class="num">Questions asked</th><th scope="col" class="num">Cost (USD)</th><th scope="col" class="num">Wall time (min)</th></tr></thead>
+            <tbody id="runs"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section aria-labelledby="findings-heading">
+        <h3 id="findings-heading">What the pilot showed</h3>
+        <ul class="plain col" id="findings"></ul>
+      </section>
     </section>
   </div>
 
   <section aria-labelledby="next-heading">
     <h2 id="next-heading">What's next</h2>
-    <p class="col">The first scored round will draw three envelopes at random and give the same three to every seat. Each seat runs once on each envelope, with three judges per run.</p>
+    <p class="col">More rounds are planned. We’re stretching the program ladder because the strongest seats already pass every program.</p>
   </section>
 
   <footer id="source" hidden>Data generated <time id="generated"></time>.</footer>

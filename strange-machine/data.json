@@ -1,7 +1,24 @@
 {
- "generated": "2026-11-25T11:10Z",
- "phase": "pilot",
+ "generated": "2026-11-25T15:14Z",
+ "phase": "round r1 scored",
  "scoring_rule": "2026-11-19",
+ "rounds": {
+  "r1": {
+   "date": "2026-11-25",
+   "seed": "r1",
+   "envelopes": [
+    "d04p04e",
+    "d03p02e",
+    "d03p04e"
+   ],
+   "judges": 3,
+   "caps_min": [
+    20,
+    75,
+    75
+   ]
+  }
+ },
  "weights": {
   "judged": 20,
   "machine": 30,
@@ -22,6 +39,8 @@
  "runs": [
   {
    "run": "p1-sonnet-5.5-high",
+   "phase": "pilot",
+   "round": null,
    "pilot": "p1",
    "seat": "sonnet-5.5-high",
    "model": "claude-sonnet-5-5",
@@ -58,6 +77,8 @@
   },
   {
    "run": "p10-haiku-5.5-high",
+   "phase": "pilot",
+   "round": null,
    "pilot": "p10",
    "seat": "haiku-5.5-high",
    "model": "claude-haiku-5-5",
@@ -94,6 +115,8 @@
   },
   {
    "run": "p10-opus-5.5-medium",
+   "phase": "pilot",
+   "round": null,
    "pilot": "p10",
    "seat": "opus-5.5-medium",
    "model": "claude-opus-5-5",
@@ -130,6 +153,8 @@
   },
   {
    "run": "p10-sonnet-5.5-high",
+   "phase": "pilot",
+   "round": null,
    "pilot": "p10",
    "seat": "sonnet-5.5-high",
    "model": "claude-sonnet-5-5",
@@ -166,6 +191,8 @@
   },
   {
    "run": "p2-haiku-5.5-high",
+   "phase": "pilot",
+   "round": null,
    "pilot": "p2",
    "seat": "haiku-5.5-high",
    "model": "claude-haiku-5-5",
@@ -202,6 +229,8 @@
   },
   {
    "run": "p2-opus-5.5-medium",
+   "phase": "pilot",
+   "round": null,
    "pilot": "p2",
    "seat": "opus-5.5-medium",
    "model": "claude-opus-5-5",
@@ -238,6 +267,8 @@
   },
   {
    "run": "p3-haiku-5.5-high",
+   "phase": "pilot",
+   "round": null,
    "pilot": "p3",
    "seat": "haiku-5.5-high",
    "model": "claude-haiku-5-5",
@@ -274,6 +305,8 @@
   },
   {
    "run": "p3-opus-5.5-medium",
+   "phase": "pilot",
+   "round": null,
    "pilot": "p3",
    "seat": "opus-5.5-medium",
    "model": "claude-opus-5-5",
@@ -310,6 +343,8 @@
   },
   {
    "run": "p3-sonnet-5.5-high",
+   "phase": "pilot",
+   "round": null,
    "pilot": "p3",
    "seat": "sonnet-5.5-high",
    "model": "claude-sonnet-5-5",
@@ -346,6 +381,8 @@
   },
   {
    "run": "p4-haiku-5.5-high",
+   "phase": "pilot",
+   "round": null,
    "pilot": "p4",
    "seat": "haiku-5.5-high",
    "model": "claude-haiku-5-5",
@@ -382,6 +419,8 @@
   },
   {
    "run": "p4-opus-5.5-medium",
+   "phase": "pilot",
+   "round": null,
    "pilot": "p4",
    "seat": "opus-5.5-medium",
    "model": "claude-opus-5-5",
@@ -418,6 +457,8 @@
   },
   {
    "run": "p4-sonnet-5.5-high",
+   "phase": "pilot",
+   "round": null,
    "pilot": "p4",
    "seat": "sonnet-5.5-high",
    "model": "claude-sonnet-5-5",
@@ -454,6 +495,8 @@
   },
   {
    "run": "p5-haiku-5.5-high",
+   "phase": "pilot",
+   "round": null,
    "pilot": "p5",
    "seat": "haiku-5.5-high",
    "model": "claude-haiku-5-5",
@@ -490,6 +533,8 @@
   },
   {
    "run": "p5-opus-5.5-medium",
+   "phase": "pilot",
+   "round": null,
    "pilot": "p5",
    "seat": "opus-5.5-medium",
    "model": "claude-opus-5-5",
@@ -526,6 +571,8 @@
   },
   {
    "run": "p5-sonnet-5.5-high",
+   "phase": "pilot",
+   "round": null,
    "pilot": "p5",
    "seat": "sonnet-5.5-high",
    "model": "claude-sonnet-5-5",
@@ -562,6 +609,8 @@
   },
   {
    "run": "p6-haiku-5.5-high",
+   "phase": "pilot",
+   "round": null,
    "pilot": "p6",
    "seat": "haiku-5.5-high",
    "model": "claude-haiku-5-5",
@@ -598,6 +647,8 @@
   },
   {
    "run": "p6-opus-5.5-medium",
+   "phase": "pilot",
+   "round": null,
    "pilot": "p6",
    "seat": "opus-5.5-medium",
    "model": "claude-opus-5-5",
@@ -634,6 +685,8 @@
   },
   {
    "run": "p6-sonnet-5.5-high",
+   "phase": "pilot",
+   "round": null,
    "pilot": "p6",
    "seat": "sonnet-5.5-high",
    "model": "claude-sonnet-5-5",
@@ -670,6 +723,8 @@
   },
   {
    "run": "p7-haiku-5.5-high",
+   "phase": "pilot",
+   "round": null,
    "pilot": "p7",
    "seat": "haiku-5.5-high",
    "model": "claude-haiku-5-5",
@@ -706,6 +761,8 @@
   },
   {
    "run": "p7-opus-5.5-medium",
+   "phase": "pilot",
+   "round": null,
    "pilot": "p7",
    "seat": "opus-5.5-medium",
    "model": "claude-opus-5-5",
@@ -742,6 +799,8 @@
   },
   {
    "run": "p7-sonnet-5.5-high",
+   "phase": "pilot",
+   "round": null,
    "pilot": "p7",
    "seat": "sonnet-5.5-high",
    "model": "claude-sonnet-5-5",
@@ -778,6 +837,8 @@
   },
   {
    "run": "p8-haiku-5.5-high",
+   "phase": "pilot",
+   "round": null,
    "pilot": "p8",
    "seat": "haiku-5.5-high",
    "model": "claude-haiku-5-5",
@@ -814,6 +875,8 @@
   },
   {
    "run": "p8-opus-5.5-medium",
+   "phase": "pilot",
+   "round": null,
    "pilot": "p8",
    "seat": "opus-5.5-medium",
    "model": "claude-opus-5-5",
@@ -850,6 +913,8 @@
   },
   {
    "run": "p8-sonnet-5.5-high",
+   "phase": "pilot",
+   "round": null,
    "pilot": "p8",
    "seat": "sonnet-5.5-high",
    "model": "claude-sonnet-5-5",
@@ -886,6 +951,8 @@
   },
   {
    "run": "p9-haiku-5.5-high",
+   "phase": "pilot",
+   "round": null,
    "pilot": "p9",
    "seat": "haiku-5.5-high",
    "model": "claude-haiku-5-5",
@@ -922,6 +989,8 @@
   },
   {
    "run": "p9-opus-5.5-medium",
+   "phase": "pilot",
+   "round": null,
    "pilot": "p9",
    "seat": "opus-5.5-medium",
    "model": "claude-opus-5-5",
@@ -958,6 +1027,8 @@
   },
   {
    "run": "p9-sonnet-5.5-high",
+   "phase": "pilot",
+   "round": null,
    "pilot": "p9",
    "seat": "sonnet-5.5-high",
    "model": "claude-sonnet-5-5",
@@ -989,6 +1060,462 @@
     355.0,
     495.2,
     1070.5
+   ],
+   "scoring": "2026-11-19"
+  },
+  {
+   "run": "r1-1-d04p04e-haiku-5.5-high",
+   "phase": "round r1",
+   "round": "r1",
+   "pilot": null,
+   "seat": "haiku-5.5-high",
+   "model": "claude-haiku-5-5",
+   "started": "2026-11-25T13:07:50Z",
+   "envelope": {
+    "name": "d04p04e",
+    "data_bits": 4,
+    "word_bits": 4,
+    "two_ended": true
+   },
+   "overall": 53.5,
+   "judged": 73.1,
+   "machine": 100.0,
+   "programs": 35.71,
+   "nonconforming": true,
+   "programs_passed": {
+    "cases": 44,
+    "passed": 19
+   },
+   "judges": 3,
+   "cost_usd": 1.5284,
+   "questions": 4,
+   "caps_s": [
+    1200,
+    4500,
+    4500
+   ],
+   "wall_s": [
+    323.8,
+    774.3,
+    513.8
+   ],
+   "scoring": "2026-11-19"
+  },
+  {
+   "run": "r1-1-d04p04e-opus-5.5-medium",
+   "phase": "round r1",
+   "round": "r1",
+   "pilot": null,
+   "seat": "opus-5.5-medium",
+   "model": "claude-opus-5-5",
+   "started": "2026-11-25T13:06:49Z",
+   "envelope": {
+    "name": "d04p04e",
+    "data_bits": 4,
+    "word_bits": 4,
+    "two_ended": true
+   },
+   "overall": 72.3,
+   "judged": 86.5,
+   "machine": 100.0,
+   "programs": 100.0,
+   "nonconforming": true,
+   "programs_passed": {
+    "cases": 44,
+    "passed": 44
+   },
+   "judges": 3,
+   "cost_usd": 6.2296,
+   "questions": 8,
+   "caps_s": [
+    1200,
+    4500,
+    4500
+   ],
+   "wall_s": [
+    319.5,
+    1087.2,
+    304.1
+   ],
+   "scoring": "2026-11-19"
+  },
+  {
+   "run": "r1-1-d04p04e-sol-6.2-xhigh",
+   "phase": "round r1",
+   "round": "r1",
+   "pilot": null,
+   "seat": "sol-6.2-xhigh",
+   "model": "gpt-6.2-sol",
+   "started": "2026-11-25T12:28:23Z",
+   "envelope": {
+    "name": "d04p04e",
+    "data_bits": 4,
+    "word_bits": 4,
+    "two_ended": true
+   },
+   "overall": 98.8,
+   "judged": 94.2,
+   "machine": 100.0,
+   "programs": 100.0,
+   "nonconforming": false,
+   "programs_passed": {
+    "cases": 44,
+    "passed": 44
+   },
+   "judges": 3,
+   "cost_usd": 5.2224,
+   "questions": 9,
+   "caps_s": [
+    1200,
+    4500,
+    4500
+   ],
+   "wall_s": [
+    780.9,
+    1491.5,
+    936.7
+   ],
+   "scoring": "2026-11-19"
+  },
+  {
+   "run": "r1-1-d04p04e-sonnet-5.5-high",
+   "phase": "round r1",
+   "round": "r1",
+   "pilot": null,
+   "seat": "sonnet-5.5-high",
+   "model": "claude-sonnet-5-5",
+   "started": "2026-11-25T13:07:20Z",
+   "envelope": {
+    "name": "d04p04e",
+    "data_bits": 4,
+    "word_bits": 4,
+    "two_ended": true
+   },
+   "overall": 98.8,
+   "judged": 94.2,
+   "machine": 100.0,
+   "programs": 100.0,
+   "nonconforming": false,
+   "programs_passed": {
+    "cases": 44,
+    "passed": 44
+   },
+   "judges": 3,
+   "cost_usd": 6.1737,
+   "questions": 6,
+   "caps_s": [
+    1200,
+    4500,
+    4500
+   ],
+   "wall_s": [
+    436.3,
+    1560.4,
+    516.3
+   ],
+   "scoring": "2026-11-19"
+  },
+  {
+   "run": "r1-2-d03p02e-haiku-5.5-high",
+   "phase": "round r1",
+   "round": "r1",
+   "pilot": null,
+   "seat": "haiku-5.5-high",
+   "model": "claude-haiku-5-5",
+   "started": "2026-11-25T13:23:35Z",
+   "envelope": {
+    "name": "d03p02e",
+    "data_bits": 3,
+    "word_bits": 2,
+    "two_ended": true
+   },
+   "overall": 56.9,
+   "judged": 80.8,
+   "machine": 100.0,
+   "programs": 42.86,
+   "nonconforming": true,
+   "programs_passed": {
+    "cases": 44,
+    "passed": 25
+   },
+   "judges": 3,
+   "cost_usd": 1.8555,
+   "questions": 5,
+   "caps_s": [
+    1200,
+    4500,
+    4500
+   ],
+   "wall_s": [
+    248.4,
+    653.9,
+    679.4
+   ],
+   "scoring": "2026-11-19"
+  },
+  {
+   "run": "r1-2-d03p02e-opus-5.5-medium",
+   "phase": "round r1",
+   "round": "r1",
+   "pilot": null,
+   "seat": "opus-5.5-medium",
+   "model": "claude-opus-5-5",
+   "started": "2026-11-25T13:22:34Z",
+   "envelope": {
+    "name": "d03p02e",
+    "data_bits": 3,
+    "word_bits": 2,
+    "two_ended": true
+   },
+   "overall": 72.3,
+   "judged": 86.5,
+   "machine": 100.0,
+   "programs": 100.0,
+   "nonconforming": true,
+   "programs_passed": {
+    "cases": 44,
+    "passed": 44
+   },
+   "judges": 3,
+   "cost_usd": 6.0511,
+   "questions": 8,
+   "caps_s": [
+    1200,
+    4500,
+    4500
+   ],
+   "wall_s": [
+    285.8,
+    858.7,
+    432.3
+   ],
+   "scoring": "2026-11-19"
+  },
+  {
+   "run": "r1-2-d03p02e-sol-6.2-xhigh",
+   "phase": "round r1",
+   "round": "r1",
+   "pilot": null,
+   "seat": "sol-6.2-xhigh",
+   "model": "gpt-6.2-sol",
+   "started": "2026-11-25T13:24:05Z",
+   "envelope": {
+    "name": "d03p02e",
+    "data_bits": 3,
+    "word_bits": 2,
+    "two_ended": true
+   },
+   "overall": 97.3,
+   "judged": 86.5,
+   "machine": 100.0,
+   "programs": 100.0,
+   "nonconforming": false,
+   "programs_passed": {
+    "cases": 44,
+    "passed": 44
+   },
+   "judges": 3,
+   "cost_usd": 5.3406,
+   "questions": 9,
+   "caps_s": [
+    1200,
+    4500,
+    4500
+   ],
+   "wall_s": [
+    765.9,
+    1608.6,
+    910.6
+   ],
+   "scoring": "2026-11-19"
+  },
+  {
+   "run": "r1-2-d03p02e-sonnet-5.5-high",
+   "phase": "round r1",
+   "round": "r1",
+   "pilot": null,
+   "seat": "sonnet-5.5-high",
+   "model": "claude-sonnet-5-5",
+   "started": "2026-11-25T13:23:04Z",
+   "envelope": {
+    "name": "d03p02e",
+    "data_bits": 3,
+    "word_bits": 2,
+    "two_ended": true
+   },
+   "overall": 98.8,
+   "judged": 94.2,
+   "machine": 100.0,
+   "programs": 100.0,
+   "nonconforming": false,
+   "programs_passed": {
+    "cases": 44,
+    "passed": 44
+   },
+   "judges": 3,
+   "cost_usd": 8.5542,
+   "questions": 8,
+   "caps_s": [
+    1200,
+    4500,
+    4500
+   ],
+   "wall_s": [
+    419.1,
+    2749.2,
+    291.0
+   ],
+   "scoring": "2026-11-19"
+  },
+  {
+   "run": "r1-3-d03p04e-haiku-5.5-high",
+   "phase": "round r1",
+   "round": "r1",
+   "pilot": null,
+   "seat": "haiku-5.5-high",
+   "model": "claude-haiku-5-5",
+   "started": "2026-11-25T14:22:22Z",
+   "envelope": {
+    "name": "d03p04e",
+    "data_bits": 3,
+    "word_bits": 4,
+    "two_ended": true
+   },
+   "overall": 58.0,
+   "judged": 86.5,
+   "machine": 100.0,
+   "programs": 21.43,
+   "nonconforming": false,
+   "programs_passed": {
+    "cases": 44,
+    "passed": 7
+   },
+   "judges": 3,
+   "cost_usd": 1.1203,
+   "questions": 5,
+   "caps_s": [
+    1200,
+    4500,
+    4500
+   ],
+   "wall_s": [
+    253.2,
+    772.1,
+    247.2
+   ],
+   "scoring": "2026-11-19"
+  },
+  {
+   "run": "r1-3-d03p04e-opus-5.5-medium",
+   "phase": "round r1",
+   "round": "r1",
+   "pilot": null,
+   "seat": "opus-5.5-medium",
+   "model": "claude-opus-5-5",
+   "started": "2026-11-25T14:21:22Z",
+   "envelope": {
+    "name": "d03p04e",
+    "data_bits": 3,
+    "word_bits": 4,
+    "two_ended": true
+   },
+   "overall": 98.8,
+   "judged": 94.2,
+   "machine": 100.0,
+   "programs": 100.0,
+   "nonconforming": false,
+   "programs_passed": {
+    "cases": 44,
+    "passed": 44
+   },
+   "judges": 3,
+   "cost_usd": 9.1248,
+   "questions": 8,
+   "caps_s": [
+    1200,
+    4500,
+    4500
+   ],
+   "wall_s": [
+    429.6,
+    1516.2,
+    507.2
+   ],
+   "scoring": "2026-11-19"
+  },
+  {
+   "run": "r1-3-d03p04e-sol-6.2-xhigh",
+   "phase": "round r1",
+   "round": "r1",
+   "pilot": null,
+   "seat": "sol-6.2-xhigh",
+   "model": "gpt-6.2-sol",
+   "started": "2026-11-25T14:22:52Z",
+   "envelope": {
+    "name": "d03p04e",
+    "data_bits": 3,
+    "word_bits": 4,
+    "two_ended": true
+   },
+   "overall": 98.8,
+   "judged": 94.2,
+   "machine": 100.0,
+   "programs": 100.0,
+   "nonconforming": false,
+   "programs_passed": {
+    "cases": 44,
+    "passed": 44
+   },
+   "judges": 3,
+   "cost_usd": 3.6113,
+   "questions": 9,
+   "caps_s": [
+    1200,
+    4500,
+    4500
+   ],
+   "wall_s": [
+    646.7,
+    978.5,
+    824.4
+   ],
+   "scoring": "2026-11-19"
+  },
+  {
+   "run": "r1-3-d03p04e-sonnet-5.5-high",
+   "phase": "round r1",
+   "round": "r1",
+   "pilot": null,
+   "seat": "sonnet-5.5-high",
+   "model": "claude-sonnet-5-5",
+   "started": "2026-11-25T14:21:52Z",
+   "envelope": {
+    "name": "d03p04e",
+    "data_bits": 3,
+    "word_bits": 4,
+    "two_ended": true
+   },
+   "overall": 98.2,
+   "judged": 94.2,
+   "machine": 97.78,
+   "programs": 100.0,
+   "nonconforming": false,
+   "programs_passed": {
+    "cases": 44,
+    "passed": 44
+   },
+   "judges": 3,
+   "cost_usd": 5.9818,
+   "questions": 9,
+   "caps_s": [
+    1200,
+    4500,
+    4500
+   ],
+   "wall_s": [
+    431.5,
+    1262.8,
+    942.4
    ],
    "scoring": "2026-11-19"
   }
