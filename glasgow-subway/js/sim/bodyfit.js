@@ -424,6 +424,9 @@ export function trimUnderSkirt(THREE, root, o = {}) {
   }
   if (waist == null) return null;
   const stats = { tops: 0, dropped: 0, waist: +waist.toFixed(3) }, limit = waist - margin;
+  // o.skirtTo: the skirt's own top band is brought down to this far above the line, so the hem overlaps it only that much and nothing of the band shows through gaps in the
+  // trimmed hem (woman_midi: dark notches in the jumper's edge where her skirt's 3 cm band stood over it as she moved - reviews 74, 75)
+  if (o.skirtTo != null) for (const m of skirts) { const g = m.geometry; if (g.userData.skirtTo != null) continue; const P = g.attributes.position, top = limit + o.skirtTo; let k = 0; for (let i = 0; i < P.count; i++) if (P.getY(i) > top) { P.setY(i, top); k++; } P.needsUpdate = true; g.userData.skirtTo = k; stats.skirtTo = k; }
   for (const m of tops) {
     const g = m.geometry, idx = g.index; if (!idx || !m.skeleton) continue;
     if (g.userData.underSkirt != null) { stats.tops++; stats.dropped += g.userData.underSkirt; continue; }

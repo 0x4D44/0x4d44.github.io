@@ -295,7 +295,7 @@ export class AnimCrowd {
     f.scalp = fitScalp(T, n);   // hair-coloured roots under the hair, so a gap between strands is not a bare patch
     f.hose = fitHoseLegs(T, n);   // legs for the people in long socks (theirs were deleted with the skin a garment hid); the kilt is held off these
     f.legs = sk ? fitLegs(T, n, Object.assign(f.hose ? { radii: f.hose.radii } : {}, /pencil|midi/.test(c.outfit) ? { slim: 0.05, margin: 0.012, slimRamp: 0.03, slimCap: 0.4 } : { slimRamp: 0.04 })) : null;   // (a pencil skirt fits close: the thighs came through its front mid-stride - review 3)   // skirts held off the thighs (shader patch + slimmed thigh skin)
-    f.trim = sk ? trimUnderSkirt(T, n) : null;   // tops: nothing drawn under the skirt's waist edge
+    f.trim = sk ? trimUnderSkirt(T, n, c.id === 'woman_midi' ? { skirtTo: 0.012 } : {}) : null;   // tops: nothing drawn under the skirt's waist edge
     if (c.id === 'woman_midi') this._jumperOnTop(n);
     f.cuffs = !sk && /trousers|trews|leggings/.test(c.outfit) ? this._extendCuffs(n) : 0;
     f.underTop = !sk && /trousers|shorts|trews|leggings/.test(c.outfit) ? trimUnderTop(T, n) : null;
@@ -315,7 +315,7 @@ export class AnimCrowd {
     f.hoseLod = fitHoseLegs(T, n);
     const radii = (f.hoseLod && f.hoseLod.radii) || (f.legs && f.legs.radii) || LEG_RADII[c.id];
     f.legsLod = sk ? fitLegs(T, n, { radii, slim: 0.055, slimCap: 0.55, slimRamp: 0.2 }) : null;
-    f.trimLod = sk ? trimUnderSkirt(T, n) : null;
+    f.trimLod = sk ? trimUnderSkirt(T, n, c.id === 'woman_midi' ? { skirtTo: 0.012 } : {}) : null;
     if (c.id === 'woman_midi') this._jumperOnTop(n);
     f.cuffsLod = !sk && /trousers|trews|leggings/.test(c.outfit) ? this._extendCuffs(n) : 0;
     f.underTopLod = !sk && /trousers|shorts|trews|leggings/.test(c.outfit) ? trimUnderTop(T, n) : null;
