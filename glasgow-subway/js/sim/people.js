@@ -1576,7 +1576,10 @@ export class AnimCrowd {
       if (pass === 0 && !ok(p.x + ux * far, p.z + uz * far)) continue;
       pick = { ux, uz, off }; break;
     }
-    if (!pick) { p.sp = 0; p.yawT = Math.atan2(-dx, -dz); return false; }
+    if (!pick) {   // no way on: brake to a stop, coasting on the way it faces while 0.42 m stays clear - set to 0 outright, walkers stopped from 1.1 m/s in one frame (review 75: 84 in 520 s)
+      p.sp = Math.max(0, (p.sp || 0) - 2 * STEER.BMAX * dt); const cm = p.sp * dt, cx = p.x - Math.sin(p.yaw) * cm, cz = p.z - Math.cos(p.yaw) * cm;
+      if (cm > 1e-4 && this._onFloor(cx, cz, 0.12) && this._core(p, cx, cz, 0.42)) { p.x = cx; p.z = cz; } else p.sp = 0;
+      p.yawT = Math.atan2(-dx, -dz); return false; }
     if (pick.off * side < 0) { p.side = -side; p.sideT = 1.0; } else if (pick.off !== 0) p.sideT = Math.max(p.sideT || 0, 0.8);
     // a veer round something is a heading to follow, but it must not shorten the planned stop: the distance to brake into is still the distance to the target
     const move = steerStep(p, dt, { hT: Math.atan2(-pick.ux, -pick.uz), want: Math.min(sp, this._followCap(p, dx / d, dz / d)), d, stop: !!p.stopHere });
@@ -1584,7 +1587,7 @@ export class AnimCrowd {
     let sx = -Math.sin(p.yaw) * move, sz = -Math.cos(p.yaw) * move;
     if (!ok(p.x + sx, p.z + sz)) {   // not facing the checked way yet and the way it faces is blocked: hold, turn, then go
       // ... but a shorter step first, if that is clear: zeroed outright, the root halted dead for single frames mid-walk, six times in 0.8 s (review 72: ya_smile_halter)
-      p.sp = Math.max(0, p.sp - 2 * STEER.BMAX * dt); const k = [0.6, 0.3, 0.15].find((f) => ok(p.x + sx * f, p.z + sz * f) && this._noCloser(p, p.x + sx * f, p.z + sz * f, 0.6)); if (k) { sx *= k; sz *= k; } else { const cm = p.sp * dt; if (cm > 1e-4 && this._onFloor(p.x - Math.sin(p.yaw) * cm, p.z - Math.cos(p.yaw) * cm, 0.12) && this._core(p, p.x - Math.sin(p.yaw) * cm, p.z - Math.cos(p.yaw) * cm, 0.34)) { sx = -Math.sin(p.yaw) * cm; sz = -Math.cos(p.yaw) * cm; } else sx = sz = 0; }   // (none clear: coast on at the braking speed while 0.34 m stays clear, rather than a one-frame dead stop)
+      p.sp = Math.max(0, p.sp - 2 * STEER.BMAX * dt); const k = [0.6, 0.3, 0.15].find((f) => ok(p.x + sx * f, p.z + sz * f) && this._noCloser(p, p.x + sx * f, p.z + sz * f, 0.6)); if (k) { sx *= k; sz *= k; } else { const cm = p.sp * dt; if (cm > 1e-4 && this._onFloor(p.x - Math.sin(p.yaw) * cm, p.z - Math.cos(p.yaw) * cm, 0.12) && this._core(p, p.x - Math.sin(p.yaw) * cm, p.z - Math.cos(p.yaw) * cm, 0.42)) { sx = -Math.sin(p.yaw) * cm; sz = -Math.cos(p.yaw) * cm; } else sx = sz = 0; }   // (none clear: coast on at the braking speed while 0.34 m stays clear, rather than a one-frame dead stop; 0.34 let two stand 0.28 m apart - review 75)
     }
     p.x += sx; p.z += sz;
     return true;
@@ -1618,8 +1621,8 @@ export class AnimCrowd {
         // someone standing in the way (a waiter at the stair foot) steps aside, out of the line of the stairs, and the walker waits for them (review 5: they held whole flights
         // up for 98 s; review 6: ignoring them walked people through each other)
         if (q.mode !== 'go' && q.mode !== 'walk' && !(q.madeWayT > 0)) { q.madeWayT = 4; const sx = -uz, sz = ux, k = ex * sx + ez * sz >= 0 ? 1 : -1; this._makeWay(q, sx * k, sz * k); }
-        // braking, not a dead stop: the walker coasts on at its falling speed while that keeps 0.34 m from everyone (stopped dead from 1.07 m/s in one frame - review 74, adult_piper)
-        p.sp = Math.max(0, (p.sp || 0) - 2 * STEER.BMAX * dt); const cm = p.sp * dt, cx = p.x - Math.sin(p.yaw) * cm, cz = p.z - Math.cos(p.yaw) * cm; if (cm > 1e-4 && this._core(p, cx, cz, 0.34)) { p.x = cx; p.z = cz; }
+        // braking, not a dead stop: the walker coasts on at its falling speed while that keeps 0.42 m from everyone (stopped dead from 1.07 m/s in one frame - review 74, adult_piper)
+        p.sp = Math.max(0, (p.sp || 0) - 2 * STEER.BMAX * dt); const cm = p.sp * dt, cx = p.x - Math.sin(p.yaw) * cm, cz = p.z - Math.cos(p.yaw) * cm; if (cm > 1e-4 && this._core(p, cx, cz, 0.42)) { p.x = cx; p.z = cz; }
         p.yawT = Math.atan2(-dx, -dz); return false; } }
     const move = steerStep(p, dt, { hT: Math.atan2(-ux, -uz), want: Math.min(sp, (p.char ? p.char.walkSpeed : 1.3) * 1.3, this._followCap(p, ux, uz)), d, stop: !!p.stopHere });
     p.steered = true; p.yawT = p.yaw;
