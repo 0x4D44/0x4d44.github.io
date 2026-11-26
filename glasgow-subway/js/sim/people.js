@@ -27,7 +27,7 @@ const NO_BAGS = typeof location !== 'undefined' && /[?&]bags=0(&|$)/.test(locati
 const NO_PHONES = typeof location !== 'undefined' && /[?&]phones=0(&|$)/.test(location.search || '');
 const STEP_TURN = 1.6;   // rad/s: the turn on the spot of a rider stepping round (to sit, after standing up, at a new spot)
 const FLOOR_BONE = 0.025;   // m: the lowest a foot or ball-of-foot bone may be above the floor while sitting down or getting up (standing, they are at 2.5 - 4.5 cm)
-const HOLD_IN = 0.55, HOLD_OUT = 0.5;   // s: the arms come up to the phone over HOLD_IN, and go back down over HOLD_OUT
+const HOLD_IN = 0.9, HOLD_OUT = 0.75;   // (0.55 and 0.5 raised a phone to the ear at a peak 3 - 3.6 m/s, review 69: a reach to the ear takes nearer a second) s: the arms come up to the phone over HOLD_IN, and go back down over HOLD_OUT
 const PHONE_USE = 0.25, PHONE_CALL = 0.28;   // the share of a standing grown-up's idle bouts spent on a phone, and of those the share that are a call (the rest are typing / reading)
 const GAIT_IN = 0.2, GAIT_OUT = 0.35, GAIT_TAIL = 0.6;   // s: the gait is blended in over GAIT_IN, its upper body held GAIT_TAIL after the person stops (the last foot lands, the arms settle), then blended out over GAIT_OUT; the legs stay on the gait for good (feet that stay where they were planted)
 
