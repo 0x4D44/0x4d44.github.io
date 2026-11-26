@@ -62,9 +62,11 @@ test('B2: a valley gutter sunk into the wall\'s top between the two skins, its s
     assert.ok(b && Math.abs(localY(b) - (top - gd)) < 0.02, `the brick sole at ${b ? localY(b).toFixed(2) : 'nothing'}, wanted ${(top - gd).toFixed(2)}`);
     assert.ok(lead && localY(lead) > top - gd && localY(lead) < top - gd + 0.05, `the lead at ${lead ? localY(lead).toFixed(2) : 'nothing'}`);
     // the kerbs either side, their tops at the skins' landing
+    // re-pinned 2026-11-26 (B2 round 3, b2-valley-round-2 score section 5: the kerbs read as one flat line from above): they stand
+    // ROOF_EXTERIOR.valleyKerbUp over the landing now, same tolerance (kx-shed-b2-round3 pins the upstand itself)
     for (const s of [-1, 1]) {
-      const k = down(spine + s * (half - (half - gw / 2) / 2), v, [brick])[0];
-      assert.ok(k && Math.abs(localY(k) - top) < 0.02, `the kerb at ${k ? localY(k).toFixed(2) : 'nothing'}, wanted ${top.toFixed(2)}`);
+      const k = down(spine + s * (half - (half - gw / 2) / 2), v, [brick])[0], want = top + shed.ROOF_EXTERIOR.valleyKerbUp;
+      assert.ok(k && Math.abs(localY(k) - want) < 0.02, `the kerb at ${k ? localY(k).toFixed(2) : 'nothing'}, wanted ${want.toFixed(2)}`);
     }
   }
   assert.ok(!SHADOW_CASTERS.has('shed-spine') && !SHADOW_CASTERS.has('shed-roof-bars'), 'the gutter casts no sun shadow');

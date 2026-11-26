@@ -448,6 +448,21 @@
     "fov": 60,
     "near": 0.1
   },
+  "spine-feet-p4": {
+    "pos": [
+      43.6905,
+      2.5,
+      -151.7125
+    ],
+    "target": [
+      41.6279,
+      6.1388,
+      -163.775
+    ],
+    "source": "R-kx-shed-interior-c (shed-c-arcade-2013.jpg): platform 4, 2.4 m east of the spine wall's east face (shed u 34.9, v 140), eye 1.6 m, looking north along the wall and up at its springing 12 m on, so the east vault's spine-side ribs land on their corbels face by face",
+    "fov": 60,
+    "near": 0.1
+  },
   "roof-underside": {
     "pos": [
       44.38716973020361,

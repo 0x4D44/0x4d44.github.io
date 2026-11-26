@@ -63,7 +63,7 @@ export const AXES = [
 export const ELEMENT_VIEWS = {
   'lighting-materials': ['overview', 'south-front', 'front-oblique-solid-slate', 'platform-eye', 'concourse', 'great-northern-hotel', 'midland-grand-front', 'gasworks-portals', 'facade-brick-close'],
   'kx-front': ['south-front', 'front-oblique', 'front-oblique-solid-slate', 'roof-above-solid-slate', 'front-oblique-xray', 'roof-above-xray', 'north-gable', 'tower-close', 'front-southwest-pedestrian', 'shed-east-flank', 'gable-oblique', 'porch-close'],
-  'shed-interior': ['platform-eye', 'platform-eye-south', 'shed-interior', 'platform-eye-p1-north', 'platform-eye-p8-south', 'roof-underside', 'furniture-close', 'suburban-p9', 'suburban-p9-south', 'platform-clock', 'platform-furniture', 'platform-eye-crown-west', 'shed-across-west'],
+  'shed-interior': ['platform-eye', 'platform-eye-south', 'shed-interior', 'platform-eye-p1-north', 'platform-eye-p8-south', 'roof-underside', 'furniture-close', 'suburban-p9', 'suburban-p9-south', 'platform-clock', 'platform-furniture', 'spine-feet-p4', 'platform-eye-crown-west', 'shed-across-west'],
   'western-concourse': ['concourse', 'concourse-roof-detail', 'western-range', 'western-range-gateline', 'concourse-hotel-junction', 'concourse-exterior-square', 'concourse-funnel-up', 'western-range-full', 'concourse-exterior-west'],
   'historic-neighbours': ['great-northern-hotel', 'midland-grand-front', 'st-pancras-shed', 'st-pancras-shed-oblique', 'gnh-from-square', 'midland-euston-road', 'midland-clock-tower', 'barlow-interior'],
   'city-surroundings': ['overview', 'gasworks-portals', 'front-oblique', 'granary-square', 'gasholders', 'canal-lock', 'kings-boulevard', 'euston-road-east'],
@@ -613,6 +613,16 @@ const FROZEN_STATION_CAMERAS = {
     pos: [39.9098, 6.5, -191.8342],
     target: [21.9168, 0.9, -192.3388],
     source: 'R-kx-shed-interior-a (shed-a-north-from-footbridge-2019.jpg): from footbridge height over platform 5 by the spine (shed u 30, v 180), looking west across the west vault: island 6/7 under the west crown and the near-wall floor of platform 8 by the west wall',
+    fov: 60, near: 0.1,
+  },
+  // B2 round 3 (b2-valley-round-2 score, section 5: in shed-interior the spine-side rib feet land behind the lattice girder, in platform-eye they are
+  // mostly hidden): up along the spine wall's east face from platform 4 beside it. Shed u 34.9 (2.4 m off the face, on the platform's west half), v 140
+  // (between two ribs, mid-length, no sample train), eye 1.6 m, aimed at the face 12 m north, 0.5 m over the springing: the corbels and the ribs' feet
+  // on them recede along the frame's left, the ribs rising over them
+  'spine-feet-p4': {
+    pos: [43.6905, 2.5, -151.7125],
+    target: [41.6279, 6.1388, -163.775],
+    source: 'R-kx-shed-interior-c (shed-c-arcade-2013.jpg): platform 4, 2.4 m east of the spine wall\'s east face (shed u 34.9, v 140), eye 1.6 m, looking north along the wall and up at its springing 12 m on, so the east vault\'s spine-side ribs land on their corbels face by face',
     fov: 60, near: 0.1,
   },
   // R-kx-shed-interior-a (shed-a-north-from-footbridge-2019.jpg): the roof underside, ribs and glazing. Platform 4 midpoint,
