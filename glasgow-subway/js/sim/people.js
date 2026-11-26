@@ -313,7 +313,11 @@ export class AnimCrowd {
       for (const i of used) if (map[i] !== undefined && s.skeleton.boneInverses[i].elements.some((e, k) => Math.abs(e - m.skeleton.boneInverses[map[i]].elements[k]) > 0.01)) return;   // (the rigs differ by 2 - 5 mm a bone: invisible on a jumper)
       const g = s.geometry.clone(), SI = g.attributes.skinIndex, SW = g.attributes.skinWeight;
       for (let i = 0; i < SI.count; i++) for (let k = 0; k < 4; k++) { const j = map[SI.getComponent(i, k)]; if (j === undefined) { if (SW.getComponent(i, k) > 0.001) return; SI.setComponent(i, k, 0); } else SI.setComponent(i, k, j); }
-      g.userData.fromFull = true; m.geometry = g; n++;
+      // written into the shared geometry in place: the far model's clones made before the full model arrived (attachFull) hold this very geometry
+      const G = m.geometry; for (const k of Object.keys(G.attributes)) if (!g.attributes[k]) G.deleteAttribute(k);
+      for (const k of Object.keys(g.attributes)) G.setAttribute(k, g.attributes[k]); G.morphAttributes = {};   // (no morphs: the far model's meshes have no influences for them)
+      G.setIndex(g.index); G.clearGroups(); for (const gr of g.groups) G.addGroup(gr.start, gr.count, gr.materialIndex); G.computeBoundingSphere(); G.computeBoundingBox();
+      G.userData.fromFull = true; n++;
     });
     return n;
   }
@@ -340,6 +344,7 @@ export class AnimCrowd {
     for (const c of this.chars) {
       if (c.node) continue; const node = holder.getObjectByName('person_' + c.id); if (!node) continue;
       c.node = node; this._fitFull(c); n++;
+      if (c.lodNode) this.fit[c.id].fromFull = this._lodFromFull(c);   // (in the game the full model comes after the far one: review 70 found the kilted children's far jumpers still capes)
       const want = LEG_RADII[c.id], got = this.fit[c.id].legs && this.fit[c.id].legs.radii;
       if (got && JSON.stringify(got) !== JSON.stringify(want)) console.warn('[people] legradii.js is stale for', c.id, '- rerun node tools/legradii.mjs --write');
       for (const k of Object.keys(c)) if (/^_h_/.test(k)) delete c[k];
