@@ -19,7 +19,10 @@ export const SCEN = {
   // A slow walk (0.4 m/s) needs a longer window than its pace to hold the three strides the repeatability item wants. At the everyday speeds the window is 17 s (14 to 21 strides a foot): the
   // variability items (TIM.cvT, TIM.cvL) estimate a spread of about 2 % from the strides in the window, and from the 7 s (5-8 strides) this scenario had until revision 10 that estimate is itself
   // 25-30 % uncertain - a perfectly good walk would have fallen under the band's floor on one recording in ten for nothing but sampling error.
-  steady: (v) => (v < 0.6 ? { plan: [{ dur: 1.0, v: 0, state: 'stand' }, { dur: 13, v, state: 'walk' }], win: [3.5, 14] } : { plan: [{ dur: 1.0, v: 0, state: 'stand' }, { dur: 23, v, state: 'walk' }], win: [7, 24] }),
+  // (Motion run 90: the slow window was 10.5 s, under five strides of a tall walker at 0.4 m/s (2.1 s each). A left heel strike landing just after the window opened was then lost with its
+  //  up-crossing, leaving two whole cycles, and the repeatability and shake items, which need three, scored 0 on a walk with nothing wrong in it - adult_cap_baggy did, from a shift of the
+  //  start phase alone. 14.5 s holds at least six strides, so three whole left cycles survive any phase.)
+  steady: (v) => (v < 0.6 ? { plan: [{ dur: 1.0, v: 0, state: 'stand' }, { dur: 17, v, state: 'walk' }], win: [3.5, 18] } : { plan: [{ dur: 1.0, v: 0, state: 'stand' }, { dur: 23, v, state: 'walk' }], win: [7, 24] }),
   // (9.5 s to cover the 6.5 m: the elders walk at 0.78 of the pace asked for, and in the 7 s it had until review 12 they never reached the mark - twelve stops,
   //  one in eight of the roster, scored 0 as 'never arrived' for want of time, not for the way they stopped)
   startstop: () => ({ plan: [{ dur: 1.2, v: 0, state: 'stand' }, { dur: 9.5, v: 1.2, state: 'walk', to: 6.5 }, { dur: 2.5, v: 0 }], win: [0, 13.2] }),

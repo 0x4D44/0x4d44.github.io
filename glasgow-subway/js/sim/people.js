@@ -1589,7 +1589,7 @@ export class AnimCrowd {
       p.yawT = Math.atan2(-dx, -dz); return false; }
     if (pick.off * side < 0) { p.side = -side; p.sideT = 1.0; } else if (pick.off !== 0) p.sideT = Math.max(p.sideT || 0, 0.8);
     // a veer round something is a heading to follow, but it must not shorten the planned stop: the distance to brake into is still the distance to the target
-    const move = steerStep(p, dt, { hT: Math.atan2(-pick.ux, -pick.uz), want: Math.min(sp, this._followCap(p, dx / d, dz / d)), d, stop: !!p.stopHere });
+    const move = steerStep(p, dt, { hT: Math.atan2(-pick.ux, -pick.uz), want: Math.min(sp, this._followCap(p, dx / d, dz / d, 0.35)), d, stop: !!p.stopHere });
     p.steered = true; p.yawT = p.yaw;
     let sx = -Math.sin(p.yaw) * move, sz = -Math.cos(p.yaw) * move;
     if (!ok(p.x + sx, p.z + sz)) {   // not facing the checked way yet and the way it faces is blocked: hold, turn, then go
@@ -1606,11 +1606,13 @@ export class AnimCrowd {
   _paceK(p) { const c = p.char; if (!c) return 1; return c._pace || (c._pace = (c.elder ? 0.78 : 1) * (/pencil/.test(c.outfit) ? 0.85 : 1)); }
   /** following someone walking the same way: the pace that keeps a comfortable gap behind them (their speed at 0.6 m, less when closer, braking smoothly to a stop 0.6 m behind
    *  if they stop). Without it the follower closed in at full pace until no heading was clear, then stopped dead for a frame - 21 times in 4.4 s behind one walker (review 70). */
-  _followCap(p, ux, uz) {
+  _followCap(p, ux, uz, any = false) {
     let cap = Infinity; const sx = -uz, sz = ux;
-    for (const q of this.people) { if (q === p || q.hidden || !q.obj || q.static || (q.mode !== 'go' && q.mode !== 'walk')) continue;
+    for (const q of this.people) { if (q === p || q.hidden || !q.obj || q.static) continue; const walking = q.mode === 'go' || q.mode === 'walk'; if (!walking && !any) continue;
       const ex = q.x - p.x, ez = q.z - p.z, proj = ex * ux + ez * uz; if (proj <= 0.05 || proj > 1.6 || Math.abs(ex * sx + ez * sz) > 0.42) continue;
-      if (-Math.sin(q.yaw) * ux - Math.cos(q.yaw) * uz < 0.5) continue;   // (going the same way)
+      // any: on a rail route (_railStep, not walking past), anyone else in the way is braked for too, to a stop 0.5 m short - only the same-way walker was, so a walker met someone
+      // standing or crossing at full pace, inside the 0.5 m it looks, and stopped dead in a frame (review 76: every one-frame stop traced at St Enoch was this, often in chains)
+      if (!walking || -Math.sin(q.yaw) * ux - Math.cos(q.yaw) * uz < 0.5) { if (any) cap = Math.min(cap, Math.max(any === true ? 0 : any, 1.2 * (proj - 0.5))); continue; }   // (any: true brakes to a stop; a number brakes to that pace - a _step walker can still steer round them)   // (going the same way, below)
       cap = Math.min(cap, Math.max(0, (q.v || 0) + 1.2 * (proj - 0.6))); }
     return cap;
   }
@@ -1631,7 +1633,7 @@ export class AnimCrowd {
         // braking, not a dead stop: the walker coasts on at its falling speed while that keeps 0.42 m from everyone (stopped dead from 1.07 m/s in one frame - review 74, adult_piper)
         p.sp = Math.max(0, (p.sp || 0) - 2 * STEER.BMAX * dt); const cm = p.sp * dt, cx = p.x - Math.sin(p.yaw) * cm, cz = p.z - Math.cos(p.yaw) * cm; if (cm > 1e-4 && this._core(p, cx, cz, 0.42)) { p.x = cx; p.z = cz; p.steered = true; } else p.sp = 0;
         p.yawT = Math.atan2(-dx, -dz); return false; } }
-    const move = steerStep(p, dt, { hT: Math.atan2(-ux, -uz), want: Math.min(sp, (p.char ? p.char.walkSpeed : 1.3) * 1.3, this._followCap(p, ux, uz)), d, stop: !!p.stopHere });
+    const move = steerStep(p, dt, { hT: Math.atan2(-ux, -uz), want: Math.min(sp, (p.char ? p.char.walkSpeed : 1.3) * 1.3, this._followCap(p, ux, uz, !pass)), d, stop: !!p.stopHere });
     p.steered = true; p.yawT = p.yaw;
     // even walking past, a step never ends inside another body (0.32 m, centre to centre) unless it moves away from them: the walker edges sideways round them instead
     // (review 8: alighters on door routes passed 0.04-0.25 m apart for up to 1.8 s). Held up 3 s, they may squeeze through (4.5 s let a stair walker stand 8 s - review 10 run), so nobody is stuck for good
