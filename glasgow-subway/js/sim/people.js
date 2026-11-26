@@ -280,6 +280,7 @@ export class AnimCrowd {
   _fitFull(c) {
     const T = this.THREE, n = c.node, f = this.fit[c.id], sk = this._skirted(c);
     if (/kilt|skirt|highland/.test(c.outfit) && !/trews/.test(c.outfit)) this._extendHem(n);
+    f.sleeves = this._sleeveTubes(n);
     f.hair = fitHair(T, n);
     f.scalp = fitScalp(T, n);   // hair-coloured roots under the hair, so a gap between strands is not a bare patch
     f.hose = fitHoseLegs(T, n);   // legs for the people in long socks (theirs were deleted with the skin a garment hid); the kilt is held off these
@@ -448,6 +449,68 @@ export class AnimCrowd {
       g.userData.underCuff = (idx.count - keep.length) / 3; if (keep.length < idx.count) g.setIndex(new this.THREE.BufferAttribute(new Uint32Array(keep), 1));
     }
     return n;
+  }
+  /** The kilted children's sweaters were cut off above the kilt at export (tools/assets_people_mpfb.py cut_below: every vertex below the cut within a hand's breadth
+   *  of the centre line) - and a child's hanging forearms are inside that band, so the inner half of each forearm sleeve went with it, and the skin under it was
+   *  already gone: from the front the sleeve stopped at the elbow in a clean hem and a strip of it ran on to the wrist round nothing (review 71). A forearm sleeve
+   *  missing more than a quarter of its way round is rebuilt here as a tube along the forearm, its radius taken from what is left of it, each vertex weighted
+   *  (and its other attributes) as the nearest vertex of the old sleeve; the old strip goes. Once per shared geometry. Returns the sleeves rebuilt. */
+  _sleeveTubes(root) {
+    const T = this.THREE; let done = 0;
+    root.traverse((m) => {
+      if (!m.isSkinnedMesh || !m.geometry.index || !/sweater/i.test((m.material && m.material.name) || '')) return;
+      const g = m.geometry; if (g.userData.sleeveTube != null) { done += g.userData.sleeveTube; return; } g.userData.sleeveTube = 0;
+      const B = m.skeleton.bones, nm = B.map((b) => b.name.replace(/_\d+$/, '')), P = g.attributes.position, SI = g.attributes.skinIndex, SW = g.attributes.skinWeight;
+      const jp = (i) => new T.Vector3().setFromMatrixPosition(m.skeleton.boneInverses[i].clone().invert()).applyMatrix4(m.bindMatrixInverse);
+      const dom = new Int32Array(P.count); for (let i = 0; i < P.count; i++) { let bw = -1; for (let k = 0; k < 4; k++) { const w = SW.getComponent(i, k); if (w > bw) { bw = w; dom[i] = SI.getComponent(i, k); } } }
+      const add = [], drop = new Uint8Array(P.count), v = new T.Vector3();
+      for (const sd of ['l', 'r']) {
+        const iu = nm.indexOf('upperarm_' + sd), il = nm.indexOf('lowerarm_' + sd), ih = nm.indexOf('hand_' + sd); if (iu < 0 || il < 0 || ih < 0) continue;
+        const fore = (b) => nm[b].endsWith('_' + sd) && /^(lowerarm|hand|thumb|index|middle|ring|pinky)/.test(nm[b]);
+        const E = jp(il), W = jp(ih), d = W.clone().sub(E), len = d.length(); d.normalize();
+        const a1 = new T.Vector3(0, 0, 1).cross(d).normalize(), a2 = d.clone().cross(a1);
+        const F = []; for (let i = 0; i < P.count; i++) if (fore(dom[i])) F.push(i);
+        if (F.length < 12) continue;
+        const ang = [], bins = [[], [], [], [], [], [], [], []], prof = new Float32Array(8), polar = (i) => { v.fromBufferAttribute(P, i).sub(E); const t = v.dot(d) / len; v.addScaledVector(d, -t * len); return [t, v.length(), Math.atan2(v.dot(a2), v.dot(a1))]; };
+        for (const i of F) { const [t, r, a] = polar(i); if (t > 0.35) ang.push(a); bins[Math.min(7, Math.max(0, Math.floor(t * 8)))].push(r); }
+        bins.forEach((L, b) => { if (L.length) { L.sort((x, y) => x - y); prof[b] = L[Math.floor(L.length / 2)]; } });   // (the median: the remnant's flared edges overstate it)
+        if (ang.length < 6) continue; ang.sort((x, y) => x - y); let gap = ang[0] + 2 * Math.PI - ang[ang.length - 1]; for (let k = 1; k < ang.length; k++) gap = Math.max(gap, ang[k] - ang[k - 1]);
+        if (gap < Math.PI / 2) continue;   // (a whole sleeve: measured below the top third, where the cut ran)
+        const near = []; for (let i = 0; i < P.count; i++) if (dom[i] === iu) { const [t, r] = polar(i); if (t > -0.25 && t < 0.02) near.push(r); }
+        near.sort((x, y) => x - y); const rTop = near.length ? near[Math.floor(near.length * 0.5)] : prof[0];
+        for (let b = 1; b < 8; b++) if (!prof[b]) prof[b] = prof[b - 1]; if (!prof[0]) prof[0] = rTop;
+        const rad = (t) => (t <= 0 ? Math.min(rTop, prof[0] * 1.1) : prof[Math.min(7, Math.floor(t * 8))]);
+        const src = []; for (let i = 0; i < P.count; i++) if (fore(dom[i]) || dom[i] === iu) src.push(i);
+        let mu = 0, mv = 0; const U = g.attributes.uv; for (const i of F) { mu += U.getX(i); mv += U.getY(i); } mu /= F.length; mv /= F.length;
+        for (const i of F) drop[i] = 1;
+        add.push({ E, d, len, a1, a2, rad, src, mu, mv }); g.userData.sleeveTube++;
+      }
+      if (!add.length) return;
+      const idx = g.index, keep = []; for (let t = 0; t < idx.count; t += 3) { const a = idx.getX(t), b = idx.getX(t + 1), c = idx.getX(t + 2); if (!(drop[a] && drop[b] && drop[c])) keep.push(a, b, c); }
+      const RINGS = 11, SEG = 12, T0 = -0.14, T1 = 1.0, per = RINGS * (SEG + 1), n0 = P.count, n1 = n0 + per * add.length;
+      const A = {}; for (const k of Object.keys(g.attributes)) { const at = g.attributes[k], arr = new at.array.constructor(n1 * at.itemSize); arr.set(at.array); A[k] = new T.BufferAttribute(arr, at.itemSize, at.normalized); }
+      let o = n0; const q = new T.Vector3(), nrm = new T.Vector3();
+      for (const S of add) {
+        const base = o;
+        for (let r = 0; r < RINGS; r++) {
+          const t = T0 + (T1 - T0) * r / (RINGS - 1), rr = S.rad(t) * 1.02;
+          for (let s = 0; s <= SEG; s++) {
+            const th = 2 * Math.PI * s / SEG; nrm.copy(S.a1).multiplyScalar(Math.cos(th)).addScaledVector(S.a2, Math.sin(th));
+            q.copy(S.E).addScaledVector(S.d, t * S.len).addScaledVector(nrm, rr);
+            let best = S.src[0], bd = 1e9; for (const i of S.src) { const dd = v.fromBufferAttribute(P, i).distanceToSquared(q); if (dd < bd) { bd = dd; best = i; } }
+            for (const k of Object.keys(A)) { const at = g.attributes[k], sz = at.itemSize; for (let c = 0; c < sz; c++) A[k].array[o * sz + c] = at.array[best * sz + c]; }
+            A.position.setXYZ(o, q.x, q.y, q.z); if (A.normal) A.normal.setXYZ(o, nrm.x, nrm.y, nrm.z);
+            if (A.uv) A.uv.setXY(o, S.mu + 0.05 * (s / SEG - 0.5), S.mv + 0.12 * ((t - T0) / (T1 - T0) - 0.5));
+            o++;
+          }
+        }
+        for (let r = 0; r < RINGS - 1; r++) for (let s = 0; s < SEG; s++) { const a = base + r * (SEG + 1) + s, b = a + SEG + 1; keep.push(a, a + 1, b, a + 1, b + 1, b); }   // (wound outward: the material is two-sided, and a face wound inward is lit as its back)
+      }
+      for (const k of Object.keys(A)) g.setAttribute(k, A[k]);
+      g.setIndex(new T.BufferAttribute(new Uint32Array(keep), 1)); g.clearGroups(); g.computeBoundingSphere(); g.computeBoundingBox();
+      done += g.userData.sleeveTube;
+    });
+    return done;
   }
   _extendHem(root, drop = 0.13) {
     const THREE = this.THREE;
