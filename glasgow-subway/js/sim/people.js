@@ -290,7 +290,7 @@ export class AnimCrowd {
     f.legs = sk ? fitLegs(T, n, Object.assign(f.hose ? { radii: f.hose.radii } : {}, /pencil|midi/.test(c.outfit) ? { slim: 0.05, margin: 0.012, slimRamp: 0.03, slimCap: 0.4 } : { slimRamp: 0.04 })) : null;   // (a pencil skirt fits close: the thighs came through its front mid-stride - review 3)   // skirts held off the thighs (shader patch + slimmed thigh skin)
     f.trim = sk ? trimUnderSkirt(T, n) : null;   // tops: nothing drawn under the skirt's waist edge
     f.cuffs = !sk && /trousers|trews|leggings/.test(c.outfit) ? this._extendCuffs(n) : 0;
-    f.underTop = (!sk && /trousers|shorts|trews|leggings/.test(c.outfit)) || c.id === 'woman_midi' ? trimUnderTop(T, n) : null;   // (woman_midi's jumper hangs over her skirt: its black waistband came through the hem as 2 - 3 cm teeth, review 73)
+    f.underTop = !sk && /trousers|shorts|trews|leggings/.test(c.outfit) ? trimUnderTop(T, n) : null;
     f.under = !sk && /trousers|shorts|trews|leggings/.test(c.outfit) ? trimUnderTrousers(T, n) : null;   // no skin left under trousers to come through the seat
     f.web = trimWebbing(T, n);
     f.skinHid = SKIN_UNDER[c.id] ? this._hideSkinUnder(n, SKIN_UNDER[c.id]) : 0;
@@ -309,7 +309,7 @@ export class AnimCrowd {
     f.legsLod = sk ? fitLegs(T, n, { radii, slim: 0.055, slimCap: 0.55, slimRamp: 0.2 }) : null;
     f.trimLod = sk ? trimUnderSkirt(T, n) : null;
     f.cuffsLod = !sk && /trousers|trews|leggings/.test(c.outfit) ? this._extendCuffs(n) : 0;
-    f.underTopLod = (!sk && /trousers|shorts|trews|leggings/.test(c.outfit)) || c.id === 'woman_midi' ? trimUnderTop(T, n) : null;
+    f.underTopLod = !sk && /trousers|shorts|trews|leggings/.test(c.outfit) ? trimUnderTop(T, n) : null;
     f.underLod = !sk && /trousers|shorts|trews|leggings/.test(c.outfit) ? trimUnderTrousers(T, n) : null;
     f.webLod = trimWebbing(T, n);
     f.skinHidLod = SKIN_UNDER[c.id] ? this._hideSkinUnder(n, SKIN_UNDER[c.id]) : 0;   // the simplified body has a few triangles joining a hand to a thigh
