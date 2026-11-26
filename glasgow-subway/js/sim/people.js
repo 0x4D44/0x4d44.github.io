@@ -17,6 +17,7 @@ import { LookRig } from './look_three.js';
 export const PET_OWNER = 'adult_string_vest';   // the man in the string vest walks a haggis (haggis.js)
 import { dressTee, undressTee, takePrint, releasePrint, printAtlas, teeColour, TEE } from './tees.js';
 // ?gait=clip: the captured clip walk the game had before the procedural gait (to compare, and the baseline of research/people-motion-rubric.md)
+const ARM_FADE = 0.8, ARM_BONE = /^(clavicle|upperarm|lowerarm|hand|thumb|index|middle|ring|pinky)/;   // s: an arm that was up on a pole is lowered over this long, as a person lets go and drops the hand (POSE_FADE dropped it 0.6 m in 0.2 s - review 65)
 const POSE_FADE = 0.4;   // s: a person handed over between crowds goes from their old pose to their new one in this long
 const SIT_FEET = 0.07;   // how far below the floor a seated person's soles may reach before they are lifted off the seat (people audit: 0.08)
 const CLIP_WALK = typeof location !== 'undefined' && /[?&]gait=clip(&|$)/.test(location.search || '');
@@ -493,6 +494,9 @@ export class AnimCrowd {
     // and when nobody left fits but a garment already worn by half of them, the seat or the spot stays empty: the roster has 58 of 99 in trousers, and with everyone in use
     // once (unique) the draw fell back to trousers - review 15 counted 41 of 180 car samples over half one garment, 73 % at worst
     if (c && this.unique && nOwn >= 4 && full.has(grp(c)) && (tally.get(grp(c)) || 0) + 1 > 0.5 * (nOwn + 1)) return null;
+    // and likewise one sex: when the draw falls back to a grown-up of the sex already over 58 % near by, the place stays empty (review 64: the player's car ran 10 women to 6 men
+    // for the whole ride, over 58 % in 94 % of frames - the unique roster's fallback skipped the check)
+    if (c && this.unique && sexFull && !c.kid && c.sex === sexFull && nF + nM >= 4) return null;
     return c && this.unique && IN_USE.get(c.id) ? null : c;
   }
   add(p, parent, filter) {
@@ -613,7 +617,7 @@ export class AnimCrowd {
     const r = p.bagRig; if (!r || !old || old.kind !== r.kind || r.kind !== 'trolley') return; r.tow = old.tow || 0; r.lw = old.lw || 0; r.th = old.th; r.park = null; p.obj.updateMatrixWorld(true);
     const T = this.THREE, par = r.mesh && r.mesh.parent;
     // a pole rider stands the case where it is: parked at its place beside the leg, it was dragged by the hand as the pose blended, then glided 0.85 m over the floor (review 61)
-    if (old.wp && par && p.state === 'pole') { const l = par.worldToLocal(old.wp.clone()); r.park = [l.x, l.z]; r.tow = 0; }   // (and lets go of it: left in tow, it followed the hand to the pole, 0.22 m a frame)
+    if (old.wp && par && (p.state === 'pole' || (old.tow || 0) < 0.5)) { const l = par.worldToLocal(old.wp.clone()); r.park = [l.x, l.z]; r.tow = 0; r.lp = null; }   // (a case standing parked stays standing where it was, and is picked up as the new body walks to it: taken in tow at once, it glided 0.5 - 0.67 m to a leaver's hand over the pose blend - review 65)   // (and lets go of it: left in tow, it followed the hand to the pole, 0.22 m a frame)
     stepBag(r, p.state === 'sit', p.state === 'pole', false, this._bagHow(p));
     // and whatever is left between where the case was and where the new body draws it is eased out over the pose blend (getting off, the case went from standing to towed in one
     // frame and jumped 0.20 - 0.27 m - review 61)
@@ -651,6 +655,7 @@ export class AnimCrowd {
     const old = p.obj, par = p.parent, t = p.cur ? p.cur.time : 0, clip = p.curClip, vis = old.visible;
     const fe = p.fadeEnd, fd = p.fadeDur, yF = p.yFrom, pa = p.prevAct, mid = pa && fe && this._clock < fe && fd > 0, prev = mid ? pa.getClip() : null, pt = mid ? pa.time : 0;   // (in the middle of a blend - sitting down, getting up: it carries on across the swap, from where it was)
     par.remove(old); p.mixer.stopAllAction(); p.lod = lod; undressTee(old); const obj = this._clone(p.char, lod); obj.traverse((o) => { if (o.isMesh) o.frustumCulled = false; }); this._dressTee(p, obj); this._lids(p, obj);
+    obj.traverse((b) => { if (b.isBone) b.userData.restPos = b.position.clone(); });   // (the new body's own rest, as add() takes it: without it a body swapped to the full model mid hand-over kept every untracked bone at the clip's, and the pelvis popped 4 - 7 cm - review 65)
     p.obj = obj; par.add(obj); obj.visible = vis; p.mixer = new this.THREE.AnimationMixer(obj); p.act = new Map(); p.cur = null; if (p.gait) { p.gait.rig = null; const gb = this._gaitBody(p.char, lod); if (gb) { p.gait.gb = gb; p.gait.g.body = gb.body; } }   // the gait lives on, on the new skeleton
     if (clip) { this._play(p, clip, 0, p.cur ? 1 : (clip.name.startsWith('walk') ? (p.speed ? p.speed / p.char.walkSpeed : 1) : 1)); if (p.cur) { p.cur.time = t; } }
     if (clip && mid && p.cur) { const o = this._action(p, prev); o.enabled = true; o.play(); o.time = pt; p.fadeEnd = fe; p.fadeDur = fd; p.yFrom = yF; p.prevAct = o; p.manFade = { o, n: p.cur }; this._manFade(p); } p.mixer.update(0.0001); p.dirty = false; if (p.hold) { const r0 = p.hold.rig; p.hold.rig = null; this._holdStep(p, 0, false); const r1 = p.hold.rig; if (r0 && r1 && r0.hasSnap && r0 !== r1) { r1.snap.set(r0.snap); r1.hasSnap = true; } }   /* (the hold goes on from where it was, with the pose it rose from: snapped to its end, the hands jumped 0.18 m at a swap during a put-away - review 62) */ this._place(p, true); this._bagOn(p); if (mid && p.manFade) this._floorFeet(p);
@@ -670,7 +675,7 @@ export class AnimCrowd {
     if (!clip) return; const n = this._action(p, clip), o = p.cur; if (o === n) { n.timeScale = speed; return; }
     n.timeScale = speed; n.enabled = true;
     p.manFade = null;
-    if (o && fade > 0) { const olds = []; for (const a of p.act.values()) { a.stopFading(); if (a !== n && a.getEffectiveWeight() > 0) olds.push([a, a.getEffectiveWeight()]); } const n0 = Math.min(1, n.getEffectiveWeight()); n.reset().play(); p.manFade = { n, n0, olds }; }
+    if (o && fade > 0) { const olds = []; for (const a of p.act.values()) { a.stopFading(); if (a !== n && a.getEffectiveWeight() > 0) olds.push([a, a.getEffectiveWeight()]); } const n0 = Math.min(1, n.getEffectiveWeight()); n.reset().play(); if (/^walk/.test(clip.name) && /^walk/.test(o.getClip().name)) n.time = ((o.time / o.getClip().duration) % 1) * clip.duration;   /* (walk to walk: the new walk picks up at the old one's point in the stride - started from its own beginning, the two crossfaded half a stride apart and a far body's foot jumped 0.15 - 0.20 m in a frame - review 64) */ p.manFade = { n, n0, olds }; }
     else { for (const a of p.act.values()) { a.stopFading(); if (a !== n) a.setEffectiveWeight(0); } n.setEffectiveWeight(1); }
     p.prevAct = o && fade > 0 ? o : null;
     p.cur = n; p.curClip = clip; p.m = this.measure(p.char, clip); p.dirty = true; p.fadeEnd = o && fade > 0 ? this._clock + fade : 0; p.fadeDur = fade; p.yFrom = p.yOff;
@@ -751,6 +756,7 @@ export class AnimCrowd {
     const gs = p.gait, b = p.mFrom || m;   // (b: the pose the person is walking out of while the gait takes the legs over - see _enter - otherwise the clip they are in)
     if (gs && gs.wL > 0) return -b.minY * (1 - gs.wL) - gs.gb.sole * gs.wL;   // under the gait the soles are where the gait puts them (the body is NOT lifted to hide a captured stride's feet)
     if (p.mFrom && this._gaitDue(p)) return -p.mFrom.minY;   // the first walking frame: the gait is made after the person has been placed, and is about to have the legs
+    if (!gs && p.poseFrom && p.poseFrom.feet && this.gaitOn) { const gb = this._gaitBody(p.char, p.lod); if (gb) return -gb.sole; }   // handed over standing on the old body's feet: the gait takes the legs at full weight next frame, so the body stands on its soles now (placed by the clip's lowest point first, the body rose 4 - 5 cm in one frame with the feet held, and sank back - review 65's boarder pop)
     return -m.minY;
   }
   /** will the gait take this person's legs? (it is on, they are animated people, and the rig is one it can drive; a rig not yet looked at counts: _gaitStep looks at it next) */
@@ -944,6 +950,7 @@ export class AnimCrowd {
   /** the pose a person has now (each bone's local rotation and position, by name), for whoever takes them over in another crowd to start from */
   snapPose(q) { if (!q || !q.obj) return null; const m = new Map(); q.obj.traverse((o) => { if (o.isBone && !m.has(o.name)) m.set(o.name, [o.quaternion.x, o.quaternion.y, o.quaternion.z, o.quaternion.w, o.position.x, o.position.y, o.position.z]); });
     q.obj.updateMatrixWorld(true); const V = this.THREE.Vector3, feet = []; for (const n of ['foot_l', 'foot_r']) { let b = null; q.obj.traverse((x) => { if (!b && x.isBone && x.name.endsWith(n)) b = x; }); if (b) feet.push(b.getWorldPosition(new V())); }
+    if (q.state === 'pole' || (q.curClip && /hold_(pole|rail)/.test(q.curClip.name))) m.armUp = true;   // (an arm up on a pole: it comes down over ARM_FADE, not the 0.4 s of the rest - review 65's release whip, 0.6 m in 0.2 s)
     if (feet.length === 2) m.feet = feet;   // (the ankles where the old body DREW them, in the world: the new body's gait plants its feet there - see _plantFrom)
     return m; }
   /** the feet of a body handed over from another crowd, in the new parent's frame ([x, z] per ankle), while its pose is still being blended from the old one. Planted from the new clip's
@@ -957,10 +964,10 @@ export class AnimCrowd {
   /** end a hand-over's pose blend now: bones whose position the clip does not set go back to their rest */
   _poseEnd(p) { const tr = p._poseTr && p._poseTr.clip === p.curClip ? p._poseTr : null; if (p.obj) p.obj.traverse((o) => { if (o.isBone && o.userData.restPos && !(tr && tr.pos.has(o.name))) o.position.copy(o.userData.restPos); }); p.poseFrom = null; p.rootOff = null; }
   _poseBlend(p, dt) {
-    p.poseT += dt; const u = Math.min(1, p.poseT / POSE_FADE), w = 1 - u * u * (3 - 2 * u); if (w <= 0.001) { this._poseEnd(p); return; }
+    p.poseT += dt; const u = Math.min(1, p.poseT / POSE_FADE), w0 = 1 - u * u * (3 - 2 * u), ua = p.poseFrom.armUp ? Math.min(1, p.poseT / ARM_FADE) : u, wa = 1 - ua * ua * (3 - 2 * ua); if (wa <= 0.001) { this._poseEnd(p); return; }
     const tr = p.curClip ? (p._poseTr && p._poseTr.clip === p.curClip ? p._poseTr : (p._poseTr = { clip: p.curClip, set: new Set(p.curClip.tracks.map((t) => t.name.split('.')[0])), pos: new Set(p.curClip.tracks.filter((t) => /\.position$/.test(t.name)).map((t) => t.name.split('.')[0])) })) : null;
     const Q = this._pq || (this._pq = new this.THREE.Quaternion()), V = this._pv || (this._pv = new this.THREE.Vector3());
-    p.obj.traverse((o) => { if (!o.isBone || (tr && !tr.set.has(o.name))) return; const a = p.poseFrom.get(o.name); if (!a) return; o.quaternion.slerp(Q.set(a[0], a[1], a[2], a[3]), w); if (!tr || tr.pos.has(o.name)) o.position.lerp(V.set(a[4], a[5], a[6]), w); else if (o.userData.restPos) o.position.copy(o.userData.restPos).lerp(V.set(a[4], a[5], a[6]), w); });   // (only bones the clip sets afresh every frame: any other would keep the blend. And position only where the clip sets position: idle_a turns the pelvis but does not move it, so the lerp piled up frame on frame and left a boarder's pelvis at the old body's, 15 cm down - the both-circles audit's woman_scarf. Such a bone is eased from the old body's to its own rest, not left at its rest from the first frame: that popped boarders up 4 - 16 cm at the door - review 64. The rest is read off the body when it is made, before any clip runs: read at the first blend, a clip had already moved the pelvis, and the both-circles audit's woman_scarf stood 16 cm down again; read off the character's template, other bones' rests differed and boarders popped up 8 - 17 cm)
+    p.obj.traverse((o) => { if (!o.isBone || (tr && !tr.set.has(o.name))) return; const a = p.poseFrom.get(o.name); if (!a) return; const w = ARM_BONE.test(o.name) ? wa : w0; if (w <= 0.001) return; o.quaternion.slerp(Q.set(a[0], a[1], a[2], a[3]), w); if (!tr || tr.pos.has(o.name)) o.position.lerp(V.set(a[4], a[5], a[6]), w); else if (o.userData.restPos) o.position.copy(o.userData.restPos).lerp(V.set(a[4], a[5], a[6]), w); });   // (only bones the clip sets afresh every frame: any other would keep the blend. And position only where the clip sets position: idle_a turns the pelvis but does not move it, so the lerp piled up frame on frame and left a boarder's pelvis at the old body's, 15 cm down - the both-circles audit's woman_scarf. Such a bone is eased from the old body's to its own rest, not left at its rest from the first frame: that popped boarders up 4 - 16 cm at the door - review 64. The rest is read off the body when it is made, before any clip runs: read at the first blend, a clip had already moved the pelvis, and the both-circles audit's woman_scarf stood 16 cm down again; read off the character's template, other bones' rests differed and boarders popped up 8 - 17 cm)
   }
   take(q) { const i = this.people.indexOf(q); if (i < 0) return null; const look = { char: q.char, print: q.print, teeColour: q.teeColour, bag: q.bag, force: true, pose: this.snapPose(q), bagOld: this.bagSnap(q.bagRig) }; q.print = null; this._drop(q); this.people.splice(i, 1); return look; }
   /** a walking passenger who is visible from the first frame and follows a route (points in the crowd's frame); onArrive(p, reached) is called at the end, then they are removed */
@@ -1050,7 +1057,7 @@ export class AnimCrowd {
     if (this.enabled === false) return;
     const cam = camWorld || null, v = this._v; this._clock += dt; let swaps = 0;
     // LOD0 (~8k tris) only for the nearest few people within ~11 m; everyone else uses the ~2.2k-tri LOD1 model
-    let hiSet = null; if (cam) { const arr = []; for (const q of this.people) { if (!q.obj || q.hidden) continue; q.obj.getWorldPosition(v); arr.push([v.distanceTo(cam) - (q.lod ? 0 : 2) - (LOD_POOR.has(q.char.id) ? 8 : 0), q]); } arr.sort((a, b) => a[0] - b[0]); hiSet = new Set(); for (const [d, q] of arr) { if ((hiSet.size >= this.maxHi && d > 6) || d > 11) break; hiSet.add(q); } }   // (everyone within 6 m is on the full model whatever the budget: review 4 still saw up to 10 far models within 6 m beside a train)
+    let hiSet = null; if (cam) { const arr = []; for (const q of this.people) { if (!q.obj || q.hidden) continue; q.obj.getWorldPosition(v); arr.push([v.distanceTo(cam) - (q.lod ? 0 : 2) - (LOD_POOR.has(q.char.id) ? 8 : 0), q]); } arr.sort((a, b) => a[0] - b[0]); hiSet = new Set(); for (const [d, q] of arr) { if ((hiSet.size >= this.maxHi && d > 6) || d > (this.quality === 'low' ? 11 : 15)) break; hiSet.add(q); } }   // (everyone within 6 m is on the full model whatever the budget: review 4 still saw up to 10 far models within 6 m beside a train) (and at high quality the full model to 15 m, budget allowing: the far model's baked faces split and smear mouths at 11 - 15 m - review 65)
     this._goNow = false; this._exitNow = false; this._separate(dt);
     for (let i = this.people.length - 1; i >= 0; i--) {
       const p = this.people[i]; if (!p.obj) continue;
@@ -1228,7 +1235,8 @@ export class AnimCrowd {
       if (sol) { const c = pel, w = gs.wU, b = sol.pelvisW; pel = { pos: [c.pos[0] + (b.pos[0] - c.pos[0]) * w, c.pos[1] + (b.pos[1] - c.pos[1]) * w, c.pos[2] + (b.pos[2] - c.pos[2]) * w], q: G.qslerp(c.q, b.q, w) }; }
       legs = G.gaitSolve(gs.g, T, { legsOnly: true, pelvis: pel });
     }
-    gs.rig.apply(sol, gs.wU, legs, gs.wL); gs.phase = gs.g.phase;
+    let wArm = gs.wU; if (p.poseFrom && p.poseFrom.armUp) { const ua = Math.min(1, p.poseT / ARM_FADE); wArm = Math.min(wArm, ua * ua * (3 - 2 * ua)); }   // (the walk's arm swing comes in as the pole arm comes down, not over GAIT_IN: that dropped the hand 0.6 m in 0.2 s - review 65)
+    gs.rig.apply(sol, gs.wU, legs, gs.wL, wArm); gs.phase = gs.g.phase;
   }
   /** ground speed (m/s) at which the walk cycle's planted foot does not slip: on the real skinned soles the mean contact-point speed over the stance is the asset's own
    *  `walkSpeedMps` x ~1.07 (adults 1.02-1.10, children 1.06-1.09 across the rigs), so nothing needs measuring at run time */
@@ -1242,7 +1250,7 @@ export class AnimCrowd {
     p.intent = Math.hypot(p.x - p.px, p.z - p.pz) / dt;
     if (p.paused && !p.static && p.intent < 0.5) { p.x = p.px; p.z = p.pz; }
     const v = Math.hypot(p.x - p.px, p.z - p.pz) / dt; p.px = p.x; p.pz = p.z;
-    p.v = v > 4 ? 0 : p.v + (v - p.v) * Math.min(1, dt * 12);   // teleports are not walking
+    p.v = v > 4 ? 0 : p.v + (v - p.v) * Math.min(1, dt * (v < 0.7 && p.v < 0.7 ? 4 : 12));   // teleports are not walking   (shuffling in a queue the crowd's nudges come and go frame to frame: smoothed at 12/s there, the speed flicked 0.16 - 0.41 - 0.20 m/s and the planted foot stepped 5 cm a frame - review 65)
     if (p.v > 0.15 && p.hold && p.hold.target > 0 && p.state !== 'sit' && !p.settleTurn && !p.settleGait) this._holdTo(p, null);   // moving off (stepping aside for someone, shuffled along): the phone goes away (not the slide back into a seat: that put the phone away for good and left the sit_phone clip cupping nothing - review 45)
     if ((p.state === 'walk' || p.state === 'go') && p.cur) {
       // held up (a jam on the way to the doors): after half a second still, they stand - feet together, the quiet stance - and walk on when there is room. Left in the walk

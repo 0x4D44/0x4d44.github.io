@@ -290,7 +290,11 @@ export function stepBag(rig, sit, pole, fresh, o) {
   if (where === 'floor') {
     const yaw = fz > 0 ? 0 : Math.PI, sd0 = fit.side, walk = o && o.walk ? Math.min(1, o.walk) : 0, lift = !!(o && o.lift);
     rig.gh = sit ? -1 : 0;
-    const tw = sit || (pole && !(o && o.turn)) ? 0 : walk; rig.fresh = fresh; if (fresh) rig.tow = tw; else rig.tow += (tw - rig.tow) * (o && o.settle ? 0.035 : 0.14);   // (set back upright slowly after a stepped turn - snapped back in 0.25 s, 36 cm at up to 7 m/s - review 53; and towed round by a pole holder too)
+    const tw = sit || (pole && !(o && o.turn)) ? 0 : walk; rig.fresh = fresh; let dT = fresh ? 0 : (tw - rig.tow) * (o && o.settle ? 0.035 : 0.14);
+    { const ob = rig.obj, bp = ob && ob.position, st = bp && rig.lp && !fresh ? Math.hypot(bp.x - rig.lp[0], bp.z - rig.lp[1]) : 0; if (bp) rig.lp = [bp.x, bp.z];
+      if (dT > 0 && rig.park && !(o && o.turn) && st < 0.3) dT = Math.min(dT, (st * 1.5 + 0.002) / Math.max(rig.gap || 0.3, 0.15)); }   // (a parked case is picked up as its owner walks to it: the tow grows with the ground the body covers, not with the clock - eased in on time, it glided 0.5 - 0.67 m to the hand of a leaver who had moved 3 cm, and 0.26 m to a boarder standing in the queue - review 65)
+    rig.down = !fresh && dT < 0;   // (being set down: see floorPose)
+    if (fresh) rig.tow = tw; else rig.tow += dT;   // (set back upright slowly after a stepped turn - snapped back in 0.25 s, 36 cm at up to 7 m/s - review 53; and towed round by a pole holder too)
     if (sit) {   // on the floor in front of the knees, the pull handle stowed
       at(B.calf_l, v); at(B.calf_r, u); const kx = (v.x + u.x) / 2, kf = (v.z + u.z) / 2; at(B.foot_l, v); at(B.foot_r, u);
       const ff = fz * Math.max(fz * kf, fz * v.z + 0.17 * rig.s, fz * u.z + 0.17 * rig.s);   // clear of the knees and of the toes
@@ -340,8 +344,17 @@ function floorPose(rig, o, walk, sit, pole, yaw, sd0, hx, v) {
   // standing: upright beside the leg and a little behind.  Towed: tipped on to the wheels under the handle, the grip in the hand, the case rolling behind and outside the heel
   if (rig.tow > 0.99 && walk > 0.5 && !(o && o.settle)) rig.park = null;   // (walking off, once it is fully in tow - not drawn standing then - it goes back to its place beside the leg when next stood; cleared at once, the standing case jumped 0.13 - 0.35 m in a frame, review 58)
   // after a turn on the spot it stays where it was towed to, and is stood up there: moved back to its place beside the leg it slid 0.3 - 0.5 m with no hand on it (reviews 53 - 57)
+  // a parked case stays where it was put in the car (or on the platform), not at a fixed place by the body: the body is its parent, and as a settling rider turned or eased into
+  // their place it swung with them - a boarder's case slid 0.3 m along the car after they had stopped (review 64)
+  let dyaw = 0; const ob = rig.obj, par = ob && ob.parent;
+  if (!rig.park) rig.parkP = null;
+  else if (par) {
+    const P = rig.pv || (rig.pv = new rig.T.Vector3());
+    if (!rig.parkP) { const pm = rig.pm || (rig.pm = new rig.T.Matrix4()); pm.copy(par.matrixWorld).invert(); P.set(rig.park[0], 0, rig.park[1]).applyMatrix4(ob.matrixWorld).applyMatrix4(pm); rig.parkP = [P.x, P.z, ob.rotation.y]; }
+    else { P.set(rig.parkP[0], 0, rig.parkP[1]).applyMatrix4(par.matrixWorld).applyMatrix4(rig.m); rig.park = [P.x, P.z]; dyaw = rig.parkP[2] - ob.rotation.y; }
+  }
   const sx = rig.park ? rig.park[0] : fit.midx + sd0 * (fit.hip + rig.w / 2 + 0.06), sz = rig.park ? rig.park[1] : -fz * 0.1, t = rig.tow;
-  if (t < 0.01) { mesh.position.set(sx, 0, sz); mesh.rotation.set(0, yaw, 0); return; }
+  if (t < 0.01) { mesh.position.set(sx, 0, sz); mesh.rotation.set(0, yaw + dyaw, 0); return; }
   // the tilt follows the hand's height with the case's own inertia: taken straight from it (acos is steep near upright), the 10 - 12 cm the hand rises and falls in a stride
   // swung the wheels 0.1 - 0.24 m along the floor in one frame (review 63's towed-case whip)
   const th0 = Math.acos(Math.min(0.95, Math.max(0.55, (v.y + 0.02) / rig.gripH)));   // (never nearer upright than 18 degrees, where acos is steepest: a towed case leans back on its wheels)
@@ -351,8 +364,10 @@ function floorPose(rig, o, walk, sit, pole, yaw, sd0, hx, v) {
   // the case's own (0, gripH, gz) is at the grip; its wheels (0, 0, pz) are on the floor
   const lz = rig.gripH * sn + rig.gz * c, wy = -rig.pz * sn;
   const tx = gx, tz = gzw - fz * lz, ty = -wy;   // towed
+  rig.gap = rig.park ? Math.hypot(tx - sx, tz - sz) : 0;   // (how far a parked case is from the hand: see the tow's pick-up)
   if (o && o.settle && (sit || pole ? 0 : walk) === 0 && !rig.park && t > 0.5) rig.park = [tx, tz];
-  mesh.position.set(sx + (tx - sx) * t, ty * t, sz + (tz - sz) * t); mesh.rotation.set(th, yaw, 0);
+  const k = rig.park && rig.down ? 0 : t;   // (set down where it was parked: it stands up there on its wheels, and is not drawn after the hand as the arm goes back to the idle pose - it slid 0.24 - 0.59 m over 3.7 s beside a still owner, review 65)
+  if (k === 0) mesh.position.set(rig.park[0], ty * t, rig.park[1]); else mesh.position.set(sx + (tx - sx) * t, ty * t, sz + (tz - sz) * t); mesh.rotation.set(th, yaw + dyaw * (1 - t), 0);
 }
 
 /** take a bag off a clone (the clone is being thrown away; the geometries and the material are shared and stay) */

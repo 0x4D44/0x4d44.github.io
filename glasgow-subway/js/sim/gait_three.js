@@ -74,7 +74,7 @@ export class GaitRig {
   }
   /** write the solved pose over what the mixer has just put on the bones. `sol` (gait.gaitSolve) holds the whole body and is laid over the pelvis, trunk, head and arms with
    *  weight wU; `legs` (a gaitSolve with legsOnly) is laid over the legs with weight wL. Either may be null (that part is left to the clip). */
-  apply(sol, wU, legs, wL) {
+  apply(sol, wU, legs, wL, wArm = wU) {   // (wArm: the clavicles and arms, CONTROLLED 6 - 11, may come in slower than the rest of the upper body - a hand let go of a pole)
     const names = G.CONTROLLED, S = this.saved, q = this.q, pel = this.pelvis, root = this.root;
     if (!this.applied) {   // remember the mixer's pose, for restore()
       for (let i = 0; i < this.bone.length; i++) { const b = this.bone[i].quaternion; S[i * 4] = b.x; S[i * 4 + 1] = b.y; S[i * 4 + 2] = b.z; S[i * 4 + 3] = b.w; }
@@ -82,7 +82,7 @@ export class GaitRig {
       S[o + 4] = pel.position.x; S[o + 5] = pel.position.y; S[o + 6] = pel.position.z; this.applied = true;
     }
     const lay = (i, k, w) => { const b = this.bone[i].quaternion; q.set(k[0], k[1], k[2], k[3]); if (w >= 0.999) b.copy(q); else b.slerp(q, w); };
-    if (sol && wU > 0) for (let i = 0; i < UPPER; i++) { const k = sol.q[names[i]]; if (k) lay(i, k, wU); }
+    if (sol && wU > 0) for (let i = 0; i < UPPER; i++) { const k = sol.q[names[i]], wi = i >= 6 ? Math.min(wU, wArm) : wU; if (k && wi > 0) lay(i, k, wi); }
     if (legs && wL > 0) for (let i = UPPER; i < names.length; i++) { const k = legs.q[names[i]]; if (k) lay(i, k, wL); }
     const w = Math.max(sol && wU > 0 ? wU : 0, legs && wL > 0 ? wL : 0), rq = this.gb.restRootQ; q.set(rq[0], rq[1], rq[2], rq[3]); if (w >= 0.999) root.quaternion.copy(q); else root.quaternion.slerp(q, w);
     const pp = sol && wU > 0 && sol.pelvisPos; if (pp) { if (wU >= 0.999) pel.position.set(pp[0], pp[1], pp[2]); else pel.position.lerp(this.v.set(pp[0], pp[1], pp[2]), wU); }
