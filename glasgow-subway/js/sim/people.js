@@ -18,6 +18,7 @@ export const PET_OWNER = 'adult_string_vest';   // the man in the string vest wa
 import { dressTee, undressTee, takePrint, releasePrint, printAtlas, teeColour, TEE } from './tees.js';
 // ?gait=clip: the captured clip walk the game had before the procedural gait (to compare, and the baseline of research/people-motion-rubric.md)
 const ARM_FADE = 0.8, ARM_BONE = /^(clavicle|upperarm|lowerarm|hand|thumb|index|middle|ring|pinky)/;   // s: an arm that was up on a pole is lowered over this long, as a person lets go and drops the hand (POSE_FADE dropped it 0.6 m in 0.2 s - review 65)
+const COAST_R = 0.34;   // m: a braking coast (v^2/2b, a few cm) may close on someone to this, centre to centre: held to 0.42 it was cancelled whenever the two were already that close, and boarders converging on a door stopped dead from 1.1 m/s (review 77 follow-up: 5 of 12 one-frame stops); _separate eases them back out to 0.42
 const POSE_FADE = 0.4;   // s: a person handed over between crowds goes from their old pose to their new one in this long
 const SIT_FEET = 0.07;   // how far below the floor a seated person's soles may reach before they are lifted off the seat (people audit: 0.08)
 const CLIP_WALK = typeof location !== 'undefined' && /[?&]gait=clip(&|$)/.test(location.search || '');
@@ -1594,7 +1595,7 @@ export class AnimCrowd {
     }
     if (!pick) {   // no way on: brake to a stop, coasting on the way it faces while 0.42 m stays clear - set to 0 outright, walkers stopped from 1.1 m/s in one frame (review 75: 84 in 520 s)
       p.sp = Math.max(0, (p.sp || 0) - 2 * STEER.BMAX * dt); const cm = p.sp * dt, cx = p.x - Math.sin(p.yaw) * cm, cz = p.z - Math.cos(p.yaw) * cm;
-      if (cm > 1e-4 && this._coastFloor(p, cx, cz) && this._core(p, cx, cz, 0.42)) { p.x = cx; p.z = cz; p.steered = true; } else p.sp = 0;   // (steered: _turn zeroes the speed of anyone it finds unsteered, so every coast lasted one frame - review 76)
+      if (cm > 1e-4 && this._coastFloor(p, cx, cz) && this._core(p, cx, cz, COAST_R)) { p.x = cx; p.z = cz; p.steered = true; } else p.sp = 0;   // (steered: _turn zeroes the speed of anyone it finds unsteered, so every coast lasted one frame - review 76)
       p.yawT = Math.atan2(-dx, -dz); return false; }
     if (pick.off * side < 0) { p.side = -side; p.sideT = 1.0; } else if (pick.off !== 0) p.sideT = Math.max(p.sideT || 0, 0.8);
     // a veer round something is a heading to follow, but it must not shorten the planned stop: the distance to brake into is still the distance to the target
@@ -1603,7 +1604,7 @@ export class AnimCrowd {
     let sx = -Math.sin(p.yaw) * move, sz = -Math.cos(p.yaw) * move;
     if (!ok(p.x + sx, p.z + sz)) {   // not facing the checked way yet and the way it faces is blocked: hold, turn, then go
       // ... but a shorter step first, if that is clear: zeroed outright, the root halted dead for single frames mid-walk, six times in 0.8 s (review 72: ya_smile_halter)
-      p.sp = Math.max(0, p.sp - 2 * STEER.BMAX * dt); const k = [0.6, 0.3, 0.15].find((f) => ok(p.x + sx * f, p.z + sz * f) && this._noCloser(p, p.x + sx * f, p.z + sz * f, 0.6)); if (k) { sx *= k; sz *= k; } else { const cm = p.sp * dt; if (cm > 1e-4 && this._coastFloor(p, p.x - Math.sin(p.yaw) * cm, p.z - Math.cos(p.yaw) * cm) && this._core(p, p.x - Math.sin(p.yaw) * cm, p.z - Math.cos(p.yaw) * cm, 0.42)) { sx = -Math.sin(p.yaw) * cm; sz = -Math.cos(p.yaw) * cm; } else { sx = sz = 0; p.sp = 0; } }   // (none clear: coast on at the braking speed while 0.34 m stays clear, rather than a one-frame dead stop; 0.34 let two stand 0.28 m apart - review 75)
+      p.sp = Math.max(0, p.sp - 2 * STEER.BMAX * dt); const k = [0.6, 0.3, 0.15].find((f) => ok(p.x + sx * f, p.z + sz * f) && this._noCloser(p, p.x + sx * f, p.z + sz * f, 0.6)); if (k) { sx *= k; sz *= k; } else { const cm = p.sp * dt; if (cm > 1e-4 && this._coastFloor(p, p.x - Math.sin(p.yaw) * cm, p.z - Math.cos(p.yaw) * cm) && this._core(p, p.x - Math.sin(p.yaw) * cm, p.z - Math.cos(p.yaw) * cm, COAST_R)) { sx = -Math.sin(p.yaw) * cm; sz = -Math.cos(p.yaw) * cm; } else { sx = sz = 0; p.sp = 0; } }   // (none clear: coast on at the braking speed while 0.34 m stays clear, rather than a one-frame dead stop; 0.34 let two stand 0.28 m apart - review 75)
     }
     p.x += sx; p.z += sz;
     return true;
@@ -1643,7 +1644,7 @@ export class AnimCrowd {
         // up for 98 s; review 6: ignoring them walked people through each other)
         if (q.mode !== 'go' && q.mode !== 'walk' && !(q.madeWayT > 0)) { q.madeWayT = 4; const sx = -uz, sz = ux, k = ex * sx + ez * sz >= 0 ? 1 : -1; this._makeWay(q, sx * k, sz * k); }
         // braking, not a dead stop: the walker coasts on at its falling speed while that keeps 0.42 m from everyone (stopped dead from 1.07 m/s in one frame - review 74, adult_piper)
-        p.sp = Math.max(0, (p.sp || 0) - 2 * STEER.BMAX * dt); const cm = p.sp * dt, cx = p.x - Math.sin(p.yaw) * cm, cz = p.z - Math.cos(p.yaw) * cm; if (cm > 1e-4 && this._core(p, cx, cz, 0.42)) { p.x = cx; p.z = cz; p.steered = true; } else p.sp = 0;
+        p.sp = Math.max(0, (p.sp || 0) - 2 * STEER.BMAX * dt); const cm = p.sp * dt, cx = p.x - Math.sin(p.yaw) * cm, cz = p.z - Math.cos(p.yaw) * cm; if (cm > 1e-4 && this._core(p, cx, cz, COAST_R)) { p.x = cx; p.z = cz; p.steered = true; } else p.sp = 0;
         p.yawT = Math.atan2(-dx, -dz); return false; } }
     const move = steerStep(p, dt, { hT: Math.atan2(-ux, -uz), want: Math.min(sp, (p.char ? p.char.walkSpeed : 1.3) * 1.3, this._followCap(p, ux, uz, !pass)), d, stop: !!p.stopHere });
     p.steered = true; p.yawT = p.yaw;
