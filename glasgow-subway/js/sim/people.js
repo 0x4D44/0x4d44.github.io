@@ -245,7 +245,9 @@ export class AnimCrowd {
       const rig = armRig(THREE, c.node || c.lodNode), tab = ARM_OUT[c.id], drop = ARM_DROP[c.id] || []; let n = 0; this.armRigs[c.id] = rig;
       c.pools0 = {}; for (const cat of Object.keys(c.pools)) c.pools0[cat] = c.pools[cat].slice();
       if (rig && tab) for (const cat of Object.keys(c.pools)) c.pools[cat] = c.pools[cat].map((clip) => {
-        const d = tab[clip.name.split('__').pop()]; if (!d) return clip;
+        const cn = clip.name.split('__').pop(); let d = tab[cn];
+        if (!d && cn === 'phone_call' && this._skirted(c) && tab.idle_a) d = [tab.idle_a[0] + 4, tab.idle_a[1] + 4];   // (the free hand of a call hangs at the thigh: inside a kilt or skirt hem - review 72; the phone arm is the hold's)
+        if (!d) return clip;
         const nc = armClip(THREE, clip, armAxes(THREE, rig, clip), d[0], d[1]); if (nc !== clip) n++; return nc;
       });
       for (const cat of Object.keys(c.pools)) { const keep = c.pools[cat].filter((clip) => !drop.includes(clip.name.split('__').pop())); if (keep.length) c.pools[cat] = keep; }
@@ -479,28 +481,41 @@ export class AnimCrowd {
         const near = []; for (let i = 0; i < P.count; i++) if (dom[i] === iu) { const [t, r] = polar(i); if (t > -0.25 && t < 0.02) near.push(r); }
         near.sort((x, y) => x - y); const rTop = near.length ? near[Math.floor(near.length * 0.5)] : prof[0];
         for (let b = 1; b < 8; b++) if (!prof[b]) prof[b] = prof[b - 1]; if (!prof[0]) prof[0] = rTop;
-        const rad = (t) => (t <= 0 ? Math.min(rTop, prof[0] * 1.1) : prof[Math.min(7, Math.floor(t * 8))]);
+        const pr = (t) => prof[Math.min(7, Math.max(0, Math.floor(t * 8)))] * 1.02, r0 = Math.min(rTop * 0.96, prof[0] * 1.12);
+        const rad = (t) => (t <= 0 ? r0 : t < 0.3 ? r0 + (pr(t) - r0) * (t / 0.3) * (t / 0.3) * (3 - 2 * t / 0.3) : pr(t));   // (just inside the upper sleeve at the joint, tapering to the forearm: review 72 saw a step and flare)
+        // the tube's texture: the intact upper sleeve's own, mirrored down the forearm (review 72: a flat patch round the remnant's mean UV, with the island's orange padding at the inner elbow)
+        const U = g.attributes.uv, smp = []; if (U) for (let i = 0; i < P.count; i++) if (dom[i] === iu) { const [t, , a] = polar(i); if (t > -0.75 && t < -0.03) smp.push([t, a, U.getX(i), U.getY(i)]); }
         const src = []; for (let i = 0; i < P.count; i++) if (fore(dom[i]) || dom[i] === iu) src.push(i);
-        let mu = 0, mv = 0; const U = g.attributes.uv; for (const i of F) { mu += U.getX(i); mv += U.getY(i); } mu /= F.length; mv /= F.length;
-        for (const i of F) drop[i] = 1;
-        add.push({ E, d, len, a1, a2, rad, src, mu, mv }); g.userData.sleeveTube++;
+        for (const i of F) drop[i] = polar(i)[0] > 0.04 ? 2 : 1;   // (2: so far down the arm that a face touching it is the cut hem's flare - review 72)
+        add.push({ E, d, len, a1, a2, rad, src, smp, il }); g.userData.sleeveTube++;
       }
       if (!add.length) return;
-      const idx = g.index, keep = []; for (let t = 0; t < idx.count; t += 3) { const a = idx.getX(t), b = idx.getX(t + 1), c = idx.getX(t + 2); if (!(drop[a] && drop[b] && drop[c])) keep.push(a, b, c); }
+      const idx = g.index, keep = []; for (let t = 0; t < idx.count; t += 3) { const a = idx.getX(t), b = idx.getX(t + 1), c = idx.getX(t + 2); if (!(drop[a] && drop[b] && drop[c]) && !(this._hemCut !== false && (drop[a] === 2 || drop[b] === 2 || drop[c] === 2))) keep.push(a, b, c); }
       const RINGS = 11, SEG = 12, T0 = -0.14, T1 = 1.0, per = RINGS * (SEG + 1), n0 = P.count, n1 = n0 + per * add.length;
       const A = {}; for (const k of Object.keys(g.attributes)) { const at = g.attributes[k], arr = new at.array.constructor(n1 * at.itemSize); arr.set(at.array); A[k] = new T.BufferAttribute(arr, at.itemSize, at.normalized); }
       let o = n0; const q = new T.Vector3(), nrm = new T.Vector3();
+      const dA = (a, b) => { const x = Math.abs(a - b) % (2 * Math.PI); return Math.min(x, 2 * Math.PI - x); };
+      const pick = (S, tp, th, near) => { let bi = -1, bd = 1e9; for (let k = 0; k < S.smp.length; k++) { const c = S.smp[k], an = dA(c[1], th); if (near && an > 0.8) continue; const dd = (c[0] - tp) * (c[0] - tp) + 0.09 * an * an + (near ? 4 * ((c[2] - near[0]) ** 2 + (c[3] - near[1]) ** 2) : 0); if (dd < bd) { bd = dd; bi = k; } } return bi < 0 ? null : [S.smp[bi][2], S.smp[bi][3]]; };
       for (const S of add) {
         const base = o;
+        // the tube's seam goes where the sleeve's UV island has its own: the widest UV jump between neighbouring angles
+        let th0 = 0; if (S.smp.length > 8) { let jb = -1; for (let s = 0; s < 24; s++) { const p0 = pick(S, -0.2, 2 * Math.PI * s / 24), p1 = pick(S, -0.2, 2 * Math.PI * (s + 1) / 24), j = Math.hypot(p0[0] - p1[0], p0[1] - p1[1]); if (j > jb) { jb = j; th0 = 2 * Math.PI * (s + 0.5) / 24; } } }
+
         for (let r = 0; r < RINGS; r++) {
-          const t = T0 + (T1 - T0) * r / (RINGS - 1), rr = S.rad(t) * 1.02;
+          const t = T0 + (T1 - T0) * r / (RINGS - 1), rr = S.rad(t);
+          let ruv = null; if (S.smp.length > 8) {   // (each vertex next to the one before it in UV, so no face spans the island's seam; the first ring vertex last, beside the second)
+            const tp = -0.05 - 0.6 * (t - T0) / (T1 - T0), at = (k) => th0 + 0.05 + (2 * Math.PI - 0.1) * k / SEG; ruv = new Array(SEG + 1);
+            for (let k = 1; k <= SEG; k++) { let uv = pick(S, tp, at(k)); const pv = ruv[k - 1]; if (pv && Math.hypot(uv[0] - pv[0], uv[1] - pv[1]) > 0.06) uv = pick(S, tp, at(k), pv) || uv; ruv[k] = uv; }
+            ruv[0] = pick(S, tp, at(0), ruv[1]) || pick(S, tp, at(0));
+          }
           for (let s = 0; s <= SEG; s++) {
-            const th = 2 * Math.PI * s / SEG; nrm.copy(S.a1).multiplyScalar(Math.cos(th)).addScaledVector(S.a2, Math.sin(th));
+            const th = th0 + 0.05 + (2 * Math.PI - 0.1) * s / SEG; nrm.copy(S.a1).multiplyScalar(Math.cos(th)).addScaledVector(S.a2, Math.sin(th));
             q.copy(S.E).addScaledVector(S.d, t * S.len).addScaledVector(nrm, rr);
             let best = S.src[0], bd = 1e9; for (const i of S.src) { const dd = v.fromBufferAttribute(P, i).distanceToSquared(q); if (dd < bd) { bd = dd; best = i; } }
             for (const k of Object.keys(A)) { const at = g.attributes[k], sz = at.itemSize; for (let c = 0; c < sz; c++) A[k].array[o * sz + c] = at.array[best * sz + c]; }
             A.position.setXYZ(o, q.x, q.y, q.z); if (A.normal) A.normal.setXYZ(o, nrm.x, nrm.y, nrm.z);
-            if (A.uv) A.uv.setXY(o, S.mu + 0.05 * (s / SEG - 0.5), S.mv + 0.12 * ((t - T0) / (T1 - T0) - 0.5));
+            if (t > 0.2 && A.skinIndex && A.skinWeight) { A.skinIndex.setXYZW(o, S.il, 0, 0, 0); A.skinWeight.setXYZW(o, 1, 0, 0, 0); }   // (the cuff on the forearm alone: copied from the hand's vertices it followed the hand into a kilt - review 72)
+            if (A.uv && ruv) A.uv.setXY(o, ruv[s][0], ruv[s][1]);
             o++;
           }
         }
