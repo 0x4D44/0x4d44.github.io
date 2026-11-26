@@ -474,13 +474,13 @@ function land(g, f, P) {
 }
 
 // where the heel will land: ahead of the pelvis by aH at the time of landing, stepHalf off the line of travel
-function landTarget(g, s, P, rem) {
+function landTarget(g, s, P, rem, dec = false) {   // (dec: allow for the body slowing as well - only when a fixed mark is re-aimed, see footOut)
   const fwd = [-Math.sin(g.yaw), -Math.cos(g.yaw)], rgt = [Math.cos(g.yaw), -Math.sin(g.yaw)], sgn = s ? 1 : -1;
   const f = g.feet[s], sw = f.sw, T = rem * (1 - P.S) * 2 / Math.max(P.fs, 0.2), half = P.stepHalf * (sw ? sw.kW : 1) * (g.var.wid || 1);   // (g.var.wid: some people walk wide, some near a line - people review 1 saw everybody on the same narrow line)
   // A body that is speeding up is further on by the time the foot lands, and takes the longer step of the speed it is reaching: the foot is put where it will be (constant acceleration
   // over the rest of the swing). Placed for the speed of the moment, the first foot of a walk landed 0.1 - 0.2 m short of the pelvis's lead, and that stance foot then trailed 0.15 m
   // further behind at its toe-off than at any other step: the pelvis was dragged down by 10 cm on the second step of every walk (mean sag over the first six seconds 102 -> 65 mm).
-  const up = clamp(g.acc, 0, ACC_MAX), PL = up > 0 ? gaitParams(g.body, P.v + up * T, g.var.cad) : P, ahead = PL.aH * (sw ? sw.kL : 1) + P.v * T + 0.5 * up * T * T;
+  const up = clamp(g.acc, 0, ACC_MAX), dn = dec ? clamp(-g.acc, 0, ACC_MAX) : 0, Td = dn > 0 ? Math.min(T, P.v / dn) : T, PL = up > 0 ? gaitParams(g.body, P.v + up * T, g.var.cad) : dn > 0 ? gaitParams(g.body, Math.max(0, P.v - dn * T), g.var.cad) : P, ahead = PL.aH * (sw ? sw.kL : 1) + P.v * Td + 0.5 * (up - dn) * Td * Td;
   const toe = (g.var.yawBias + (sgn > 0 ? -6.5 : 6.5)) * D2R + (sw ? sw.dToe : 0);
   const W = { H: [g.x + fwd[0] * ahead + rgt[0] * sgn * half, g.z + fwd[1] * ahead + rgt[1] * sgn * half], psi: g.yaw + toe };
   // no longer a step than the speed being reached takes: early in a walk the swing is long (the cadence is still low) and the acceleration term put the foot 0.8 - 0.97 m on
@@ -510,7 +510,14 @@ function footOut(g, f, pfNow) {
     return { A, psi: f.psi, th, thb };
   }
   const sw = f.sw, s = sw.s;
-  if (!sw.tgt && !sw.mark && s >= SW_MARK) sw.mark = landTarget(g, f.s, P, 1 - s);          // the landing mark is fixed over the last part of the swing
+  if (!sw.tgt && !sw.mark && s >= SW_MARK) sw.mark = landTarget(g, f.s, P, 1 - s);
+  else if (!sw.tgt && sw.mark && g.acc < -REAIM_ACC) {   // a body pulled up short (a queue closing ahead) after the mark was fixed: the foot comes down shorter, the mark moving back at no more than
+    // MARK_RATE m/s - left where it was, the last step of an abrupt stop landed 0.3 m ahead of a body that had stopped and the pelvis hung 12 cm low until the feet came together
+    // (review 67: stopping crouch p90 0.109 m); moved at once, the foot jumped up to 0.37 m in a frame (replay of St Enoch stoppers)
+    const m = landTarget(g, f.s, P, 1 - s, true), fw = [-Math.sin(g.yaw), -Math.cos(g.yaw)], al = (h) => (h[0] - g.x) * fw[0] + (h[1] - g.z) * fw[1];
+    if (al(m.H) < al(sw.mark.H)) { const dx = m.H[0] - sw.mark.H[0], dz = m.H[1] - sw.mark.H[1], D = Math.hypot(dx, dz), k = Math.min(1, MARK_RATE * Math.max(0, g.t - (sw.mT != null ? sw.mT : g.t)) / Math.max(D, 1e-9)); sw.mark = { H: [sw.mark.H[0] + dx * k, sw.mark.H[1] + dz * k], psi: sw.mark.psi }; }
+  }
+  if (sw.mark) sw.mT = g.t;          // the landing mark is fixed over the last part of the swing
   const tgt = sw.tgt || sw.mark || landTarget(g, f.s, P, 1 - s);
   const A1 = stanceAnkle(o, tgt.H, tgt.psi, sw.th1);
   // the foot comes up off its toes quickly (level by 0.45 of the swing, so the ankle is not carried high while the knee is bent) and tips up for heel strike; it is over its mark
@@ -598,7 +605,7 @@ const KNEE_MIN = 9, KNEE_TOE = 14;
  *  swing, the heel already up and the knee flexing - a swing foot raised a few cm is not seen; a pelvis dropped 1.7 cm in a frame is). */
 // (TO_DEEP, at any walking pace: a trailing leg already 2 cm out of reach, and going further, in the last TO_DEEP_W of its stance leaves now - a walker speeding up from a queue overran
 // the clock and dragged the pelvis 6 - 12 cm down behind the foot, review 66)
-const WO_S0 = 0.3;   // (walk-off from a foot in the air: see gaitUpdate)
+const WO_S0 = 0.3, REAIM_ACC = 1, MARK_RATE = 2;   // (walk-off from a foot in the air: see gaitUpdate; a mark re-aimed on a hard stop: see footOut)   // (walk-off from a foot in the air: see gaitUpdate)
 const TO_DEEP = 0.02, TO_DEEP_W = 0.15, TO_EARLY = 0.1, TO_LOOK = 0.008, TO_V0 = 1.25, TO_V1 = 1.6, SW_LIFT = 0.03, SW_FADE = 0.4;   // (off up to TO_V0 m/s, and TO_LOOK reached from 0 by TO_V1: below that the jolt was small and a foot sent off at the fit's own 2 mm margin left before it had pushed off - plantarflexion at toe-off 2 - 6 deg toes-UP in five people at 0.8 - 1.2 m/s, pmall2)
 function earlyToeOff(g, P) {
   const T = gaitTargets(g), hb = T.bobH;
