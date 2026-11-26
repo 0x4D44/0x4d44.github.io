@@ -191,7 +191,8 @@ const GARMENT_TINT = { teen_tee: [[/^alpha_hair_/i, 0.13, 0.065, 0.03]], woman_s
   woman_student: [[/^(alpha_|scalp_alpha_)hair/, 0.34, 0.22, 0.15], [/^skin_/, 1.06, 0.97, 0.95]], adult_baggy_knit: [[/^(alpha_|scalp_alpha_)hair/, 0.16, 0.13, 0.12], [/^skin_/, 0.84, 0.71, 0.6]],
   teen_tee: [[/^(alpha_|scalp_alpha_)hair/, 0.75, 0.4, 0.26], [/^skin_/, 1.1, 1.03, 1.0]], sum_crop_bike: [[/^skin_/, 0.93, 0.8, 0.67]],
   // (review 75: adult_vneck and adult_smile_blouse were one blonde, blue-eyed woman twice - adult_vneck is dark brown, warmer-skinned, darker-eyed)
-  adult_vneck: [[/^(alpha_|scalp_alpha_)hair/, 0.2, 0.12, 0.07], [/^alpha_brows/, 0.12, 0.08, 0.05], [/^skin_/, 1.0, 0.88, 0.78], [/^eye_/, 0.55, 0.4, 0.28]],
+  ya_ginger_braid: [[/^eye_/, 1, 1, 1, { swap: 'eye_bluegreen' }]],   // (review 76: her face is adult_smile_blouse's under the same plaited cut - the green-grey eyes of a redhead tell them apart)
+  adult_vneck: [[/^(alpha_|scalp_alpha_)hair/, 0.2, 0.12, 0.07], [/^alpha_brows/, 0.12, 0.08, 0.05], [/^skin_/, 1.0, 0.88, 0.78], [/^eye_/, 1, 1, 1, { swap: 'eye_brown' }]],
   girl_ginger: [[/casualsuit/i, 0.82, 0.88, 1.0, { region: [0, 0.44, 0.72, 1], rgb: [0.9, 1.25, 2.1] }]] };   // (her jeans' rust smear, calmed)   // (review 68: near-black brows read as a frown - a soft dark brown)   // (review 67: man_elder's skin grey and grimy, man_longcoat's orange - warmed and cooled)   // (review 13: the one maze-striped coat on two women - now a plain camel coat and a plain navy one; the tartan mini on two girls - teen_tube's now plain blue)   // (review 13: the boots' white texture parts stretched into white wedges at the boot tops - now the boot's own colour throughout)   // (review 11: man_beard's red jumper on man_kilt_casual too - now a dark burgundy; teen_skater's white trainers on sum_loose_shorts_w's template - now black)
 const SCALP_OPT = { teen_girl: { sparse: 1.01, brow: 1.25 } };   // (review 75: teen_girl's crown showed pale specks where her centre parting left scalp uncovered - the whole scalp is hair-coloured, the hairline held up at 1.25 eye-widths so it is not a straight cut)
 /** a face whose resting set reads as a scowl wears this much of the smile at rest (review 69: woman_midi - the brows are under her fringe, the frown is in the mouth) */
@@ -235,7 +236,10 @@ export class AnimCrowd {
     for (const c of this.chars) for (const r of [c.node, c.lodNode]) if (r) r.traverse((m) => { const mt = m.isMesh && m.material; if (!mt || !/^alpha_(brows|lashes)/.test(mt.name || '') || mt.userData.soft) return; mt.userData.soft = true; mt.transparent = true; mt.alphaTest = 0.04; mt.depthWrite = false; mt.needsUpdate = true; });
     // hair cards: cut off hard at the export's 0.5, their tips are jagged shards and slabs across the face (reviews 67, 68); with multisampling on, alpha to coverage feathers the cut
     for (const c of this.chars) for (const r of [c.node, c.lodNode]) if (r) r.traverse((m) => { const mt = m.isMesh && m.material; if (!mt || !/^alpha_hair/.test(mt.name || '') || mt.alphaToCoverage || !(mt.alphaTest > 0)) return; mt.alphaToCoverage = true; mt.needsUpdate = true; });
-    for (const c of this.chars) { const T = GARMENT_TINT[c.id]; if (T) for (const r of [c.node, c.lodNode]) if (r) r.traverse((m) => { if (!m.isMesh || !m.material || m.material.userData.tintOf === c.id) return; const t = T.find((x) => x[0].test(m.material.name || '')); if (!t) return; m.material = m.material.clone(); m.material.color.setRGB(t[1], t[2], t[3]); if (t[4] === 'flat') { m.material.map = null; m.material.needsUpdate = true; } else if (t[4] && t[4].region) regionTint(m.material, t[4]); m.material.userData.tintOf = c.id; }); }   // ('flat': the picture goes and the colour stands alone - a texture whose light parts stretch into wedges)   // (a clone: one material can be shared by several characters in the file)
+    // { swap: name }: wear another character's material from the same file, untouched (an iris tinted by multiplying stays the hue it was painted, only darker - adult_vneck's
+    // 'darker eyes' still read blue, review 76). Looked up before any tint runs, so the material lent is the file's own.
+    const byName = [new Map(), new Map()]; for (const c of this.chars) [c.node, c.lodNode].forEach((r, k) => { if (r) r.traverse((m) => { const mt = m.isMesh && m.material; if (mt && mt.name && !byName[k].has(mt.name)) byName[k].set(mt.name, mt); }); });
+    for (const c of this.chars) { const T = GARMENT_TINT[c.id]; if (T) [c.node, c.lodNode].forEach((r, k) => { if (r) r.traverse((m) => { if (!m.isMesh || !m.material || m.material.userData.tintOf === c.id) return; const t = T.find((x) => x[0].test(m.material.name || '')); if (!t) return; if (t[4] && t[4].swap) { const w = byName[k].get(t[4].swap); if (w) m.material = w; return; } m.material = m.material.clone(); m.material.color.setRGB(t[1], t[2], t[3]); if (t[4] === 'flat') { m.material.map = null; m.material.needsUpdate = true; } else if (t[4] && t[4].region) regionTint(m.material, t[4]); m.material.userData.tintOf = c.id; }); }); }   // ('flat': the picture goes and the colour stands alone - a texture whose light parts stretch into wedges)   // (a clone: one material can be shared by several characters in the file)
     // the 21 rigs share bone names; GLTFLoader suffixed the duplicates (hips_5 ...). The shared clips address the plain names -> canonicalise per clone.
     this.boneNames = new Set(); { const f = this.chars[0]; if (f) (f.node || f.lodNode).traverse((o) => { if (o.isBone) this.boneNames.add(o.name); }); }   // first rig keeps the plain names (spine_01 ... are REAL names: never strip blindly)
     this.canon = (n) => (this.boneNames.has(n) ? n : (this.boneNames.has(n.replace(/_\d+$/, '')) ? n.replace(/_\d+$/, '') : n));
@@ -1057,7 +1061,7 @@ export class AnimCrowd {
   /** Safety net only - steering (`_step`) keeps people apart. Bodies that genuinely overlap are eased apart slowly and in small amounts. R is below the 0.45 m
    *  clearance the steering keeps, so the two never fight, and the push is capped so nobody is ever visibly shoved or made to glide. */
   _separate(dt) {
-    const P = this.people, R = 0.38, k = Math.min(1, dt * 8), cap = 0.45 * dt;
+    const P = this.people, R = 0.42, k = Math.min(1, dt * 8), cap = 0.45 * dt;   // (0.42, was 0.38: two strangers stood 0.27-0.29 m pelvis to pelvis for 3 s, review 76 - the stride's sway takes 5-8 cm off the root gap)
     for (let i = 0; i < P.length; i++) {
       const a = P[i]; if (a.static || a.hidden || !a.obj || (a.delay > 0)) continue;
       for (let j = i + 1; j < P.length; j++) {
@@ -1565,12 +1569,13 @@ export class AnimCrowd {
    *  opposite sides); the chosen direction is the heading the person wants, and steer.js turns them toward it and speeds them up or brakes them (a person is a unicycle: they move
    *  the way they face, at a limited acceleration and braking, slowly while their facing is far off, and braking into the target when p.stopHere) - no snapping, no crab-walking,
    *  no jitter, nobody stopped dead.
-   *  lvl 0: normal wanderer / queuer (slab inset 0.22); 1: passenger going for a door / the stairs (inset 0.12, still walks round people); 2: boxed-in passenger (floor only).
+   *  lvl 0: normal wanderer / queuer (slab inset 0.22); 1: passenger going for a door / the stairs (inset 0.12, still walks round people); 2: boxed-in passenger (floor, and no
+   *  closer than 0.36 m to anyone it is closing on - 0.3 m let one brush past another at 0.19 m pelvis to pelvis, review 76).
    *  Returns false when there is no way forward (the person then faces the goal and stands still - never a random shuffle). */
   _step(p, dt, sp, lvl = 0) {
     sp *= this._paceK(p); sp = Math.min(sp, (p.char ? p.char.walkSpeed : 1.3) * 1.3);   // never faster than the walk cycle can plausibly cover (stride matching handles the rest)
     const dx = p.tx - p.x, dz = p.tz - p.z, d = Math.hypot(dx, dz); if (d < 1e-4) return true;
-    const ok = (x, z) => (lvl === 2 ? this._onFloor(x, z, 0.12) && this._core(p, x, z) : this._freeStep(p, x, z, lvl === 1 ? 0.12 : 0.22));
+    const ok = (x, z) => (lvl === 2 ? this._onFloor(x, z, 0.12) && this._core(p, x, z, 0.36) : this._freeStep(p, x, z, lvl === 1 ? 0.12 : 0.22));
     const h0 = Math.atan2(dz, dx), side = p.side || 1, near = Math.min(d, 0.4), far = Math.min(d, 0.85);
     if (p.sideT > 0) p.sideT -= dt;
     // pick a heading: straight on if it is clear well ahead, else the smallest veer that is (preferred side first, and once a side is chosen the person COMMITS to it for a
