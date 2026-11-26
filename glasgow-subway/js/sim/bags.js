@@ -347,13 +347,15 @@ const EASE_T = 0.25;   // s
  *  last frame. The difference is kept and faded out over EASE_T (inertialization), so the case moves there instead of jumping: a pick-up of a standing case stepped its handle
  *  0.18 m and turned it 0.78 rad in one frame, and set-downs kicked 0.10 - 0.13 m on their first frame (review 70). */
 function easeBranch(rig, obj, live, dt) {
-  const T = rig.T, mesh = rig.mesh, key = (rig.park ? 1 : 0) | (rig.tow < 0.01 ? 2 : 0) | (rig.down ? 4 : 0) | (rig.pT ? 8 : 0) | (rig.pick ? 16 : 0);
+  if (rig.brObj !== obj) { rig.brObj = obj; live = false; }   // (a body swapped, far model for full: on that frame its world matrix is not yet its own - eased through it, a standing case jumped 0.4 - 0.8 m and came back)
+  const T = rig.T, mesh = rig.mesh, key = (rig.park ? 1 : 0) | (rig.tow < 0.01 ? 2 : 0) | (rig.pT ? 8 : 0);   // (not rig.down nor rig.pick: at a walking pace they flicker, and each flicker restarted the fade, leaving the case behind the hand; a set-down still shows, its park point being taken)
   if (!(rig.brOq && rig.brOq.isQuaternion)) { rig.brOq = new T.Quaternion(); rig.brOv = new T.Vector3(); rig.brOs = new T.Vector3(); rig.brCp = new T.Vector3(); rig.brCq = new T.Quaternion(); rig.brI = new T.Quaternion(); }   // (and a rig copied as plain data has none of them as three.js objects)
   const oq = rig.brOq, ov = rig.brOv, os = rig.brOs;
   obj.matrixWorld.decompose(ov, oq, os);
   const cp = rig.brCp.copy(mesh.position).applyMatrix4(obj.matrixWorld), cq = rig.brCq.copy(oq).multiply(mesh.quaternion);
   if (!(rig.brP && rig.brP.isVector3 && rig.brQ && rig.brQ.isQuaternion && rig.brD && rig.brD.isVector3 && rig.brDq && rig.brDq.isQuaternion)) { rig.brKey = undefined; rig.brP = new T.Vector3(); rig.brQ = new T.Quaternion(); rig.brD = new T.Vector3(); rig.brDq = new T.Quaternion(); rig.brT = EASE_T; }
-  if (live && rig.brKey !== undefined && key !== rig.brKey) { rig.brD.copy(rig.brP).sub(cp); rig.brDq.copy(cq).invert().premultiply(rig.brQ); rig.brT = 0; }   // (eDq: last frame's drawn = eDq * this frame's)
+  const dn = rig.down && (rig.brNd || 0) >= 10; rig.brNd = rig.down ? 0 : (rig.brNd || 0) + 1;   // (the start of a set-down: down after a run of not, so a flicker at walking pace starts one fade, not one a frame)
+  if (live && ((rig.brKey !== undefined && key !== rig.brKey) || dn)) { rig.brD.copy(rig.brP).sub(cp); rig.brDq.copy(cq).invert().premultiply(rig.brQ); rig.brT = 0; }   // (eDq: last frame's drawn = eDq * this frame's)
   if (!live) rig.brT = EASE_T;
   rig.brKey = key; rig.brLive = true;
   if (rig.brT < EASE_T) {
