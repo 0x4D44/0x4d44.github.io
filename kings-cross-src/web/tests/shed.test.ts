@@ -8,7 +8,7 @@ import { shedRoofY } from '../src/furniture.ts';
 import { createSunShadow, SHADOW_CASTERS } from '../src/lighting.ts';
 import { ARCADE_FRAME, ARCADE_GLASS, buildingNightMaterialsOf, material, PANE_UV, TEXTURES, windowNight } from '../src/materials.ts';
 import { FRONT_RELIEF, WEST_ARCADE, westArcadeOpenings, WEST_GLAZING } from '../src/shed.ts';
-import { buildShed, buildTower, EAST_ARCADE, eastArcadeOpenings, eastArcadeU, NORTH_PIER, RIB_FOOT, ribLanding, spineLowerOpenings, spineUpperOpenings, valleyTop, buildWesternRange, gableBars, GABLE_GLASS_FROM, glazedHalfAngle, GLAZED_STRIP_WIDTH, GLASS_OPACITY, glazingOpacity, lunetteBars, MEMBER_SIZE, RIB_SPACING, ribMembers, ribPositions, ROOF_SKIN, roofOpacity, SPINE_WALL, spineOpenings, TOWER_SIZE, TOWER_TOP, valleyCut, vaultBand, vaultPoint, WESTERN_RANGE, WESTERN_RANGE_DEPTH_BEFORE, westernArches, westernBays, westernBlock, westernWindows, XRAY_OPACITY } from '../src/shed.ts';
+import { buildShed, buildTower, EAST_ARCADE, ROOF_EXTERIOR, eastArcadeOpenings, eastArcadeU, NORTH_PIER, RIB_FOOT, ribLanding, spineLowerOpenings, spineUpperOpenings, valleyTop, buildWesternRange, gableBars, GABLE_GLASS_FROM, glazedHalfAngle, GLAZED_STRIP_WIDTH, GLASS_OPACITY, glazingOpacity, lunetteBars, MEMBER_SIZE, RIB_SPACING, ribMembers, ribPositions, ROOF_SKIN, roofOpacity, SPINE_WALL, spineOpenings, TOWER_SIZE, TOWER_TOP, valleyCut, vaultBand, vaultPoint, WESTERN_RANGE, WESTERN_RANGE_DEPTH_BEFORE, westernArches, westernBays, westernBlock, westernWindows, XRAY_OPACITY } from '../src/shed.ts';
 
 const data: KxData = JSON.parse(readFileSync(new URL('../src/data/kx-track.json', import.meta.url), 'utf8'));
 const layout = shedLayout(data);
@@ -407,7 +407,10 @@ test('buildShed: the valley is closed by the spine wall\'s brick, from the sprin
     yMax = Math.max(yMax, p.getY(i)); zMin = Math.min(zMin, p.getZ(i)); zMax = Math.max(zMax, p.getZ(i));
     xMin = Math.min(xMin, p.getX(i)); xMax = Math.max(xMax, p.getX(i));
   }
-  close(yMax, top, EPS);
+  // re-pinned 2026-11-26 (B2 round 3, the kerbs read as one flat line from above): the gutter's two kerbs stand ROOF_EXTERIOR.valleyKerbUp over
+  // where the skins meet, so the wall's top is there, and so is the closed top (the kerbs' tops), same tolerance
+  const kerbTop = top + ROOF_EXTERIOR.valleyKerbUp;
+  close(yMax, kerbTop, EPS);
   close((xMin + xMax) / 2, valley, EPS);
   close(zMin, -layout.length, EPS);
   close(zMax, 0, EPS);
@@ -415,7 +418,7 @@ test('buildShed: the valley is closed by the spine wall\'s brick, from the sprin
   // the wall's top is closed (seen from above when the roof is x-rayed): one quad the length of the shed at the valley's height, facing up
   const nor = wall.geometry.getAttribute('normal');
   let tops = 0;
-  for (let i = 0; i < p.count; i++) if (nor.getY(i) > 0.99 && Math.abs(p.getY(i) - top) < EPS) tops++;
+  for (let i = 0; i < p.count; i++) if (nor.getY(i) > 0.99 && Math.abs(p.getY(i) - kerbTop) < EPS) tops++;
   assert.ok(tops >= 4, `${tops} vertices of the wall's top`);
 });
 
@@ -490,7 +493,7 @@ test('buildShed: every mesh has finite positions and the roof skin never crosses
   const girder = new THREE.Box3();
   for (let i = 0; i < wp.count; i++) if (-wp.getZ(i) <= layout.length + EPS && Math.abs(wp.getX(i) - valley) <= SPINE_WALL.thick / 2 + EPS) girder.expandByPoint(new THREE.Vector3(wp.getX(i), wp.getY(i), wp.getZ(i)));
   assert.ok(girder.min.y <= sp + EPS);
-  close(girder.max.y, sp + rs * Math.sin(valleyCut(rs)), EPS);
+  close(girder.max.y, sp + rs * Math.sin(valleyCut(rs)) + ROOF_EXTERIOR.valleyKerbUp, EPS); // re-pinned 2026-11-26 (B2 round 3): the kerbs stand valleyKerbUp over the skins
   close((girder.min.x + girder.max.x) / 2, valley, EPS);
   close(girder.min.z, -layout.length, EPS);
 });
@@ -651,7 +654,7 @@ test('buildShed: the spine wall meets the springing: it stands up to the valley,
     xMin = Math.min(xMin, x); xMax = Math.max(xMax, x); zMin = Math.min(zMin, p.getZ(i)); zMax = Math.max(zMax, p.getZ(i));
   }
   assert.ok(n > 1000, `${n} brick vertices on the spine line`);
-  close(top, valleyTop(sp), 1e-6); // the design asks 1e-9; the drawn positions are float32, good to about 5e-7 m at this height
+  close(top, valleyTop(sp) + ROOF_EXTERIOR.valleyKerbUp, 1e-6); // re-pinned 2026-11-26 (B2 round 3): the gutter's kerbs stand valleyKerbUp over the skins. The design asks 1e-9; the drawn positions are float32, good to about 5e-7 m at this height
   assert.ok(foot < 0, 'from the ground');
   close(xMin, layout.spine - half, 1e-5); // float32 positions: 32.504 is stored as 32.5040016
   close(xMax, layout.spine + half, 1e-5);

@@ -43,6 +43,8 @@ test('A5: the crown\'s seams are a paler paint than the rib caps, between the ri
   const { post, size } = ROOF_EXTERIOR.rail, top = layout.springing + R + ROOF_SKIN, posts: number[] = [];
   for (let v = post / 2; v < L; v += post) posts.push(v);
   const seamX = new THREE.Color(ROOF_EXTERIOR.seamColour).r / m.color.r, sheenX = new THREE.Color(ROOF_EXTERIOR.ribSheen).r / m.color.r, capX = new THREE.Color(ROOF_EXTERIOR.capColour).r / m.color.r;
+  // re-pinned 2026-11-26 (B2 round 3): the valley gutter's lead is in ROOF_EXTERIOR.leadColour (kx-shed-b2-round3.test.ts pins it)
+  const leadX = new THREE.Color(ROOF_EXTERIOR.leadColour).r / m.color.r;
   for (let i = 0; i < pos.count; i++) {
     const c = new THREE.Color(col.getX(i), col.getY(i), col.getZ(i)).multiply(m.color);
     // re-pinned 2026-11-24 (round 10): the crown rail is in the seams' paint too, and the end rib's top in ROOF_EXTERIOR.ribSheen (kx-roof-round10.test.ts
@@ -56,7 +58,7 @@ test('A5: the crown\'s seams are a paler paint than the rib caps, between the ri
     } else if (onRail) continue;
     // re-pinned round A5-1: the intermediate rib caps are in ROOF_EXTERIOR.capColour now, a subdued grey (kx-roof-round13.test.ts pins them), and every
     // other bar still the ribs' paint
-    else if (Math.abs(col.getX(i) - sheenX) > 1e-6 && Math.abs(col.getX(i) - capX) > 1e-6) { other++; assert.ok(Math.abs(col.getX(i) - 1) < 1e-6, 'every other bar the ribs\' paint'); }
+    else if (Math.abs(col.getX(i) - sheenX) > 1e-6 && Math.abs(col.getX(i) - capX) > 1e-6 && Math.abs(col.getX(i) - leadX) > 1e-6) { other++; assert.ok(Math.abs(col.getX(i) - 1) < 1e-6, 'every other bar the ribs\' paint'); }
   }
   assert.ok(seam > 1000 && other > 1000, `${seam} seam vertices, ${other} others`);
   assert.ok(rMax - rMin < 0.01, `the paler paint on the seams alone: radii ${rMin.toFixed(3)} to ${rMax.toFixed(3)}`);

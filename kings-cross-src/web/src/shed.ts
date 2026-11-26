@@ -497,7 +497,7 @@ export const EAST_AISLE_OPENING = { fromEast: 3.07, width: 3.5, head: 4.8 } as c
  * gables (v = length), from the ground up to the valley, where the two vaults' roof skins land (the springing plus (R + ROOF_SKIN) sin(valleyCut),
  * 8.73 m): brick, two storeys, the ribs landing on stone corbels on its faces. Since B2 (2026-11-25, core/station.ts SHED_VALLEY_WIDTH) each vault
  * springs from its own face of the wall, the skins 1.0 m apart, and the wall's top between them is a valley gutter (ROOF_EXTERIOR.valleyGutter: a
- * kerb on each face up to the skins, the sole 0.3 m under them, lead on it; ASSUMED sizes). Sources for the wall itself: Historic England list entry 1078328,
+ * kerb on each face standing 0.15 m over the skins (round 3), the sole 0.3 m under them, lead on it; ASSUMED sizes). Sources for the wall itself: Historic England list entry 1078328,
  * Interior, a "round-arched brick central colonnade"
  * (https://historicengland.org.uk/listing/the-list/list-entry/1078328?section=official-list-entry), and Camden's delegated report 2009/5099/L
  * under 2007/2611/L, p3, the "central spine wall" (https://camdocs.camden.gov.uk/HPRMWebDrawer/Record/3357544/file/document). Neither gives a
@@ -801,6 +801,23 @@ export function ribMembers(springing: number, r = R, n = 16, feet: readonly [num
   return out;
 }
 
+/**
+ * B2 round 3 (b2-valley-round-2 score, section 5: the spine-side rib feet were hard to read from inside): a cast-iron shoe at each rib's foot, on the
+ * corbel's cap, in the ribs' dark paint against the pale stone, so each rib reads as landing on its own corbel. `tall` 0.3 m from the cap up, `wide` 0.34 m
+ * along the shed (the boom is 0.2 m: a cheek either side), from `clear` off the wall's face to the inner boom's far edge (ASSUMED sizes; R-kx-shed-interior-c
+ * shows the ribs ending on the corbels, not the shoe's size). The outer feet's shoes start `outerFrom` in from the springing, clear of both outer walls'
+ * faces (the west arcade's at WEST_ARCADE.depth 0.72 m, the east arcade's at 0.5 m), since one truss serves both vaults.
+ */
+export const RIB_SHOE = { tall: 0.3, wide: 0.34, clear: 0.02, outerFrom: WEST_ARCADE.depth + 0.02 } as const;
+/** The two shoes of one rib (RIB_SHOE) in the truss's frame (ribMembers'), west foot then east, for feet `feet` in from the springing; `from` how far in each starts. */
+export function ribShoes(springing: number, r = R, feet: readonly [number, number] = [RIB_FOOT, RIB_FOOT], from: readonly [number, number] = [RIB_SHOE.outerFrom, RIB_SHOE.outerFrom]): { c: V3; s: V3 }[] {
+  const { tall, wide } = RIB_SHOE, y = ribLanding(springing) + tall / 2;
+  return [0, 1].map(i => {
+    const a = from[i]!, b = feet[i]! + MEMBER_SIZE.boom[0] / 2 - 0.005, side = i === 0 ? -1 : 1;
+    return { c: [side * (r - (a + b) / 2), y, 0] as V3, s: [b - a, tall, wide] as V3 };
+  });
+}
+
 /** Where the ribs stand, metres north of the south front. */
 export function ribPositions(length: number): number[] {
   const out: number[] = [];
@@ -966,7 +983,7 @@ export function haunchRingCentres(springing: number, r = R, n = 16): [number, nu
  *   rail     a walkway handrail along each vault's crown: front-d shows a rail with close posts along the far vault's crown (and front-e a rail line along the
  *            top), about 1.1 m high (some 18 px against the gable's 17 px a metre: MEASURED in memory, +-25%); posts every 1.525 m, a quarter rib bay (ASSUMED,
  *            the photographs show them close but not countable), a top and a mid rail, 0.06 m members (ASSUMED);
- *   eaves    a box gutter along each vault's outer springing, `gutter` 0.5 m wide and 0.45 m deep, and a 0.8 m valley gutter sunk 0.3 m into the spine wall's top between the two vaults' skins (B2) (ASSUMED sizes; front-e
+ *   eaves    a box gutter along each vault's outer springing, `gutter` 0.5 m wide and 0.45 m deep, and a 0.6 m (B2 round 3; 0.8 m in round 1) valley gutter sunk 0.3 m into the spine wall's top between the two vaults' skins (B2) (ASSUMED sizes; front-e
  *            shows a dark eaves line along the springing);
  *   PV       none: no photovoltaic rows can be made out on the flanks in R-kx-front-b, -d or -e, so none are drawn (the rubric asks for them only if the reference
  *            shows them).
@@ -975,7 +992,14 @@ export const ROOF_EXTERIOR = {
   // round A5-1 (gap-scan-2, A5 item 2: the intermediate caps read as bold near-black arcs over glass and slate; front-d shows them subdued): 0.3 -> 0.15 m wide,
   // in `capColour`, a mid grey between the ribs' paint and the seams'; the end ribs and the gable ribs stay heavy and dark
   seamPitch: 1.8, seam: [0.06, 0.03], ribCap: [0.15, 0.12], capColour: 0x4a5058, endRib: [0.5, 0.6], rail: { height: 1.1, post: 1.525, size: 0.06 },
-  gutter: [0.5, 0.45], valleyGutter: [0.8, 0.3],
+  gutter: [0.5, 0.45], valleyGutter: [0.6, 0.3],
+  /**
+   * B2 round 3 (b2-valley-round-2 score, section 5: from above the gutter read as one flat dark strip with a single kerb line). Each brick kerb is 0.2 m wide
+   * (the gutter 0.8 -> 0.6 m, so a kerb is about 2 px, not 1, in roof-above) and stands `valleyKerbUp` 0.15 m over the skins' landing, so both show a top and a
+   * face; the lead on the sole is `leadColour`, a pale weathered-lead grey, lighter than the slate and the ribs' paint, so the sole reads as a lined channel
+   * between two kerbs. ASSUMED sizes and tone: the references do not show the gutter.
+   */
+  valleyKerbUp: 0.15, leadColour: 0x8e969d,
   /**
    * Round 9 (the roof-exterior-round-2 score: the north end rib "cannot be told apart from the brick arch ring"; A6 "needs the dark metal end rib in front
    * of the ring"): R-kx-front-d shows each north gable framed by a dark, heavy arched metal rib at its face, no pale ring; about 0.9 m deep in the gable's
@@ -1624,7 +1648,9 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
     outer.box([edge, sp + gh / 2 - 0.1, -L / 2], [gw, gh, L]);
   });
   // B2: the valley gutter's lead, on the sole of the trough sunk into the spine wall's top between the two skins (buildSpineWall)
-  outer.box([spine, valleyTop(sp) - ROOF_EXTERIOR.valleyGutter[1] + 0.005, -L / 2], [ROOF_EXTERIOR.valleyGutter[0], 0.01, L], { skip: ['-y', '+z', '-z'] });
+  // B2 round 3: in the lead's own pale grey (ROOF_EXTERIOR.leadColour)
+  const leadRgb = new THREE.Color(ROOF_EXTERIOR.leadColour), leadPaint: [number, number, number] = [leadRgb.r / ribRgb.r, leadRgb.g / ribRgb.g, leadRgb.b / ribRgb.b];
+  outer.box([spine, valleyTop(sp) - ROOF_EXTERIOR.valleyGutter[1] + 0.005, -L / 2], [ROOF_EXTERIOR.valleyGutter[0], 0.01, L], { skip: ['-y', '+z', '-z'], color: leadPaint });
   const barsMat = (material('ribPaint') as THREE.MeshLambertMaterial).clone();
   barsMat.vertexColors = true; // the seams' paler paint (seamPaint)
   barsMat.transparent = true; // its opacity follows the cladding's outside and is 0 inside, see roofBarsOpacity
@@ -1663,6 +1689,8 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   const rib = new Batch();
   // B2: the truss of a west vault (its east foot on the spine's face); the east vault's is the same turned half round about the vertical, a proper rotation
   for (const m of ribMembers(sp, R, 16, [RIB_FOOT, RIB_FOOT_SPINE])) rib.box(m.c, m.s, { rotZ: m.rotZ, skip: m.kind === 'boom' ? ['+x', '-x'] : ['+x', '-x', '+y', '-y'] });
+  // B2 round 3: a shoe at each foot on its corbel (RIB_SHOE), the spine's from the wall's face; no underside, none on the wall's side
+  ribShoes(sp, R, [RIB_FOOT, RIB_FOOT_SPINE], [RIB_SHOE.outerFrom, RIB_SHOE.clear]).forEach((m, i) => rib.box(m.c, m.s, { skip: ['-y', i === 0 ? '-x' : '+x'] }));
   const ribPos = ribPositions(L);
   const ribs = new THREE.InstancedMesh(rib.build(), ribDay(), ribPos.length * centres.length); // round S1: lighter by day (RIB_DAY_LIFT)
   withBuildingNightMaterial(ribs, material('ribPaint'));
@@ -1747,7 +1775,7 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   }
   const spineBrick = new Batch();
   const spineStone = new Batch();
-  buildSpineWall(spineBrick, spineStone, spine, L, sp, valleyY, [-1, 1], spineLowerOpenings(L), ROOF_EXTERIOR.valleyGutter);
+  buildSpineWall(spineBrick, spineStone, spine, L, sp, valleyY, [-1, 1], spineLowerOpenings(L), ROOF_EXTERIOR.valleyGutter, ROOF_EXTERIOR.valleyKerbUp);
   buildNorthPier(spineBrick, spineStone, spine, L, valleyY);
   // the east vault's east springing, between the vault and the east aisle, stands on an arcade of the spine wall's pattern (EAST_ARCADE)
   const eastArcade = new Batch();
@@ -2291,7 +2319,7 @@ export const ribLanding = (springing: number): number => springing - SPINE_WALL.
  * opening a bay from the band to the top, and the wall's top closed. The caller gives the brick its own batch (`shed-spine`,
  * `shed-east-arcade`), and the stone `shed-spine-stone`: none of them casts a sun shadow.
  */
-export function buildSpineWall(brick: Batch, stone: Batch, x: number, length: number, springing: number, top: number, faces: readonly (-1 | 1)[], lower = spineLowerOpenings(length), gutter?: readonly [number, number]): void {
+export function buildSpineWall(brick: Batch, stone: Batch, x: number, length: number, springing: number, top: number, faces: readonly (-1 | 1)[], lower = spineLowerOpenings(length), gutter?: readonly [number, number], kerbUp = 0): void {
   const { thick, sill } = SPINE_WALL;
   const h = thick / 2;
   const landing = ribLanding(springing);
@@ -2311,7 +2339,8 @@ export function buildSpineWall(brick: Batch, stone: Batch, x: number, length: nu
     brick.poly([[x - h, sole, 0], [x + h, sole, 0], [x + h, sole, -length], [x - h, sole, -length]], [[0, 0], [thick, 0], [thick, length], [0, length]], { facing: [0, 1, 0] });
     if (gutter) {
       const kerb = h - gutter[0] / 2;
-      for (const side of [-1, 1] as const) brick.box([x + side * (h - kerb / 2), (sole + top) / 2, -length / 2], [kerb, top - sole, length], { skip: ['-y'] });
+      // B2 round 3: each kerb stands `kerbUp` over the skins' landing (ROOF_EXTERIOR.valleyKerbUp)
+      for (const side of [-1, 1] as const) brick.box([x + side * (h - kerb / 2), (sole + top + kerbUp) / 2, -length / 2], [kerb, top + kerbUp - sole, length], { skip: ['-y'] });
     }
   }
   for (const side of faces) dressFace(stone, x + side * h, side, length, springing);
