@@ -1622,11 +1622,11 @@ export class AnimCrowd {
       const ex = q.x - p.x, ez = q.z - p.z, proj = ex * ux + ez * uz; if (proj <= 0.05 || proj > 1.6 || Math.abs(ex * sx + ez * sz) > (only ? 0.3 : 0.42)) continue;
       // any: on a rail route (_railStep, not walking past), anyone else in the way is braked for too, to a stop 0.5 m short - only the same-way walker was, so a walker met someone
       // standing or crossing at full pace, inside the 0.5 m it looks, and stopped dead in a frame (review 76: every one-frame stop traced at St Enoch was this, often in chains)
-      if (!walking || -Math.sin(q.yaw) * ux - Math.cos(q.yaw) * uz < 0.5) { if (any === true) { const e = Math.hypot(ex, ez); if (proj > 0.3 * e) cap = Math.min(cap, Math.max(0, 1.2 * (e - 0.4))); } else if (any) cap = Math.min(cap, Math.max(any, 1.2 * (proj - 0.5))); continue; }   // (any: true brakes to a stop; a number brakes to that pace - a _step walker can still steer round them)   // (going the same way, below)
+      if (!walking || -Math.sin(q.yaw) * ux - Math.cos(q.yaw) * uz < 0.5) { if (any === true) { const e = Math.hypot(ex, ez); if (proj > 0.3 * e) cap = Math.min(cap, Math.max(0, 1.2 * (e - 0.4))); else if (e < 0.55) cap = Math.min(cap, Math.max(0.3, 1.2 * (e - 0.4))); } else if (any) cap = Math.min(cap, Math.max(any, 1.2 * (proj - 0.5))); continue; }   // (any: true brakes to a stop; a number brakes to that pace - a _step walker can still steer round them)   // (going the same way, below)
       if (only) continue; cap = Math.min(cap, Math.max(0, (q.v || 0) + 1.2 * (proj - 0.6))); }
     // (review 77: the pace floor was looked for along the line to the target, so a walker veering round someone standing there crept past them at 0.35 m/s - 80 shuffles in 520 s;
     //  _step now looks only along the heading it picked (only: a 0.3 m band, standers and crossers only). On a rail leg the stop is 0.4 m short (centre to centre, and only for someone
-    //  in the hold-up check's own cone ahead), inside the 0.5 m that check looks: a stop 0.5 m short, or for someone alongside, left a boarder stood 5.6 s behind one; and stopped at 0.5 m, the walker was never "held up", so the one ahead never made way and the boarder timed out short of the door and was slid in, legs still)
+    //  in the hold-up check's own cone ahead), inside the 0.5 m that check looks: a stop 0.5 m short, or for someone alongside, left a boarder stood 5.6 s behind one (one level with them now eases the pace to 0.3 m/s, not to a stop: let walk on at full pace, two boarders abreast closed to 0.27 m); and stopped at 0.5 m, the walker was never "held up", so the one ahead never made way and the boarder timed out short of the door and was slid in, legs still)
     return cap;
   }
   _railStep(p, dt, sp) {
@@ -1650,7 +1650,7 @@ export class AnimCrowd {
     p.steered = true; p.yawT = p.yaw;
     // even walking past, a step never ends inside another body (0.32 m, centre to centre) unless it moves away from them: the walker edges sideways round them instead
     // (review 8: alighters on door routes passed 0.04-0.25 m apart for up to 1.8 s). Held up 3 s, they may squeeze through (4.5 s let a stair walker stand 8 s - review 10 run), so nobody is stuck for good
-    const fx = p.x - Math.sin(p.yaw) * move, fz = p.z - Math.cos(p.yaw) * move, held = pass && (p.blockT || 0) < 3 && !this._core(p, fx, fz, 0.3);
+    const fx = p.x - Math.sin(p.yaw) * move, fz = p.z - Math.cos(p.yaw) * move, held = pass && (p.blockT || 0) < 3 && !this._core(p, fx, fz, 0.36);   // (0.36: at 0.3, with the pelvis's own sway, an alighter and a boarder passing in a doorway came 0.27 m apart - review 77 follow-up)
     if (!held) { p.x = fx; p.z = fz; } else p.sp = Math.max(0, (p.sp || 0) - 2 * STEER.BMAX * dt);
     if (pass) {   // walking past someone standing on the stairs: edge round them, sideways, rather than through them (gp8: 0.14-0.29 m for up to 12 s)
       const sx = -uz, sz = ux; let lat = 0;
