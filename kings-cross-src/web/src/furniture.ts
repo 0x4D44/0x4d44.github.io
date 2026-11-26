@@ -1700,6 +1700,172 @@ function canopyMeshes(c: CanopyPlan): { glass: Batch; sheet: Batch; steel: Batch
   return { glass, sheet, steel, lattice };
 }
 
+/**
+ * B6 (shed-gap-scan-1, item 2; the partner's ruling 2026-11-25: the station owns the outer wall beside the platform 9-11 canopy). R-kx-shed-interior-f
+ * (shed-f-suburban-platforms-2022.jpg, looking south to the buffers) shows the suburban platforms closed on the west by a tall wall of yellow stock
+ * brick with shallow pilasters, the canopy's columns standing in front of it. The model had nothing of the station there: past platform 10's outer
+ * track the landscraper's timber face (Platform 37, kxcentral.ts, about 12 m out) stood in its place. The wall runs the length of platform 10's
+ * canopy, its face `fromEdge` m out from the platform's outer coping, square to it, in the stock brick of the shed (material 'brick').
+ * It casts no sun shadow (its mesh is not in lighting.ts SHADOW_CASTERS: the pass is near its budget). All figures ASSUMED, read in memory from R-f.
+ */
+export const SUBURBAN_WALL = {
+  /** the face from the platform's outer coping: the outer track's centre line is about 1.8 m out (OSM) and the OLE portals' outer masts 2.6 m and more
+   *  past it (core/ole.ts mastClearance), so the face stands behind the masts, 3 m and more from any rail, a pilaster's face at least 0.3 m clear of a mast */
+  fromEdge: 5.6,
+  thickness: 0.7,
+  /** the coping's top over the canopy's roof: the roof meets the wall just under it */
+  aboveRoof: 1.2,
+  pilasterWidth: 0.9,
+  /** how far a pilaster stands out of the face, toward the tracks */
+  pilasterProud: 0.25,
+  /** pilaster centres along the wall: half the canopy's 15 m column bay */
+  pilasterSpacing: 7.5,
+  copingHeight: 0.3,
+  copingOverhang: 0.1,
+} as const;
+
+export interface SuburbanWallPlan {
+  /** the face toward the tracks and the back, one point per canopy sample, in step (the canopy's own order along the platform) */
+  face: Pt[];
+  back: Pt[];
+  /** the pilasters: their box's centre in plan (it runs from `pilasterProud` out of the face to 0.05 m into it) and its turn about y (local x along the wall) */
+  pilasters: { x: number; z: number; rotY: number }[];
+  /** the wall's foot and the coping's top */
+  y0: number;
+  y1: number;
+}
+
+/** `line` moved `d` m to one side, each corner mitred so every segment stays `d` from its own; `side` is +1 for the left-hand normal of the first segment's direction, -1 for the right. */
+function offsetLine(line: readonly Pt[], d: number, side: number): Pt[] {
+  const normals = line.slice(1).map((b, i): Pt => {
+    const a = line[i] as Pt;
+    const l = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+    return [(-(b[1] - a[1]) / l) * side, ((b[0] - a[0]) / l) * side];
+  });
+  return line.map((p, i): Pt => {
+    const n0 = normals[Math.max(0, i - 1)] as Pt;
+    const n1 = normals[Math.min(normals.length - 1, i)] as Pt;
+    const m: Pt = [n0[0] + n1[0], n0[1] + n1[1]];
+    const ml = Math.hypot(m[0], m[1]) || 1;
+    const k = d / Math.max(0.5, (m[0] * n1[0] + m[1] * n1[1]) / ml);
+    return [p[0] + (m[0] / ml) * k, p[1] + (m[1] / ml) * k];
+  });
+}
+
+/**
+ * Where the outer wall stands: along platform 10's canopy, on the side away from platform 9's (the outer side), `fromEdge` out from the coping
+ * (the canopy's edge line is `canopyInset` inside it). Null when there is no canopy on 10, or none on 9 to tell the outer side by.
+ */
+export function suburbanWallPlan(plan: Pick<FurniturePlan, 'canopies'>): SuburbanWallPlan | null {
+  const c = plan.canopies.find((k) => k.ref === '10');
+  const inner = plan.canopies.find((k) => k.ref === '9');
+  if (!c || !inner || c.left.length < 2) return null;
+  const W = SUBURBAN_WALL;
+  const mid = (line: readonly Pt[]): Pt => [line.reduce((s, p) => s + p[0], 0) / line.length, line.reduce((s, p) => s + p[1], 0) / line.length];
+  const other = mid([...inner.left, ...inner.right]);
+  const far = (line: readonly Pt[]): number => Math.hypot(mid(line)[0] - other[0], mid(line)[1] - other[1]);
+  const [edge, opposite] = far(c.left) >= far(c.right) ? [c.left, c.right] : [c.right, c.left];
+  // the side of the edge line that is away from the canopy's other edge
+  const a = edge[0] as Pt;
+  const b = edge[1] as Pt;
+  const o = opposite[0] as Pt;
+  const side = Math.sign(-(b[1] - a[1]) * (a[0] - o[0]) + (b[0] - a[0]) * (a[1] - o[1])) || 1;
+  const face = offsetLine(edge, W.fromEdge + FIGURES.canopyInset, side);
+  const back = offsetLine(edge, W.fromEdge + FIGURES.canopyInset + W.thickness, side);
+  // the pilasters, every `pilasterSpacing` along the face, the run centred on its length
+  const lengths = face.slice(1).map((p, i) => Math.hypot(p[0] - (face[i] as Pt)[0], p[1] - (face[i] as Pt)[1]));
+  const total = lengths.reduce((s, l) => s + l, 0);
+  const count = Math.floor((total - W.pilasterWidth) / W.pilasterSpacing) + 1;
+  const first = (total - (count - 1) * W.pilasterSpacing) / 2;
+  const pilasters: SuburbanWallPlan['pilasters'] = [];
+  for (let j = 0; j < count; j++) {
+    let s = first + j * W.pilasterSpacing;
+    let i = 0;
+    while (i < lengths.length - 1 && s > (lengths[i] as number)) s -= lengths[i++] as number;
+    const p = face[i] as Pt;
+    const q = face[i + 1] as Pt;
+    const l = lengths[i] as number;
+    const t: Pt = [(q[0] - p[0]) / l, (q[1] - p[1]) / l];
+    const n: Pt = [-t[1] * side, t[0] * side]; // toward the back
+    const out = (W.pilasterProud - 0.05) / 2; // the box runs 0.05 m into the face
+    pilasters.push({ x: p[0] + t[0] * s - n[0] * out, z: p[1] + t[1] * s - n[1] * out, rotY: Math.atan2(-t[1], t[0]) });
+  }
+  return { face, back, pilasters, y0: GROUND_Y, y1: c.roofY + W.aboveRoof };
+}
+
+/** The wall's mesh: both faces and the ends of the wall up to the coping, the coping (mitred along the wall, overhanging both faces), and the pilasters. UVs in metres. */
+function suburbanWallGeometry(w: SuburbanWallPlan): THREE.BufferGeometry {
+  const W = SUBURBAN_WALL;
+  const b = new Batch();
+  const yTop = w.y1 - W.copingHeight;
+  const along: number[] = [0];
+  for (let i = 1; i < w.face.length; i++) along.push((along[i - 1] as number) + Math.hypot((w.face[i] as Pt)[0] - (w.face[i - 1] as Pt)[0], (w.face[i] as Pt)[1] - (w.face[i - 1] as Pt)[1]));
+  const away = (i: number): V3 => {
+    const f = w.face[i] as Pt;
+    const k = w.back[i] as Pt;
+    const l = Math.hypot(k[0] - f[0], k[1] - f[1]) || 1;
+    return [(k[0] - f[0]) / l, 0, (k[1] - f[1]) / l];
+  };
+  const toward = (n: V3): V3 => [-n[0], -n[1], -n[2]];
+  // a vertical strip of quads along `line` from y0 to y1, facing `facing(i)`
+  const sheet = (line: readonly Pt[], y0: number, y1: number, facing: (i: number) => V3): void => {
+    for (let i = 0; i + 1 < line.length; i++) {
+      const p = line[i] as Pt;
+      const q = line[i + 1] as Pt;
+      const u0 = along[i] as number;
+      const u1 = along[i + 1] as number;
+      b.quadUV([p[0], y0, p[1]], [q[0], y0, q[1]], [q[0], y1, q[1]], [p[0], y1, p[1]], [[u0, y0 - w.y0], [u1, y0 - w.y0], [u1, y1 - w.y0], [u0, y1 - w.y0]], facing(i));
+    }
+  };
+  // a horizontal strip between two lines at height y
+  const flat = (l0: readonly Pt[], l1: readonly Pt[], y: number, up: boolean): void => {
+    for (let i = 0; i + 1 < l0.length; i++) {
+      const a = l0[i] as Pt, c = l0[i + 1] as Pt, d = l1[i + 1] as Pt, e = l1[i] as Pt;
+      b.quadUV([a[0], y, a[1]], [c[0], y, c[1]], [d[0], y, d[1]], [e[0], y, e[1]], [[a[0], a[1]], [c[0], c[1]], [d[0], d[1]], [e[0], e[1]]], [0, up ? 1 : -1, 0]);
+    }
+  };
+  // an end of the wall (or of the coping) between two points, facing out along the wall
+  const end = (f: Pt, k: Pt, y0: number, y1: number, out: V3): void => {
+    b.quadUV([f[0], y0, f[1]], [k[0], y0, k[1]], [k[0], y1, k[1]], [f[0], y1, f[1]], [[0, y0 - w.y0], [W.thickness, y0 - w.y0], [W.thickness, y1 - w.y0], [0, y1 - w.y0]], out);
+  };
+  const n = w.face.length - 1;
+  const dirAt = (i: number, j: number): V3 => {
+    const p = w.face[i] as Pt;
+    const q = w.face[j] as Pt;
+    const l = Math.hypot(q[0] - p[0], q[1] - p[1]) || 1;
+    return [(q[0] - p[0]) / l, 0, (q[1] - p[1]) / l];
+  };
+  sheet(w.face, w.y0, yTop, (i) => toward(away(i)));
+  sheet(w.back, w.y0, yTop, (i) => away(i));
+  end(w.face[0] as Pt, w.back[0] as Pt, w.y0, yTop, dirAt(1, 0));
+  end(w.face[n] as Pt, w.back[n] as Pt, w.y0, yTop, dirAt(n - 1, n));
+  // the coping: its own two lines, `copingOverhang` past each face
+  const shift = (line: readonly Pt[], d: number): Pt[] => line.map((p, i): Pt => { const a = away(i); return [p[0] + a[0] * d, p[1] + a[2] * d]; });
+  const cf = shift(w.face, -W.copingOverhang);
+  const cb = shift(w.back, W.copingOverhang);
+  sheet(cf, yTop, w.y1, (i) => toward(away(i)));
+  sheet(cb, yTop, w.y1, (i) => away(i));
+  flat(cf, cb, w.y1, true);
+  flat(cf, cb, yTop, false);
+  end(cf[0] as Pt, cb[0] as Pt, yTop, w.y1, dirAt(1, 0));
+  end(cf[n] as Pt, cb[n] as Pt, yTop, w.y1, dirAt(n - 1, n));
+  // the pilasters, from the foot to the coping's underside
+  for (const p of w.pilasters) b.box([p.x, (w.y0 + yTop) / 2, p.z], [W.pilasterWidth, yTop - w.y0, W.pilasterProud + 0.05], { rotY: p.rotY, skip: ['-y'] });
+  return b.build();
+}
+
+/**
+ * B6: the outer wall beside platform 10's canopy (SUBURBAN_WALL), from the furniture's plan (buildFurniture's `userData.plan`): one draw, `suburban-wall`,
+ * in the shed's stock brick, casting no sun shadow. A structure, not furniture, so it is its own object beside the furniture group; null without the canopies.
+ */
+export function buildSuburbanWall(plan: Pick<FurniturePlan, 'canopies'>): THREE.Mesh | null {
+  const wall = suburbanWallPlan(plan);
+  if (!wall) return null;
+  const mesh = new THREE.Mesh(suburbanWallGeometry(wall), material('brick'));
+  mesh.name = 'suburban-wall';
+  return mesh;
+}
+
 /** Counts, for logging and the dev page. */
 export function describePlan(plan: FurniturePlan): Record<string, number> {
   return {

@@ -373,7 +373,7 @@ EVIDENCE_TESTS = [
     'the labelled overview is added only when the overview is selected and the overlays are off',
     "concourse-exterior-west is western-concourse's official C6 view and concourse-exterior-square is labelled context",
     "a record carries a view's part in scoring, and a view with none carries nothing",
-    'only the two exterior views of the western concourse are shot with a scoring part, official and context',
+    'only the two exterior views of the western concourse and the two suburban views of B6 are shot with a scoring part, official and context',
     'the pack index says which view each criterion is scored from, and which are context',
     'the usage text names the official and the context view',
 ]

@@ -487,6 +487,19 @@
     ],
     "source": "OSM platform 9 canopy middle (furniturePlan canopy 9), eye 1.6 m above platform, looking north along the platform; R-kx-shed-interior-f standpoint (shed-f-suburban-platforms-2022.jpg)"
   },
+  "suburban-p9-south": {
+    "pos": [
+      3.8405,
+      2.5,
+      -260.3813
+    ],
+    "target": [
+      -16.4362,
+      2.5,
+      -225.9015
+    ],
+    "source": "R-kx-shed-interior-f standpoint and direction (shed-f-suburban-platforms-2022.jpg): OSM platform 9, 1.5 m in from its west edge at the middle of canopy 9's column bay, eye 1.6 m, looking south along the platform toward the buffers, turned 15 degrees west toward the outer wall"
+  },
   "concourse-funnel-up": {
     "pos": [
       -16.7270740795371,

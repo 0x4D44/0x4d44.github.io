@@ -63,7 +63,7 @@ export const AXES = [
 export const ELEMENT_VIEWS = {
   'lighting-materials': ['overview', 'south-front', 'front-oblique-solid-slate', 'platform-eye', 'concourse', 'great-northern-hotel', 'midland-grand-front', 'gasworks-portals', 'facade-brick-close'],
   'kx-front': ['south-front', 'front-oblique', 'front-oblique-solid-slate', 'roof-above-solid-slate', 'front-oblique-xray', 'roof-above-xray', 'north-gable', 'tower-close', 'front-southwest-pedestrian', 'shed-east-flank', 'gable-oblique', 'porch-close'],
-  'shed-interior': ['platform-eye', 'platform-eye-south', 'shed-interior', 'platform-eye-p1-north', 'platform-eye-p8-south', 'roof-underside', 'furniture-close', 'suburban-p9', 'platform-clock', 'platform-furniture', 'platform-eye-crown-west', 'shed-across-west'],
+  'shed-interior': ['platform-eye', 'platform-eye-south', 'shed-interior', 'platform-eye-p1-north', 'platform-eye-p8-south', 'roof-underside', 'furniture-close', 'suburban-p9', 'suburban-p9-south', 'platform-clock', 'platform-furniture', 'platform-eye-crown-west', 'shed-across-west'],
   'western-concourse': ['concourse', 'concourse-roof-detail', 'western-range', 'western-range-gateline', 'concourse-hotel-junction', 'concourse-exterior-square', 'concourse-funnel-up', 'western-range-full', 'concourse-exterior-west'],
   'historic-neighbours': ['great-northern-hotel', 'midland-grand-front', 'st-pancras-shed', 'st-pancras-shed-oblique', 'gnh-from-square', 'midland-euston-road', 'midland-clock-tower', 'barlow-interior'],
   'city-surroundings': ['overview', 'gasworks-portals', 'front-oblique', 'granary-square', 'gasholders', 'canal-lock', 'kings-boulevard', 'euston-road-east'],
@@ -81,6 +81,11 @@ export const VIEW_ROLES = Object.freeze({
     label: 'Official exterior view for western-concourse criterion C6, the view C6 is scored from: the whole roof from Pancras Road, with the Great Northern Hotel at the right edge.' }),
   'concourse-exterior-square': Object.freeze({ element: 'western-concourse', criterion: 'C6', role: 'context',
     label: 'Context for western-concourse criterion C6, not the view it is scored from: the rubric\'s frozen stand in King\'s Cross Square, from which the Great Northern Hotel stands in front of about half of the canopy. C6 is scored from concourse-exterior-west.' }),
+  // B6 (the partner's decision after shed-gap-scan-1: R-f looks south, the frozen suburban-p9 north): B6 is scored from suburban-p9-south.
+  'suburban-p9-south': Object.freeze({ element: 'shed-interior', criterion: 'B6', role: 'official',
+    label: 'Official view for shed-interior criterion B6, the view B6 is scored from: platform 9 looking south toward the buffers, R-kx-shed-interior-f\'s direction, the outer brick wall on the right.' }),
+  'suburban-p9': Object.freeze({ element: 'shed-interior', criterion: 'B6', role: 'context',
+    label: 'Context for shed-interior criterion B6, not the view it is scored from: platform 9 looking north, away from R-kx-shed-interior-f\'s direction; kept so earlier rounds stay comparable. B6 is scored from suburban-p9-south.' }),
 });
 
 /** A view's part in scoring as a capture record carries it, `scoring` ({ element, criterion, role }) and a `label`; nothing for a view that has none. */
@@ -631,6 +636,16 @@ const FROZEN_STATION_CAMERAS = {
     pos: [7.821052603185734, 2.5, -271.7337435583622],
     target: [17.78834085522388, 2.5, -310.47200842529685],
     source: 'OSM platform 9 canopy middle (furniturePlan canopy 9), eye 1.6 m above platform, looking north along the platform; R-kx-shed-interior-f standpoint (shed-f-suburban-platforms-2022.jpg)',
+  },
+  // B6 (shed-gap-scan-1, B6: R-f looks south to the buffers, suburban-p9 north, so the canopies were scored by inference; the partner's decision, 2026-11-25):
+  // R-f's own direction. Platform 9, 1.5 m in from its west (track) edge, square across from the middle of the canopy's column bay between its
+  // 7th and 8th columns, eye 1.6 m, looking south along the platform with the lens turned 15 degrees west (toward the outer wall) of the edge's
+  // line: R-f's tracks vanish left of the frame's middle (the turn read in memory from the photograph: ASSUMED to a few degrees). B6 is scored
+  // from here (VIEW_ROLES); suburban-p9 stays as its context, so earlier rounds' captures stay comparable.
+  'suburban-p9-south': {
+    pos: [3.8405, 2.5, -260.3813],
+    target: [-16.4362, 2.5, -225.9015],
+    source: 'R-kx-shed-interior-f standpoint and direction (shed-f-suburban-platforms-2022.jpg): OSM platform 9, 1.5 m in from its west edge at the middle of canopy 9\'s column bay, eye 1.6 m, looking south along the platform toward the buffers, turned 15 degrees west toward the outer wall',
   },
 
   // western-concourse.

@@ -5,7 +5,7 @@ import { PLATFORM_HEIGHT, railSegments } from '../../core/scene.ts';
 import type { CityData } from '../../core/city.ts';
 import { addCity } from './city.ts';
 import { buildingsUnderStation, concourseCanopy, platformSouthEnd, shedBufferStops, shedLayout, stationBuilding, stationPlatforms, worldToShed } from '../../core/station.ts';
-import { buildFurniture, buildPlatforms, surfacePlatforms } from './furniture.ts';
+import { buildFurniture, buildPlatforms, buildSuburbanWall, surfacePlatforms } from './furniture.ts';
 import type { FurniturePlan } from './furniture.ts';
 import { buildBufferStops, buildTrack } from './track.ts';
 import { addPortals, portalHole } from './portals.ts';
@@ -103,6 +103,8 @@ function start(): void {
   scene.add(buildPlatforms(data, layout));
   const furniture = buildFurniture(data, layout);
   scene.add(furniture);
+  const suburbanWall = buildSuburbanWall(furniture.userData.plan); // B6: the outer brick wall beside platform 10's canopy
+  if (suburbanWall) scene.add(suburbanWall);
 
   // The station footprint is a roof, not a block: skip it as a building and build the shed. So are
   // the blocks that would stand inside the concourse dome or against the south front.
