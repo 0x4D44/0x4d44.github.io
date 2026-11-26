@@ -585,7 +585,12 @@ export class AnimCrowd {
   mixOver(parent, ch, extra = []) {
     let n = 0, same = 0; const g = garmentGroup(ch); for (const q of this.people) if (q.parent === parent && q.char && q.obj && !q.leaving) { n++; if (garmentGroup(q.char) === g) same++; }   // (one getting off here is not staying - review 18)
     for (const c of extra) { n++; if (garmentGroup(c) === g) same++; }
-    return n + 1 >= 4 && same + 1 > 0.5 * (n + 1);   // (n + 1: the 3rd and 4th people into a car are checked too - 4 of 4 in trousers for 98 s, review 57)
+    if (n + 1 >= 4 && same + 1 > 0.5 * (n + 1)) return true;   // (n + 1: the 3rd and 4th people into a car are checked too - 4 of 4 in trousers for 98 s, review 57)
+    // and the grown-ups of one sex kept to 60 % of a car's: the draw's cap holds where the people are drawn, but boarding and alighting changed a car's mix after it, and a car of
+    // five grown-ups ran 4 women to 1 man for 118 s (review 67)
+    if (ch.kid || !ch.sex) return false; let a = 0, ss = 0; const one = (c) => { if (c && !c.kid && c.sex) { a++; if (c.sex === ch.sex) ss++; } };
+    for (const q of this.people) if (q.parent === parent && q.char && q.obj && !q.leaving) one(q.char); for (const c of extra) one(c);
+    return a + 1 >= 4 && ss + 1 > 0.6 * (a + 1);
   }
   /** would one more person in ch's garment group make it over half of the people of this crowd within r of (x, z)? (riders getting off on to a platform: review 16 counted
    *  a platform near the player over half one garment in 13 of 65 samples) */
@@ -596,7 +601,11 @@ export class AnimCrowd {
   /** would the car be left with one garment over half its people if q (and those already leaving) got off? (riders getting off thinned a car to 7 of 12 in trousers - review 15) */
   mixLeaves(q) {
     const t = new Map(); let n = 0; for (const o of this.people) if (o.parent === q.parent && o.char && o.obj && o !== q && !o.leaving) { n++; const g = garmentGroup(o.char); t.set(g, (t.get(g) || 0) + 1); }
-    if (n < 4) return false; for (const v of t.values()) if (v > 0.5 * n) return true; return false;
+    if (n >= 4) for (const v of t.values()) if (v > 0.5 * n) return true;
+    // nor of one sex over 60 % of the grown-ups left, where this one's going makes it worse (see mixOver)
+    if (q.char && !q.char.kid && q.char.sex) { let a = 0, f = 0; for (const o of this.people) if (o.parent === q.parent && o.char && o.obj && o !== q && !o.leaving && !o.char.kid && o.char.sex) { a++; if (o.char.sex === 'f') f++; }
+      const sh = (k, m) => (m ? Math.max(k, m - k) / m : 0), after = sh(f, a), before = sh(f + (q.char.sex === 'f' ? 1 : 0), a + 1); if (a >= 4 && after > 0.6 && after > before) return true; }
+    return false;
   }
   /** is (x, z) in this car (its frame) within r of the bag at a seated rider's feet? (it stands in front of their toes, about half a metre in from the hips) */
   _bagNear(car, x, z, r = 0.5) {
