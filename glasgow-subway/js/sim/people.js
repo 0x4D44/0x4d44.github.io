@@ -777,7 +777,8 @@ export class AnimCrowd {
     const use = this.phones ? this._phoneUse(p, state, cat) : null;   // who is on a phone: it takes the body of the stock phone clip (head down, or to the ear) and the arms of hold_three.js
     if (use && use.clip) clip = use.clip;
     if (!use && p.hold && p.hold.w > 0 && fade > 0) fade = Math.max(fade, HOLD_OUT + 0.1);
-    if (fade > 0 && p.curClip && /phone/.test(p.curClip.name) && clip !== p.curClip) fade = Math.max(fade, 0.9);
+    const armUp = (c) => !!c && /phone|hold_(pole|rail)/.test(c.name);   // clips with a hand up by the face or on a pole
+    if (fade > 0 && cat !== 'walk' && clip !== p.curClip && (armUp(clip) || armUp(p.curClip))) fade = Math.max(fade, 0.9);   // (in or out of one, the clip's arm swing is the motion, and 0.3 s moved the hand 0.4 - 0.65 m at 3.1 - 3.8 m/s: a phone put away, a call taken, a pole reached for - review 70)
     if (fade > 0 && clip && /hold_(pole|rail)/.test(clip.name) && !(p.curClip && /hold_(pole|rail)/.test(p.curClip.name))) fade = Math.max(fade, 0.8);   // (reaching up for a pole: the hand rose 0.6 m in a third of a second, 3.8 m/s - review 70)  if (!use && p.hold && fade > 0) p.hold.out = Math.max(HOLD_OUT, fade);   // (out of a phone clip with the hold already gone: the arm came down from the ear in 0.3 s, the hand at 3.1-3.6 m/s - review 70)   // ... nor may the hold let go faster than the clip's arms come down (a 1 s sit: they showed empty by the face for half a second - review 45)   // the phone goes away: the clip's own arms (up by the face, in the stock phone clips) must not drop faster than the hold lets go of them
     const was = p.cat, m0 = p.m;
     this._play(p, clip, fade, cat === 'walk' ? (p.speed ? p.speed / ch.walkSpeed : 1) : 0.9 + r() * 0.2);

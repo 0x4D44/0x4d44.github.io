@@ -288,7 +288,7 @@ export function stepBag(rig, sit, pole, fresh, o) {
   if (where === 'back') return;
   const fz = fit.fz;
   if (where === 'floor') {
-    const eOk = rig.eLive; rig.eLive = false;   // (drawn by easeBranch last frame: see there)
+    const eOk = rig.brLive; rig.brLive = false;   // (drawn by easeBranch last frame: see there)
     const yaw = fz > 0 ? 0 : Math.PI, sd0 = fit.side, walk = o && o.walk ? Math.min(1, o.walk) : 0, lift = !!(o && o.lift);
     rig.gh = sit ? -1 : 0;
     const tw = sit || (pole && !(o && o.turn)) ? 0 : walk; rig.fresh = fresh; let dT = fresh ? 0 : (tw - rig.tow) * (o && o.settle ? 0.035 : 0.14);
@@ -348,20 +348,21 @@ const EASE_T = 0.25;   // s
  *  0.18 m and turned it 0.78 rad in one frame, and set-downs kicked 0.10 - 0.13 m on their first frame (review 70). */
 function easeBranch(rig, obj, live, dt) {
   const T = rig.T, mesh = rig.mesh, key = (rig.park ? 1 : 0) | (rig.tow < 0.01 ? 2 : 0) | (rig.down ? 4 : 0) | (rig.pT ? 8 : 0) | (rig.pick ? 16 : 0);
-  const oq = rig.eOq || (rig.eOq = new T.Quaternion()), ov = rig.eOv || (rig.eOv = new T.Vector3()), os = rig.eOs || (rig.eOs = new T.Vector3());
+  if (!(rig.brOq && rig.brOq.isQuaternion)) { rig.brOq = new T.Quaternion(); rig.brOv = new T.Vector3(); rig.brOs = new T.Vector3(); rig.brCp = new T.Vector3(); rig.brCq = new T.Quaternion(); rig.brI = new T.Quaternion(); }   // (and a rig copied as plain data has none of them as three.js objects)
+  const oq = rig.brOq, ov = rig.brOv, os = rig.brOs;
   obj.matrixWorld.decompose(ov, oq, os);
-  const cp = (rig.eCp || (rig.eCp = new T.Vector3())).copy(mesh.position).applyMatrix4(obj.matrixWorld), cq = (rig.eCq || (rig.eCq = new T.Quaternion())).copy(oq).multiply(mesh.quaternion);
-  if (!rig.eP) { rig.eP = new T.Vector3(); rig.eQ = new T.Quaternion(); rig.eD = new T.Vector3(); rig.eDq = new T.Quaternion(); rig.eT = EASE_T; }
-  if (live && rig.eKey !== undefined && key !== rig.eKey) { rig.eD.copy(rig.eP).sub(cp); rig.eDq.copy(cq).invert().premultiply(rig.eQ); rig.eT = 0; }   // (eDq: last frame's drawn = eDq * this frame's)
-  if (!live) rig.eT = EASE_T;
-  rig.eKey = key; rig.eLive = true;
-  if (rig.eT < EASE_T) {
-    const u = rig.eT / EASE_T, k = 1 - u * u * (3 - 2 * u), I = rig.eI || (rig.eI = new T.Quaternion());
-    cp.addScaledVector(rig.eD, k); cq.premultiply(I.identity().slerp(rig.eDq, k));
+  const cp = rig.brCp.copy(mesh.position).applyMatrix4(obj.matrixWorld), cq = rig.brCq.copy(oq).multiply(mesh.quaternion);
+  if (!(rig.brP && rig.brP.isVector3 && rig.brQ && rig.brQ.isQuaternion && rig.brD && rig.brD.isVector3 && rig.brDq && rig.brDq.isQuaternion)) { rig.brKey = undefined; rig.brP = new T.Vector3(); rig.brQ = new T.Quaternion(); rig.brD = new T.Vector3(); rig.brDq = new T.Quaternion(); rig.brT = EASE_T; }
+  if (live && rig.brKey !== undefined && key !== rig.brKey) { rig.brD.copy(rig.brP).sub(cp); rig.brDq.copy(cq).invert().premultiply(rig.brQ); rig.brT = 0; }   // (eDq: last frame's drawn = eDq * this frame's)
+  if (!live) rig.brT = EASE_T;
+  rig.brKey = key; rig.brLive = true;
+  if (rig.brT < EASE_T) {
+    const u = rig.brT / EASE_T, k = 1 - u * u * (3 - 2 * u), I = rig.brI;
+    cp.addScaledVector(rig.brD, k); cq.premultiply(I.identity().slerp(rig.brDq, k));
     mesh.position.copy(cp).applyMatrix4(rig.m); mesh.quaternion.copy(oq).invert().multiply(cq);
-    rig.eT += dt;
+    rig.brT += dt;
   }
-  rig.eP.copy(cp); rig.eQ.copy(cq);
+  rig.brP.copy(cp); rig.brQ.copy(cq);
 }
 
 /** the case on the floor: standing beside the leg, or towed on its wheels (v: the grip, in the body's frame) */
