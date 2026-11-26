@@ -618,8 +618,8 @@ try {
   await shot(p, '21_explore_hillhead');
   { const wa = await ev(p, () => __sim.waitAudit());
     const sc = await ev(p, () => __sim.scalpAudit());
-    ok('hair-coloured scalp under the hair: nearly everyone with hair has the cap on both models, the people on the platform carry it, and nobody but the bun (if worn) is a bare head with strands',
-      sc && sc.chars > 60 && sc.lod >= 0.85 * sc.chars && (sc.full === 0 || (sc.full >= 0.9 * sc.chars && sc.minTris >= 12 && ['', 'adult_suit_bun'].includes(sc.sparse.join()))) && sc.people > 0 && sc.capped === sc.people, JSON.stringify(sc));
+    ok('hair-coloured scalp under the hair: nearly everyone with hair has the cap on both models, the people on the platform carry it, and nobody but the bun (if worn) is a bare head with strands (teen_girl\'s whole scalp is capped on purpose: people.js SCALP_OPT)',
+      sc && sc.chars > 60 && sc.lod >= 0.85 * sc.chars && (sc.full === 0 || (sc.full >= 0.9 * sc.chars && sc.minTris >= 12 && ['', 'adult_suit_bun'].includes(sc.sparse.filter((id) => id !== 'teen_girl').join()))) && sc.people > 0 && sc.capped === sc.people, JSON.stringify(sc));
     const ha = await ev(p, () => __sim.hoseAudit());
     ok('the five people in kilts and long socks have legs: a leg and a whole sock each on both models, sock radii a leg could have, and none of the old holed socks left',
       ha && ha.ids.length === 5 && ha.lod === 5 && ha.old === 0 && ha.minTris >= 300 && ha.rh.every((r) => r >= 0.03 && r <= 0.085), JSON.stringify(ha));
