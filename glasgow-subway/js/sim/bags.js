@@ -292,6 +292,7 @@ export function stepBag(rig, sit, pole, fresh, o) {
     rig.gh = sit ? -1 : 0;
     const tw = sit || (pole && !(o && o.turn)) ? 0 : walk; rig.fresh = fresh; let dT = fresh ? 0 : (tw - rig.tow) * (o && o.settle ? 0.035 : 0.14);
     { const ob = rig.obj, bp = ob && ob.position, st = bp && rig.lp && !fresh ? Math.hypot(bp.x - rig.lp[0], bp.z - rig.lp[1]) : 0; if (bp) rig.lp = [bp.x, bp.z];
+      { const sp = st / ((o && o.dt) || 1 / 60); rig.spd = fresh || rig.spd === undefined ? sp : rig.spd + (Math.min(sp, 3) - rig.spd) * 0.2; }   // (the owner's ground speed, smoothed: see floorPose's trailer)
       if (dT > 0 && rig.park && !(o && o.turn) && st < 0.3) dT = Math.min(dT, st / Math.max(rig.gap || 0.3, 0.15)); }   // (a parked case is picked up as its owner walks to it: the tow grows with the ground the body covers, not with the clock - eased in on time, it glided 0.5 - 0.67 m to the hand of a leaver who had moved 3 cm, and 0.26 m to a boarder standing in the queue - review 65; and no faster than the owner walks, with nothing on the clock: at 1.5x their ground plus a clock floor it closed 1.1 m at 0.057 m a frame, and tilted into a still owner's hand over 3.8 s - review 66)
     rig.down = !fresh && dT < 0;   // (being set down: see floorPose)
     if (fresh) rig.tow = tw; else rig.tow += dT;   // (set back upright slowly after a stepped turn - snapped back in 0.25 s, 36 cm at up to 7 m/s - review 53; and towed round by a pole holder too)
@@ -337,6 +338,8 @@ export function stepBag(rig, sit, pole, fresh, o) {
   mesh.position.set(v.x, Math.max(v.y + (rig.lug ? -0.004 : 0.014), rig.drop + rig.h + 0.012), v.z); mesh.rotation.set(0, 0, def > 0 ? sd * Math.asin(Math.min(0.42, def / L)) : 0);
 }
 
+const TRL_RATE = 0.35, TRL_TH = 0.99, TRL_IN = 0.25, TRL_OUT = 0.5, TRL_EASE = 0.8;   // the trailer's pace being wheeled round to its place (m/s), its handle's greatest lean (rad: acos 0.55, as the towed pose's), and the owner's pace (m/s) below which a walker's case is drawn as a trailer, and above which it is towed rigidly again; and how fast (m/s) the towed pose is eased in from the trailer's
+
 /** the case on the floor: standing beside the leg, or towed on its wheels (v: the grip, in the body's frame) */
 function floorPose(rig, o, walk, sit, pole, yaw, sd0, hx, v) {
   const { mesh, fit } = rig, fz = fit.fz;
@@ -347,14 +350,14 @@ function floorPose(rig, o, walk, sit, pole, yaw, sd0, hx, v) {
   // a parked case stays where it was put in the car (or on the platform), not at a fixed place by the body: the body is its parent, and as a settling rider turned or eased into
   // their place it swung with them - a boarder's case slid 0.3 m along the car after they had stopped (review 64)
   let dyaw = 0; const ob = rig.obj, par = ob && ob.parent;
-  if (!rig.park) rig.parkP = null;
+  if (!rig.park) { rig.parkP = null; rig.pT = false; }
   else if (par) {
     const P = rig.pv || (rig.pv = new rig.T.Vector3());
     if (!rig.parkP) { const pm = rig.pm || (rig.pm = new rig.T.Matrix4()); pm.copy(par.matrixWorld).invert(); P.set(rig.park[0], 0, rig.park[1]).applyMatrix4(ob.matrixWorld).applyMatrix4(pm); rig.parkP = [P.x, P.z, ob.rotation.y]; }
     else { P.set(rig.parkP[0], 0, rig.parkP[1]).applyMatrix4(par.matrixWorld).applyMatrix4(rig.m); rig.park = [P.x, P.z]; dyaw = rig.parkP[2] - ob.rotation.y; }
   }
-  const sx = rig.park ? rig.park[0] : fit.midx + sd0 * (fit.hip + rig.w / 2 + 0.06), sz = rig.park ? rig.park[1] : -fz * 0.1, t = rig.tow;
-  if (t < 0.01) { mesh.position.set(sx, 0, sz); mesh.rotation.set(0, yaw + dyaw, 0); return; }
+  const sx = rig.park ? rig.park[0] : fit.midx + sd0 * (fit.hip + rig.w / 2 + 0.08), sz = rig.park ? rig.park[1] : -fz * 0.12, t = rig.tow;   // (its place beside the leg, as the trailer's: 2 cm nearer, the foot was 0.8 - 4 cm from its side)
+  if (t < 0.01) { mesh.position.set(sx, 0, sz); mesh.rotation.set(0, yaw + dyaw, 0); rig.sb = 0; return; }
   // the tilt follows the hand's height with the case's own inertia: taken straight from it (acos is steep near upright), the 10 - 12 cm the hand rises and falls in a stride
   // swung the wheels 0.1 - 0.24 m along the floor in one frame (review 63's towed-case whip)
   const th0 = Math.acos(Math.min(0.95, Math.max(0.55, (v.y + 0.02) / rig.gripH)));   // (never nearer upright than 18 degrees, where acos is steepest: a towed case leans back on its wheels)
@@ -364,11 +367,19 @@ function floorPose(rig, o, walk, sit, pole, yaw, sd0, hx, v) {
   // the case's own (0, gripH, gz) is at the grip; its wheels (0, 0, pz) are on the floor
   const lz = rig.gripH * sn + rig.gz * c, wy = -rig.pz * sn;
   const tx = gx, tz = gzw - fz * lz, ty = -wy;   // towed
+  // Standing with the handle still in the hand (turning or stepping into place to settle, or turning at a pole) the case is a trailer: its wheels stay where they are on the
+  // floor, held in the car's frame, and only the handle tilts to the hand; the hand drags it only at full stretch, and wheels it round beside the leg at a hand's pace. Drawn as
+  // the rigid towed pose turned about the grip, it slid 0.8 - 2.3 m beside a still owner, and was set down 0.7 - 1.0 m off or inside the shin (review 67)
+  // And so it is for a walker barely moving (turning as they set off, or shuffling in a queue): towed rigidly, it swung 1.3 m round one who turned 2.3 rad while covering 0.34 m (review 67).
+  // In and out of it on the owner's pace, with a margin, so a walker near the pace does not flick between the two
+  const slow = rig.spd !== undefined && (rig.sP ? rig.spd < TRL_OUT : rig.spd < TRL_IN);
+  if (o && (o.settle || slow) && !sit && par && !rig.fresh && t > 0.02 && !rig.down && !o.lift) { trailer(rig, o, t, gx, gzw, yaw); return; }
+  rig.sP = null;
   rig.gap = rig.park ? Math.hypot(tx - sx, tz - sz) : 0;   // (how far a parked case is from the hand: see the tow's pick-up)
   if (o && o.settle && (sit || pole ? 0 : walk) === 0 && !rig.park && t > 0.5) rig.park = rig.wasDown !== undefined ? [mesh.position.x, mesh.position.z] : [tx, tz];   // (where it is drawn: trailing its handle it is not at the rigid towed place, and parked there it jumped 0.37 - 0.56 m)
   // the set-down starts where the case is now: the park point is taken as the settle begins, before the settling turn swings the towed case round the body, and stood up at that
   // stale point the case jumped 0.77 - 1.60 m in a frame and stood a metre from its owner for the ride (review 66). Not on a body's first frame, whose mesh is still where a fresh rig puts it.
-  if (rig.park && rig.down && rig.wasDown === false) { rig.park = [mesh.position.x, mesh.position.z]; rig.parkP = null; }
+  if (rig.park && rig.down && rig.wasDown === false && !rig.pT) { rig.park = [mesh.position.x, mesh.position.z]; rig.parkP = null; }
   rig.wasDown = rig.down;
   const k = rig.park && rig.down ? 0 : t;   // (set down where it was parked: it stands up there on its wheels, and is not drawn after the hand as the arm goes back to the idle pose - it slid 0.24 - 0.59 m over 3.7 s beside a still owner, review 65)
   // The towed case trails its handle like a trailer: its wheels are only drawn towards the hand, never swung round it. Drawn as a rigid offset behind the hand, the case swept
@@ -385,8 +396,47 @@ function floorPose(rig, o, walk, sit, pole, yaw, sd0, hx, v) {
   if (k > 0 && par) { const P = rig.pv || (rig.pv = new rig.T.Vector3()), pm = rig.pm || (rig.pm = new rig.T.Matrix4()); pm.copy(par.matrixWorld).invert(); P.set(rx, 0, rz).applyMatrix4(ob.matrixWorld).applyMatrix4(pm); rig.wP = [P.x, P.z]; }
   else rig.wP = null;
   if (k === 0) mesh.position.set(rig.park[0], ty * t, rig.park[1]); else mesh.position.set(sx + (rx - sx) * t, ty * t, sz + (rz - sz) * t);
-  mesh.rotation.set(th, yaw + dyaw * (1 - t), 0);
+  mesh.rotation.set(th, yaw + dyaw * (rig.pT ? 1 : 1 - t), 0);   // (stood up where the trailer left it, facing as it did: see trailer)
   if (al) mesh.quaternion.premultiply((rig.qa || (rig.qa = new rig.T.Quaternion())).setFromAxisAngle(rig.ay || (rig.ay = new rig.T.Vector3(0, 1, 0)), al * t));   // (in the parent's frame, after the case's own order of rotations)
+  // walking off from the trailer's pose, the towed pose is eased in over half a second rather than taken at once
+  if (k === 0) rig.sb = 0;
+  else if (rig.sb > 0 && par && rig.sPos) {
+    const P = rig.tv || (rig.tv = new rig.T.Vector3()), Q = rig.tq || (rig.tq = new rig.T.Quaternion());
+    // (from the trailer's last pose, carried with the body from there, and at no more than TRL_EASE over the floor: eased on the clock from a pose fixed in the car, it went 0.11 m a frame)
+    if (!rig.sBP) { P.fromArray(rig.sPos).applyMatrix4(par.matrixWorld).applyMatrix4(rig.m); Q.fromArray(rig.sQ).premultiply((rig.tq2 || (rig.tq2 = new rig.T.Quaternion())).copy(ob.quaternion).invert()); rig.sBP = P.toArray(); rig.sBQ = Q.toArray(); }
+    P.fromArray(rig.sBP); Q.fromArray(rig.sBQ); const D = P.distanceTo(mesh.position), dt = (o && o.dt) || 1 / 60;
+    mesh.position.lerp(P, rig.sb); mesh.quaternion.slerp(Q, rig.sb); rig.sb = Math.max(0, rig.sb - Math.min(2 * dt, TRL_EASE * dt / Math.max(D, 1e-3)));
+  }
+}
+
+/** the case as a trailer, its owner standing with the handle in their hand (see floorPose): (gx, gz) is the grip on the floor plan, in the body's frame */
+function trailer(rig, o, t, gx, gz, yaw) {
+  const { mesh, fit } = rig, ob = rig.obj, par = ob.parent, T = rig.T, P = rig.tv || (rig.tv = new T.Vector3()), pm = rig.pm || (rig.pm = new T.Matrix4());
+  pm.copy(par.matrixWorld).invert();
+  const toPar = (x, z) => { P.set(x, 0, z).applyMatrix4(ob.matrixWorld).applyMatrix4(pm); return [P.x, P.z]; }, toBody = (x, z) => { P.set(x, 0, z).applyMatrix4(par.matrixWorld).applyMatrix4(rig.m); return [P.x, P.z]; };
+  // from where it is drawn now; and handed over between crowds (on to a train), from where the old body left it, which the trailer holds: eased over as well, it went 1.3 m from the
+  // owner and was dragged back 0.4 m in a frame
+  if (!rig.sP || rig.carry) { rig.sP = toPar(mesh.position.x, mesh.position.z); rig.carry = null; }
+  let [bx, bz] = toBody(rig.sP[0], rig.sP[1]);
+  // wheeled round to its place beside the leg (about 0.45 m from the pelvis, clear of the knee and the foot), round the body rather than through it, at no more than a hand's pace
+  if (t > 0.5 && o && o.settle) {
+    const sd = fit.side, lx = fit.midx + sd * (fit.hip + rig.w / 2 + 0.08), lz = -fit.fz * 0.12, rt = Math.hypot(lx, lz), at = Math.atan2(lx, lz);
+    let r = Math.hypot(bx, bz), a = Math.atan2(bx, bz), da = at - a; da -= 2 * Math.PI * Math.round(da / (2 * Math.PI));
+    const step = TRL_RATE * ((o && o.dt) || 1 / 60), dr = Math.max(-step, Math.min(step, rt - r)); r = Math.max(r + dr, Math.min(r, 0.38));
+    a += Math.max(-step / Math.max(r, 0.3), Math.min(step / Math.max(r, 0.3), da)); bx = r * Math.sin(a); bz = r * Math.cos(a);
+  }
+  // dragged by the handle only at full stretch
+  const A = Math.hypot(rig.gripH, rig.gz), ph = Math.atan2(rig.gz, rig.gripH), reach = A * Math.sin(TRL_TH + ph);
+  let dx = bx - gx, dz = bz - gz, d = Math.hypot(dx, dz); if (d > reach) { bx = gx + dx * reach / d; bz = gz + dz * reach / d; d = reach; }
+  rig.sP = toPar(bx, bz);
+  const th = Math.max(0, Math.min(TRL_TH, Math.asin(Math.min(1, d / A)) - ph)), psi = d > 0.03 ? Math.atan2(gx - bx, gz - bz) : (rig.sPsi !== undefined ? rig.sPsi - ob.rotation.y : yaw);
+  rig.sPsi = psi + ob.rotation.y;
+  mesh.position.set(bx, rig.pz * Math.sin(th), bz); mesh.rotation.set(th, psi, 0); if (rig.handle) rig.handle.position.y = 0;
+  // set down from here, it stands where it is, facing as it does (floorPose's park, held in the car's frame); and walked off from here, the towed pose is eased in
+  rig.park = [bx, bz]; rig.parkP = [rig.sP[0], rig.sP[1], psi + ob.rotation.y - yaw]; rig.pT = true; rig.th = th / Math.max(t, 0.05); rig.wP = rig.sP.slice(); rig.wasDown = false;
+  mesh.updateMatrix(); const M = rig.tm || (rig.tm = new T.Matrix4()); M.multiplyMatrices(ob.matrix, mesh.matrix);
+  const Q = rig.tq || (rig.tq = new T.Quaternion()), S = rig.ts || (rig.ts = new T.Vector3()), W = rig.tw2 || (rig.tw2 = new T.Vector3()); M.decompose(W, Q, S);
+  rig.sPos = [W.x, W.y, W.z]; rig.sQ = [Q.x, Q.y, Q.z, Q.w]; rig.sb = 1; rig.sBP = null;
 }
 
 /** take a bag off a clone (the clone is being thrown away; the geometries and the material are shared and stay) */
