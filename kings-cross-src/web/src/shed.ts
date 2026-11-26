@@ -1525,6 +1525,13 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
       flanks.push(vaultBand(uc, sp, R + ROOF_SKIN, a0, a1, L, ARC_STEPS));
       lining.push(vaultBand(uc, sp, R + ROOF_SKIN - 0.02, a0, a1, L, ARC_STEPS));
     }
+    // B2 round 2 (b2-valley round-1 score: a sky-blue seam along each spine-side springing): the lining, 2 cm inside the slate, stops 2 cm off the wall's
+    // face, and the cavity between them opened downward there, a sight-line over the kerb and the gutter onto the far vault's outside. A closer board in the
+    // lining, level from its edge into the kerb's top (4 mm under it), shuts it.
+    const s = vault === 0 ? 1 : -1, [eu, ey] = vaultPoint(uc, sp, R + ROOF_SKIN - 0.02, vault === 0 ? Math.PI - cut : cut);
+    const closer = new THREE.PlaneGeometry(0.035 + Math.abs(uc + s * R - eu), L).rotateX(-Math.PI / 2); // facing up: the lining's BackSide shows it from below
+    closer.translate(eu + s * (0.035 + Math.abs(uc + s * R - eu)) / 2 - s * 0.01, ey, -L / 2);
+    lining.push(closer);
     glass.push(vaultBand(uc, sp, R + ROOF_SKIN, Math.PI / 2 - phi, Math.PI / 2 + phi, L, ARC_STEPS)); // (the band is 130 degrees now, not 33: four chords would flatten the crown by half a metre)
   });
   const cladMat = (material('slate') as THREE.MeshLambertMaterial).clone();

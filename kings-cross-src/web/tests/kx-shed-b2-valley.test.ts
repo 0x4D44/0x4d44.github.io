@@ -93,3 +93,21 @@ test('B2: the ribs\' inner booms land on the spine\'s corbel caps, the vaults\' 
   for (const uc of shedVaultCentres(layout)) assert.ok(Math.abs(shedRoofY(layout, uc) - (sp + R)) < 1e-6, `the roof's crown over u ${uc.toFixed(2)}`);
   assert.equal(shedRoofY(layout, spine), sp, 'over the wall, the springing');
 });
+
+test('B2 round 2: no platform eye sees sky through the gap between a vault\'s spine-side lining and the wall\'s face (the round-1 seam)', async () => {
+  const { PLATFORM_HEIGHT } = await import('../../core/scene.ts');
+  const top = shed.valleyTop(sp), seeThrough = new Set(['shed-roof-glass', 'shed-roof-bars']);
+  const opaque: THREE.Object3D[] = [];
+  group.traverse((o) => { if ((o as THREE.Mesh).isMesh && !seeThrough.has(o.name)) opaque.push(o); });
+  const misses: string[] = [];
+  // the lining (R + ROOF_SKIN - 0.02) stops 2 cm off the wall's face, under the slate's edge (R + ROOF_SKIN) on the face: the cavity between them opens
+  // downward there, and a sight-line through it passes over the kerb and the gutter onto the far vault's outside (its glass, or the slate's outer face).
+  // Aim at a point in that cavity just above the kerb's top, from eyes 1.6 m above the platforms beside the wall.
+  for (const v of [6.1 * 5, 6.1 * 20, 6.1 * 35]) for (const s of [-1, 1] as const) for (const du of [3, 8, 14]) for (const into of [0.005, 0.01]) {
+    const eye = group.localToWorld(new THREE.Vector3(spine + s * (half + du), PLATFORM_HEIGHT + 1.6, -v));
+    const aim = group.localToWorld(new THREE.Vector3(spine + s * (half + into), top + 0.002, -v));
+    const d = aim.distanceTo(eye), hit = new THREE.Raycaster(eye, aim.clone().sub(eye).normalize(), 0, d - 1e-3).intersectObjects(opaque, false)[0];
+    if (!hit) misses.push(`v ${v.toFixed(1)} ${s < 0 ? 'west' : 'east'} eye ${du} m off the face, aim ${into} m off it`);
+  }
+  assert.deepEqual(misses, [], `sky through the spine-side gutter gap: ${misses.length} sight-lines`);
+});
