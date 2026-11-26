@@ -1594,7 +1594,7 @@ export class AnimCrowd {
       p.yawT = Math.atan2(-dx, -dz); return false; }
     if (pick.off * side < 0) { p.side = -side; p.sideT = 1.0; } else if (pick.off !== 0) p.sideT = Math.max(p.sideT || 0, 0.8);
     // a veer round something is a heading to follow, but it must not shorten the planned stop: the distance to brake into is still the distance to the target
-    const move = steerStep(p, dt, { hT: Math.atan2(-pick.ux, -pick.uz), want: Math.min(sp, this._followCap(p, dx / d, dz / d, 0.35)), d, stop: !!p.stopHere });
+    const move = steerStep(p, dt, { hT: Math.atan2(-pick.ux, -pick.uz), want: Math.min(sp, this._followCap(p, dx / d, dz / d), this._followCap(p, pick.ux, pick.uz, 0.35, true)), d, stop: !!p.stopHere });
     p.steered = true; p.yawT = p.yaw;
     let sx = -Math.sin(p.yaw) * move, sz = -Math.cos(p.yaw) * move;
     if (!ok(p.x + sx, p.z + sz)) {   // not facing the checked way yet and the way it faces is blocked: hold, turn, then go
@@ -1611,14 +1611,17 @@ export class AnimCrowd {
   _paceK(p) { const c = p.char; if (!c) return 1; return c._pace || (c._pace = (c.elder ? 0.78 : 1) * (/pencil/.test(c.outfit) ? 0.85 : 1)); }
   /** following someone walking the same way: the pace that keeps a comfortable gap behind them (their speed at 0.6 m, less when closer, braking smoothly to a stop 0.6 m behind
    *  if they stop). Without it the follower closed in at full pace until no heading was clear, then stopped dead for a frame - 21 times in 4.4 s behind one walker (review 70). */
-  _followCap(p, ux, uz, any = false) {
+  _followCap(p, ux, uz, any = false, only = false) {
     let cap = Infinity; const sx = -uz, sz = ux;
     for (const q of this.people) { if (q === p || q.hidden || !q.obj || q.static) continue; const walking = q.mode === 'go' || q.mode === 'walk'; if (!walking && !any) continue;
-      const ex = q.x - p.x, ez = q.z - p.z, proj = ex * ux + ez * uz; if (proj <= 0.05 || proj > 1.6 || Math.abs(ex * sx + ez * sz) > 0.42) continue;
+      const ex = q.x - p.x, ez = q.z - p.z, proj = ex * ux + ez * uz; if (proj <= 0.05 || proj > 1.6 || Math.abs(ex * sx + ez * sz) > (only ? 0.3 : 0.42)) continue;
       // any: on a rail route (_railStep, not walking past), anyone else in the way is braked for too, to a stop 0.5 m short - only the same-way walker was, so a walker met someone
       // standing or crossing at full pace, inside the 0.5 m it looks, and stopped dead in a frame (review 76: every one-frame stop traced at St Enoch was this, often in chains)
-      if (!walking || -Math.sin(q.yaw) * ux - Math.cos(q.yaw) * uz < 0.5) { if (any) cap = Math.min(cap, Math.max(any === true ? 0 : any, 1.2 * (proj - 0.5))); continue; }   // (any: true brakes to a stop; a number brakes to that pace - a _step walker can still steer round them)   // (going the same way, below)
-      cap = Math.min(cap, Math.max(0, (q.v || 0) + 1.2 * (proj - 0.6))); }
+      if (!walking || -Math.sin(q.yaw) * ux - Math.cos(q.yaw) * uz < 0.5) { if (any === true) { const e = Math.hypot(ex, ez); if (proj > 0.3 * e) cap = Math.min(cap, Math.max(0, 1.2 * (e - 0.4))); } else if (any) cap = Math.min(cap, Math.max(any, 1.2 * (proj - 0.5))); continue; }   // (any: true brakes to a stop; a number brakes to that pace - a _step walker can still steer round them)   // (going the same way, below)
+      if (only) continue; cap = Math.min(cap, Math.max(0, (q.v || 0) + 1.2 * (proj - 0.6))); }
+    // (review 77: the pace floor was looked for along the line to the target, so a walker veering round someone standing there crept past them at 0.35 m/s - 80 shuffles in 520 s;
+    //  _step now looks only along the heading it picked (only: a 0.3 m band, standers and crossers only). On a rail leg the stop is 0.4 m short (centre to centre, and only for someone
+    //  in the hold-up check's own cone ahead), inside the 0.5 m that check looks: a stop 0.5 m short, or for someone alongside, left a boarder stood 5.6 s behind one; and stopped at 0.5 m, the walker was never "held up", so the one ahead never made way and the boarder timed out short of the door and was slid in, legs still)
     return cap;
   }
   _railStep(p, dt, sp) {
