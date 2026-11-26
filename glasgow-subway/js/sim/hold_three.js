@@ -67,6 +67,13 @@ export class HoldRig {
     const S = this.saved, B = this.bones;
     if (!this.applied) { for (let i = 0; i < B.length; i++) { const q = B[i].quaternion; S[i * 4] = q.x; S[i * 4 + 1] = q.y; S[i * 4 + 2] = q.z; S[i * 4 + 3] = q.w; } this.applied = true; }
     const T = this.target(kind), F = T.F, err = {};
+    if (rising) this.wFall = w < 0.999 ? -1 : 0; else if (this.wFall === -1) this.wFall = w;   // (-1: rising from the captured pose; a weight: the rise was cut off there)
+    if (!rising && this.wFall > 0 && this.hasSnap) {
+      // a rise cut off part-way (walked off mid-raise): its arms stood on the captured pose, so they go back to the animation's own as the weight falls, not in one frame
+      // (review 74: adult_heel_boots's two hands jumped 0.097 m when go -> walk cut off a phone_stand raise at 0.48)
+      const N = this.snap, q = this.q2 || (this.q2 = this.q.clone()), k = Math.min(1, w / this.wFall);
+      for (let i = 0; i < B.length; i++) { const free = !T.hands[i < 3 ? 'r' : 'l'], s = free ? (1 - this.wFall) * k : k; q.set(N[i * 4], N[i * 4 + 1], N[i * 4 + 2], N[i * 4 + 3]); B[i].quaternion.slerp(q, s); }
+    }
     if (rising && this.hasSnap && w < 0.999) {
       // a hand the hold does not take (the free one, on a call) goes from the captured pose to the animation's own by w, not all at once when w reaches 1 (review 71: woman_dress's
       // free hand stepped 0.55 m in a frame going from texting to a call)
