@@ -278,6 +278,13 @@ export class AnimCrowd {
     for (const m of p.seatMeshes) if (m.morphTargetInfluences) m.morphTargetInfluences[0] = p.seatW;
   }
   _seatDraped(c) { if (c.seatDrape === undefined) { c.seatDrape = false; for (const r of [c.node, c.lodNode]) if (r) r.traverse((m) => { if (m.isMesh && m.geometry && m.geometry.attributes._seat) c.seatDrape = true; }); } return c.seatDrape; }
+  /** woman_midi: her skirt's top band and the jumper's last few centimetres lie within millimetres of each other, and as the spine (the jumper) and the pelvis (the skirt) move
+   *  apart the jumper came through the skirt as a row of red and black teeth (review 73, 74; also on the far model). The jumper is biased toward the eye in depth, so where they
+   *  touch it is drawn over the skirt. (Drawing the skirt in or clipping its top bared the body; pushing the hem out flared the cuffs and did not hold once posed.) */
+  _jumperOnTop(root) {
+    root.traverse((m) => { if (!m.isSkinnedMesh || !/^cloth_.*(shirt|sweater|knit)/i.test((m.material && m.material.name) || '')) return;
+      if (!m.material.userData.onTop) { m.material = m.material.clone(); m.material.userData.onTop = true; m.material.polygonOffset = true; m.material.polygonOffsetFactor = -2; m.material.polygonOffsetUnits = -8; } });
+  }
   _skirted(c) { return /kilt|skirt|highland|dress/.test(c.outfit) && !/trews/.test(c.outfit); }
   /** the bodyfit.js fits of the full-detail model (people.glb) */
   _fitFull(c) {
@@ -289,6 +296,7 @@ export class AnimCrowd {
     f.hose = fitHoseLegs(T, n);   // legs for the people in long socks (theirs were deleted with the skin a garment hid); the kilt is held off these
     f.legs = sk ? fitLegs(T, n, Object.assign(f.hose ? { radii: f.hose.radii } : {}, /pencil|midi/.test(c.outfit) ? { slim: 0.05, margin: 0.012, slimRamp: 0.03, slimCap: 0.4 } : { slimRamp: 0.04 })) : null;   // (a pencil skirt fits close: the thighs came through its front mid-stride - review 3)   // skirts held off the thighs (shader patch + slimmed thigh skin)
     f.trim = sk ? trimUnderSkirt(T, n) : null;   // tops: nothing drawn under the skirt's waist edge
+    if (c.id === 'woman_midi') this._jumperOnTop(n);
     f.cuffs = !sk && /trousers|trews|leggings/.test(c.outfit) ? this._extendCuffs(n) : 0;
     f.underTop = !sk && /trousers|shorts|trews|leggings/.test(c.outfit) ? trimUnderTop(T, n) : null;
     f.under = !sk && /trousers|shorts|trews|leggings/.test(c.outfit) ? trimUnderTrousers(T, n) : null;   // no skin left under trousers to come through the seat
@@ -308,6 +316,7 @@ export class AnimCrowd {
     const radii = (f.hoseLod && f.hoseLod.radii) || (f.legs && f.legs.radii) || LEG_RADII[c.id];
     f.legsLod = sk ? fitLegs(T, n, { radii, slim: 0.055, slimCap: 0.55, slimRamp: 0.2 }) : null;
     f.trimLod = sk ? trimUnderSkirt(T, n) : null;
+    if (c.id === 'woman_midi') this._jumperOnTop(n);
     f.cuffsLod = !sk && /trousers|trews|leggings/.test(c.outfit) ? this._extendCuffs(n) : 0;
     f.underTopLod = !sk && /trousers|shorts|trews|leggings/.test(c.outfit) ? trimUnderTop(T, n) : null;
     f.underLod = !sk && /trousers|shorts|trews|leggings/.test(c.outfit) ? trimUnderTrousers(T, n) : null;
