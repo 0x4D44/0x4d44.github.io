@@ -167,6 +167,17 @@ export function pickChar(chars, pool, filter, rng, local, global = IN_USE) {
 /** garments whose asset left the body's skin in under them: the skin comes out through the cloth wherever the two are skinned differently. What the garment covers is not drawn
  *  (_hideSkinUnder). Review 68: ya_ginger_long's blouse showed a 4 cm patch of skin at the right shoulder blade and specks down the back */
 const SKIN_UNDER = { ya_ginger_long: /lace_up_blouse/i };
+// One garment texture can carry two garments (MakeHuman's casualsuit: a T-shirt above, jeans below). { region: [u0, v0, u1, v1], rgb }
+// re-dyes the texels inside that UV box: their brightness kept, their hue replaced, so the jeans and the shirt can differ.
+function regionTint(mat, o) {
+  const [u0, v0, u1, v1] = o.region, f = (x) => x.toFixed(4), prev = mat.onBeforeCompile, key = 'rgn' + o.region.join(',') + o.rgb.join(',');
+  mat.onBeforeCompile = (sh, r) => { if (prev) prev.call(mat, sh, r);
+    sh.fragmentShader = sh.fragmentShader.replace('#include <map_fragment>', `#include <map_fragment>
+#ifdef USE_MAP
+if (vMapUv.x > ${f(u0)} && vMapUv.x < ${f(u1)} && vMapUv.y > ${f(v0)} && vMapUv.y < ${f(v1)}) { float lum = dot(texture2D(map, vMapUv).rgb, vec3(0.299, 0.587, 0.114)); diffuseColor.rgb = lum * vec3(${o.rgb.map(f).join(', ')}); }
+#endif`); };
+  mat.customProgramCacheKey = () => key; mat.needsUpdate = true;
+}
 const GARMENT_TINT = { woman_mini: [[/skirt/i, 0.09, 0.12, 0.1], [/camisole/i, 0.22, 0.3, 0.55]], elder_woman_coat: [[/^cloth_coat\./i, 0.33, 0.2, 0.09, 'flat']],
   ya_winter: [[/^cloth_coat\./i, 0.035, 0.045, 0.09, 'flat']], teen_tube: [[/skirt/i, 0.07, 0.12, 0.3, 'flat']], ya_ginger_lad: [[/casualsuit/i, 0.32, 0.32, 0.32]],
   man_kilt_casual: [[/sweater/i, 0.3, 0.26, 0.3]], teen_skater: [[/tennisshoes/i, 0.06, 0.06, 0.07]],
@@ -178,7 +189,7 @@ const GARMENT_TINT = { woman_mini: [[/skirt/i, 0.09, 0.12, 0.1], [/camisole/i, 0
   // the one young woman's face (skin_young_asian_female) on four ids: each her own colouring, so they are four people and not one twice (review 70)
   woman_student: [[/^(alpha_|scalp_alpha_)hair/, 0.34, 0.22, 0.15], [/^skin_/, 1.06, 0.97, 0.95]], adult_baggy_knit: [[/^(alpha_|scalp_alpha_)hair/, 0.16, 0.13, 0.12], [/^skin_/, 0.84, 0.71, 0.6]],
   teen_tee: [[/^(alpha_|scalp_alpha_)hair/, 0.75, 0.4, 0.26], [/^skin_/, 1.1, 1.03, 1.0]], sum_crop_bike: [[/^skin_/, 0.93, 0.8, 0.67]],
-  girl_ginger: [[/casualsuit/i, 0.82, 0.88, 1.0]] };   // (her jeans' rust smear, calmed)   // (review 68: near-black brows read as a frown - a soft dark brown)   // (review 67: man_elder's skin grey and grimy, man_longcoat's orange - warmed and cooled)   // (review 13: the one maze-striped coat on two women - now a plain camel coat and a plain navy one; the tartan mini on two girls - teen_tube's now plain blue)   // (review 13: the boots' white texture parts stretched into white wedges at the boot tops - now the boot's own colour throughout)   // (review 11: man_beard's red jumper on man_kilt_casual too - now a dark burgundy; teen_skater's white trainers on sum_loose_shorts_w's template - now black)
+  girl_ginger: [[/casualsuit/i, 0.82, 0.88, 1.0, { region: [0, 0.44, 0.72, 1], rgb: [0.9, 1.25, 2.1] }]] };   // (her jeans' rust smear, calmed)   // (review 68: near-black brows read as a frown - a soft dark brown)   // (review 67: man_elder's skin grey and grimy, man_longcoat's orange - warmed and cooled)   // (review 13: the one maze-striped coat on two women - now a plain camel coat and a plain navy one; the tartan mini on two girls - teen_tube's now plain blue)   // (review 13: the boots' white texture parts stretched into white wedges at the boot tops - now the boot's own colour throughout)   // (review 11: man_beard's red jumper on man_kilt_casual too - now a dark burgundy; teen_skater's white trainers on sum_loose_shorts_w's template - now black)
 /** a face whose resting set reads as a scowl wears this much of the smile at rest (review 69: woman_midi - the brows are under her fringe, the frown is in the mouth) */
 const REST_SMILE = { woman_midi: 0.3 };
 /** the four garment groups the crowd keeps any one of under half of the people near by (_pick) */
@@ -220,7 +231,7 @@ export class AnimCrowd {
     for (const c of this.chars) for (const r of [c.node, c.lodNode]) if (r) r.traverse((m) => { const mt = m.isMesh && m.material; if (!mt || !/^alpha_(brows|lashes)/.test(mt.name || '') || mt.userData.soft) return; mt.userData.soft = true; mt.transparent = true; mt.alphaTest = 0.04; mt.depthWrite = false; mt.needsUpdate = true; });
     // hair cards: cut off hard at the export's 0.5, their tips are jagged shards and slabs across the face (reviews 67, 68); with multisampling on, alpha to coverage feathers the cut
     for (const c of this.chars) for (const r of [c.node, c.lodNode]) if (r) r.traverse((m) => { const mt = m.isMesh && m.material; if (!mt || !/^alpha_hair/.test(mt.name || '') || mt.alphaToCoverage || !(mt.alphaTest > 0)) return; mt.alphaToCoverage = true; mt.needsUpdate = true; });
-    for (const c of this.chars) { const T = GARMENT_TINT[c.id]; if (T) for (const r of [c.node, c.lodNode]) if (r) r.traverse((m) => { if (!m.isMesh || !m.material || m.material.userData.tintOf === c.id) return; const t = T.find((x) => x[0].test(m.material.name || '')); if (!t) return; m.material = m.material.clone(); m.material.color.setRGB(t[1], t[2], t[3]); if (t[4] === 'flat') { m.material.map = null; m.material.needsUpdate = true; } m.material.userData.tintOf = c.id; }); }   // ('flat': the picture goes and the colour stands alone - a texture whose light parts stretch into wedges)   // (a clone: one material can be shared by several characters in the file)
+    for (const c of this.chars) { const T = GARMENT_TINT[c.id]; if (T) for (const r of [c.node, c.lodNode]) if (r) r.traverse((m) => { if (!m.isMesh || !m.material || m.material.userData.tintOf === c.id) return; const t = T.find((x) => x[0].test(m.material.name || '')); if (!t) return; m.material = m.material.clone(); m.material.color.setRGB(t[1], t[2], t[3]); if (t[4] === 'flat') { m.material.map = null; m.material.needsUpdate = true; } else if (t[4] && t[4].region) regionTint(m.material, t[4]); m.material.userData.tintOf = c.id; }); }   // ('flat': the picture goes and the colour stands alone - a texture whose light parts stretch into wedges)   // (a clone: one material can be shared by several characters in the file)
     // the 21 rigs share bone names; GLTFLoader suffixed the duplicates (hips_5 ...). The shared clips address the plain names -> canonicalise per clone.
     this.boneNames = new Set(); { const f = this.chars[0]; if (f) (f.node || f.lodNode).traverse((o) => { if (o.isBone) this.boneNames.add(o.name); }); }   // first rig keeps the plain names (spine_01 ... are REAL names: never strip blindly)
     this.canon = (n) => (this.boneNames.has(n) ? n : (this.boneNames.has(n.replace(/_\d+$/, '')) ? n.replace(/_\d+$/, '') : n));
