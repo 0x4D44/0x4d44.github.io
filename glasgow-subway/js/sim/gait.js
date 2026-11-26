@@ -319,7 +319,7 @@ function startSwing(g, f, tgt, o) {   // o = { T (s) | null for phase driven, th
 // ------------------------------------------------------------------------------------------------------------------------ the update
 const V_ON = 0.16, V_OFF = 0.09, ACC_TAU = 0.1, ACC_MAX = 3;
 const STEP_CAP = 1.15;
-const REACH_DROP = 0.12, DROP_RISE = 0.4;   // m/s: the fastest the pelvis comes back up from a reach drop (see gaitUpdate: g.dropS)   // m: the most the pelvis is lowered below the stride's own height to let the feet reach   // a landing is at most this many steps (of the speed being reached) on from the other foot   // (ACC_*: the smoothing (s) and the ceiling (m/s^2) of the acceleration the landings are placed for)
+const REACH_DROP = 0.11, DROP_RISE = 0.4;   // m/s: the fastest the pelvis comes back up from a reach drop (see gaitUpdate: g.dropS)   // m: the most the pelvis is lowered below the stride's own height to let the feet reach   // a landing is at most this many steps (of the speed being reached) on from the other foot   // (ACC_*: the smoothing (s) and the ceiling (m/s^2) of the acceleration the landings are placed for)
 /** Advance the gait by dt (<= 1/30 s). inp = { x, z, yaw (the person's world position and heading), v (ground speed), walking (the game wants a walk),
  *  stopD (optional: the metres the body still has to travel along its heading before it comes to rest, for a person who is walking to a place to STAND - the last steps then land where
  *  they will stand instead of a stride ahead of it) } */
