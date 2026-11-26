@@ -151,8 +151,8 @@ export const FIGURES = {
   clockWidth: 0.65,
   clockTall: 0.25,
 
-  // --- canopies (platforms 9 and 10). MEASURED in memory from R-kx-shed-interior-f (shed-f-suburban-platforms-2022.jpg, looking north along
-  // platform 9 at the steel roof over 9-10): eye about 1.6 m over the platform, horizon about y 570 of 1200, a 26 mm-equivalent lens (f ~ 1165 px).
+  // --- canopies (platforms 9 and 10). MEASURED in memory from R-kx-shed-interior-f (shed-f-suburban-platforms-2022.jpg, looking south along
+  // platform 9 toward the buffers, at the steel roof over 9-10; the gap scan corrected 'north', and the figures below are distances, so they stand): eye about 1.6 m over the platform, horizon about y 570 of 1200, a 26 mm-equivalent lens (f ~ 1165 px).
   // The column bases on the far platform sit at y 655, 615, 603, 597, 592 (distances f x 1.6 / dy ~ 22, 41, 56, 69, 85 m): a bay of about 15 m
   // (+-25%). The nearest column rises 270 px over its base at 53 px/m: about 5.1 m to the underside of the roof steel. Over it the roof is a
   // grid of black lattice trusses (X-braced, about a fifth of the column height deep, ~1.2 m) under a near-flat roof of dark corrugated
@@ -1713,23 +1713,46 @@ export const SUBURBAN_WALL = {
    *  past it (core/ole.ts mastClearance), so the face stands behind the masts, 3 m and more from any rail, a pilaster's face at least 0.3 m clear of a mast */
   fromEdge: 5.6,
   thickness: 0.7,
-  /** the coping's top over the canopy's roof: the roof meets the wall just under it */
+  /** the coping's top over the canopy's roof: the roof (carried to the wall since B6 round 2) meets the wall under it */
   aboveRoof: 1.2,
   pilasterWidth: 0.9,
-  /** how far a pilaster stands out of the face, toward the tracks */
-  pilasterProud: 0.25,
+  /** how far a pilaster stands out of the face, toward the tracks. Round 2 (b6-round-1 score, section 5.3: the pilasters read only as faint shading;
+   *  R-f shows deep ones with clear shadow sides): 0.25 to 0.45 m, the most the OLE masts leave (a mast's side 0.33 m clear of a pilaster's face) */
+  pilasterProud: 0.45,
   /** pilaster centres along the wall: half the canopy's 15 m column bay */
   pilasterSpacing: 7.5,
   copingHeight: 0.3,
   copingOverhang: 0.1,
+  /** round 2 (section 5.3, R-f's dark band at the wall's foot): a plinth of darker brick from the foot to this height (y, metres: 0.6 m over the platforms' top) */
+  plinthTop: PLATFORM_HEIGHT + 0.6,
+  /** the plinth's brick, and a pilaster's two sides (a baked shade, so the sides read as shadow whatever the sun), as multiples of the wall's own (vertex colour) */
+  plinthShade: 0.45,
+  sideShade: 0.55,
+  /** round 2 (section 5.1/5.3): the roof's trusses bear on columns standing just in front of the wall, in pairs: their centres this far out of the face and
+   *  this far apart along it (R-f, ASSUMED), one pair under each of canopy 10's trusses */
+  columnOut: 0.7,
+  columnPair: 0.7,
+  /** round 2 (the north context view: the wall stopped dead, the landscraper's face beyond): a return wall at the north end, this long, turned away from the tracks */
+  returnLength: 3,
+  /** round 2 (section 5.4): after dark the canopy's pendants light the wall: a warm wash (linear RGB, on the brick's own colour), a pool on the wall behind
+   *  each lamp falling off with the distance on the wall from the point square behind it (a gaussian of `washSpread` m), the pools summed and capped at 1
+   *  (ASSUMED, matched to nothing measured: R-f is a day photograph) */
+  washColor: [0.34, 0.24, 0.13] as const,
+  washSpread: 2.2,
 } as const;
 
 export interface SuburbanWallPlan {
   /** the face toward the tracks and the back, one point per canopy sample, in step (the canopy's own order along the platform) */
   face: Pt[];
   back: Pt[];
+  /** canopy 10's sample positions along its platform (`ts`), and its edge lines on the wall's side (`edge`) and on platform 9's (`inner`), in step with `face` */
+  ts: number[];
+  edge: Pt[];
+  inner: Pt[];
   /** the pilasters: their box's centre in plan (it runs from `pilasterProud` out of the face to 0.05 m into it) and its turn about y (local x along the wall) */
   pilasters: { x: number; z: number; rotY: number }[];
+  /** the north end's return: from the end of the face (`at`, index into `face`) `returnLength` m along `dir`, away from the tracks */
+  ret: { at: number; dir: Pt };
   /** the wall's foot and the coping's top */
   y0: number;
   y1: number;
@@ -1790,14 +1813,175 @@ export function suburbanWallPlan(plan: Pick<FurniturePlan, 'canopies'>): Suburba
     const out = (W.pilasterProud - 0.05) / 2; // the box runs 0.05 m into the face
     pilasters.push({ x: p[0] + t[0] * s - n[0] * out, z: p[1] + t[1] * s - n[1] * out, rotY: Math.atan2(-t[1], t[0]) });
   }
-  return { face, back, pilasters, y0: GROUND_Y, y1: c.roofY + W.aboveRoof };
+  // the north end (north is -z): its return runs from the face's end away from the tracks
+  const at = (face[face.length - 1] as Pt)[1] < (face[0] as Pt)[1] ? face.length - 1 : 0;
+  const away: Pt = [(back[at] as Pt)[0] - (face[at] as Pt)[0], (back[at] as Pt)[1] - (face[at] as Pt)[1]];
+  const al = Math.hypot(away[0], away[1]) || 1;
+  return { face, back, ts: [...c.ts], edge: [...edge], inner: [...opposite], pilasters, ret: { at, dir: [away[0] / al, away[1] / al] }, y0: GROUND_Y, y1: c.roofY + W.aboveRoof };
 }
 
-/** The wall's mesh: both faces and the ends of the wall up to the coping, the coping (mitred along the wall, overhanging both faces), and the pilasters. UVs in metres. */
-function suburbanWallGeometry(w: SuburbanWallPlan): THREE.BufferGeometry {
+/** Nearest point to `p` on the polyline `line`, and whether it is inside it (not clamped to an end). */
+function nearestOn(line: readonly Pt[], p: Pt): { q: Pt; inside: boolean } {
+  let best = { d: Infinity, q: line[0] as Pt, inside: false };
+  for (let i = 0; i + 1 < line.length; i++) {
+    const a = line[i] as Pt, b = line[i + 1] as Pt, dx = b[0] - a[0], dz = b[1] - a[1], l2 = dx * dx + dz * dz || 1;
+    const raw = ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / l2, t = Math.max(0, Math.min(1, raw));
+    const q: Pt = [a[0] + dx * t, a[1] + dz * t], d = Math.hypot(p[0] - q[0], p[1] - q[1]);
+    const inside = !((i === 0 && raw < 0) || (i === line.length - 2 && raw > 1));
+    if (d < best.d) best = { d, q, inside };
+  }
+  return { q: best.q, inside: best.inside };
+}
+
+/**
+ * B6 round 2 (b6-round-1 score, section 5.1; gap scan B6 item 1): one roof from canopy 9 across the 9-10 track, over canopy 10 and on to the wall, as R-f shows.
+ * Two infill strips at the canopies' roof height, cut where canopy 10's roof is cut so its glazed strips run straight on across them: the 9-10 track's (from
+ * canopy 10's inner edge to canopy 9's nearest edge, where canopy 9 is beside it) and the outer track's (from canopy 10's outer edge to the wall's face). The
+ * glass goes in canopy-glass (no shadow), the sheet in canopy-steel's sheet group, which casts: a roof over a track throws its shade there (the pass grows by
+ * the sheet's few hundred triangles; no new caster, no new draw). The steel goes in canopy-lattice (no shadow): at each of canopy 10's trusses a truss
+ * across each strip, the outer one bearing on a pair of columns standing just in front of the wall (`columnOut`, `columnPair`) with knee braces to the
+ * truss and along the wall, and a beam along the columns' tops.
+ */
+function suburbanRoofMeshes(c10: CanopyPlan, c9: CanopyPlan, w: SuburbanWallPlan): { glass: Batch; sheet: Batch; lattice: Batch } {
+  const glass = newBatch();
+  const sheet = newBatch();
+  const lattice = newBatch();
   const W = SUBURBAN_WALL;
-  const b = new Batch();
+  const S = CANOPY_STEEL;
+  const y = c10.roofY;
+  const yb = c10.columnTopY;
+  const at = (line: readonly Pt[], t: number): Pt => lineAt(w.ts, line, t);
+  // canopy 9's edge on canopy 10's side: of its two lines, the nearer to canopy 10's inner edge
+  const d = (line: readonly Pt[]): number => Math.min(...w.inner.map((p) => nearestOn(line, p).q).map((q, i) => Math.hypot(q[0] - (w.inner[i] as Pt)[0], q[1] - (w.inner[i] as Pt)[1])));
+  const nine = d(c9.left) <= d(c9.right) ? c9.left : c9.right;
+  const tFirst = w.ts[0] as number;
+  const tLast = w.ts[w.ts.length - 1] as number;
+  const cuts = [...w.ts, ...c10.glazing.flat()].filter((t) => t >= tFirst - 1e-6 && t <= tLast + 1e-6).sort((p, q) => p - q).filter((t, i, all) => i === 0 || t - (all[i - 1] as number) > 1e-6);
+  const piece = (l0: Pt, l1: Pt, r1: Pt, r0: Pt, mid: number): void => {
+    const into = c10.glazing.some(([lo, hi]) => mid > lo && mid < hi) ? glass : sheet;
+    into.poly([[l0[0], y - 0.05, l0[1]], [l1[0], y - 0.05, l1[1]], [r1[0], y - 0.05, r1[1]], [r0[0], y - 0.05, r0[1]]], undefined, { normal: [0, 1, 0], color: S });
+  };
+  for (let i = 0; i + 1 < cuts.length; i++) {
+    const t0 = cuts[i] as number, t1 = cuts[i + 1] as number, mid = (t0 + t1) / 2;
+    // the outer track: canopy 10's outer edge to the wall's face
+    piece(at(w.edge, t0), at(w.edge, t1), at(w.face, t1), at(w.face, t0), mid);
+    // the 9-10 track, where canopy 9 is beside canopy 10 at both cuts
+    const a0 = at(w.inner, t0), a1 = at(w.inner, t1), n0 = nearestOn(nine, a0), n1 = nearestOn(nine, a1);
+    if (n0.inside && n1.inside) piece(a0, a1, n1.q, n0.q, mid);
+  }
+  // the trusses: at each of canopy 10's (its end beams and one over each column), across both strips
+  const yTop = y - FIGURES.beamDepth;
+  const yBot = yb + 0.15;
+  const truss = (a: Pt, b: Pt): void => {
+    addBeam(lattice, [a[0], y - FIGURES.crossDepth / 2, a[1]], [b[0], y - FIGURES.crossDepth / 2, b[1]], FIGURES.beamWidth, FIGURES.crossDepth, S);
+    addBeam(lattice, [a[0], yb + 0.075, a[1]], [b[0], yb + 0.075, b[1]], 0.15, 0.15, S);
+    const n = Math.max(1, Math.round(Math.hypot(b[0] - a[0], b[1] - a[1]) / 2));
+    for (let k = 0; k < n; k++) {
+      const p: Pt = [a[0] + ((b[0] - a[0]) * k) / n, a[1] + ((b[1] - a[1]) * k) / n];
+      const q: Pt = [a[0] + ((b[0] - a[0]) * (k + 1)) / n, a[1] + ((b[1] - a[1]) * (k + 1)) / n];
+      addBeam(lattice, [p[0], yTop, p[1]], [q[0], yBot, q[1]], 0.07, 0.07, S);
+      addBeam(lattice, [p[0], yBot, p[1]], [q[0], yTop, q[1]], 0.07, 0.07, S);
+    }
+  };
+  const columnLine: Pt[] = [];
+  for (const beam of c10.crossBeams) {
+    const [l, r] = beam;
+    // its end on the wall's side: the nearer the face
+    const gap = (p: Pt): number => { const q = nearestOn(w.face, p).q; return Math.hypot(q[0] - p[0], q[1] - p[1]); };
+    const [outer, innerEnd] = gap(l) <= gap(r) ? [l, r] : [r, l];
+    // the outer truss, from canopy 10's edge to the wall's columns
+    const f = nearestOn(w.face, outer).q;
+    const u: Pt = [outer[0] - f[0], outer[1] - f[1]];
+    const ul = Math.hypot(u[0], u[1]) || 1;
+    const ux: Pt = [u[0] / ul, u[1] / ul]; // from the wall toward the tracks
+    const col: Pt = [f[0] + ux[0] * W.columnOut, f[1] + ux[1] * W.columnOut];
+    truss(outer, [f[0] + ux[0] * 0.05, f[1] + ux[1] * 0.05]);
+    const along: Pt = [-ux[1], ux[0]];
+    // the end trusses bear on the wall itself (a pair there would stand past its end); the others on a pair of columns
+    const columns = c10.crossBeams.indexOf(beam) >= 2;
+    if (columns) columnLine.push(col);
+    for (const s of columns ? [-1, 1] : []) {
+      const cx = col[0] + along[0] * (W.columnPair / 2) * s, cz = col[1] + along[1] * (W.columnPair / 2) * s;
+      uprightBox(lattice, cx, cz, along, 0.125, 0.125, GROUND_Y, GROUND_Y + 0.04, S);
+      uprightBox(lattice, cx, cz, along, 0.09, 0.1, GROUND_Y + 0.04, yb - 0.4, S);
+      // knee braces: out to the truss's bottom chord, and along the wall to the beam over the columns
+      addBeam(lattice, [cx, yb - 1.4, cz], [cx + ux[0] * 1.0, yb + 0.02, cz + ux[1] * 1.0], 0.07, 0.07, S);
+      addBeam(lattice, [cx, yb - 1.4, cz], [cx + along[0] * 1.0 * s, yb - 0.4, cz + along[1] * 1.0 * s], 0.07, 0.07, S);
+    }
+    // the inner truss, across the 9-10 track, where canopy 9 is beside it
+    const n = nearestOn(nine, innerEnd);
+    if (n.inside) truss(innerEnd, n.q);
+  }
+  // the beam along the columns' tops, under the trusses
+  columnLine.sort((p, q) => nearestT(w, p) - nearestT(w, q));
+  for (let i = 0; i + 1 < columnLine.length; i++) {
+    const a = columnLine[i] as Pt, b = columnLine[i + 1] as Pt;
+    addBeam(lattice, [a[0], yb - 0.2, a[1]], [b[0], yb - 0.2, b[1]], 0.16, 0.4, S);
+  }
+  return { glass, sheet, lattice };
+}
+
+/**
+ * The ground under the suburban roof (round 2) in plan: from the wall's face across canopy 10 to canopy 9's facing edge where canopy 9 runs beside it
+ * (canopy 10's inner edge where it does not), one point per canopy 10 sample on each side. Null without the wall. For the tests and the weather's cover.
+ */
+export function suburbanRoofFootprint(plan: Pick<FurniturePlan, 'canopies'>): Pt[] | null {
+  const w = suburbanWallPlan(plan);
+  const c9 = plan.canopies.find((c) => c.ref === '9');
+  if (!w || !c9) return null;
+  const d = (line: readonly Pt[]): number => Math.min(...w.inner.map((p) => { const q = nearestOn(line, p).q; return Math.hypot(q[0] - p[0], q[1] - p[1]); }));
+  const nine = d(c9.left) <= d(c9.right) ? c9.left : c9.right;
+  const side = w.inner.map((p): Pt => { const n = nearestOn(nine, p); return n.inside ? n.q : p; });
+  return [...w.face, ...side.reverse()];
+}
+
+/** Where along the wall (metres from the face's first point, measured on the face) the point nearest `p` lies. */
+function nearestT(w: SuburbanWallPlan, p: Pt): number {
+  let s = 0, best = { d: Infinity, s: 0 };
+  for (let i = 0; i + 1 < w.face.length; i++) {
+    const a = w.face[i] as Pt, b = w.face[i + 1] as Pt, dx = b[0] - a[0], dz = b[1] - a[1], l = Math.hypot(dx, dz) || 1;
+    const t = Math.max(0, Math.min(l, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / l));
+    const d = Math.hypot(p[0] - a[0] - (dx / l) * t, p[1] - a[1] - (dz / l) * t);
+    if (d < best.d) best = { d, s: s + t };
+    s += l;
+  }
+  return best.s;
+}
+
+/** A pendant lamp as the wall sees it: its glass's middle, and `d`, its distance in plan from the wall's face. */
+export interface WallLamp { x: number; y: number; z: number; d: number }
+
+/** Canopy 10's pendants (the plan's overhead lamps on platform 10), their glass at the pendant's height (pendantGeometry), each with its distance from the face. */
+export function wallLamps(plan: Pick<FurniturePlan, 'lamps'>, w: Pick<SuburbanWallPlan, 'face'>): WallLamp[] {
+  return plan.lamps.filter((l) => l.overhead && l.ref === '10').map((l) => {
+    const q = nearestOn(w.face, [l.x, l.z]).q;
+    return { x: l.x, y: PLATFORM_HEIGHT + FIGURES.lampHeight - 0.14, z: l.z, d: Math.hypot(q[0] - l.x, q[1] - l.z) };
+  });
+}
+
+/** The pendants' wash at a point on the wall (SUBURBAN_WALL.washSpread): the sum over the lamps of a gaussian of the distance on the wall from the point square behind each, capped at 1. */
+export function wallWash(lamps: readonly WallLamp[], p: V3): number {
+  const s2 = 2 * SUBURBAN_WALL.washSpread ** 2;
+  let s = 0;
+  for (const l of lamps) {
+    const r2 = (p[0] - l.x) ** 2 + (p[1] - l.y) ** 2 + (p[2] - l.z) ** 2;
+    s += Math.exp(-Math.max(0, r2 - l.d * l.d) / s2);
+  }
+  return Math.min(1, s);
+}
+
+/**
+ * The wall's mesh, vertex-coloured: the face toward the tracks in pieces about 1.25 m wide and in rows (the plinth, then up to the lamps' wash's heights),
+ * the plinth's brick darker (`plinthShade`); the back, the ends and the coping; the north end's return; the pilasters, their sides in a baked shade
+ * (`sideShade`). UVs in metres. A `kxWash` attribute (0..1) carries the canopy's lamps' light at each vertex (wallWash).
+ */
+function suburbanWallGeometry(w: SuburbanWallPlan, lamps: readonly WallLamp[]): THREE.BufferGeometry {
+  const W = SUBURBAN_WALL;
+  const b = new Batch({ colored: true });
   const yTop = w.y1 - W.copingHeight;
+  const full: Rgb = [1, 1, 1];
+  const plinth: Rgb = [W.plinthShade, W.plinthShade, W.plinthShade];
+  const shade: Rgb = [W.sideShade, W.sideShade, W.sideShade];
   const along: number[] = [0];
   for (let i = 1; i < w.face.length; i++) along.push((along[i - 1] as number) + Math.hypot((w.face[i] as Pt)[0] - (w.face[i - 1] as Pt)[0], (w.face[i] as Pt)[1] - (w.face[i - 1] as Pt)[1]));
   const away = (i: number): V3 => {
@@ -1807,26 +1991,31 @@ function suburbanWallGeometry(w: SuburbanWallPlan): THREE.BufferGeometry {
     return [(k[0] - f[0]) / l, 0, (k[1] - f[1]) / l];
   };
   const toward = (n: V3): V3 => [-n[0], -n[1], -n[2]];
-  // a vertical strip of quads along `line` from y0 to y1, facing `facing(i)`
-  const sheet = (line: readonly Pt[], y0: number, y1: number, facing: (i: number) => V3): void => {
+  const quad = (p: Pt, q: Pt, y0: number, y1: number, u0: number, u1: number, facing: V3, color: Rgb): void =>
+    b.poly([[p[0], y0, p[1]], [q[0], y0, q[1]], [q[0], y1, q[1]], [p[0], y1, p[1]]], [[u0, y0 - w.y0], [u1, y0 - w.y0], [u1, y1 - w.y0], [u0, y1 - w.y0]], { facing, color });
+  // a vertical strip along `line` from y0 to y1, facing `facing(i)`; `step` > 0 cuts each segment into pieces no longer than it, `rows` the heights it is cut at
+  const sheet = (line: readonly Pt[], y0: number, y1: number, facing: (i: number) => V3, step = 0, rows: readonly number[] = []): void => {
+    const ys = [y0, ...rows.filter((r) => r > y0 && r < y1), y1];
     for (let i = 0; i + 1 < line.length; i++) {
-      const p = line[i] as Pt;
-      const q = line[i + 1] as Pt;
-      const u0 = along[i] as number;
-      const u1 = along[i + 1] as number;
-      b.quadUV([p[0], y0, p[1]], [q[0], y0, q[1]], [q[0], y1, q[1]], [p[0], y1, p[1]], [[u0, y0 - w.y0], [u1, y0 - w.y0], [u1, y1 - w.y0], [u0, y1 - w.y0]], facing(i));
+      const p = line[i] as Pt, q = line[i + 1] as Pt;
+      const u0 = along[i] as number, u1 = along[i + 1] as number;
+      const n = step > 0 ? Math.max(1, Math.ceil((u1 - u0) / step)) : 1;
+      for (let k = 0; k < n; k++) {
+        const a: Pt = [p[0] + ((q[0] - p[0]) * k) / n, p[1] + ((q[1] - p[1]) * k) / n];
+        const e: Pt = [p[0] + ((q[0] - p[0]) * (k + 1)) / n, p[1] + ((q[1] - p[1]) * (k + 1)) / n];
+        for (let r = 0; r + 1 < ys.length; r++) {
+          const ya = ys[r] as number, yc = ys[r + 1] as number;
+          quad(a, e, ya, yc, u0 + ((u1 - u0) * k) / n, u0 + ((u1 - u0) * (k + 1)) / n, facing(i), yc <= W.plinthTop + 1e-9 ? plinth : full);
+        }
+      }
     }
   };
   // a horizontal strip between two lines at height y
   const flat = (l0: readonly Pt[], l1: readonly Pt[], y: number, up: boolean): void => {
     for (let i = 0; i + 1 < l0.length; i++) {
       const a = l0[i] as Pt, c = l0[i + 1] as Pt, d = l1[i + 1] as Pt, e = l1[i] as Pt;
-      b.quadUV([a[0], y, a[1]], [c[0], y, c[1]], [d[0], y, d[1]], [e[0], y, e[1]], [[a[0], a[1]], [c[0], c[1]], [d[0], d[1]], [e[0], e[1]]], [0, up ? 1 : -1, 0]);
+      b.poly([[a[0], y, a[1]], [c[0], y, c[1]], [d[0], y, d[1]], [e[0], y, e[1]]], [[a[0], a[1]], [c[0], c[1]], [d[0], d[1]], [e[0], e[1]]], { facing: [0, up ? 1 : -1, 0], color: full });
     }
-  };
-  // an end of the wall (or of the coping) between two points, facing out along the wall
-  const end = (f: Pt, k: Pt, y0: number, y1: number, out: V3): void => {
-    b.quadUV([f[0], y0, f[1]], [k[0], y0, k[1]], [k[0], y1, k[1]], [f[0], y1, f[1]], [[0, y0 - w.y0], [W.thickness, y0 - w.y0], [W.thickness, y1 - w.y0], [0, y1 - w.y0]], out);
   };
   const n = w.face.length - 1;
   const dirAt = (i: number, j: number): V3 => {
@@ -1835,10 +2024,25 @@ function suburbanWallGeometry(w: SuburbanWallPlan): THREE.BufferGeometry {
     const l = Math.hypot(q[0] - p[0], q[1] - p[1]) || 1;
     return [(q[0] - p[0]) / l, 0, (q[1] - p[1]) / l];
   };
-  sheet(w.face, w.y0, yTop, (i) => toward(away(i)));
+  const endOut = (i: number): V3 => (i === 0 ? dirAt(1, 0) : dirAt(n - 1, n));
+  sheet(w.face, w.y0, yTop, (i) => toward(away(i)), 1.25, [W.plinthTop, 2.5, 3.6, 4.7, 5.8]);
   sheet(w.back, w.y0, yTop, (i) => away(i));
-  end(w.face[0] as Pt, w.back[0] as Pt, w.y0, yTop, dirAt(1, 0));
-  end(w.face[n] as Pt, w.back[n] as Pt, w.y0, yTop, dirAt(n - 1, n));
+  // the ends: the south end plain; the north end turns away from the tracks in its return (a box `returnLength` long, the wall's thickness, from the face's end)
+  const south = w.ret.at === 0 ? n : 0;
+  quad(w.face[south] as Pt, w.back[south] as Pt, w.y0, W.plinthTop, 0, W.thickness, endOut(south), plinth);
+  quad(w.face[south] as Pt, w.back[south] as Pt, W.plinthTop, yTop, 0, W.thickness, endOut(south), full);
+  {
+    const f = w.face[w.ret.at] as Pt, out = endOut(w.ret.at), dir = w.ret.dir, L = W.returnLength, T = W.thickness;
+    // the return's footprint: from the face's end, `L` along `dir`, `T` thick on the wall's side (back from the end along the wall)
+    const p0: Pt = f, p1: Pt = [f[0] + dir[0] * L, f[1] + dir[1] * L];
+    const q0: Pt = [f[0] - out[0] * T, f[1] - out[2] * T], q1: Pt = [p1[0] - out[0] * T, p1[1] - out[2] * T];
+    for (const [ya, yc, col] of [[w.y0, W.plinthTop, plinth], [W.plinthTop, w.y1, full]] as const) {
+      quad(p0, p1, ya, yc, 0, L, out, col); // its outer face, flush with the wall's end
+      quad(q1, p1, ya, yc, 0, T, [dir[0], 0, dir[1]], col); // its far end
+      quad(q0, q1, ya, yc, 0, L, toward(out), col); // its face toward the wall's length (the part past the wall's back)
+    }
+    b.poly([[p0[0], w.y1, p0[1]], [p1[0], w.y1, p1[1]], [q1[0], w.y1, q1[1]], [q0[0], w.y1, q0[1]]], undefined, { facing: [0, 1, 0], color: full });
+  }
   // the coping: its own two lines, `copingOverhang` past each face
   const shift = (line: readonly Pt[], d: number): Pt[] => line.map((p, i): Pt => { const a = away(i); return [p[0] + a[0] * d, p[1] + a[2] * d]; });
   const cf = shift(w.face, -W.copingOverhang);
@@ -1847,21 +2051,64 @@ function suburbanWallGeometry(w: SuburbanWallPlan): THREE.BufferGeometry {
   sheet(cb, yTop, w.y1, (i) => away(i));
   flat(cf, cb, w.y1, true);
   flat(cf, cb, yTop, false);
-  end(cf[0] as Pt, cb[0] as Pt, yTop, w.y1, dirAt(1, 0));
-  end(cf[n] as Pt, cb[n] as Pt, yTop, w.y1, dirAt(n - 1, n));
-  // the pilasters, from the foot to the coping's underside
-  for (const p of w.pilasters) b.box([p.x, (w.y0 + yTop) / 2, p.z], [W.pilasterWidth, yTop - w.y0, W.pilasterProud + 0.05], { rotY: p.rotY, skip: ['-y'] });
-  return b.build();
+  quad(cf[south] as Pt, cb[south] as Pt, yTop, w.y1, 0, W.thickness, endOut(south), full);
+  quad(cf[w.ret.at] as Pt, cb[w.ret.at] as Pt, yTop, w.y1, 0, W.thickness, endOut(w.ret.at), full);
+  // the pilasters, from the foot to the coping's underside: the front in the wall's brick (the plinth's below its top), the two sides in shade
+  const ph = W.pilasterWidth / 2, pd = (W.pilasterProud + 0.05) / 2;
+  for (const p of w.pilasters) {
+    const t: Pt = [Math.cos(p.rotY), -Math.sin(p.rotY)]; // local x, along the wall
+    const nz: Pt = [Math.sin(p.rotY), Math.cos(p.rotY)]; // local z, across it
+    const o = nearestOn(w.face, [p.x, p.z]).q;
+    const sgn = (o[0] - p.x) * nz[0] + (o[1] - p.z) * nz[1] > 0 ? -1 : 1; // +1 when local +z points toward the tracks
+    const out: Pt = [nz[0] * sgn, nz[1] * sgn];
+    const pt = (sa: number, sc: number): Pt => [p.x + t[0] * ph * sa + out[0] * pd * sc, p.z + t[1] * ph * sa + out[1] * pd * sc];
+    for (const [ya, yc, col, sideCol] of [[w.y0, W.plinthTop, plinth, [plinth[0] * W.sideShade, plinth[1] * W.sideShade, plinth[2] * W.sideShade] as Rgb], [W.plinthTop, yTop, full, shade]] as const) {
+      quad(pt(-1, 1), pt(1, 1), ya, yc, 0, W.pilasterWidth, [out[0], 0, out[1]], col);
+      quad(pt(1, -1), pt(1, 1), ya, yc, 0, 2 * pd, [t[0], 0, t[1]], sideCol);
+      quad(pt(-1, -1), pt(-1, 1), ya, yc, 0, 2 * pd, [-t[0], 0, -t[1]], sideCol);
+    }
+    b.poly([[pt(-1, -1)[0], yTop, pt(-1, -1)[1]], [pt(1, -1)[0], yTop, pt(1, -1)[1]], [pt(1, 1)[0], yTop, pt(1, 1)[1]], [pt(-1, 1)[0], yTop, pt(-1, 1)[1]]], undefined, { facing: [0, 1, 0], color: full });
+  }
+  const g = b.build();
+  const pos = g.getAttribute('position');
+  const wash = new Float32Array(pos.count);
+  for (let i = 0; i < pos.count; i++) wash[i] = wallWash(lamps, [pos.getX(i), pos.getY(i), pos.getZ(i)]);
+  g.setAttribute('kxWash', new THREE.BufferAttribute(wash, 1));
+  return g;
+}
+
+let suburbanBrickMat: THREE.MeshLambertMaterial | null = null;
+/**
+ * The wall's brick: the shed's stock brick (material 'brick', cloned), taking the vertex colours (the plinth, the pilasters' shaded sides), and after dark
+ * (`windowNight`) the lamps' warm wash on the brick's own colour, scaled by the `kxWash` attribute. By day uWinNight is 0: the wash adds nothing.
+ */
+export function suburbanBrick(): THREE.MeshLambertMaterial {
+  if (!suburbanBrickMat) {
+    const m = (material('brick') as THREE.MeshLambertMaterial).clone();
+    m.vertexColors = true;
+    const [r, g, bl] = SUBURBAN_WALL.washColor;
+    m.onBeforeCompile = (shader) => {
+      shader.uniforms.uWinNight = windowNight;
+      shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nattribute float kxWash;\nvarying float vKxWash;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvKxWash = kxWash;');
+      shader.fragmentShader = shader.fragmentShader.replace('#include <common>', '#include <common>\nuniform float uWinNight;\nvarying float vKxWash;').replace('#include <emissivemap_fragment>',
+        `#include <emissivemap_fragment>\ntotalEmissiveRadiance += vec3( ${r.toFixed(4)}, ${g.toFixed(4)}, ${bl.toFixed(4)} ) * diffuseColor.rgb * vKxWash * uWinNight;`);
+    };
+    m.customProgramCacheKey = () => 'suburban-wall-wash';
+    m.name = 'suburbanBrick';
+    suburbanBrickMat = m;
+  }
+  return suburbanBrickMat;
 }
 
 /**
  * B6: the outer wall beside platform 10's canopy (SUBURBAN_WALL), from the furniture's plan (buildFurniture's `userData.plan`): one draw, `suburban-wall`,
- * in the shed's stock brick, casting no sun shadow. A structure, not furniture, so it is its own object beside the furniture group; null without the canopies.
+ * in the shed's stock brick (suburbanBrick), casting no sun shadow, washed after dark by canopy 10's pendants. A structure, not furniture, so it is its own
+ * object beside the furniture group; null without the canopies.
  */
-export function buildSuburbanWall(plan: Pick<FurniturePlan, 'canopies'>): THREE.Mesh | null {
+export function buildSuburbanWall(plan: Pick<FurniturePlan, 'canopies' | 'lamps'>): THREE.Mesh | null {
   const wall = suburbanWallPlan(plan);
   if (!wall) return null;
-  const mesh = new THREE.Mesh(suburbanWallGeometry(wall), material('brick'));
+  const mesh = new THREE.Mesh(suburbanWallGeometry(wall, wallLamps(plan, wall)), suburbanBrick());
   mesh.name = 'suburban-wall';
   return mesh;
 }
@@ -1942,6 +2189,16 @@ export function buildFurniture(data: FurnitureData, layout: FurnitureLayout): TH
       glass.append(m.glass);
       sheet.append(m.sheet);
       steel.append(m.steel);
+      lattice.append(m.lattice);
+    }
+    // B6 round 2: the roof carried across the 9-10 track and on to the outer wall (suburbanRoofMeshes)
+    const wall = suburbanWallPlan(plan);
+    const c9 = plan.canopies.find((c) => c.ref === '9');
+    const c10 = plan.canopies.find((c) => c.ref === '10');
+    if (wall && c9 && c10) {
+      const m = suburbanRoofMeshes(c10, c9, wall);
+      glass.append(m.glass);
+      sheet.append(m.sheet);
       lattice.append(m.lattice);
     }
     // the glazed strips and the opaque sheet between them are two meshes: the sheet, a second material of the steel's mesh, casts the sun's

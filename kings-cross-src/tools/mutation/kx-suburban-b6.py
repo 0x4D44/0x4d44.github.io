@@ -45,8 +45,8 @@ MUTATIONS = [
     ('cut short of the canopy', 'web/src/furniture.ts', '  const face = offsetLine(edge, ', '  const face = offsetLine(edge.slice(0, -1), ', 'B6 outer wall'),
     ('beside canopy 9', 'web/src/furniture.ts', "  const c = plan.canopies.find((k) => k.ref === '10');", "  const c = plan.canopies.find((k) => k.ref === '9');", 'B6 outer wall'),
     ('a shadow caster', 'web/src/lighting.ts', "  'canopy-steel',\n]);", "  'canopy-steel', 'suburban-wall',\n]);", 'B6 outer wall'),
-    ('in stone', 'web/src/furniture.ts', "  const mesh = new THREE.Mesh(suburbanWallGeometry(wall), material('brick'));", "  const mesh = new THREE.Mesh(suburbanWallGeometry(wall), material('stone'));", 'B6 outer wall'),
-    ('its face turned from the tracks', 'web/src/furniture.ts', '  sheet(w.face, w.y0, yTop, (i) => toward(away(i)));', '  sheet(w.face, w.y0, yTop, (i) => away(i));', 'B6 outer wall'),
+    ('in stone', 'web/src/furniture.ts', "    const m = (material('brick') as THREE.MeshLambertMaterial).clone();", "    const m = (material('stone') as THREE.MeshLambertMaterial).clone();", 'B6 outer wall'),  # round 2: the wall's brick is a clone of the stock brick
+    ('its face turned from the tracks', 'web/src/furniture.ts', "  sheet(w.face, w.y0, yTop, (i) => toward(away(i)), 1.25,", "  sheet(w.face, w.y0, yTop, (i) => away(i), 1.25,", 'B6 outer wall'),  # round 2: the face is cut into pieces and rows
 ]
 
 

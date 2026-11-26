@@ -157,21 +157,24 @@ test('B6 outer wall: the length of platform 10\'s canopy, on its outer side, pas
   assert.equal(wallPlan({ canopies: plan.canopies.filter((c) => c.ref !== '10') }), null, 'no canopy on 10, no wall');
 });
 
-test('B6 outer wall mesh: one draw in the shed\'s stock brick, no shadow caster, a few hundred triangles, its face toward the tracks seen from suburban-p9-south', () => {
-  const build = F.buildSuburbanWall as ((p: Pick<furniture.FurniturePlan, 'canopies'>) => THREE.Mesh | null) | undefined;
+test('B6 outer wall mesh: one draw in the shed\'s stock brick, no shadow caster, a few thousand triangles at most, its face toward the tracks seen from suburban-p9-south', () => {
+  const build = F.buildSuburbanWall as ((p: Pick<furniture.FurniturePlan, 'canopies' | 'lamps'>) => THREE.Mesh | null) | undefined;
   assert.ok(build, 'buildSuburbanWall');
   const mesh = build(furniture.buildFurniture(data, layout).userData.plan) as THREE.Mesh;
   assert.ok(mesh instanceof THREE.Mesh && mesh.name === 'suburban-wall', 'suburban-wall');
-  assert.equal(build({ canopies: [] }), null, 'no canopies, no wall');
+  assert.equal(build({ canopies: [], lamps: [] }), null, 'no canopies, no wall'); // round 2: the builder takes the plan's lamps too (the night wash)
   // the page and the tools' station scene both put it in the scene beside the furniture
   const main = readFileSync(new URL('../src/main.ts', import.meta.url), 'utf8'), tools = readFileSync(new URL('../../tools/station-scene.mjs', import.meta.url), 'utf8');
   assert.match(main, /const suburbanWall = buildSuburbanWall\(furniture\.userData\.plan\);[^\n]*\n\s*if \(suburbanWall\) scene\.add\(suburbanWall\);/, 'the page adds the wall');
   assert.match(tools, /suburbanWall = buildSuburbanWall\(furniture\.userData\.plan\);\n\s*scene\.add\([^\n]*furniture, \.\.\.\(suburbanWall \? \[suburbanWall\] : \[\]\)\)/, 'the tools\' station scene adds the wall');
-  assert.equal(mesh.material, material('brick'), 'the shared stock brick');
+  // re-pinned 2026-11-26 (B6 round 2): the wall's own clone of the stock brick (vertex colours for the plinth and the pilasters' shade, the lamps' night wash),
+  // on the same brick texture; was the shared material('brick') itself
+  const brick = material('brick') as THREE.MeshLambertMaterial, own = mesh.material as THREE.MeshLambertMaterial;
+  assert.ok(own !== brick && own.map === brick.map && own.color.equals(brick.color) && own.vertexColors, 'the stock brick\'s texture (or colour, where there is none), its own material');
   assert.ok(!SHADOW_CASTERS.has('suburban-wall') && !mesh.castShadow, 'not a sun shadow caster');
   assert.ok(mesh.geometry.getAttribute('uv'), 'UVs (metres) for the brick');
   const tris = (mesh.geometry.index ? mesh.geometry.index.count : mesh.geometry.getAttribute('position').count) / 3;
-  assert.ok(tris > 100 && tris <= 400, `${tris} triangles`);
+  assert.ok(tris > 100 && tris <= 2500, `${tris} triangles`); // re-pinned 2026-11-26 (B6 round 2): was <= 400; the face is cut into 1.25 m pieces and rows (the plinth, the night wash), the pilasters' sides are their own faces, and the north end has a return
   const w = wallPlan!(plan)!;
   const box = new THREE.Box3().setFromObject(mesh);
   assert.ok(Math.abs(box.max.y - w.y1) < 1e-6 && Math.abs(box.min.y - w.y0) < 1e-6, 'from the foot to the coping');
