@@ -32,6 +32,7 @@ import {
 import { SHADOW_CASTERS } from '../src/lighting.ts';
 import { ROOF_MESHES } from '../src/cover.ts';
 import type { Placement, TrackSegment } from '../src/furniture.ts';
+import { suburbanRoofFootprint } from '../src/furniture.ts';
 import { EAST_ARCADE, eastArcadeU, NORTH_PIER, spineOpenings, SPINE_WALL, westernPassages } from '../src/shed.ts';
 // Re-pinned 2026-11-24 (shed realignment, signed off): the vault centres are the spine -/+ R (aisle + R and aisle + 3R before, the same points while the aisles were even), the valley is the spine, and there is no west aisle, so a probe of 'the aisle' stands in the east aisle.
 
@@ -678,7 +679,11 @@ test('canopies: only on platforms 9 and 10, 6.4 m up, over the platform\'s own o
     for (const g of gaps(alongOf(c.ref, c.columns))) near(g, FIGURES.canopyColumnSpacing, 1e-6, 'column spacing');
   }
   // the built meshes agree: every vertex of the roof and its steel is inside one of the two outlines
-  const inside = (x: number, z: number): boolean => ['9', '10'].some((r) => pointInPolygon([x, z], outline(r)));
+  // re-pinned 2026-11-26 (B6 round 2, b6-round-1 score 5.1, the coordinator's brief: one roof from canopy 9 across the 9-10 track and platform 10 to the
+  // outer wall, R-f): or under that roof, between canopy 9's facing edge and the wall's face (suburbanRoofFootprint), 0.15 m of slack for the end trusses' steel, which stands on the footprint's end lines (0.2 m wide)
+  const roofed = suburbanRoofFootprint(plan)!;
+  assert.ok(roofed && roofed.length >= 8, 'the suburban roof has a footprint');
+  const inside = (x: number, z: number): boolean => ['9', '10'].some((r) => pointInPolygon([x, z], outline(r))) || pointInPolygon([x, z], roofed) || boundaryDistance([x, z], roofed) < 0.15;
   for (const name of ['canopy-glass', 'canopy-steel', 'canopy-lattice']) {
     const pos = part(furniture, name).geometry.getAttribute('position');
     assert.ok(pos.count > 0);

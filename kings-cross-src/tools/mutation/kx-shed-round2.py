@@ -27,8 +27,8 @@ MUTATIONS = [
     ('the ring on the inner boom', 'web/src/shed.ts', 'const cx = (xi + xo) / 2;', 'const cx = xi;', 'B1: each haunch ring'),
     ('rings back on the spine feet', 'web/src/shed.ts', 'if (Math.sign(u) !== Math.sign(spine - uc)) haunch.setMatrixAt', 'if (true) haunch.setMatrixAt', 'B1 (round S2b)'),
     ('rings on the spine feet only', 'web/src/shed.ts', 'if (Math.sign(u) !== Math.sign(spine - uc)) haunch.setMatrixAt', 'if (Math.sign(u) === Math.sign(spine - uc)) haunch.setMatrixAt', 'B1 (round S2b)'),
-    ('the ribs at 1.38 again', 'web/src/shed.ts', 'export const RIB_DAY_LIFT = 2.0;', 'export const RIB_DAY_LIFT = 1.38;', 'B1: the ribs and rings'),
-    ('the ribs too pale', 'web/src/shed.ts', 'export const RIB_DAY_LIFT = 2.0;', 'export const RIB_DAY_LIFT = 3.0;', 'B1: the ribs and rings'),
+    ('the ribs at 1.38 again', 'web/src/shed.ts', 'export const RIB_DAY_LIFT = 2.5;', 'export const RIB_DAY_LIFT = 1.38;', 'B1: the ribs and rings'),  # re-anchored round S5 (RIB_DAY_LIFT 2.0 -> 2.5)
+    ('the ribs too pale', 'web/src/shed.ts', 'export const RIB_DAY_LIFT = 2.5;', 'export const RIB_DAY_LIFT = 3.0;', 'B1: the ribs and rings'),  # re-anchored round S5 (RIB_DAY_LIFT 2.0 -> 2.5)
     ('imposts flat again', 'web/src/shed.ts', 'ARCADE_IMPOST = { tall: 0.35, out: 0.3,', 'ARCADE_IMPOST = { tall: 0.35, out: 0.08,', 'B3: each impost'),
     ('no bracket', 'web/src/shed.ts', 'steps: [[0.2, 0.2], [0.2, 0.1]] as const }', 'steps: [] as const }', 'B3: each impost'),
     ('the bracket not stepped', 'web/src/shed.ts', 'steps: [[0.2, 0.2], [0.2, 0.1]] as const }', 'steps: [[0.2, 0.2], [0.2, 0.2]] as const }', 'B3: each impost'),

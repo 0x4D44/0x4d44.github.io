@@ -908,13 +908,22 @@ export const HAUNCH_RING = { radius: 0.4, tube: 0.05, rise: 1.5 } as const; // r
 /** Round S1 (shed-gap-scan-1, B1: the ribs read near-black navy; R-a and R-b show them a mid blue-grey by day): the ribs' and haunch rings' paint by day, the
  * shared ribPaint lightened this much (ASSUMED); at night they take ribPaint itself, so their silhouette stays as it was. Their own
  * material, so the bars, the clock's iron and the front's steel that share ribPaint do not move. */
-export const RIB_DAY_LIFT = 2.0; // round S2 (shed-round-1 score, B1: 1.38 barely showed; R-a and R-b show the ribs a mid blue-grey by day, lighter than the arcade's shadow): 2.0 (ASSUMED, the score's 2-2.5), still eight times darker than the lining
+export const RIB_DAY_LIFT = 2.5; // round S2 (shed-round-1 score, B1: 1.38 barely showed; R-a and R-b show the ribs a mid blue-grey by day, lighter than the arcade's shadow): 2.0 (ASSUMED, the score's 2-2.5), still eight times darker than the lining; round S5: 2.5 (below)
+// Round S5 (shed-round-2/2b/3/4 scores, B1: x2.0 still read near navy-black; partner decision 2026-11-25: R-a and R-b show mid blue-grey ribs, the lining
+// pin relaxed from eight to three times darker): 2.5, the top of the scorer's 2-2.5. The colour alone cannot do it: under the roof the ribs see the
+// shaded sky only (the hemisphere through the roof's shade, about 0.1 linear on white), so from the platforms, where their undersides and shaded faces
+// are what shows, x2.5 draws about 17-28 of 255. RIB_DAY_GLOW is the light the glazing throws on them, as the lining's own glow is (a daylight stand-in:
+// atmosphere.ts dims every emissive with the daylight, so it fades at dusk): the day paint's colour times this, so the hue holds. MODEL (tests/aces.ts,
+// the noon rig, kx-shed-rib-tone.test.ts): undersides and shaded faces about 74-79, a face in the sun through the crown about 120, under the lining
+// (about 155-170) and the glass; at night the ribs take ribPaint itself, untouched. ASSUMED: 0.58, aimed at the lower half of the 70-95 asked for.
+export const RIB_DAY_GLOW = 0.58;
 let ribDayMaterial: THREE.MeshLambertMaterial | undefined;
 function ribDay(): THREE.MeshLambertMaterial {
   if (ribDayMaterial) return ribDayMaterial;
   const original = material('ribPaint') as THREE.MeshLambertMaterial;
   const m = original.clone();
   m.defines = { ...original.defines };
+  m.emissive.copy(original.color).multiplyScalar(RIB_DAY_LIFT * RIB_DAY_GLOW); // round S5: the glazing's light on the ribs by day
   m.color.multiplyScalar(RIB_DAY_LIFT);
   ribDayMaterial = m;
   return m;

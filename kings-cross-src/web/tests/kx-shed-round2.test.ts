@@ -39,13 +39,15 @@ test('B1: each haunch ring sits low in its rib\'s foot panel, between the booms,
   assert.ok(2 * rho >= 0.8, `${(2 * rho).toFixed(2)} m across`);
 });
 
-test('B1: the ribs and rings 2-2.5 times ribPaint by day, ribPaint at night, still eight times darker than the lining', () => {
+test('B1: the ribs and rings 2-2.5 times ribPaint by day, ribPaint at night, still three times darker than the lining', () => {
   const lift = S.RIB_DAY_LIFT as number, paint = material('ribPaint') as THREE.MeshLambertMaterial;
   assert.ok(lift >= 2 && lift <= 2.5, `lift ${lift}`);
   for (const name of ['shed-ribs', 'shed-haunch-rings']) {
     const o = group.getObjectByName(name) as THREE.Mesh, day = o.material as THREE.MeshLambertMaterial;
     assert.ok(Math.abs(lum(day.color) / lum(paint.color) - lift) < 0.01, `${name}: ${(lum(day.color) / lum(paint.color)).toFixed(2)}`);
-    assert.ok(8 * lum(day.color) < lum((material('lining') as THREE.MeshLambertMaterial).color), `${name} against the lining`);
+    // relaxed round S5 from eight times (partner decision 2026-11-25: photos R-a and R-b show mid blue-grey ribs; the pin was written to stop wash-out,
+    // not to set colour): three times darker than the lining still forbids a washed-out rib; kx-shed-rib-tone pins the tone they draw
+    assert.ok(3 * lum(day.color) < lum((material('lining') as THREE.MeshLambertMaterial).color), `${name} against the lining`);
     assert.equal(buildingNightMaterialsOf(o)?.night, paint);
   }
 });

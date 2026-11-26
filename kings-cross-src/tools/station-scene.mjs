@@ -13,7 +13,7 @@ import { addKxCentral, KXCENTRAL_OSM_IDS } from '../web/src/kxcentral.ts';
 import { landmarkGeometry } from '../web/src/landmarks.ts';
 import { addPortals, portalHole } from '../web/src/portals.ts';
 import { buildBufferStops, buildTrack } from '../web/src/track.ts';
-import { buildFurniture, buildPlatforms } from '../web/src/furniture.ts';
+import { buildFurniture, buildPlatforms, buildSuburbanWall } from '../web/src/furniture.ts';
 import { buildShed } from '../web/src/shed.ts';
 import { addTerrain } from '../web/src/world.ts';
 
@@ -33,7 +33,8 @@ export function stationData() {
 export function buildStationScene({ data, city, terrain: terrainData } = stationData()) {
   const scene = new THREE.Scene();
   const layout = shedLayout(data), canopy = concourseCanopy(data), station = stationBuilding(data);
-  scene.add(buildTrack(data, layout), buildPlatforms(data, layout), buildFurniture(data, layout));
+  const furniture = buildFurniture(data, layout), suburbanWall = buildSuburbanWall(furniture.userData.plan);
+  scene.add(buildTrack(data, layout), buildPlatforms(data, layout), furniture, ...(suburbanWall ? [suburbanWall] : []));
   const field = createTerrain(terrainData);
   const terrain = addTerrain(scene, field, { exclude: portalHole(tunnelMouths(data)), rails: railSegments(data) }).ground;
   addPortals(scene, data, { terrain });

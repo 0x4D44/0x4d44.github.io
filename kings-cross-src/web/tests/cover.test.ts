@@ -10,7 +10,7 @@ import { PLATFORM_HEIGHT } from '../../core/scene.ts';
 import { concourseCanopy, concourseHeight, pointInPolygon, SHED_SPAN_WIDTH, shedLayout, shedToWorld, stationBuilding, worldToShed } from '../../core/station.ts';
 import { buildConcourse } from '../src/concourse.ts';
 import { applyCover, buildCoverMap, COVER_BLUR, COVER_CELL, COVER_DEEP, COVER_GLSL, COVER_MAX_CELLS, COVER_SHALLOW, COVER_STEP, coverAt, coverHeightAt, coverSoftAt, coverUniforms, findRoofs, groundCoverAt, groundOpenShare, openShare, ROOF_MESHES, ROOM_ROOFS } from '../src/cover.ts';
-import { buildFurniture, furniturePlan } from '../src/furniture.ts';
+import { buildFurniture, furniturePlan, suburbanRoofFootprint } from '../src/furniture.ts';
 import { addLandmarks } from '../src/landmarks.ts';
 import { buildShed, ROOF_SKIN } from '../src/shed.ts';
 import { buildWaverleyScene } from '../src/waverley-scene.ts';
@@ -175,8 +175,21 @@ test('the concourse: under every triangle of the dome, and across its floor, is 
   assert.deepEqual(bare, [], 'and what is not is at the building\'s edge, never in the middle of the floor');
 });
 
+/** Distance from p to the nearest edge of the closed polygon `pts`. */
+function boundaryDistance(p: readonly [number, number], pts: readonly (readonly [number, number])[]): number {
+  let best = Infinity;
+  for (let i = 0; i < pts.length; i++) {
+    const a = pts[i]!, b = pts[(i + 1) % pts.length]!, dx = b[0] - a[0], dz = b[1] - a[1], l2 = dx * dx + dz * dz;
+    const t = l2 === 0 ? 0 : Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / l2));
+    best = Math.min(best, Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dz));
+  }
+  return best;
+}
+
 test('the platform canopies: the strip between a canopy\'s edge beams is covered, the track beside it is open', () => {
   assert.ok(plan.canopies.length >= 2, 'the plan has the canopies of platforms 9 and 10');
+  const footprint = suburbanRoofFootprint(plan)!;
+  let underRoof = 0, open = 0;
   for (const c of plan.canopies) {
     for (let i = 1; i + 1 < c.left.length; i += Math.max(1, Math.floor(c.left.length / 8))) {
       const l = c.left[i] as [number, number], r = c.right[i] as [number, number];
@@ -187,10 +200,17 @@ test('the platform canopies: the strip between a canopy\'s edge beams is covered
       const len = Math.hypot(r[0] - l[0], r[1] - l[1]);
       for (const [from, away] of [[l, -1], [r, 1]] as const) {
         const x = from[0] + ((away * (r[0] - l[0])) / len) * 2.5, z = from[1] + ((away * (r[1] - l[1])) / len) * 2.5;
-        assert.equal(coverAt(map, x, PLATFORM_HEIGHT + 1.6, z), 0, `platform ${c.ref}: 2.5 m beyond an edge beam is open to the rain`);
+        // re-pinned 2026-11-26 (B6 round 2, the coordinator's brief after b6-round-1 score 5.1: one roof from canopy 9 across the 9-10 track and platform 10
+        // to the outer wall, as R-f shows): beyond an edge beam is open to the rain, unless that roof carries on over the track there (suburbanRoofFootprint),
+        // where it is under cover; was open beside every edge beam
+        const roofed = pointInPolygon([x, z], footprint) && boundaryDistance([x, z], footprint) > 0.5;
+        if (!roofed && boundaryDistance([x, z], footprint) <= 0.5) continue; // on the footprint's line itself: the cover map's cell decides, neither is pinned
+        assert.equal(coverAt(map, x, PLATFORM_HEIGHT + 1.6, z), roofed ? 1 : 0, `platform ${c.ref}: 2.5 m beyond an edge beam is ${roofed ? 'under the suburban roof' : 'open to the rain'}`);
+        if (roofed) underRoof++; else open++;
       }
     }
   }
+  assert.ok(underRoof >= 8 && open >= 4, `${underRoof} points beyond an edge beam under the suburban roof, ${open} open`);
 });
 
 test('the weather\'s share: none of the rain, the snow or the wet under a roof; all of it in the open and on top of a roof', () => {

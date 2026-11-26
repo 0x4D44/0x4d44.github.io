@@ -365,7 +365,10 @@ test('the ironwork is dark grey steel, as in R-lighting-materials-a2 and -b, and
     // ribPaint instead of by the steel, the bars keep the steel bound, and every rib still keeps the bound below against the lining
     const ceiling = name === 'shed-ribs' ? 2.5 * luminance(material('ribPaint')) : luminance(material('steel'));
     assert.ok(luminance(m) > 0.02 && luminance(m) <= ceiling + 1e-9, `${name}: dark steel, no lighter than its bound and not black: luminance ${luminance(m).toFixed(3)}`);
-    assert.ok(8 * luminance(m) < lining, `${name} is at least eight times darker than the lining it stands against`);
+    // relaxed round S5 for the ribs only, from eight times to three (partner decision 2026-11-25: photos R-a and R-b show mid blue-grey ribs; the pin was
+    // written to stop wash-out, not to set colour); the bars keep eight
+    const darker = name === 'shed-ribs' ? 3 : 8;
+    assert.ok(darker * luminance(m) < lining, `${name} is at least ${darker} times darker than the lining it stands against`);
     assert.ok(m.emissive.r + m.emissive.g + m.emissive.b < 0.2, `${name}'s lift is a floor, not a glow`);
   }
   assert.ok(!group.getObjectByName('shed-valley-girder'), 'no grey fascia in the valley: R-c shows brick');
