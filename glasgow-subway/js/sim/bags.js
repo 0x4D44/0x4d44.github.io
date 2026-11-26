@@ -356,11 +356,12 @@ function floorPose(rig, o, walk, sit, pole, yaw, sd0, hx, v) {
   if (rig.pT && rig.sP && !rig.down && o && !o.settle && walk > 0.5) { rig.park = null; rig.pT = false; }
   else if (rig.park && rig.tow < 0.02) { rig.pick = true; rig.pT = false; }   // (a pick-up from where it stands: see the trailer's entry below)
   if (!rig.sP) rig.eb = 0;
+  if (!rig.park || !rig.parkP) rig.dyL = undefined;
   if (!rig.park) { rig.parkP = null; rig.pT = false; rig.pick = false; }
   else if (par) {
     const P = rig.pv || (rig.pv = new rig.T.Vector3());
     if (!rig.parkP) { const pm = rig.pm || (rig.pm = new rig.T.Matrix4()); pm.copy(par.matrixWorld).invert(); P.set(rig.park[0], 0, rig.park[1]).applyMatrix4(ob.matrixWorld).applyMatrix4(pm); rig.parkP = [P.x, P.z, ob.rotation.y]; }
-    else { P.set(rig.parkP[0], 0, rig.parkP[1]).applyMatrix4(par.matrixWorld).applyMatrix4(rig.m); rig.park = [P.x, P.z]; dyaw = rig.parkP[2] - ob.rotation.y; }
+    else { P.set(rig.parkP[0], 0, rig.parkP[1]).applyMatrix4(par.matrixWorld).applyMatrix4(rig.m); rig.park = [P.x, P.z]; dyaw = rig.parkP[2] - ob.rotation.y; const d0 = rig.dyL === undefined ? 0 : rig.dyL; dyaw = d0 + Math.atan2(Math.sin(dyaw - d0), Math.cos(dyaw - d0)); rig.dyL = dyaw; }   // (continuous from frame to frame, starting the short way round: taken raw, it jumped by 2 pi as the body's heading crossed pi, and eased by (1 - tow) the case flipped 1.9 - 2.6 rad in a frame as it was picked up; and a park 2 pi off spun the case a full turn - review 69)
   }
   const sx = rig.park ? rig.park[0] : fit.midx + sd0 * (fit.hip + rig.w / 2 + 0.08), sz = rig.park ? rig.park[1] : -fz * 0.12, t = rig.tow;   // (its place beside the leg, as the trailer's: 2 cm nearer, the foot was 0.8 - 4 cm from its side)
   if (t < 0.01) { mesh.position.set(sx, 0, sz); mesh.rotation.set(0, yaw + dyaw, 0); rig.sb = 0; return; }

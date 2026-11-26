@@ -172,14 +172,18 @@ const GARMENT_TINT = { woman_mini: [[/skirt/i, 0.09, 0.12, 0.1], [/camisole/i, 0
   man_kilt_casual: [[/sweater/i, 0.3, 0.26, 0.3]], teen_skater: [[/tennisshoes/i, 0.06, 0.06, 0.07]],
   adult_lusekofta: [[/winterboots/i, 0.12, 0.06, 0.025, 'flat']], adult_beret: [[/riding_boots/i, 0.05, 0.05, 0.05]],
   man_elder: [[/^skin_/, 1.6, 1.35, 1.15]], man_longcoat: [[/^skin_/, 0.78, 0.84, 1.05]], elder_man_suit: [[/^skin_/, 0.74, 0.86, 1.25]],
-  woman_midi: [[/^alpha_brows/, 0.16, 0.1, 0.07]], ya_tube_heels: [[/^alpha_brows/, 0.16, 0.1, 0.07]] };   // (review 68: near-black brows read as a frown - a soft dark brown)   // (review 67: man_elder's skin grey and grimy, man_longcoat's orange - warmed and cooled)   // (review 13: the one maze-striped coat on two women - now a plain camel coat and a plain navy one; the tartan mini on two girls - teen_tube's now plain blue)   // (review 13: the boots' white texture parts stretched into white wedges at the boot tops - now the boot's own colour throughout)   // (review 11: man_beard's red jumper on man_kilt_casual too - now a dark burgundy; teen_skater's white trainers on sum_loose_shorts_w's template - now black)
+  woman_midi: [[/^alpha_brows/, 0.16, 0.1, 0.07], [/^skin_/, 1.1, 1.0, 0.9]],
+  adult_leggings_knit: [[/^(alpha_|scalp_alpha_)hair/, 0.3, 0.12, 0.05], [/knitted_sweater/i, 0.42, 0.36, 0.26, 'flat'], [/^skin_/, 0.95, 0.86, 0.76]],   // (review 69: woman_midi's twin - one face, one black bob, one red jumper. Auburn now, in oatmeal, a shade darker)
+  ya_tube_heels: [[/^alpha_brows/, 0.16, 0.1, 0.07]] };   // (review 68: near-black brows read as a frown - a soft dark brown)   // (review 67: man_elder's skin grey and grimy, man_longcoat's orange - warmed and cooled)   // (review 13: the one maze-striped coat on two women - now a plain camel coat and a plain navy one; the tartan mini on two girls - teen_tube's now plain blue)   // (review 13: the boots' white texture parts stretched into white wedges at the boot tops - now the boot's own colour throughout)   // (review 11: man_beard's red jumper on man_kilt_casual too - now a dark burgundy; teen_skater's white trainers on sum_loose_shorts_w's template - now black)
+/** a face whose resting set reads as a scowl wears this much of the smile at rest (review 69: woman_midi - the brows are under her fringe, the frown is in the mouth) */
+const REST_SMILE = { woman_midi: 0.3 };
 /** the four garment groups the crowd keeps any one of under half of the people near by (_pick) */
 const garmentGroup = (c) => (/skirt|dress|sash/.test(c.outfit) ? 'skirt' : /kilt|highland/.test(c.outfit) && !/trews/.test(c.outfit) ? 'kilt' : /shorts|leggings/.test(c.outfit) ? 'bare' : 'trousers');
 /** 'f' or 'm', from the body's skin material (MPFB2 names them skin_..._female / skin_..._male), '' if neither */
 const sexOf = (node) => { let s = ''; if (node) node.traverse((o) => { for (const x of o.material ? [].concat(o.material) : []) if (!s && /^skin_/.test(x.name || '')) s = /female/.test(x.name) ? 'f' : /male/.test(x.name) ? 'm' : ''; }); return s; };
 // whose far model is poor close to (review 62: boy_kilt's and girl_school_kilt's jumpers a flat box with the arms out of the sleeves; red mouth smears and misaligned eyes on the
 // decimated heads): they keep the full model 8 m further out - to about 19 m, where the far model's faults are a few pixels
-const LOD_POOR = new Set(['boy_kilt', 'girl_school_kilt', 'adult_piper', 'elder_man_suit', 'ya_spiky', 'man_kilt_casual', 'teen_shorts_lad', 'ya_tattoo_tank', 'adult_smile_blouse', 'woman_elder', 'boy_shorts', 'woman_puffer']);
+const LOD_POOR = new Set(['boy_kilt', 'girl_school_kilt', 'adult_piper', 'elder_man_suit', 'ya_spiky', 'man_kilt_casual', 'teen_shorts_lad', 'ya_tattoo_tank', 'adult_smile_blouse', 'woman_elder', 'boy_shorts', 'woman_puffer', 'ya_ginger_long']);
 const FINGER_SIGN = 1;   // a positive turn about a finger bone's own X closes it toward the palm
 const PHONE_SIDE = 1;    // the right hand (_fingerRig: side 0 is the left), which holds a phone to the ear (hold.js holdHands)
 export class AnimCrowd {
@@ -277,6 +281,7 @@ export class AnimCrowd {
    *  measure the legs on, so it takes the full model's leg radii - measured now when both are here, else the same numbers from legradii.js (tools/legradii.mjs). */
   _fitLod(c) {
     const T = this.THREE, n = c.lodNode, f = this.fit[c.id], sk = this._skirted(c);
+    f.fromFull = c.node ? this._lodFromFull(c) : 0;
     if (/kilt|skirt|highland/.test(c.outfit) && !/trews/.test(c.outfit)) this._extendHem(n);
     f.hairLod = fitHair(T, n);
     f.scalpLod = fitScalp(T, n);
@@ -290,6 +295,27 @@ export class AnimCrowd {
     f.webLod = trimWebbing(T, n);
     f.skinHidLod = SKIN_UNDER[c.id] ? this._hideSkinUnder(n, SKIN_UNDER[c.id]) : 0;   // the simplified body has a few triangles joining a hand to a thigh
     f.puffLod = this._puffOuter(n);
+  }
+  /** A garment the simplification all but destroyed (the kilted children's and man_kilt_casual's jumpers: 39 - 42 triangles for the full model's 1440) hung from the
+   *  shoulders as a cape, the sleeves joined to the sides (review 69). It takes the full model's garment instead - already fitted, as _fitFull runs first - its skin
+   *  indices put on to the simplified skeleton by bone name. Only where the two skeletons bind alike (they are one rig), else the garment is left as it is. */
+  _lodFromFull(c) {
+    const F = new Map(); let n = 0;
+    c.node.traverse((m) => { if (m.isSkinnedMesh && m.geometry.index && /^cloth_/.test(m.material.name || '')) F.set(m.material.name, m); });
+    c.lodNode.traverse((m) => {
+      if (!m.isSkinnedMesh || !m.geometry.index || !m.geometry.attributes.skinIndex) return;
+      const s = F.get(m.material.name); if (!s) return;
+      if (m.geometry.userData.fromFull) { n++; return; }
+      const nl = m.geometry.index.count / 3, nf = s.geometry.index.count / 3; if (nl >= 120 || nf < 8 * nl) return;
+      const strip = (b) => b.name.replace(/_\d+$/, ''), lodAt = new Map(m.skeleton.bones.map((b, i) => [strip(b), i])), map = s.skeleton.bones.map((b) => lodAt.get(strip(b)));
+      if (!m.bindMatrix.equals(s.bindMatrix) && m.bindMatrix.elements.some((e, i) => Math.abs(e - s.bindMatrix.elements[i]) > 1e-4)) return;
+      const used = new Set(), SI0 = s.geometry.attributes.skinIndex, SW0 = s.geometry.attributes.skinWeight; for (let i = 0; i < SI0.count; i++) for (let k = 0; k < 4; k++) if (SW0.getComponent(i, k) > 0.001) used.add(SI0.getComponent(i, k));   // (only the bones it hangs from: the two rigs' roots differ by a centimetre)
+      for (const i of used) if (map[i] !== undefined && s.skeleton.boneInverses[i].elements.some((e, k) => Math.abs(e - m.skeleton.boneInverses[map[i]].elements[k]) > 0.01)) return;   // (the rigs differ by 2 - 5 mm a bone: invisible on a jumper)
+      const g = s.geometry.clone(), SI = g.attributes.skinIndex, SW = g.attributes.skinWeight;
+      for (let i = 0; i < SI.count; i++) for (let k = 0; k < 4; k++) { const j = map[SI.getComponent(i, k)]; if (j === undefined) { if (SW.getComponent(i, k) > 0.001) return; SI.setComponent(i, k, 0); } else SI.setComponent(i, k, j); }
+      g.userData.fromFull = true; m.geometry = g; n++;
+    });
+    return n;
   }
   /** On the simplified model the layers under an outer garment were simplified harder than it (the staff work suit is 137 vertices under a 1714-vertex vest), so their
    *  flat faces come through it: the vest became a patchwork of orange on navy and the long coats showed jeans through holes (review 7, on the true far model). The outer
@@ -460,7 +486,7 @@ export class AnimCrowd {
     if (ch.metaH != null && ch.metaH > s.ceilAt(s.x) - s.y - 0.05) return false;
     for (const c of cats) for (const clip of ch.pools[c] || []) {
       const m = this.measure(ch, clip), V = m.verts;
-      for (let i = 0; i < V.length; i += 3) { const x = s.x + cs * V[i] + sn * V[i + 2], y = s.y - m.minY + V[i + 1]; if (Math.abs(x) > 1.07 || y > s.ceilAt(x) - 0.035) return false; }
+      for (let i = 0; i < V.length; i += 3) { const x = s.x + cs * V[i] + sn * V[i + 2], y = s.y - m.minY + V[i + 1]; if (Math.abs(x) > 1.07 || y > s.ceilAt(x) - 0.05) return false; }   // (5 cm: at 3.5 the idle sway put adult_sport_cap's cap to the ceiling at Ibrox, review 69)
     }
     return true;
   }
@@ -620,7 +646,7 @@ export class AnimCrowd {
     // five grown-ups ran 4 women to 1 man for 118 s (review 67)
     if (ch.kid || !ch.sex) return false; let a = 0, ss = 0; const one = (c) => { if (c && !c.kid && c.sex) { a++; if (c.sex === ch.sex) ss++; } };
     for (const q of this.people) if (q.parent === parent && q.char && q.obj && !q.leaving) one(q.char); for (const c of extra) one(c);
-    return a + 1 >= 4 && ss + 1 > 0.6 * (a + 1);
+    return (a + 1 >= 4 && ss + 1 > 0.6 * (a + 1)) || (a + 1 === 3 && ss + 1 === 3);   // (and no car of three grown-ups all of one sex: review 69's ran 3 women to 0 men for all 160 s)
   }
   /** would one more person in ch's garment group make it over half of the people of this crowd within r of (x, z)? (riders getting off on to a platform: review 16 counted
    *  a platform near the player over half one garment in 13 of 65 samples) */
@@ -1145,7 +1171,7 @@ export class AnimCrowd {
       if (((p.state === 'sit') !== !!p.skirtSit || (p.skirtSit && p.skirtObj !== p.obj)) && this._skirted(p.char)) this._skirtSit(p, p.state === 'sit');
       if (this._skirted(p.char) && this._seatDraped(p.char)) this._seatMorph(p, dt);   // (and again on a new model: swapped between the near and far model, a seated skirt kept its standing weights - review 37's dresses)
       if (p.bagRig && p.obj.visible && (p.bagRig.kind !== 'ruck' || p.state === 'sit' || p.bagRig.where !== 'back')) { if (p.leaving) p.obj.updateMatrixWorld(true); stepBag(p.bagRig, p.state === 'sit', p.state === 'pole', !!(p.lod && p.state === 'sit'), this._bagHow(p)); if (p.bagRig.carry) this._bagEase(p.bagRig, dt); }   // (a far-model rider is not animated every frame: its bones' world matrices can still be the standing bind pose's, which put the lap bag at the chin - review 8. fresh = read them after an update. And for one getting off, whose case is held by the hand at the door: a rider not animated every frame has the hand's world matrix from where the train was, up to 1 km back, and the case was handed over there and flew in to the walker - review 62's fix, caught by its own probe. Only the matrices: stepBag's fresh also sets the tow at once, and the case jumped to the hand in one frame - review 63)
-      if (p.face) { let w = 0; if (cam && !p.hidden && p.att && p.att.sm > 0.004) { p.obj.getWorldPosition(v); if (v.distanceTo(cam) < BLINK.range) w = p.att.sm; } if (Math.abs(w - p.face.morphTargetInfluences[0]) > 0.002 || (!w && p.face.morphTargetInfluences[0])) p.face.morphTargetInfluences[0] = w; }
+      if (p.face) { let w = 0; const r0 = REST_SMILE[p.char.id] || 0; if (cam && !p.hidden && ((p.att && p.att.sm > 0.004) || r0)) { p.obj.getWorldPosition(v); if (v.distanceTo(cam) < BLINK.range) w = Math.max(r0, p.att ? p.att.sm || 0 : 0); } if (Math.abs(w - p.face.morphTargetInfluences[0]) > 0.002 || (!w && p.face.morphTargetInfluences[0])) p.face.morphTargetInfluences[0] = w; }
       if (p.eyes && cam && !p.hidden) { p.obj.getWorldPosition(v); if (v.distanceTo(cam) < BLINK.range) { const a = p.att, g = gazeStep(p.gaze, dt, this.rng, { phone: !!p.hold, want: a && a.tgt && a.tgt !== 'about' ? (a.wy || 0) - (a.yaw || 0) : 0 }); if (Math.abs(g.y - p.eyes.y) + Math.abs(g.p - p.eyes.p) > 0.002) p.eyes.set(g.y, g.p); } }
       if (p.lids) { let c = 0; if (cam && !p.hidden) { p.obj.getWorldPosition(v); if (v.distanceTo(cam) < BLINK.range) c = blinkStep(p.blink, dt, this.rng, { sit: p.state === 'sit', phone: !!p.hold }); } if (p.face) c = Math.max(c, 0.2 * p.face.morphTargetInfluences[0]); if (c !== p.lids.c) p.lids.set(c); }   // a real smile narrows the eyes (the cheeks push the lower lids up): without it review 6 read the smiles as faint smirks
       p.stateT += dt; this._goNow = p.mode === 'go'; this._exitNow = false; if (p.bayOut && this._onFloor(p.x, p.z, 0)) p.bayOut = null; this._exitNow = !!p.bayOut;
