@@ -190,7 +190,10 @@ const GARMENT_TINT = { teen_tee: [[/^alpha_hair_/i, 0.13, 0.065, 0.03]], woman_s
   // the one young woman's face (skin_young_asian_female) on four ids: each her own colouring, so they are four people and not one twice (review 70)
   woman_student: [[/^(alpha_|scalp_alpha_)hair/, 0.34, 0.22, 0.15], [/^skin_/, 1.06, 0.97, 0.95]], adult_baggy_knit: [[/^(alpha_|scalp_alpha_)hair/, 0.16, 0.13, 0.12], [/^skin_/, 0.84, 0.71, 0.6]],
   teen_tee: [[/^(alpha_|scalp_alpha_)hair/, 0.75, 0.4, 0.26], [/^skin_/, 1.1, 1.03, 1.0]], sum_crop_bike: [[/^skin_/, 0.93, 0.8, 0.67]],
+  // (review 75: adult_vneck and adult_smile_blouse were one blonde, blue-eyed woman twice - adult_vneck is dark brown, warmer-skinned, darker-eyed)
+  adult_vneck: [[/^(alpha_|scalp_alpha_)hair/, 0.2, 0.12, 0.07], [/^alpha_brows/, 0.12, 0.08, 0.05], [/^skin_/, 1.0, 0.88, 0.78], [/^eye_/, 0.55, 0.4, 0.28]],
   girl_ginger: [[/casualsuit/i, 0.82, 0.88, 1.0, { region: [0, 0.44, 0.72, 1], rgb: [0.9, 1.25, 2.1] }]] };   // (her jeans' rust smear, calmed)   // (review 68: near-black brows read as a frown - a soft dark brown)   // (review 67: man_elder's skin grey and grimy, man_longcoat's orange - warmed and cooled)   // (review 13: the one maze-striped coat on two women - now a plain camel coat and a plain navy one; the tartan mini on two girls - teen_tube's now plain blue)   // (review 13: the boots' white texture parts stretched into white wedges at the boot tops - now the boot's own colour throughout)   // (review 11: man_beard's red jumper on man_kilt_casual too - now a dark burgundy; teen_skater's white trainers on sum_loose_shorts_w's template - now black)
+const SCALP_OPT = { teen_girl: { sparse: 1.01, brow: 1.25 } };   // (review 75: teen_girl's crown showed pale specks where her centre parting left scalp uncovered - the whole scalp is hair-coloured, the hairline held up at 1.25 eye-widths so it is not a straight cut)
 /** a face whose resting set reads as a scowl wears this much of the smile at rest (review 69: woman_midi - the brows are under her fringe, the frown is in the mouth) */
 const REST_SMILE = { woman_midi: 0.3 };
 /** the four garment groups the crowd keeps any one of under half of the people near by (_pick) */
@@ -292,7 +295,7 @@ export class AnimCrowd {
     if (/kilt|skirt|highland/.test(c.outfit) && !/trews/.test(c.outfit)) this._extendHem(n);
     f.sleeves = this._sleeveTubes(n);
     f.hair = fitHair(T, n);
-    f.scalp = fitScalp(T, n);   // hair-coloured roots under the hair, so a gap between strands is not a bare patch
+    f.scalp = fitScalp(T, n, SCALP_OPT[c.id]);   // hair-coloured roots under the hair, so a gap between strands is not a bare patch
     f.hose = fitHoseLegs(T, n);   // legs for the people in long socks (theirs were deleted with the skin a garment hid); the kilt is held off these
     f.legs = sk ? fitLegs(T, n, Object.assign(f.hose ? { radii: f.hose.radii } : {}, /pencil|midi/.test(c.outfit) ? { slim: 0.05, margin: 0.012, slimRamp: 0.03, slimCap: 0.4 } : { slimRamp: 0.04 })) : null;   // (a pencil skirt fits close: the thighs came through its front mid-stride - review 3)   // skirts held off the thighs (shader patch + slimmed thigh skin)
     f.trim = sk ? trimUnderSkirt(T, n, c.id === 'woman_midi' ? { skirtTo: 0.012 } : {}) : null;   // tops: nothing drawn under the skirt's waist edge
@@ -311,7 +314,7 @@ export class AnimCrowd {
     f.fromFull = c.node ? this._lodFromFull(c) : 0;
     if (/kilt|skirt|highland/.test(c.outfit) && !/trews/.test(c.outfit)) this._extendHem(n);
     f.hairLod = fitHair(T, n);
-    f.scalpLod = fitScalp(T, n);
+    f.scalpLod = fitScalp(T, n, SCALP_OPT[c.id]);
     f.hoseLod = fitHoseLegs(T, n);
     const radii = (f.hoseLod && f.hoseLod.radii) || (f.legs && f.legs.radii) || LEG_RADII[c.id];
     f.legsLod = sk ? fitLegs(T, n, { radii, slim: 0.055, slimCap: 0.55, slimRamp: 0.2 }) : null;
