@@ -366,10 +366,14 @@ class Sim {
         else if (!q.char.kid) { if (seat.p === q) seat.p = null; seat = null; }
       }   // (held up short of their seat, they stand where they are: settled from there, the body glided seated up to 2.6 m along the car - review 45's probe)
       const at = reached && !seat && spot.yaw != null, here = { x: at || (seat && reached && spot.feet) ? spot.x : (c.x < 0 ? -1 : 1) * Math.max(0.14, Math.min(0.25, Math.abs(c.x))), y: PY, z: at || (seat && reached && spot.feet) ? spot.z : c.z, yaw: at ? spot.yaw : c.yaw, ceilAt, mode: 'stand' }, look = { char: p.char, print: p.print, teeColour: p.teeColour, bag: p.bag, force: true, pose: sc.snapPose(p) };   // (their own bag comes aboard with them: without it the car gave them a new one - review 18, 16 of 19 boarders changed bags at the door)
+      // held up short of their spot (or of their seat: a child keeps it), they are made where they stopped - which can be 0.33 m from someone else who stopped there too (the
+      // riders audit, 1 run in 6 after the walkers began braking for anyone in the path): along the aisle to the nearest place 0.55 m clear of every stander, as spots are chosen
+      if (!at && !(seat && reached && spot.feet)) { const clash = (z) => sc.people.some((o) => o.parent === car && o.obj && o.state !== 'sit' && Math.hypot(o.x - here.x, o.z - z) < 0.55);
+        if (clash(here.z)) for (const d of [0.15, -0.15, 0.3, -0.3, 0.45, -0.45, 0.6, -0.6]) { const z = here.z + d; if (Math.abs(z) < info.len / 2 - 0.6 && !clash(z) && !sc._bagNear(car, here.x, z) && sc._fitsStandAt(p.char, { ...here, z })) { here.z = z; break; } } }
       if (!seat && !sc._fitsStandAt(p.char, here)) return free('too tall here');
       // handed over well short of the place they were given (more than HOV_REACH): they are made where they really stand and step across to it, not drawn there and eased 1 - 1.4 m
       // in the 0.4 s blend - the body slid and both feet, planted on the old body's, were left out of reach and floated 0.3 - 0.45 m off the floor (review 62, 1 boarder in 10)
-      const near = { x: (c.x < 0 ? -1 : 1) * Math.max(0.14, Math.min(0.25, Math.abs(c.x))), y: PY, z: c.z, yaw: c.yaw, ceilAt, mode: 'stand' }, far = Math.hypot(c.x - here.x, c.z - here.z) > HOV_REACH && sc._fitsStandAt(p.char, near), walkTo = far ? { x: here.x, z: here.z } : null;
+      const near = { x: (c.x < 0 ? -1 : 1) * Math.max(0.14, Math.min(0.25, Math.abs(c.x))), y: PY, z: at || (seat && reached && spot.feet) ? c.z : here.z, yaw: c.yaw, ceilAt, mode: 'stand' }, far = Math.hypot(c.x - here.x, c.z - here.z) > HOV_REACH && sc._fitsStandAt(p.char, near), walkTo = far ? { x: here.x, z: here.z } : null;
       if (far) Object.assign(here, { x: near.x, z: near.z });
       p.print = null; const np = sc.add({ ...look, ...here, yaw: c.yaw, static: true, state: 'stand' }, car); if (!np.obj) return free('not added');
       np.rootOff = { x: c.x - np.x, z: c.z - np.z }; sc._place(np, true);   // (drawn first where they really are)
