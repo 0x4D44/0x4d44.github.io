@@ -121,7 +121,10 @@ test('B1: the ribs and haunch rings a lighter blue-grey by day (RIB_DAY_LIFT), r
   for (const name of ['shed-ribs', 'shed-haunch-rings']) {
     const o = group.getObjectByName(name) as THREE.Mesh, day = o.material as THREE.MeshLambertMaterial;
     assert.ok(Math.abs(lum(day.color) / lum(paint.color) - lift) < 0.01, `${name} by day: ${(lum(day.color) / lum(paint.color)).toFixed(2)} of ribPaint`);
-    assert.ok(day.emissive.equals(paint.emissive) && day.customProgramCacheKey() === paint.customProgramCacheKey(), `${name}: the paint's emissive and program`);
+    // re-pinned round S5 (B1, the glazing's light on the ribs by day, RIB_DAY_GLOW): the day glow is the day colour times RIB_DAY_GLOW, no longer the
+    // paint's own; the program is still the paint's
+    const glow = day.color.clone().multiplyScalar(S.RIB_DAY_GLOW as number);
+    assert.ok(Math.abs(day.emissive.r - glow.r) + Math.abs(day.emissive.g - glow.g) + Math.abs(day.emissive.b - glow.b) < 1e-6 && day.customProgramCacheKey() === paint.customProgramCacheKey(), `${name}: the day glow and the paint's program`);
     assert.equal(buildingNightMaterialsOf(o)?.night, paint, `${name} at night: ribPaint`);
   }
   assert.equal(lum(paint.color).toFixed(4), lum(new THREE.Color(0x343b42)).toFixed(4), 'ribPaint itself unchanged');
