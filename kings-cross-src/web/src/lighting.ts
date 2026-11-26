@@ -20,6 +20,7 @@
 // same one the rain stops at) keeps only part of its hemisphere light and a little less of its direct light. (R-lighting-materials-b:
 // the platforms under the Barlow shed are a fifth as bright as the forecourt, and the tarmac is near black.)
 import * as THREE from 'three';
+import { SHED_VALLEY_WIDTH } from '../../core/station.ts';
 import { COVER_GLSL, coverUniforms } from './cover.ts';
 import { buildingNightMaterialsOf, windowNight } from './materials.ts';
 import { HEADLAMP_FRAGMENT, headlampUniforms } from './train-headlamp-light.ts';
@@ -460,6 +461,8 @@ export const SHED_UNDER = { ends: [1.3, 1.5] } as const;
  * shade down to about 1.4). So the band is now on the floor's diffuse light, the sun's and the sky's alike (`crown` on both terms): the stripes keep
  * their ratio, and the sunlit floor on the crown line (119.5) is about 134 (+14.6), nothing by `band[1]` (0.38) of the half-span.
  */
+// B2 round 2: the band (from shedCrown on) is centred on the vaults' own crowns (core/station.ts shedVaultCentres, a quarter of the valley outboard of the
+// half-span's middle) and measured in their radius (SHED_VAULT_RADIUS); the near-wall bounce (shedNear) keeps the half-span's frame
 export const SHED_SKY = { bounce: 1.6, wall: 0.8, reach: [2, 6], height: [3, 6], crown: 0.22, band: [0, 0.38], up: [0.5, 0.9] } as const;
 export const NO_SHED_LIGHT = 'NO_SHED_LIGHT';
 /** GLSL (after the roof's shade, with SHED_WALL_SUN_GLSL): SHED_SKY on the indirect light. */
@@ -470,6 +473,8 @@ export const SHED_SKY_GLSL = `if ( uShedDiffuse > 0.0 ) {
     float shedOff = abs( abs( shedQ.x - 0.5 * ( uShedSize.x + uShedSize.y ) ) - shedR );
     float shedNear = ( 1.0 - smoothstep( ${SHED_SKY.reach[0].toFixed(2)}, ${SHED_SKY.reach[1].toFixed(2)}, shedR - shedOff ) ) * ( 1.0 - smoothstep( ${SHED_SKY.height[0].toFixed(2)}, ${SHED_SKY.height[1].toFixed(2)}, shedQ.y ) );
     float shedUp = smoothstep( ${SHED_SKY.up[0].toFixed(2)}, ${SHED_SKY.up[1].toFixed(2)}, ( normal * mat3( viewMatrix ) ).y );
+    shedOff = abs( abs( shedQ.x - 0.5 * ( uShedSize.x + uShedSize.y ) ) - shedR - ${(SHED_VALLEY_WIDTH / 4).toFixed(4)} );
+    shedR = shedR - ${(SHED_VALLEY_WIDTH / 4).toFixed(4)};
     float shedCrown = ( 1.0 - smoothstep( ${SHED_SKY.band[0].toFixed(2)}, ${SHED_SKY.band[1].toFixed(2)}, shedOff / shedR ) ) * shedUp;
     float shedK = shedUnder( shedP );
     float shedC = shedK * ${SHED_SKY.crown.toFixed(4)} * shedCrown;

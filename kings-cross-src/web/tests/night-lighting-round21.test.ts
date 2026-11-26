@@ -124,10 +124,10 @@ test('Waverley full daylight and Perth preserve their material identity, shaders
     at(day,0);
     const daySignatures = materials.map(signature), dayKeys = materials.map(m=>m.customProgramCacheKey());
     assert.deepEqual(daySignatures,[
-      'c933eff1adc865eb98dceab860a3350dda078d6b5b7dd6e2ed98582c49557e0c',
-      'b121e0ea8a670f6c1698ab0b109f4791f812b4a2eac124722dc4806ca1aa0465',
+      '14966994cca1fd3b74fbceb0aa0c9c7d766a51bbcc3af8ca08073dfef62dcc5f',
+      '6d3f28d051f04b6c57659a0bb15a7cfc0fc8aff039fda1e9a31bc9d2cbd3daef',
     ],'Waverley daylight programs match round 20');
-    assert.equal(perthSignature,'95cbaee760e9b6469c1abc42cfc773aa351aadea57ee1b72e979cbaa43e26bc2');
+    assert.equal(perthSignature,'fbe9ccb1d866a1e05005d384046a3e1eb767bfd05575c603b90393c1ccf37cc3');
     const counts = topology();
     at(night,1000);
     assert.ok(targets.every((mesh,i)=>signature(mesh.material)!==daySignatures[i]),'both night contributions are active in the real weather entry point');
