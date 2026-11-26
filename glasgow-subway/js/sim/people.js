@@ -1560,7 +1560,10 @@ export class AnimCrowd {
     const move = steerStep(p, dt, { hT: Math.atan2(-pick.ux, -pick.uz), want: Math.min(sp, this._followCap(p, dx / d, dz / d)), d, stop: !!p.stopHere });
     p.steered = true; p.yawT = p.yaw;
     let sx = -Math.sin(p.yaw) * move, sz = -Math.cos(p.yaw) * move;
-    if (!ok(p.x + sx, p.z + sz)) { p.sp = Math.max(0, p.sp - 2 * STEER.BMAX * dt); sx = sz = 0; }   // not facing the checked way yet and the way it faces is blocked: hold, turn, then go
+    if (!ok(p.x + sx, p.z + sz)) {   // not facing the checked way yet and the way it faces is blocked: hold, turn, then go
+      // ... but a shorter step first, if that is clear: zeroed outright, the root halted dead for single frames mid-walk, six times in 0.8 s (review 72: ya_smile_halter)
+      p.sp = Math.max(0, p.sp - 2 * STEER.BMAX * dt); const k = [0.6, 0.3].find((f) => ok(p.x + sx * f, p.z + sz * f)); if (k) { sx *= k; sz *= k; } else sx = sz = 0;
+    }
     p.x += sx; p.z += sz;
     return true;
   }
