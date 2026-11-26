@@ -1,5 +1,5 @@
 {
- "generated": "2026-11-25T21:20:52Z",
+ "generated": "2026-11-26T22:44:42Z",
  "n_passages": 1496,
  "n_files": 431,
  "n_labelled": 1328,
@@ -8,257 +8,321 @@
    "model": "claude-fable-5.2",
    "form": null,
    "n": 43,
-   "plain": 0.0233,
-   "matched": 0.6279,
-   "with_nonfiction": 0.5116
+   "n_docs": 3,
+   "plain": 0.2558,
+   "matched": 0.5581,
+   "with_nonfiction": 0.4419,
+   "documents": 0.3333
   },
   {
    "model": "claude-fable-5.2",
    "form": "short-stories",
    "n": 43,
-   "plain": 0.0233,
-   "matched": 0.6279,
-   "with_nonfiction": 0.5116
+   "n_docs": 3,
+   "plain": 0.2558,
+   "matched": 0.5581,
+   "with_nonfiction": 0.4419,
+   "documents": 0.3333
   },
   {
    "model": "claude-opus-3",
    "form": null,
    "n": 120,
-   "plain": 0.0,
-   "matched": 0.5833,
-   "with_nonfiction": 0.7083
+   "n_docs": 1,
+   "plain": 0.0167,
+   "matched": 0.2,
+   "with_nonfiction": 0.2417,
+   "documents": 0.0
   },
   {
    "model": "claude-opus-3",
    "form": "short-stories",
    "n": 120,
-   "plain": 0.0,
-   "matched": 0.5833,
-   "with_nonfiction": 0.7083
+   "n_docs": 1,
+   "plain": 0.0167,
+   "matched": 0.2,
+   "with_nonfiction": 0.2417,
+   "documents": 0.0
   },
   {
    "model": "claude-opus-4",
    "form": null,
    "n": 128,
-   "plain": 0.2031,
-   "matched": 0.9609,
-   "with_nonfiction": 0.9531
+   "n_docs": 9,
+   "plain": 0.2734,
+   "matched": 0.9453,
+   "with_nonfiction": 0.9297,
+   "documents": 1.0
   },
   {
    "model": "claude-opus-4.1",
    "form": null,
    "n": 160,
-   "plain": 0.1938,
-   "matched": 0.9563,
-   "with_nonfiction": 0.9375
+   "n_docs": 61,
+   "plain": 0.3625,
+   "matched": 0.8313,
+   "with_nonfiction": 0.8688,
+   "documents": 0.918
   },
   {
    "model": "claude-opus-4.1",
    "form": "short-stories",
    "n": 160,
-   "plain": 0.1938,
-   "matched": 0.9563,
-   "with_nonfiction": 0.9375
+   "n_docs": 61,
+   "plain": 0.3625,
+   "matched": 0.8313,
+   "with_nonfiction": 0.8688,
+   "documents": 0.918
   },
   {
    "model": "claude-opus-4.5",
    "form": null,
    "n": 116,
-   "plain": 0.2759,
-   "matched": 0.9397,
-   "with_nonfiction": 0.9224
+   "n_docs": 10,
+   "plain": 0.5603,
+   "matched": 0.9741,
+   "with_nonfiction": 0.9483,
+   "documents": 1.0
   },
   {
    "model": "claude-opus-4.5",
    "form": "short-stories",
    "n": 116,
-   "plain": 0.2759,
-   "matched": 0.9397,
-   "with_nonfiction": 0.9224
+   "n_docs": 10,
+   "plain": 0.5603,
+   "matched": 0.9741,
+   "with_nonfiction": 0.9483,
+   "documents": 1.0
   },
   {
    "model": "claude-opus-4",
    "form": "short-stories",
    "n": 128,
-   "plain": 0.2031,
-   "matched": 0.9609,
-   "with_nonfiction": 0.9531
+   "n_docs": 9,
+   "plain": 0.2734,
+   "matched": 0.9453,
+   "with_nonfiction": 0.9297,
+   "documents": 1.0
   },
   {
    "model": "claude-sonnet-3.5",
    "form": null,
    "n": 51,
-   "plain": 0.0,
-   "matched": 0.9216,
-   "with_nonfiction": 0.7647
+   "n_docs": 1,
+   "plain": 0.0196,
+   "matched": 1.0,
+   "with_nonfiction": 0.9412,
+   "documents": 1.0
   },
   {
    "model": "claude-sonnet-3.5",
    "form": "short-stories",
    "n": 51,
-   "plain": 0.0,
-   "matched": 0.9216,
-   "with_nonfiction": 0.7647
+   "n_docs": 1,
+   "plain": 0.0196,
+   "matched": 1.0,
+   "with_nonfiction": 0.9412,
+   "documents": 1.0
   },
   {
    "model": "claude-sonnet-4.5",
    "form": null,
    "n": 160,
-   "plain": 0.1,
-   "matched": 0.8438,
-   "with_nonfiction": 0.8938
+   "n_docs": 292,
+   "plain": 0.3187,
+   "matched": 0.8187,
+   "with_nonfiction": 0.9563,
+   "documents": 0.9281
   },
   {
    "model": "claude-sonnet-4.5",
    "form": "novels",
    "n": 61,
-   "plain": 0.0328,
+   "n_docs": 110,
+   "plain": 0.1803,
    "matched": 0.9672,
-   "with_nonfiction": 0.9016
+   "with_nonfiction": 0.9508,
+   "documents": 0.9455
   },
   {
    "model": "claude-sonnet-4.5",
    "form": "scripts-and-tv",
    "n": 29,
-   "plain": 0.0,
-   "matched": 0.3103,
-   "with_nonfiction": 0.8621
+   "n_docs": 49,
+   "plain": 0.3103,
+   "matched": 0.2069,
+   "with_nonfiction": 0.931,
+   "documents": 0.7959
   },
   {
    "model": "claude-sonnet-4.5",
    "form": "short-stories",
    "n": 70,
-   "plain": 0.2,
-   "matched": 0.9571,
-   "with_nonfiction": 0.9
+   "n_docs": 133,
+   "plain": 0.4429,
+   "matched": 0.9429,
+   "with_nonfiction": 0.9714,
+   "documents": 0.9624
   },
   {
    "model": "gemini",
    "form": null,
    "n": 96,
-   "plain": 0.0,
+   "n_docs": 8,
+   "plain": 0.0625,
    "matched": 0.875,
-   "with_nonfiction": 0.8125
+   "with_nonfiction": 0.9062,
+   "documents": 1.0
   },
   {
    "model": "gemini",
    "form": "short-stories",
    "n": 96,
-   "plain": 0.0,
+   "n_docs": 8,
+   "plain": 0.0625,
    "matched": 0.875,
-   "with_nonfiction": 0.8125
+   "with_nonfiction": 0.9062,
+   "documents": 1.0
   },
   {
    "model": "o1",
    "form": null,
    "n": 157,
-   "plain": 0.051,
-   "matched": 0.535,
-   "with_nonfiction": 0.8089
+   "n_docs": 32,
+   "plain": 0.3185,
+   "matched": 0.4904,
+   "with_nonfiction": 0.9809,
+   "documents": 1.0
   },
   {
    "model": "o1-pro",
    "form": null,
    "n": 158,
-   "plain": 0.2532,
-   "matched": 0.9747,
-   "with_nonfiction": 0.9937
+   "n_docs": 86,
+   "plain": 0.5,
+   "matched": 0.9937,
+   "with_nonfiction": 0.9873,
+   "documents": 0.9884
   },
   {
    "model": "o1-pro",
    "form": "short-stories",
    "n": 158,
-   "plain": 0.2532,
-   "matched": 0.9747,
-   "with_nonfiction": 0.9937
+   "n_docs": 86,
+   "plain": 0.5,
+   "matched": 0.9937,
+   "with_nonfiction": 0.9873,
+   "documents": 0.9884
   },
   {
    "model": "o1",
    "form": "non-fiction",
    "n": 29,
-   "plain": 0.0,
-   "matched": 0.4828,
-   "with_nonfiction": 0.7241
+   "n_docs": 6,
+   "plain": 0.1724,
+   "matched": 0.4138,
+   "with_nonfiction": 0.9655,
+   "documents": 1.0
   },
   {
    "model": "o1",
    "form": "scripts-and-tv",
    "n": 100,
-   "plain": 0.0,
-   "matched": 0.46,
-   "with_nonfiction": 0.79
+   "n_docs": 20,
+   "plain": 0.26,
+   "matched": 0.38,
+   "with_nonfiction": 0.99,
+   "documents": 1.0
   },
   {
    "model": "o1",
    "form": "short-stories",
    "n": 28,
-   "plain": 0.2857,
-   "matched": 0.8571,
-   "with_nonfiction": 0.9643
+   "n_docs": 6,
+   "plain": 0.6786,
+   "matched": 0.9643,
+   "with_nonfiction": 0.9643,
+   "documents": 1.0
   },
   {
    "model": "o3",
    "form": null,
    "n": 46,
+   "n_docs": 2,
    "plain": 0.0,
-   "matched": 0.0652,
-   "with_nonfiction": 0.4348
+   "matched": 0.087,
+   "with_nonfiction": 0.7391,
+   "documents": 1.0
   },
   {
    "model": "o3-mini",
    "form": null,
    "n": 93,
-   "plain": 0.0,
-   "matched": 0.9462,
-   "with_nonfiction": 0.9892
+   "n_docs": 4,
+   "plain": 0.086,
+   "matched": 1.0,
+   "with_nonfiction": 1.0,
+   "documents": 1.0
   },
   {
    "model": "o3-mini",
    "form": "short-stories",
    "n": 93,
-   "plain": 0.0,
-   "matched": 0.9462,
-   "with_nonfiction": 0.9892
+   "n_docs": 4,
+   "plain": 0.086,
+   "matched": 1.0,
+   "with_nonfiction": 1.0,
+   "documents": 1.0
   },
   {
    "model": "o3",
    "form": "non-fiction",
    "n": 46,
+   "n_docs": 2,
    "plain": 0.0,
-   "matched": 0.0652,
-   "with_nonfiction": 0.4348
+   "matched": 0.087,
+   "with_nonfiction": 0.7391,
+   "documents": 1.0
   },
   {
    "model": "unknown",
    "form": null,
    "n": 168,
-   "plain": 0.0417,
-   "matched": 0.619,
-   "with_nonfiction": 0.6786
+   "n_docs": 189,
+   "plain": 0.2619,
+   "matched": 0.6369,
+   "with_nonfiction": 0.744,
+   "documents": 0.9259
   },
   {
    "model": "unknown",
    "form": "non-fiction",
    "n": 48,
+   "n_docs": 4,
    "plain": 0.0,
-   "matched": 0.0417,
-   "with_nonfiction": 0.2292
+   "matched": 0.25,
+   "with_nonfiction": 0.7083,
+   "documents": 0.5
   },
   {
    "model": "unknown",
    "form": "novels",
    "n": 90,
-   "plain": 0.0222,
-   "matched": 0.8222,
-   "with_nonfiction": 0.8111
+   "n_docs": 175,
+   "plain": 0.2667,
+   "matched": 0.7222,
+   "with_nonfiction": 0.6889,
+   "documents": 0.9314
   },
   {
    "model": "unknown",
    "form": "short-stories",
    "n": 30,
-   "plain": 0.1667,
-   "matched": 0.9333,
-   "with_nonfiction": 1.0
+   "n_docs": 10,
+   "plain": 0.6667,
+   "matched": 1.0,
+   "with_nonfiction": 0.9667,
+   "documents": 1.0
   }
  ],
  "who": {
@@ -694,7 +758,7 @@
    "top": "o1-pro",
    "top_share": 0.4,
    "claude_share": 0.35,
-   "caught": 0.45
+   "caught": 1.0
   },
   {
    "date": "2025.10.02",
@@ -703,7 +767,7 @@
    "top": "claude-opus-4.5",
    "top_share": 0.6333,
    "claude_share": 1.0,
-   "caught": 1.0
+   "caught": 0.9667
   },
   {
    "date": "2025.10.27",
@@ -712,7 +776,7 @@
    "top": "claude-sonnet-4.5",
    "top_share": 0.6333,
    "claude_share": 1.0,
-   "caught": 0.9667
+   "caught": 1.0
   },
   {
    "date": "2025.10.27",
@@ -721,7 +785,7 @@
    "top": "claude-fable-5.2",
    "top_share": 0.5,
    "claude_share": 0.8667,
-   "caught": 0.5
+   "caught": 0.1333
   },
   {
    "date": "2025.10.30",
@@ -730,7 +794,7 @@
    "top": "o1",
    "top_share": 0.7778,
    "claude_share": 0.2222,
-   "caught": 0.0741
+   "caught": 0.5185
   },
   {
    "date": "2025.11.09",
@@ -739,7 +803,7 @@
    "top": "claude-opus-4.1",
    "top_share": 0.5667,
    "claude_share": 1.0,
-   "caught": 0.9667
+   "caught": 0.9333
   }
  ]
 }

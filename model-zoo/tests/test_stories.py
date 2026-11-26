@@ -271,6 +271,19 @@ class GroupedSplit(unittest.TestCase):
             self.assertEqual(nf_row["matched_new"]["n_human"], 6)
             self.assertEqual(nf_row["matched_new"]["n_model"], 6)
             self.assertEqual(out["matched"]["humans_new"]["wiki"]["n_human"], 6)
+            fixed = out["better"]["fixed"]["both"]
+            n_h = {"reddit": 9, "gutenberg": 3, "author": 3, "wiki": 6}
+            called = sum(fixed["humans_called_ai"][k] * n for k, n in n_h.items()) / sum(n_h.values())
+            self.assertLessEqual(called, out["better"]["false_alarms"])   # the threshold holds false alarms to the target
+            self.assertEqual({(g["genre"], g["family"]) for g in out["better"]["genres"]},
+                             {(g, f) for g in ("stories", "essays", "nonfiction") for f in ("gpt", "claude")})
+
+    def test_style_vec_ignores_typesetting_but_sees_habits(self):
+        a = D.style_vec("“Well,” she said -- it's late. *Very* late.")
+        b = D.style_vec('"Well," she said — it’s late. Very late.')
+        self.assertEqual(a, b)
+        semi = D.MARKS.index(";")
+        self.assertGreater(D.style_vec("We ate; we left; we slept.")[semi], D.style_vec("We ate. We left. We slept.")[semi])
 
     def test_scrub_drops_the_heading_and_the_title(self):
         t = D.scrub("# On Owning Nothing\n\nI wrote on owning nothing last year. On Owning Nothing, again.", "On Owning Nothing")
@@ -329,7 +342,7 @@ class Books(unittest.TestCase):
                     emb = {}
                     with open(os.path.join(d, "q33-story.jsonl"), "w") as f:
                         for s in range(6):
-                            f.write(json.dumps({"model": "gpt-a", "sample": s, "ok": True, "text": "x"}) + "\n")
+                            f.write(json.dumps({"model": "gpt-a", "sample": s, "ok": True, "text": "T\n" + para}) + "\n")
                             emb["gpt-a-s%d" % s] = (rng.normal(size=8) + 2).tolist()
                     with open(os.path.join(d, "human", "gutenberg.jsonl"), "w") as f:
                         for s in range(6):
@@ -346,7 +359,9 @@ class Books(unittest.TestCase):
                 self.assertNotIn(w, blob)
             self.assertEqual(out["who"]["models"]["classes"], ["claude-x", "o9"])
             self.assertEqual(out["unknown"][0]["date"], "2025.01.03")
-            self.assertTrue(any(r["model"] == "claude-x" and r["form"] is None for r in out["detector"]))
+            row = [r for r in out["detector"] if r["model"] == "claude-x" and r["form"] is None][0]
+            self.assertEqual(row["n_docs"], 4)
+            self.assertEqual(row["documents"], 1.0)                  # every passage reads as AI, so every document does
 
 
 if __name__ == "__main__":

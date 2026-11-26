@@ -12,12 +12,14 @@
                                    ../data/detect-{wp,essay,nf}.jsonl (resumable; hard cap DETECT_BUDGET,
                                    default USD 18, counting all three)
   detect.py embed                  embed those texts (text-embedding-3-small) into ../data/embeddings/detect.json
-  detect.py                        build ../site/detect.json: grouped-split logistic regression on the
-                                   embeddings, error rates per kind, and the topic-matched comparison
+  detect.py                        build ../site/detect.json: grouped-split logistic regressions on the
+                                   embeddings and on style counts (style_vec), blended; error rates per kind,
+                                   the topic-matched comparison, and what the style view adds (better)
 
 The site file holds only rates, counts, distances and 2-D points: never human text, prompts or titles.
 """
 import hashlib, json, os, random, re, statistics, sys
+from collections import Counter
 from datetime import datetime, timezone
 
 import numpy as np
@@ -286,6 +288,26 @@ def _fit_logreg(x, y, alpha, iters):
     return score
 
 
+def logit(p):
+    p = np.clip(p, 1e-6, 1 - 1e-6)
+    return np.log(p / (1 - p))
+
+
+def blend(p_emb, p_style):
+    """The detector's verdict: the two views' log-odds averaged with equal weight (fixed, never tuned)."""
+    return 1 / (1 + np.exp(-(logit(p_emb) + logit(p_style)) / 2))
+
+
+def style_matrix(items):
+    return np.array([style_vec(it["text"]) for it in items], dtype=float)
+
+
+def fit_detector(x, s, y):
+    """A logistic regression on each view, blended. Returns a scorer: (embeddings, style rows) -> P(model)."""
+    fe, fs = fit_logreg(x, y), fit_logreg(s, y)
+    return lambda xr, sr: blend(fe(xr), fs(sr))
+
+
 def topic_fold(topic, k=K_TOPIC):
     if topic is None:
         return None
@@ -345,6 +367,33 @@ def rates(items, s, idx):
     return out
 
 
+FUNCTION_WORDS = ("the a an and but or of to in on at by for with from as that which who this these those it its "
+                  "i me my we our you your he him his she her they them their is was were be been have has had "
+                  "do did not no so if then than there here very just only also even still perhaps maybe really "
+                  "quite rather such all some any each every more most like").split()
+MARKS = (",", ";", ":", "!", "?", "(", '"', "'", "—", "…")
+
+
+def style_vec(text):
+    """How a passage is written, whatever it is about: per-1,000-word rates of punctuation and function words,
+    sentence length and its spread, word length and vocabulary range. Quotes and dashes are normalised first
+    so a typesetting convention does not count as style."""
+    t = stories.norm(re.sub(r"[*_#]", "", text or "")).replace("“", '"').replace("”", '"')
+    t = re.sub(r"\s*(?:--|—|\s–\s)\s*", " — ", t).replace("...", "…")
+    toks = stories.tokenize(t)
+    n = max(len(toks), 1)
+    per = 1000.0 / n
+    c = Counter(toks)
+    sl = [len(stories.tokenize(s)) for s in re.split(r"(?<=[.!?…])[\"')\]]*\s+", t) if stories.tokenize(s)] or [0]
+    v = [t.count(m) * per for m in MARKS]
+    v += [c[w] * per for w in FUNCTION_WORDS]
+    v += [sum(k.endswith("n't") for k in toks) * per, sum(len(k) > 4 and k.endswith("ly") for k in toks) * per,
+          len(re.findall(r"\d", t)) * per, float(np.mean([len(k) for k in toks] or [0])),
+          float(np.mean(sl)), float(np.std(sl)), float(np.std(sl) / (np.mean(sl) or 1)),
+          float(np.mean([s <= 5 for s in sl])), float(np.mean([s > 30 for s in sl])), stories.mattr(toks)]
+    return v
+
+
 def cos_dist(a, b):
     a, b = stories._unit([a])[0], stories._unit([b])[0]
     return float(1 - a @ b)
@@ -371,16 +420,17 @@ def load(data_dir=None):
     for r in jl(os.path.join(d, "q33-story.jsonl")):
         if r.get("ok") and (r.get("text") or "").strip():
             add(id="%s-s%s" % (r["model"], r["sample"]), model=r["model"], group=model_group(r["model"]),
+                text=(r["text"].strip().split("\n", 1) + [""])[1],   # the body: stories.py drops the title line
                 kind="gpt" if provider(r["model"], meta) == "openai" else "claude", y=1, topic=None, set="base")
     for fname, kind in (("writingprompts.jsonl", "reddit"), ("gutenberg.jsonl", "gutenberg"),
                         ("author.jsonl", "author"), ("wikipedia.jsonl", "wiki")):
         for r in jl(os.path.join(d, "human", fname)):
             topic = r["id"] if kind in ("reddit", "author", "wiki") else None
             # Wikipedia came later, with its matched texts: it stays out of the original set.
-            add(id=r["id"], group="h:" + r["group"], kind=kind, y=0, topic=topic,
+            add(id=r["id"], group="h:" + r["group"], kind=kind, y=0, topic=topic, text=r["text"],
                 set="nf" if kind == "wiki" else "base")
     for r in gen_rows(d):
-        add(id=gen_id(r), model=r["model"], group=model_group(r["model"]), y=1, topic=r["topic"], set=r["set"],
+        add(id=gen_id(r), model=r["model"], group=model_group(r["model"]), y=1, topic=r["topic"], set=r["set"], text=prose(r["text"]),
             kind="gpt" if provider(r["model"], meta) == "openai" else "claude")
     # Only a topic someone matched is a topic: an unused Reddit prompt constrains nothing.
     used = {it["topic"] for it in items if it["set"] != "base"}
@@ -392,11 +442,14 @@ def load(data_dir=None):
 
 def build(data_dir=None):
     items, x = load(data_dir)
+    st = style_matrix(items)
     n = len(items)
     base = [i for i in range(n) if items[i]["set"] == "base"]
-    sA = cross_scores(items, x, base)          # trained on the original texts only
+    eA = cross_scores(items, x, base)          # trained on the original texts only: the embedding view
+    sA = blend(eA, cross_scores(items, st, base))
     matched_models = sorted({items[i]["model"] for i in range(n) if items[i]["set"] != "base" and items[i]["y"] == 1})
-    sC = cross_scores(items, x, list(range(n))) if matched_models else sA   # with the matched texts too
+    eC = cross_scores(items, x, list(range(n))) if matched_models else eA   # with the matched texts too
+    sC = blend(eC, cross_scores(items, st, list(range(n)))) if matched_models else sA
 
     def kidx(kind, sets=("base",), pred=lambda it: True):
         return [i for i in range(n) if items[i]["kind"] == kind and items[i]["set"] in sets and pred(items[i])]
@@ -440,9 +493,46 @@ def build(data_dir=None):
                                          "wiki": rates(items, sA, hum_wk)},
                           "humans_new": {"reddit": rates(items, sC, hum_wp), "author": rates(items, sC, hum_ax),
                                          "wiki": rates(items, sC, hum_wk)}}
+        out["better"] = better(items, eC, sC)
         out["distances"] = distances(items, x, mm)
         out["map"] = map_points(items, x)
     return out
+
+
+FALSE_ALARMS = 0.02
+
+
+def better(items, s_emb, s_both):
+    """What the style view adds: AUC per genre with embeddings alone and with both, and how much model text
+    each catches when the threshold is set so FALSE_ALARMS of the human texts are called AI. The threshold
+    is read off these same held-out human scores, so on new human writing the rate will run a little higher."""
+    n = len(items)
+    hum = [i for i in range(n) if items[i]["y"] == 0]
+    mod = [i for i in range(n) if items[i]["y"] == 1]
+    genres = []
+    for label, kind, s in (("stories", "reddit", "wp"), ("essays", "author", "essay"), ("nonfiction", "wiki", "nf")):
+        hh = [i for i in hum if items[i]["kind"] == kind and items[i]["topic"] is not None]
+        for fam in ("gpt", "claude"):
+            mm = [i for i in mod if items[i]["set"] == s and items[i]["kind"] == fam]
+            if hh and mm:
+                genres.append({"genre": label, "family": fam, "auc_embedding": stories.r4(auc(s_emb[hh], s_emb[mm])),
+                               "auc_both": stories.r4(auc(s_both[hh], s_both[mm]))})
+    fixed = {}
+    for name, s in (("embedding", s_emb), ("both", s_both)):
+        t = float(np.sort(s[hum])[::-1][int(FALSE_ALARMS * len(hum))])   # just FALSE_ALARMS of humans above it
+        kinds = {}
+        for k in ("reddit", "gutenberg", "author", "wiki"):
+            ix = [i for i in hum if items[i]["kind"] == k]
+            if ix:
+                kinds[k] = stories.r4(float(np.mean(s[ix] > t)))
+        sets = {}
+        for st in ("base", "wp", "essay", "nf"):
+            ix = [i for i in mod if items[i]["set"] == st]
+            if ix:
+                sets[st] = stories.r4(float(np.mean(s[ix] > t)))
+        fixed[name] = {"threshold": stories.r4(t), "caught": stories.r4(float(np.mean(s[mod] > t))),
+                       "humans_called_ai": kinds, "caught_by_set": sets}
+    return {"false_alarms": FALSE_ALARMS, "n_style": len(style_vec("")), "genres": genres, "fixed": fixed}
 
 
 def distances(items, x, mm):

@@ -2,7 +2,8 @@
 """How the detector does on a private library of model writing, and what each model's habits are.
 
   books.py <books_dir>    sample ~300-word passages from the collections in <books_dir> (a private repo: one
-                          folder per collection, "<date> - <model> - <title>"), embed them into
+                          folder per collection, "<date> - <model> - <title>"), embed them and every
+                          other passage of each file (for whole-document verdicts) into
                           ../data/embeddings/books.json (local only), and build ../site/books.json
 
 The library is private. Its text goes nowhere but the embeddings endpoint; the site file holds only
@@ -90,7 +91,8 @@ def collect(bdir):
                     m = label(coll, f)
                     if m is None:
                         continue
-                    paras = clean(open(os.path.join(root, f), encoding="utf-8", errors="replace").read())
+                    with open(os.path.join(root, f), encoding="utf-8", errors="replace") as fh:
+                        paras = clean(fh.read())
                     words = " ".join(paras).lower().split()
                     if len(words) < 300 or sum(w in ENGLISH for w in words) / len(words) < 0.15:
                         continue
@@ -245,16 +247,34 @@ def style(docs, min_words=10000):
     return out
 
 
+def whole(docs):
+    """Every passage of every document, for scoring whole documents."""
+    return [{"id": "%s#%d" % (d["file"], i), "file": d["file"], "model": d["model"], "text": c}
+            for d in docs for i, c in enumerate(d["chunks"])]
+
+
 def build(bdir, data_dir=None):
     docs = collect(bdir)
     pas = sample(docs)
-    X = embed(pas)
+    every = whole(docs)
+    E = embed(every)
+    row = {p["id"]: k for k, p in enumerate(every)}
+    X = E[[row[p["id"]] for p in pas]]
+    Sx = np.array([detect.style_vec(p["text"]) for p in pas])
     items, x = detect.load(data_dir)
+    st = detect.style_matrix(items)
     y = np.array([it["y"] for it in items], dtype=float)
     pools = {"plain": [i for i, it in enumerate(items) if it["set"] == "base"],
              "matched": [i for i, it in enumerate(items) if it["set"] in ("base", "wp", "essay")],
              "with_nonfiction": list(range(len(items)))}
-    scores = {k: detect.fit_logreg(x[ix], y[ix])(X) for k, ix in pools.items()}
+    fits = {k: detect.fit_detector(x[ix], st[ix], y[ix]) for k, ix in pools.items()}
+    scores = {k: f(X, Sx) for k, f in fits.items()}
+    # Whole documents: the mean log-odds over all of a document's passages, by the fullest detector.
+    se = fits["with_nonfiction"](E, np.array([detect.style_vec(p["text"]) for p in every]))
+    by_file = defaultdict(list)
+    for p, s in zip(every, se):
+        by_file[p["file"]].append(detect.logit(np.array([s]))[0])
+    doc_ai = {f: float(np.mean(v)) > 0 for f, v in by_file.items()}
     det = defaultdict(lambda: defaultdict(list))
     for i, p in enumerate(pas):
         for key in (p["model"], p["model"] + "|" + p["form"]):
@@ -263,8 +283,10 @@ def build(bdir, data_dir=None):
     detector = []
     for key, v in sorted(det.items()):
         m, _, form = key.partition("|")
-        detector.append({"model": m, "form": form or None, "n": len(v["plain"]),
-                         **{k: detect.stories.r4(float(np.mean(np.array(s) >= 0.5))) for k, s in v.items()}})
+        fs = [d["file"] for d in docs if d["model"] == m and (not form or d["form"] == form)]
+        detector.append({"model": m, "form": form or None, "n": len(v["plain"]), "n_docs": len(fs),
+                         **{k: detect.stories.r4(float(np.mean(np.array(s) >= 0.5))) for k, s in v.items()},
+                         "documents": detect.stories.r4(float(np.mean([doc_ai[f] for f in fs]))) if fs else None})
     cnt, files = Counter(p["model"] for p in pas), defaultdict(set)
     for p in pas:
         files[p["model"]].add(p["file"])

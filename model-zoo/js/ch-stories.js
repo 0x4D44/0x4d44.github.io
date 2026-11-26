@@ -242,7 +242,9 @@ Zoo.chapter("stories", ["stories", "detect", "books"], function (el, data) {
     function rate(r, f) { return r && r[f] != null ? (r[f] * 100).toFixed(r[f] > 0 && r[f] < 0.1 ? 1 : 0) + "%" : "–"; }
     el.appendChild(h("h3", { class: "part", text: "Could a simple detector tell?" }));
     el.appendChild(h("p", { class: "note", text: "On the map the two kinds of writing sit apart, so we tried the plainest detector there is: " +
-      "a logistic regression, one straight cut through the same 1,536 numbers that place each story on the map. " +
+      "two logistic regressions, each one straight cut. One goes through the same 1,536 numbers that place each story on the map; the other through " +
+      ((D.better || {}).n_style || "about a hundred") + " counts of how a text is written: punctuation, common words such as “the” and “perhaps”, and sentence length and its spread. " +
+      "The detector averages their verdicts (their log-odds, with equal weight). " +
       "Every text was scored by a detector that had never seen its writer. We held out one writer at a time (a model with its thinking variant, " +
       "a group of ten Reddit writers, a classic author, this site’s author), trained on everything else, and scored only what was held out. " +
       "A score of 50% or more means “written by AI”." }));
@@ -354,7 +356,32 @@ Zoo.chapter("stories", ["stories", "detect", "books"], function (el, data) {
       el.appendChild(h("p", { class: "note", text: "The same two axes as the map above, with its free model stories in grey and its human texts faint. " +
         "The axes were fitted without the matched texts, so this shows where they land, not a new layout." }));
     }
+    if (D.better) better(D);
     el.appendChild(h("div", { class: "how one" }, [para("What this does and does not show", HONEST(D))]));
+  }
+
+  function better(D) {
+    var B = D.better, E = B.fixed.embedding, C = B.fixed.both, p100 = function (x) { return Math.round(x * 100) + "%"; };
+    var nH = ["reddit", "gutenberg", "author"].reduce(function (s, k) { return s + ((D.base.kinds[k] || {}).n_human || 0); }, 0) +
+      ((D.matched.humans_new.wiki || {}).n_human || 0);
+    var nWiki = (D.matched.humans_new.wiki || {}).n_human || 0;
+    el.appendChild(h("h4", { class: "sub", text: "Making it better" }));
+    el.appendChild(h("p", { class: "note", text: "The first version looked only at the embedding, and an embedding records what a text is about more than how it is written. " +
+      "Where the subject is matched, as in the non-fiction, that left little to go on. So we added the style counts as a second view. Every number above already uses both; this is what the second view bought, " +
+      "measured the same way (AUC, held-out writers and topics):" }));
+    var G = { stories: "stories on the Reddit prompts", essays: "essays on the author’s titles", nonfiction: "encyclopedia passages" };
+    el.appendChild(h("div", { class: "table-wrap" }, [h("table", { class: "data detect" }, [
+      h("thead", null, [h("tr", null, [h("th", { text: "" }), h("th", { class: "num wrap", text: "Embedding only" }), h("th", { class: "num wrap", text: "With style counts" })])]),
+      h("tbody", null, B.genres.map(function (g) {
+        return h("tr", null, [h("td", null, [h("span", { class: "who" }, [h("span", { class: "dot " + (g.family === "gpt" ? "openai" : "anthropic") }),
+          (g.family === "gpt" ? "GPT " : "Claude ") + G[g.genre]])]),
+          h("td", { class: "num", text: g.auc_embedding.toFixed(3) }), h("td", { class: "num", text: g.auc_both.toFixed(3) })]);
+      }))])]));
+    el.appendChild(h("p", { class: "note", text: "A 50% line is arbitrary. A detector that will be used on people should set its line by how often it may wrongly accuse one. " +
+      "Set the line so that only " + p100(B.false_alarms) + " of the " + nH + " human texts score above it (" + Math.floor(B.false_alarms * nH) + " texts), and the embedding alone catches " +
+      p100(E.caught) + " of the model texts; with the style counts, " + p100(C.caught) + ". On the encyclopedia passages that is " + p100(E.caught_by_set.nf) + " against " + p100(C.caught_by_set.nf) + ". " +
+      "Wikipedia stays the hardest human writing to clear: " + Math.round(C.humans_called_ai.wiki * nWiki) + " of its " + nWiki + " passages still sit above the line" + (C.humans_called_ai.reddit === 0 ? ", where no Reddit story does. " : ". ") +
+      "The line was read off these same held-out scores, so on fresh human writing expect a little more than " + p100(B.false_alarms) + "." }));
   }
 
   // The closing paragraph's numbers come from the data, so it stays true if the data is rebuilt.
@@ -370,7 +397,7 @@ Zoo.chapter("stories", ["stories", "detect", "books"], function (el, data) {
     var f3 = function (x) { return x > 0.9995 && x < 1 ? x.toFixed(4) : x.toFixed(3); };
     var axNew = D.matched.humans_new.author, axWrong = Math.round((axNew.fpr || 0) * axNew.n_human);
     var p100 = function (x) { return Math.round(x * 100) + "%"; };
-    var shows = "On these texts, a plain linear cut through the embeddings finds a signal that survives topic matching, but the clean split on the map is partly topic and format. ";
+    var shows = "On these texts, plain linear cuts find a signal that survives topic matching, but the clean split on the map is partly topic and format. ";
     if (Ds.stories) shows += "Given the same prompt, model stories move much closer to the human ones: a Reddit story sits nearer the model stories written to its own prompt (" +
       Ds.stories.matched.toFixed(2) + ") than to another Reddit story (" + Ds.stories.human_human.toFixed(2) + "). ";
     shows += "The detector trained on the free stories looked perfect, yet missed " + p100(miss[0]) + " to " + p100(miss[1]) +
@@ -419,20 +446,25 @@ Zoo.chapter("stories", ["stories", "detect", "books"], function (el, data) {
       "o1-pro", "o1", "o3-mini", "o3", "gemini", "unknown"];
     var rank = function (m) { var i = order.indexOf(m); return i < 0 ? 99 : i; };
     rows.sort(function (a, b) { return rank(a.model) - rank(b.model) || a.form.localeCompare(b.form); });
-    var cols = [["plain", "First detector"], ["matched", "Retrained, stories and essays"], ["with_nonfiction", "Retrained, with non-fiction"]];
+    var cols = [["plain", "First detector"], ["matched", "Retrained, stories and essays"], ["with_nonfiction", "Retrained, with non-fiction"], ["documents", "Whole documents"]];
     el.appendChild(h("div", { class: "table-wrap" }, [h("table", { class: "data detect" }, [
-      h("thead", null, [h("tr", null, [h("th", { text: "Writer" }), h("th", { text: "Form" }), h("th", { class: "num", text: "Passages" })]
+      h("thead", null, [h("tr", null, [h("th", { text: "Writer" }), h("th", { text: "Form" }), h("th", { class: "num", text: "Passages" }), h("th", { class: "num", text: "Files" })]
         .concat(cols.map(function (c) { return h("th", { class: "num wrap", text: c[1] + ": called AI" }); })))]),
       h("tbody", null, rows.map(function (r) {
-        return h("tr", null, [h("td", { text: nm(r.model) }), h("td", { text: FORM[r.form] || r.form }), h("td", { class: "num", text: String(r.n) })]
+        return h("tr", null, [h("td", { text: nm(r.model) }), h("td", { text: FORM[r.form] || r.form }), h("td", { class: "num", text: String(r.n) }),
+          h("td", { class: "num", text: r.n_docs == null ? "–" : String(r.n_docs) })]
           .concat(cols.map(function (c) { return h("td", { class: "num", text: pc(r[c[0]]) }); })));
       }))])]));
     el.appendChild(h("p", { class: "note", text: "Each detector is trained on every text of the sections above (the first on the free stories and the human texts only) and scores every passage here; " +
-      "there are no human texts in the library, so this counts only what each one misses. “Unlabelled” is writing whose model nobody recorded." }));
+      "there are no human texts in the library, so this counts only what each one misses. “Unlabelled” is writing whose model nobody recorded. " +
+      "“Whole documents” judges each file on every one of its passages, not just the sample, with the last detector: a file is called AI when its passages’ log-odds average above even. " +
+      "One passage is a noisy witness and a file of ten is judged on all ten, so most models’ files are caught more often than their passages. " +
+      "Where the passages split close to even (Fable 5.2, Sonnet 4.5’s scripts, the unlabelled non-fiction) the file verdict can land lower. Where a model has one file (Claude Opus 3, Sonnet 3.5), that column is one verdict." }));
     var nfr = rows.filter(function (r) { return r.form === "non-fiction"; });
-    if (nfr.length) el.appendChild(h("p", { class: "note", text: "Fiction is easy for it once it has seen matched texts. Non-fiction is not. Before it learned from the Wikipedia set it called almost all of the library’s non-fiction human; after, " +
-      nfr.map(function (r) { return pc(r.with_nonfiction) + " of " + nm(r.model) + "’s"; }).join(", ") + " is called AI, and that same detector calls " +
-      pc(D.matched.humans_new.wiki && D.matched.humans_new.wiki.fpr) + " of the human Wikipedia passages AI. It has learned a little about non-fiction, and is wrong about it often in both directions." }));
+    if (nfr.length) el.appendChild(h("p", { class: "note", text: "Fiction is easy for it once it has seen matched texts. Non-fiction is harder. Before it learned from the Wikipedia set it called " +
+      nfr.map(function (r) { return pc(r.matched) + " of " + nm(r.model) + "’s"; }).join(", ") + " passages AI; after, " +
+      nfr.map(function (r) { return pc(r.with_nonfiction); }).join(", ") + ". That same detector calls " +
+      pc(D.matched.humans_new.wiki && D.matched.humans_new.wiki.fpr) + " of the human Wikipedia passages AI, so it is still wrong about non-fiction in both directions." }));
 
     var W = BK.who || {};
     if (W.models && W.families) {
