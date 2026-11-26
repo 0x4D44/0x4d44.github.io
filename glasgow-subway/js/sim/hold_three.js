@@ -66,8 +66,13 @@ export class HoldRig {
     if (w <= 0) { this.phone.visible = false; return; }
     const S = this.saved, B = this.bones;
     if (!this.applied) { for (let i = 0; i < B.length; i++) { const q = B[i].quaternion; S[i * 4] = q.x; S[i * 4 + 1] = q.y; S[i * 4 + 2] = q.z; S[i * 4 + 3] = q.w; } this.applied = true; }
-    if (rising && this.hasSnap && w < 0.999) { const N = this.snap; for (let i = 0; i < B.length; i++) B[i].quaternion.set(N[i * 4], N[i * 4 + 1], N[i * 4 + 2], N[i * 4 + 3]); }
     const T = this.target(kind), F = T.F, err = {};
+    if (rising && this.hasSnap && w < 0.999) {
+      // a hand the hold does not take (the free one, on a call) goes from the captured pose to the animation's own by w, not all at once when w reaches 1 (review 71: woman_dress's
+      // free hand stepped 0.55 m in a frame going from texting to a call)
+      const N = this.snap, q = this.q2 || (this.q2 = this.q.clone());
+      for (let i = 0; i < B.length; i++) { const free = !T.hands[i < 3 ? 'r' : 'l']; q.set(N[i * 4], N[i * 4 + 1], N[i * 4 + 2], N[i * 4 + 3]); if (free) B[i].quaternion.copy(q.slerp(B[i].quaternion, w)); else B[i].quaternion.copy(q); }
+    }
     for (const sd of SIDES) {
       const hand = T.hands[sd], A = this.arm[sd]; if (!hand) continue;
       const side = sd === 'r' ? 1 : -1, cl = this.worldOf(A.clav), up = this.worldOf(A.up);

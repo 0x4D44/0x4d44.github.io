@@ -277,7 +277,7 @@ export function wearBag(T, obj, bag, fit, h = 1.75) {
  *  Reads the skeleton as it was last drawn (matrixWorld), so it costs no update of its own; call it once with fresh = true after posing a new clone. */
 export function stepBag(rig, sit, pole, fresh, o) {
   if (!rig) return; const { obj, B, mesh, fit, T } = rig, v = rig.v, u = rig.u;
-  if (fresh) obj.updateMatrixWorld(true);
+  if (fresh || rig.wObj !== obj) { rig.wObj = obj; obj.updateWorldMatrix(true, true); }   // (and a body just swapped in, far model for full: its matrices are not yet its own this frame - a parked case placed through them leapt 0.5 - 1.2 m, review 71)
   const inv = rig.m.copy(obj.matrixWorld).invert(), at = (bone, out) => out.setFromMatrixPosition(bone.matrixWorld).applyMatrix4(inv);
   const where = rig.kind === 'trolley' ? 'floor' : sit ? 'lap' : rig.kind === 'ruck' ? 'back' : 'hand';
   if (where !== rig.where) {
@@ -347,15 +347,16 @@ const EASE_T = 0.25;   // s
  *  last frame. The difference is kept and faded out over EASE_T (inertialization), so the case moves there instead of jumping: a pick-up of a standing case stepped its handle
  *  0.18 m and turned it 0.78 rad in one frame, and set-downs kicked 0.10 - 0.13 m on their first frame (review 70). */
 function easeBranch(rig, obj, live, dt) {
-  if (rig.brObj !== obj) { rig.brObj = obj; live = false; }   // (a body swapped, far model for full: on that frame its world matrix is not yet its own - eased through it, a standing case jumped 0.4 - 0.8 m and came back)
+  const swap = rig.brObj !== obj; rig.brObj = obj;   // (a body swapped in: no new fade starts on that frame, but one under way carries on - cut, a case held back by it snapped 0.49 m, review 71)   // (a body swapped, far model for full: on that frame its world matrix is not yet its own - eased through it, a standing case jumped 0.4 - 0.8 m and came back)
   const T = rig.T, mesh = rig.mesh, key = (rig.park ? 1 : 0) | (rig.tow < 0.01 ? 2 : 0) | (rig.pT ? 8 : 0);   // (not rig.down nor rig.pick: at a walking pace they flicker, and each flicker restarted the fade, leaving the case behind the hand; a set-down still shows, its park point being taken)
   if (!(rig.brOq && rig.brOq.isQuaternion)) { rig.brOq = new T.Quaternion(); rig.brOv = new T.Vector3(); rig.brOs = new T.Vector3(); rig.brCp = new T.Vector3(); rig.brCq = new T.Quaternion(); rig.brI = new T.Quaternion(); }   // (and a rig copied as plain data has none of them as three.js objects)
   const oq = rig.brOq, ov = rig.brOv, os = rig.brOs;
   obj.matrixWorld.decompose(ov, oq, os);
   const cp = rig.brCp.copy(mesh.position).applyMatrix4(obj.matrixWorld), cq = rig.brCq.copy(oq).multiply(mesh.quaternion);
   if (!(rig.brP && rig.brP.isVector3 && rig.brQ && rig.brQ.isQuaternion && rig.brD && rig.brD.isVector3 && rig.brDq && rig.brDq.isQuaternion)) { rig.brKey = undefined; rig.brP = new T.Vector3(); rig.brQ = new T.Quaternion(); rig.brD = new T.Vector3(); rig.brDq = new T.Quaternion(); rig.brT = EASE_T; }
-  const dn = rig.down && (rig.brNd || 0) >= 10; rig.brNd = rig.down ? 0 : (rig.brNd || 0) + 1;   // (the start of a set-down: down after a run of not, so a flicker at walking pace starts one fade, not one a frame)
-  if (live && ((rig.brKey !== undefined && key !== rig.brKey) || dn)) { rig.brD.copy(rig.brP).sub(cp); rig.brDq.copy(cq).invert().premultiply(rig.brQ); rig.brT = 0; }   // (eDq: last frame's drawn = eDq * this frame's)
+  const dn = rig.down && (rig.brNd || 0) >= 10; rig.brNd = rig.down ? 0 : (rig.brNd || 0) + 1;
+  const tr = !!rig.trl, te = rig.brTr !== undefined && tr !== rig.brTr && (rig.brTrN || 0) >= 6; rig.brTrN = tr !== rig.brTr ? 0 : (rig.brTrN || 0) + 1; rig.brTr = tr;   // (into or out of the trailer, after a steady run: a set-down that stopped short handed the case to the trailer, which tipped it 0.33 m to the hand in a frame - review 71 replay, adult_casual5)   // (the start of a set-down: down after a run of not, so a flicker at walking pace starts one fade, not one a frame)
+  if (live && !swap && ((rig.brKey !== undefined && key !== rig.brKey) || dn || te)) { rig.brD.copy(rig.brP).sub(cp); rig.brDq.copy(cq).invert().premultiply(rig.brQ); rig.brT = 0; }   // (eDq: last frame's drawn = eDq * this frame's)
   if (!live) rig.brT = EASE_T;
   rig.brKey = key; rig.brLive = true;
   if (rig.brT < EASE_T) {
@@ -370,7 +371,7 @@ function easeBranch(rig, obj, live, dt) {
 /** the case on the floor: standing beside the leg, or towed on its wheels (v: the grip, in the body's frame) */
 function floorPose(rig, o, walk, sit, pole, yaw, sd0, hx, v) {
   const { mesh, fit } = rig, fz = fit.fz;
-  if (rig.handle) rig.handle.position.y = 0;
+  if (rig.handle) rig.handle.position.y = 0; rig.trl = false;
   // standing: upright beside the leg and a little behind.  Towed: tipped on to the wheels under the handle, the grip in the hand, the case rolling behind and outside the heel
   if (rig.tow > 0.99 && walk > 0.5 && !(o && o.settle)) rig.park = null;   // (walking off, once it is fully in tow - not drawn standing then - it goes back to its place beside the leg when next stood; cleared at once, the standing case jumped 0.13 - 0.35 m in a frame, review 58)
   // after a turn on the spot it stays where it was towed to, and is stood up there: moved back to its place beside the leg it slid 0.3 - 0.5 m with no hand on it (reviews 53 - 57)
@@ -409,7 +410,7 @@ function floorPose(rig, o, walk, sit, pole, yaw, sd0, hx, v) {
   const slow = rig.spd !== undefined && (rig.sP ? rig.spd < TRL_OUT : rig.spd < TRL_IN);
   if (o && (o.settle || slow) && !sit && par && !rig.fresh && t > 0.02 && !rig.down && !o.lift && (!rig.pick || t > 0.5)) {   // (not for a case being picked up where it stood: taken over at a tow of 0.02, the upright case snapped to the hand's tilt and heading - review 68)
     if (rig.pick) { rig.pick = false; rig.sP = null; if (par) { mesh.updateMatrix(); const M = rig.tm || (rig.tm = new rig.T.Matrix4()), W = new rig.T.Vector3(), Q = new rig.T.Quaternion(), S = new rig.T.Vector3(); M.multiplyMatrices(ob.matrix, mesh.matrix).decompose(W, Q, S); rig.eP = W.toArray(); rig.eQ = Q.toArray(); rig.eb = 1; } }   // (picked up and in hand, its owner stopped again: a trailer from where it is drawn now - kept on the pick-up, it was set down at its old place and spun 1 rad in a frame, review 68)
-    trailer(rig, o, t, gx, gzw, yaw); return; }
+    rig.trl = true; trailer(rig, o, t, gx, gzw, yaw); return; }
   rig.sP = null;
   rig.gap = rig.park ? Math.hypot(tx - sx, tz - sz) : 0;   // (how far a parked case is from the hand: see the tow's pick-up)
   if (o && o.settle && (sit || pole ? 0 : walk) === 0 && !rig.park && t > 0.5) rig.park = rig.wasDown !== undefined ? [mesh.position.x, mesh.position.z] : [tx, tz];   // (where it is drawn: trailing its handle it is not at the rigid towed place, and parked there it jumped 0.37 - 0.56 m)
