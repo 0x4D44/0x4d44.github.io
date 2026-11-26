@@ -288,6 +288,7 @@ export function stepBag(rig, sit, pole, fresh, o) {
   if (where === 'back') return;
   const fz = fit.fz;
   if (where === 'floor') {
+    const eOk = rig.eLive; rig.eLive = false;   // (drawn by easeBranch last frame: see there)
     const yaw = fz > 0 ? 0 : Math.PI, sd0 = fit.side, walk = o && o.walk ? Math.min(1, o.walk) : 0, lift = !!(o && o.lift);
     rig.gh = sit ? -1 : 0;
     const tw = sit || (pole && !(o && o.turn)) ? 0 : walk; rig.fresh = fresh; let dT = fresh ? 0 : (tw - rig.tow) * (o && o.settle ? 0.035 : 0.14);
@@ -309,6 +310,7 @@ export function stepBag(rig, sit, pole, fresh, o) {
     if (lw >= 1) { mesh.position.set(rig.lp[0], rig.lp[1], rig.lp[2]); mesh.rotation.set(0, yaw + Math.PI / 2, 0); if (rig.handle) rig.handle.position.y = -rig.travel; return; }
     floorPose(rig, o, walk, sit, pole, yaw, sd0, hx, v);
     if (lw > 0) { const P = mesh.position, k = lw; P.set(P.x + (rig.lp[0] - P.x) * k, P.y + (rig.lp[1] - P.y) * k, P.z + (rig.lp[2] - P.z) * k); mesh.rotation.set(mesh.rotation.x * (1 - k), yaw + k * Math.PI / 2, 0); if (rig.handle) rig.handle.position.y = -rig.travel * k; }
+    easeBranch(rig, obj, eOk && !fresh, (o && o.dt) || 1 / 60);
     return;
   }
   if (where === 'lap') {
@@ -339,6 +341,28 @@ export function stepBag(rig, sit, pole, fresh, o) {
 }
 
 const TRL_RATE = 0.35, TRL_TH = 0.99, TRL_IN = 0.25, TRL_OUT = 0.5, TRL_EASE = 0.8;   // the trailer's pace being wheeled round to its place (m/s), its handle's greatest lean (rad: acos 0.55, as the towed pose's), and the owner's pace (m/s) below which a walker's case is drawn as a trailer, and above which it is towed rigidly again; and how fast (m/s) the towed pose is eased in from the trailer's
+
+const EASE_T = 0.25;   // s
+/** A case's pose changes branch (a park point taken or dropped, stood up or tipped on to its wheels, the set-down begun): the new branch's pose is not where the case was drawn
+ *  last frame. The difference is kept and faded out over EASE_T (inertialization), so the case moves there instead of jumping: a pick-up of a standing case stepped its handle
+ *  0.18 m and turned it 0.78 rad in one frame, and set-downs kicked 0.10 - 0.13 m on their first frame (review 70). */
+function easeBranch(rig, obj, live, dt) {
+  const T = rig.T, mesh = rig.mesh, key = (rig.park ? 1 : 0) | (rig.tow < 0.01 ? 2 : 0) | (rig.down ? 4 : 0) | (rig.pT ? 8 : 0) | (rig.pick ? 16 : 0);
+  const oq = rig.eOq || (rig.eOq = new T.Quaternion()), ov = rig.eOv || (rig.eOv = new T.Vector3()), os = rig.eOs || (rig.eOs = new T.Vector3());
+  obj.matrixWorld.decompose(ov, oq, os);
+  const cp = (rig.eCp || (rig.eCp = new T.Vector3())).copy(mesh.position).applyMatrix4(obj.matrixWorld), cq = (rig.eCq || (rig.eCq = new T.Quaternion())).copy(oq).multiply(mesh.quaternion);
+  if (!rig.eP) { rig.eP = new T.Vector3(); rig.eQ = new T.Quaternion(); rig.eD = new T.Vector3(); rig.eDq = new T.Quaternion(); rig.eT = EASE_T; }
+  if (live && rig.eKey !== undefined && key !== rig.eKey) { rig.eD.copy(rig.eP).sub(cp); rig.eDq.copy(cq).invert().premultiply(rig.eQ); rig.eT = 0; }   // (eDq: last frame's drawn = eDq * this frame's)
+  if (!live) rig.eT = EASE_T;
+  rig.eKey = key; rig.eLive = true;
+  if (rig.eT < EASE_T) {
+    const u = rig.eT / EASE_T, k = 1 - u * u * (3 - 2 * u), I = rig.eI || (rig.eI = new T.Quaternion());
+    cp.addScaledVector(rig.eD, k); cq.premultiply(I.identity().slerp(rig.eDq, k));
+    mesh.position.copy(cp).applyMatrix4(rig.m); mesh.quaternion.copy(oq).invert().multiply(cq);
+    rig.eT += dt;
+  }
+  rig.eP.copy(cp); rig.eQ.copy(cq);
+}
 
 /** the case on the floor: standing beside the leg, or towed on its wheels (v: the grip, in the body's frame) */
 function floorPose(rig, o, walk, sit, pole, yaw, sd0, hx, v) {

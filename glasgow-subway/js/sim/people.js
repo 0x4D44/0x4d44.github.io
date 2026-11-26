@@ -174,7 +174,11 @@ const GARMENT_TINT = { woman_mini: [[/skirt/i, 0.09, 0.12, 0.1], [/camisole/i, 0
   man_elder: [[/^skin_/, 1.6, 1.35, 1.15]], man_longcoat: [[/^skin_/, 0.78, 0.84, 1.05]], elder_man_suit: [[/^skin_/, 0.74, 0.86, 1.25]],
   woman_midi: [[/^alpha_brows/, 0.16, 0.1, 0.07], [/^skin_/, 1.1, 1.0, 0.9]],
   adult_leggings_knit: [[/^(alpha_|scalp_alpha_)hair/, 0.3, 0.12, 0.05], [/knitted_sweater/i, 0.42, 0.36, 0.26, 'flat'], [/^skin_/, 0.95, 0.86, 0.76]],   // (review 69: woman_midi's twin - one face, one black bob, one red jumper. Auburn now, in oatmeal, a shade darker)
-  ya_tube_heels: [[/^alpha_brows/, 0.16, 0.1, 0.07]] };   // (review 68: near-black brows read as a frown - a soft dark brown)   // (review 67: man_elder's skin grey and grimy, man_longcoat's orange - warmed and cooled)   // (review 13: the one maze-striped coat on two women - now a plain camel coat and a plain navy one; the tartan mini on two girls - teen_tube's now plain blue)   // (review 13: the boots' white texture parts stretched into white wedges at the boot tops - now the boot's own colour throughout)   // (review 11: man_beard's red jumper on man_kilt_casual too - now a dark burgundy; teen_skater's white trainers on sum_loose_shorts_w's template - now black)
+  ya_tube_heels: [[/^alpha_brows/, 0.16, 0.1, 0.07]],
+  // the one young woman's face (skin_young_asian_female) on four ids: each her own colouring, so they are four people and not one twice (review 70)
+  woman_student: [[/^(alpha_|scalp_alpha_)hair/, 0.34, 0.22, 0.15], [/^skin_/, 1.06, 0.97, 0.95]], adult_baggy_knit: [[/^(alpha_|scalp_alpha_)hair/, 0.16, 0.13, 0.12], [/^skin_/, 0.84, 0.71, 0.6]],
+  teen_tee: [[/^(alpha_|scalp_alpha_)hair/, 0.75, 0.4, 0.26], [/^skin_/, 1.1, 1.03, 1.0]], sum_crop_bike: [[/^skin_/, 0.93, 0.8, 0.67]],
+  girl_ginger: [[/casualsuit/i, 0.82, 0.88, 1.0]] };   // (her jeans' rust smear, calmed)   // (review 68: near-black brows read as a frown - a soft dark brown)   // (review 67: man_elder's skin grey and grimy, man_longcoat's orange - warmed and cooled)   // (review 13: the one maze-striped coat on two women - now a plain camel coat and a plain navy one; the tartan mini on two girls - teen_tube's now plain blue)   // (review 13: the boots' white texture parts stretched into white wedges at the boot tops - now the boot's own colour throughout)   // (review 11: man_beard's red jumper on man_kilt_casual too - now a dark burgundy; teen_skater's white trainers on sum_loose_shorts_w's template - now black)
 /** a face whose resting set reads as a scowl wears this much of the smile at rest (review 69: woman_midi - the brows are under her fringe, the frown is in the mouth) */
 const REST_SMILE = { woman_midi: 0.3 };
 /** the four garment groups the crowd keeps any one of under half of the people near by (_pick) */
@@ -557,7 +561,7 @@ export class AnimCrowd {
     if (c && this.unique && nOwn >= 4 && full.has(grp(c)) && (tally.get(grp(c)) || 0) + 1 > 0.5 * (nOwn + 1)) return null;
     // and likewise one sex: when the draw falls back to a grown-up of the sex already over 58 % near by, the place stays empty (review 64: the player's car ran 10 women to 6 men
     // for the whole ride, over 58 % in 94 % of frames - the unique roster's fallback skipped the check)
-    if (c && this.unique && sexFull && !c.kid && c.sex === sexFull && nF + nM >= 4) return null;
+    if (c && this.unique && sexFull && !c.kid && c.sex === sexFull && nF + nM >= 3) return null;   // (from three: at 1 to 2 a fallback man made a car of 1 woman to 3 men for 33 s - review 70)
     return c && this.unique && IN_USE.get(c.id) ? null : c;
   }
   add(p, parent, filter) {
@@ -772,7 +776,9 @@ export class AnimCrowd {
     if (cat === 'fidget') once = true;
     const use = this.phones ? this._phoneUse(p, state, cat) : null;   // who is on a phone: it takes the body of the stock phone clip (head down, or to the ear) and the arms of hold_three.js
     if (use && use.clip) clip = use.clip;
-    if (!use && p.hold && p.hold.w > 0 && fade > 0) fade = Math.max(fade, HOLD_OUT + 0.1);  if (!use && p.hold && fade > 0) p.hold.out = Math.max(HOLD_OUT, fade);   // ... nor may the hold let go faster than the clip's arms come down (a 1 s sit: they showed empty by the face for half a second - review 45)   // the phone goes away: the clip's own arms (up by the face, in the stock phone clips) must not drop faster than the hold lets go of them
+    if (!use && p.hold && p.hold.w > 0 && fade > 0) fade = Math.max(fade, HOLD_OUT + 0.1);
+    if (fade > 0 && p.curClip && /phone/.test(p.curClip.name) && clip !== p.curClip) fade = Math.max(fade, 0.9);
+    if (fade > 0 && clip && /hold_(pole|rail)/.test(clip.name) && !(p.curClip && /hold_(pole|rail)/.test(p.curClip.name))) fade = Math.max(fade, 0.8);   // (reaching up for a pole: the hand rose 0.6 m in a third of a second, 3.8 m/s - review 70)  if (!use && p.hold && fade > 0) p.hold.out = Math.max(HOLD_OUT, fade);   // (out of a phone clip with the hold already gone: the arm came down from the ear in 0.3 s, the hand at 3.1-3.6 m/s - review 70)   // ... nor may the hold let go faster than the clip's arms come down (a 1 s sit: they showed empty by the face for half a second - review 45)   // the phone goes away: the clip's own arms (up by the face, in the stock phone clips) must not drop faster than the hold lets go of them
     const was = p.cat, m0 = p.m;
     this._play(p, clip, fade, cat === 'walk' ? (p.speed ? p.speed / ch.walkSpeed : 1) : 0.9 + r() * 0.2);
     // Walking off from a standing pose: remember the pose that was left. Until the gait has the legs, the height of the body is a blend of that pose's and the gait's (_yOffset); the
@@ -1421,7 +1427,7 @@ export class AnimCrowd {
     if (!pick) { p.sp = 0; p.yawT = Math.atan2(-dx, -dz); return false; }
     if (pick.off * side < 0) { p.side = -side; p.sideT = 1.0; } else if (pick.off !== 0) p.sideT = Math.max(p.sideT || 0, 0.8);
     // a veer round something is a heading to follow, but it must not shorten the planned stop: the distance to brake into is still the distance to the target
-    const move = steerStep(p, dt, { hT: Math.atan2(-pick.ux, -pick.uz), want: sp, d, stop: !!p.stopHere });
+    const move = steerStep(p, dt, { hT: Math.atan2(-pick.ux, -pick.uz), want: Math.min(sp, this._followCap(p, dx / d, dz / d)), d, stop: !!p.stopHere });
     p.steered = true; p.yawT = p.yaw;
     let sx = -Math.sin(p.yaw) * move, sz = -Math.cos(p.yaw) * move;
     if (!ok(p.x + sx, p.z + sz)) { p.sp = Math.max(0, p.sp - 2 * STEER.BMAX * dt); sx = sz = 0; }   // not facing the checked way yet and the way it faces is blocked: hold, turn, then go
@@ -1433,6 +1439,16 @@ export class AnimCrowd {
   /** a person's own pace against the crowd's: older people walk at about 1.0-1.1 m/s against 1.3-1.4 for younger adults (Bohannon 1997, Bohannon & Andrews 2011);
    *  a tight skirt shortens the step (people review 2: elders walked like everyone else, a pencil skirt tore at a full stride) */
   _paceK(p) { const c = p.char; if (!c) return 1; return c._pace || (c._pace = (c.elder ? 0.78 : 1) * (/pencil/.test(c.outfit) ? 0.85 : 1)); }
+  /** following someone walking the same way: the pace that keeps a comfortable gap behind them (their speed at 0.6 m, less when closer, braking smoothly to a stop 0.6 m behind
+   *  if they stop). Without it the follower closed in at full pace until no heading was clear, then stopped dead for a frame - 21 times in 4.4 s behind one walker (review 70). */
+  _followCap(p, ux, uz) {
+    let cap = Infinity; const sx = -uz, sz = ux;
+    for (const q of this.people) { if (q === p || q.hidden || !q.obj || q.static || (q.mode !== 'go' && q.mode !== 'walk')) continue;
+      const ex = q.x - p.x, ez = q.z - p.z, proj = ex * ux + ez * uz; if (proj <= 0.05 || proj > 1.6 || Math.abs(ex * sx + ez * sz) > 0.42) continue;
+      if (-Math.sin(q.yaw) * ux - Math.cos(q.yaw) * uz < 0.5) continue;   // (going the same way)
+      cap = Math.min(cap, Math.max(0, (q.v || 0) + 1.2 * (proj - 0.6))); }
+    return cap;
+  }
   _railStep(p, dt, sp) {
     sp *= this._paceK(p);
     const dx = p.tx - p.x, dz = p.tz - p.z, d = Math.hypot(dx, dz); if (d < 1e-4) return true; const ux = dx / d, uz = dz / d;
@@ -1448,7 +1464,7 @@ export class AnimCrowd {
         // up for 98 s; review 6: ignoring them walked people through each other)
         if (q.mode !== 'go' && q.mode !== 'walk' && !(q.madeWayT > 0)) { q.madeWayT = 4; const sx = -uz, sz = ux, k = ex * sx + ez * sz >= 0 ? 1 : -1; this._makeWay(q, sx * k, sz * k); }
         p.sp = Math.max(0, (p.sp || 0) - 2 * STEER.BMAX * dt); p.yawT = Math.atan2(-dx, -dz); return false; } }
-    const move = steerStep(p, dt, { hT: Math.atan2(-ux, -uz), want: Math.min(sp, (p.char ? p.char.walkSpeed : 1.3) * 1.3), d, stop: !!p.stopHere });
+    const move = steerStep(p, dt, { hT: Math.atan2(-ux, -uz), want: Math.min(sp, (p.char ? p.char.walkSpeed : 1.3) * 1.3, this._followCap(p, ux, uz)), d, stop: !!p.stopHere });
     p.steered = true; p.yawT = p.yaw;
     // even walking past, a step never ends inside another body (0.32 m, centre to centre) unless it moves away from them: the walker edges sideways round them instead
     // (review 8: alighters on door routes passed 0.04-0.25 m apart for up to 1.8 s). Held up 3 s, they may squeeze through (4.5 s let a stair walker stand 8 s - review 10 run), so nobody is stuck for good
