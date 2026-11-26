@@ -346,9 +346,11 @@ export function gaitUpdate(g, dt, inp) {
     // 8 - 12 cm on most walk-offs from a queue (review 66: St Enoch, 26 of 30 deep sinks).
     const sw = F.findIndex((f) => f.mode === 'swing' && f.sw.T);
     if (sw >= 0 && F[1 - sw].mode === 'stance') {
-      const f = F[sw], s0 = f.sw.s; g.phase = wrap1(P.S + s0 * (1 - P.S) + (sw ? 0.5 : 0));
-      f.sw.T = null; f.sw.tgt = null; f.sw.mark = null; f.sw.pf0 = P.S;
-      if (s0 < 0.6) f.sw.th1 = P.thHS; else f.sw.keepTh = true;   // (the pitch it lands at: the walk's heel strike, unless the swing is already turning the foot to the pitch it was aimed at - see footOut: th1 comes in over the last 35 % of a swing)
+      // The swing is begun again from where the foot is: carried on at the point it had reached but aimed at a walking landing, its path was the new one's at that point and the
+      // foot jumped 0.3 - 0.44 m in a frame (replay of the St Enoch walkers). Its clock starts at most WO_S0 of the way through a swing: from the beginning (a whole swing still to
+      // go) the planted foot waited too long and the deep sinks came back (replay p99 0.111 m), and much later the rest of the swing was too short for the way it has to go.
+      const f = F[sw], pfK = P.S + Math.min(f.sw.s, WO_S0) * (1 - P.S); g.phase = wrap1(pfK + (sw ? 0.5 : 0));
+      startSwing(g, f, null, { T: null, th1: P.thHS, clear: P.clear }); f.sw.pf0 = pfK;
       const o = F[1 - sw]; o.th = 0; o.fresh = true;
     } else {
       g.phase = wrap1(P.S + (first ? 0.5 : 0));
@@ -443,7 +445,7 @@ function walkStep(g, dt, P) {
       } else { f.th = stanceTh(P, pf); f.fresh = false; }
     } else if (f.mode === 'swing') {
       if (f.sw.T) { f.sw.t += dt; f.sw.s = clamp(f.sw.t / f.sw.T, 0, 1); if (f.sw.s >= 1) { const th1 = f.sw.th1; land(g, f, P); if (th1 != null) f.th = th1; } }   // (a timed step - one taken standing, still in the air as the walk began - lands at the pitch it swung to: given the walk's heel-strike pitch, the foot snapped 17 deg toes-up on landing and popped 0.10 - 0.12 m at its toe-off the next frame, at half of all starts - review 61)
-      else if (pf < Math.min(P.S, f.sw.pf0 != null ? f.sw.pf0 : 1)) { f.sw.s = 1; const kt = f.sw.keepTh ? f.sw.th1 : null; land(g, f, P); if (kt != null) f.th = kt; }   // (an early toe-off is still short of S for a frame or two after it left)                        // the phase has come round to heel strike
+      else if (pf < Math.min(P.S, f.sw.pf0 != null ? f.sw.pf0 : 1)) { f.sw.s = 1; land(g, f, P); }   // (an early toe-off is still short of S for a frame or two after it left)                        // the phase has come round to heel strike
       else { const p0 = f.sw.pf0 != null && f.sw.pf0 < 0.999 ? f.sw.pf0 : P.S; f.sw.s = clamp((pf - p0) / (1 - p0), 0, 1); }
     }
   }
@@ -596,6 +598,7 @@ const KNEE_MIN = 9, KNEE_TOE = 14;
  *  swing, the heel already up and the knee flexing - a swing foot raised a few cm is not seen; a pelvis dropped 1.7 cm in a frame is). */
 // (TO_DEEP, at any walking pace: a trailing leg already 2 cm out of reach, and going further, in the last TO_DEEP_W of its stance leaves now - a walker speeding up from a queue overran
 // the clock and dragged the pelvis 6 - 12 cm down behind the foot, review 66)
+const WO_S0 = 0.3;   // (walk-off from a foot in the air: see gaitUpdate)
 const TO_DEEP = 0.02, TO_DEEP_W = 0.15, TO_EARLY = 0.1, TO_LOOK = 0.008, TO_V0 = 1.25, TO_V1 = 1.6, SW_LIFT = 0.03, SW_FADE = 0.4;   // (off up to TO_V0 m/s, and TO_LOOK reached from 0 by TO_V1: below that the jolt was small and a foot sent off at the fit's own 2 mm margin left before it had pushed off - plantarflexion at toe-off 2 - 6 deg toes-UP in five people at 0.8 - 1.2 m/s, pmall2)
 function earlyToeOff(g, P) {
   const T = gaitTargets(g), hb = T.bobH;
