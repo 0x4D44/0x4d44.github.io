@@ -3,7 +3,7 @@ import test from 'node:test';
 import * as THREE from 'three';
 import type { KxData } from '../../core/osm.ts';
 import { readFileSync } from 'node:fs';
-import { SHED_SPAN_WIDTH, shedLayout } from '../../core/station.ts';
+import { SHED_VAULT_RADIUS, shedLayout, shedVaultCentres } from '../../core/station.ts';
 import { buildShed, ROOF_EXTERIOR, ROOF_SKIN } from '../src/shed.ts';
 import { material } from '../src/materials.ts';
 import { SHADOW_CASTERS } from '../src/lighting.ts';
@@ -15,13 +15,15 @@ const group = buildShed(layout, { range: false });
 group.updateMatrixWorld(true);
 const named = (n: string): THREE.Mesh => { const o = group.getObjectByName(n) as THREE.Mesh | undefined; assert.ok(o, `${n} is built`); return o!; };
 const lum = (c: THREE.Color): number => 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
-const R = SHED_SPAN_WIDTH / 2, L = layout.length;
+// Re-pinned 2026-11-25 (B2, partner-approved: the vaults spring from the spine wall's two faces, a valley gutter between): each vault's radius is
+// SHED_VAULT_RADIUS (the published half span less a quarter of the valley) and its axis shedVaultCentres(layout), a quarter of the valley out from the spine -/+ R before.
+const [cw, ce] = shedVaultCentres(layout), R = SHED_VAULT_RADIUS, L = layout.length;
 
 test('A6: each north gable is framed by a dark metal end rib about 0.9 m deep, standing proud of the glass, heavier than a rib cap, and casting', () => {
   const ring = named('shed-arch-rings'), m = ring.material as THREE.MeshLambertMaterial;
   assert.ok(m === material('ribPaint') && lum(m.color) < 0.5 * lum((material('stone') as THREE.MeshLambertMaterial).color), 'the ribs\' dark paint, not stone');
   assert.ok(SHADOW_CASTERS.has('shed-arch-rings'), 'it casts');
-  for (const uc of [layout.spine - R, layout.spine + R]) {
+  for (const uc of [cw, ce]) {
     // across the rib at the crown, from the north: it starts at the glass's edge and runs gableRib[0] out
     const ys: number[] = [];
     for (let y = layout.springing + R - 0.2; y < layout.springing + R + 1.5; y += 0.02) {
@@ -45,7 +47,7 @@ test('A5: the crown\'s seams are a paler paint than the rib caps, between the ri
     const c = new THREE.Color(col.getX(i), col.getY(i), col.getZ(i)).multiply(m.color);
     // re-pinned 2026-11-24 (round 10): the crown rail is in the seams' paint too, and the end rib's top in ROOF_EXTERIOR.ribSheen (kx-roof-round10.test.ts
     // pins both); the seams are still the only paler vertices on the shell, all on their one radius, and every other bar is still the ribs' paint
-    const x = pos.getX(i), uc = x < layout.spine ? layout.spine - R : layout.spine + R, r = Math.hypot(x - uc, pos.getY(i) - layout.springing);
+    const x = pos.getX(i), uc = x < layout.spine ? cw : ce, r = Math.hypot(x - uc, pos.getY(i) - layout.springing);
     const z = pos.getZ(i), onRail = Math.abs(x - uc) <= size / 2 + 1e-4 && pos.getY(i) >= top - 1e-4 && (Math.abs(z) < 1e-3 || Math.abs(z + L) < 1e-3 || posts.some(v => Math.abs(z + v) <= size / 2 + 1e-4));
     if (Math.abs(col.getX(i) - seamX) < 1e-6 && !onRail) {
       seam++; seamLum += lum(c);

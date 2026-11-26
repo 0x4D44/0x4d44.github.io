@@ -64,7 +64,7 @@ test('the shed\'s lights hang inside it: under its two vaults, within its length
     assert.ok(y > layout.springing && y < layout.springing + radius, `between the springing and the crown: ${y}`);
   }
   // Re-pinned 2026-11-24 (rows over the islands): the rows no longer stand at the vault crowns -/+ 8 m but over the five islands, so
-  // 'four rows' is now 'one row per island', still with equally many lights in each (the 4/5 row zig-zags across the spine wall).
+  // 'four rows' is now 'one row per island', still with equally many lights in each.
   const rows = new Map<number, number>();
   for (const [x, , z] of lights) {
     const { u } = worldToShed(layout, [x, z]);
@@ -74,9 +74,12 @@ test('the shed\'s lights hang inside it: under its two vaults, within its length
   assert.equal(rows.size, ISLANDS.length, `a row over each island: ${[...rows.keys()]}`);
   // Re-pinned 2026-11-24 (platform 1's edge dark): the 0/1 island (the last) has two rows, one over each platform, as one row over its middle
   // left both its track-side edges out of the pools; the others' rows have as many lights as before, the 0/1 island twice that.
+  // Re-pinned 2026-11-26 (B7 night pools: the 4/5 row zig-zagged across the spine, so each of platforms 4 and 5 had a pool only every 24.4 m):
+  // the 4/5 island (the middle) now has a row over each platform too, so it has twice the lights, as the 0/1 island.
   const counts = ISLANDS.map((_, i) => rows.get(i)!);
-  assert.equal(new Set(counts.slice(0, -1)).size, 1, `the same number in each row: ${counts}`);
-  assert.equal(counts[counts.length - 1], 2 * counts[0]!, `two rows over the 0/1 island: ${counts}`);
+  const twice = new Set([ISLANDS.findIndex((r) => r[0] === '5'), ISLANDS.length - 1]);
+  assert.equal(new Set(counts.filter((_, i) => !twice.has(i))).size, 1, `the same number in each single row: ${counts}`);
+  for (const i of twice) assert.equal(counts[i], 2 * counts[0]!, `two rows over the ${ISLANDS[i]!.join('/')} island: ${counts}`);
   const spacing = triples(sites.shed).slice(0, 2).map(([x, , z]) => worldToShed(layout, [x, z]).v);
   assert.ok(Math.abs((spacing[1] as number) - (spacing[0] as number) - 12.2) < 1e-6, `a light every 12.2 m: ${spacing}`);
 });

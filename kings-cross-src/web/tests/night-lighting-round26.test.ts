@@ -238,10 +238,10 @@ test('the new night programs preserve main day-clear fingerprints, material iden
     local.update(cam, '12:00', 0);
     const day = daylight(), keys = originals.map(m => m.customProgramCacheKey());
     assert.deepEqual(day, [
-      'ce9617048e6593a1135f8c2609ddea972d5d2273b7444b97e2808dfafc5c3264',
-      '2bd4f424144463fab0e6f8fd6b505e2dbd161c1c8a8ac49444fd8dd23e70e412',
-      'b121e0ea8a670f6c1698ab0b109f4791f812b4a2eac124722dc4806ca1aa0465',
-      'ecbd9f430ede682cf630619400837ed00af1df1e12a791f4ba50565b8a4a381f',
+      '8e7a166963da0967ed8b632d98b69e7db07fd0c00b8c16620349449f6134b117',
+      '6f2356dfe7e4e364cfb388ac9ebaff2a9101795470247153b11c2d72c587f030',
+      '6d3f28d051f04b6c57659a0bb15a7cfc0fc8aff039fda1e9a31bc9d2cbd3daef',
+      '014feac3ab0cd4d4c1358b53a467cd01a51633784732779bb12cfdc9edb7b13c',
       '88bfc7b244a2892a7870c19f817280831533a634374bb5e26674a3d6738bf9ef',
       '2f34f2a6011d30e26949695b680ada384190ca1092ed72a5e4830fb4c941f74a',
     ]);

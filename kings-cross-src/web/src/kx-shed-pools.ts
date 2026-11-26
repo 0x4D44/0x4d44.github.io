@@ -7,7 +7,7 @@
 // track bed, not drawn with these materials, keeps only its dim base. By day the floor's light falls toward the vault walls, under the lined
 // flanks, so the platforms under the glazed crown read brighter than those beside the walls (SHED_CROWN_FLOOR).
 import * as THREE from 'three';
-import { SHED_SPAN_WIDTH, worldToShed } from '../../core/station.ts';
+import { SHED_SPAN_WIDTH, SHED_VAULT_RADIUS, shedVaultCentres, worldToShed } from '../../core/station.ts';
 import type { ShedLayout } from '../../core/station.ts';
 import { smoothstep } from '../../core/daylight.ts';
 import { crownBelowUniforms } from './lighting.ts';
@@ -80,9 +80,9 @@ export function shedFloorInside(layout: Pick<ShedLayout, 'origin' | 'heading' | 
 
 /** How far under a vault's crown the floor at (x, z) is: 1 on a vault's axis to 0 at its wall (SHED_CROWN_FLOOR), 1 outside the two vaults (the aisle keeps its light). */
 export function shedCrownFloor(layout: Pick<ShedLayout, 'origin' | 'heading' | 'spine'>, x: number, z: number): number {
-  const { u } = worldToShed(layout, [x, z]), r = SHED_SPAN_WIDTH / 2;
-  if (u < layout.spine - 2 * r || u > layout.spine + 2 * r) return 1;
-  const off = Math.min(Math.abs(u - (layout.spine - r)), Math.abs(u - (layout.spine + r))) / r;
+  const { u } = worldToShed(layout, [x, z]), r = SHED_VAULT_RADIUS, [cw, ce] = shedVaultCentres(layout); // B2: the vaults' own axes
+  if (u < layout.spine - SHED_SPAN_WIDTH || u > layout.spine + SHED_SPAN_WIDTH) return 1;
+  const off = Math.min(Math.abs(u - cw), Math.abs(u - ce)) / r;
   return 1 - smoothstep(SHED_CROWN_FLOOR.from, SHED_CROWN_FLOOR.to, off);
 }
 

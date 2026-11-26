@@ -3,7 +3,7 @@ import test from 'node:test';
 import * as THREE from 'three';
 import type { KxData } from '../../core/osm.ts';
 import { readFileSync } from 'node:fs';
-import { SHED_SPAN_WIDTH, shedLayout } from '../../core/station.ts';
+import { SHED_VAULT_RADIUS, shedLayout, shedVaultCentres } from '../../core/station.ts';
 import { buildShed, ROOF_EXTERIOR, ROOF_SKIN } from '../src/shed.ts';
 
 // Round 10 (the end-rib-round-1 score, section 5): the crown rail no longer a dark grid line over the pale crown; the north gables' end rib with a lip
@@ -13,13 +13,15 @@ const group = buildShed(layout, { range: false });
 group.updateMatrixWorld(true);
 const named = (n: string): THREE.Mesh => { const o = group.getObjectByName(n) as THREE.Mesh | undefined; assert.ok(o, `${n} is built`); return o!; };
 const lum = (c: THREE.Color): number => 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
-const R = SHED_SPAN_WIDTH / 2, L = layout.length, sp = layout.springing, [gd, gt] = ROOF_EXTERIOR.gableRib;
+// Re-pinned 2026-11-25 (B2, partner-approved: the vaults spring from the spine wall's two faces, a valley gutter between): each vault's radius is
+// SHED_VAULT_RADIUS (the published half span less a quarter of the valley) and its axis shedVaultCentres(layout), a quarter of the valley out from the spine -/+ R before.
+const [cw, ce] = shedVaultCentres(layout), R = SHED_VAULT_RADIUS, L = layout.length, sp = layout.springing, [gd, gt] = ROOF_EXTERIOR.gableRib;
 const bars = named('shed-roof-bars'), paint = (bars.material as THREE.MeshLambertMaterial).color;
 const pos = bars.geometry.getAttribute('position'), col = bars.geometry.getAttribute('color'), nrm = bars.geometry.getAttribute('normal');
-const centreOf = (x: number): number => (x < layout.spine ? layout.spine - R : layout.spine + R);
+const centreOf = (x: number): number => (x < layout.spine ? cw : ce);
 /** whether vertex i lies on a vault's rib top (radius r about that vault's centre, its normal pointing straight out from it); the gable ribs span their whole half
  * circles, so near the spine either vault's may be the one */
-const onTop = (i: number, r: number, tol: number): boolean => [layout.spine - R, layout.spine + R].some(uc => {
+const onTop = (i: number, r: number, tol: number): boolean => [cw, ce].some(uc => {
   const dx = pos.getX(i) - uc, dy = pos.getY(i) - sp, d = Math.hypot(dx, dy);
   return Math.abs(d - r) < tol && (nrm.getX(i) * dx + nrm.getY(i) * dy) / d > 0.99;
 });
@@ -38,7 +40,7 @@ test('A5: the crown walkway rail is drawn in the seams\' paler paint, not the ri
 
 test('A6: the end rib\'s face has a lip along both edges, proud of the face, the outer one overhanging the rib\'s top', () => {
   const [lw, lp, over] = ROOF_EXTERIOR.ribLip;
-  for (const uc of [layout.spine - R, layout.spine + R]) for (const a of [Math.PI / 2, Math.PI / 4, (3 * Math.PI) / 4]) {
+  for (const uc of [cw, ce]) for (const a of [Math.PI / 2, Math.PI / 4, (3 * Math.PI) / 4]) {
     // rays from the north, square to the gable, across the rib at angle a: where the outside structure stands north of the rib's face
     const proud: number[] = [];
     for (let d = -0.2; d <= gd + 0.3; d += 0.01) {

@@ -3,7 +3,7 @@ import test from 'node:test';
 import * as THREE from 'three';
 import type { KxData } from '../../core/osm.ts';
 import { readFileSync } from 'node:fs';
-import { SHED_SPAN_WIDTH, shedLayout } from '../../core/station.ts';
+import { SHED_SPAN_WIDTH, SHED_VAULT_RADIUS, shedLayout, shedVaultCentres } from '../../core/station.ts';
 import { buildingNightMaterialsOf, material } from '../src/materials.ts';
 import * as shed from '../src/shed.ts';
 
@@ -11,7 +11,10 @@ import * as shed from '../src/shed.ts';
 // A3 the fascia's night glow following its pale lettering.
 const data: KxData = JSON.parse(readFileSync(new URL('../src/data/kx-track.json', import.meta.url), 'utf8'));
 const layout = shedLayout(data);
-const X0 = layout.spine - SHED_SPAN_WIDTH, R = SHED_SPAN_WIDTH / 2, sp = layout.springing;
+// Re-pinned 2026-11-25 (B2, partner-approved: the vaults spring from the spine wall's two faces, a valley gutter between): each great arch's radius is
+// SHED_VAULT_RADIUS (the published half span less a quarter of the valley) and its centre shedVaultCentres(layout), a quarter of the valley out from the spine -/+ R before.
+const [cw, ce] = shedVaultCentres(layout);
+const X0 = layout.spine - SHED_SPAN_WIDTH, R = SHED_VAULT_RADIUS, sp = layout.springing;
 const group = shed.buildShed(layout, { range: false });
 group.updateMatrixWorld(true);
 const S = shed as unknown as Record<string, unknown>;
@@ -42,7 +45,7 @@ test('A2: the front\'s returns are a darker shade of its brick, by day and at ni
 
 test('A2: each order\'s step face is a return: under the crown, between one order\'s face and the next, a ray up meets the darker group', () => {
   const F = shed.FRONT_RELIEF;
-  for (const uc of [layout.spine - R, layout.spine + R]) for (let i = 1; i < F.orders; i++) {
+  for (const uc of [cw, ce]) for (let i = 1; i < F.orders; i++) {
     const z = shed.frontOrderZ(i) - F.orderStep / 2; // in front of order i - 1's face, behind order i's (re-pinned round A2: the faces at frontOrderZ)
     const up = ray([uc, sp + R - 1.0, z], [0, 1, 0], [front]);
     const sy = (F as typeof F & { splay?: number }).splay ?? 0; // re-pinned round 26 (front-round-5 score, A2): the step splayed, so halfway up it stands half the splay out from its foot

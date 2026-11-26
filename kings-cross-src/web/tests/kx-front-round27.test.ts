@@ -3,7 +3,7 @@ import test from 'node:test';
 import * as THREE from 'three';
 import type { KxData } from '../../core/osm.ts';
 import { readFileSync } from 'node:fs';
-import { SHED_SPAN_WIDTH, shedLayout } from '../../core/station.ts';
+import { SHED_SPAN_WIDTH, SHED_VAULT_RADIUS, shedLayout, shedVaultCentres } from '../../core/station.ts';
 import { buildingNightMaterialsOf, material } from '../src/materials.ts';
 import * as shed from '../src/shed.ts';
 
@@ -11,7 +11,10 @@ import * as shed from '../src/shed.ts';
 // A3 the porch interiors darker by day, their night glow as it was.
 const data: KxData = JSON.parse(readFileSync(new URL('../src/data/kx-track.json', import.meta.url), 'utf8'));
 const layout = shedLayout(data);
-const X0 = layout.spine - SHED_SPAN_WIDTH, R = SHED_SPAN_WIDTH / 2, sp = layout.springing;
+// Re-pinned 2026-11-25 (B2, partner-approved: the vaults spring from the spine wall's two faces, a valley gutter between): each great arch's radius is
+// SHED_VAULT_RADIUS (the published half span less a quarter of the valley) and its centre shedVaultCentres(layout), a quarter of the valley out from the spine -/+ R before.
+const [cw, ce] = shedVaultCentres(layout);
+const X0 = layout.spine - SHED_SPAN_WIDTH, R = SHED_VAULT_RADIUS, sp = layout.springing;
 const group = shed.buildShed(layout, { range: false });
 group.updateMatrixWorld(true);
 const S = shed as unknown as Record<string, unknown>;
@@ -34,7 +37,7 @@ test('A2: the orders\' faces are a lighter brick than the front, by day and at n
   assert.ok(day[2]!.map === brick.map && day[2]!.customProgramCacheKey() === brick.customProgramCacheKey(), 'the faces on the brick\'s texture and program');
   for (const [f, o, when] of [[day[0]!, day[2]!, 'by day'], [night[0]!, night[2]!, 'at night']] as const)
     assert.ok(Math.abs(lum(o.color) / lum(f.color) - L) < 0.02, `${when}: the order faces ${(lum(o.color) / lum(f.color)).toFixed(2)} of the front`);
-  for (const uc of [layout.spine - R, layout.spine + R]) for (const a of [Math.PI / 2, Math.PI / 4, (3 * Math.PI) / 4]) for (let i = 0; i < F.orders; i++) {
+  for (const uc of [cw, ce]) for (const a of [Math.PI / 2, Math.PI / 4, (3 * Math.PI) / 4]) for (let i = 0; i < F.orders; i++) {
     const r0 = R + i * F.orderWidth, at = (r: number): [number, number, number] => [uc + r * Math.cos(a), sp + r * Math.sin(a), 5];
     const sw = (F.splay * (shed.frontOrderZ(i) - Math.max(0, shed.frontOrderZ(i - 1)))) / F.orderStep; // re-pinned round A2: the inner order's splay in proportion to its depth
     const face = ray(at(r0 + (F.splay + F.orderWidth) / 2), [front]), step = ray(at(r0 + sw / 2), [front]);

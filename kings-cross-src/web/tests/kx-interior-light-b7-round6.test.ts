@@ -9,7 +9,7 @@ import test from 'node:test';
 import * as THREE from 'three';
 import type { KxData } from '../../core/osm.ts';
 import { PLATFORM_HEIGHT } from '../../core/scene.ts';
-import { SHED_SPAN_WIDTH, shedLayout, shedToWorld } from '../../core/station.ts';
+import { SHED_SPAN_WIDTH, shedLayout, shedToWorld, shedVaultCentres } from '../../core/station.ts';
 import * as lighting from '../src/lighting.ts';
 import { buildShed } from '../src/shed.ts';
 import { plain } from '../src/train-geom.ts';
@@ -28,7 +28,9 @@ const at = (u: number, v: number, y: number): [number, number, number] => { cons
 const UP: [number, number, number] = [0, 1, 0];
 const WEST_IN: [number, number, number] = [Math.cos(layout.heading), 0, Math.sin(layout.heading)]; // the west wall's inner face looks east
 const EAST_IN: [number, number, number] = [-WEST_IN[0], 0, -WEST_IN[2]];
-const WEST_WALL = layout.spine - 2 * R, SPINE = layout.spine, CENTRE = layout.spine - R;
+// re-pinned in B2 round 2: the crown band is centred on the west vault's own axis (0.25 m out from the half-span's middle since the vaults spring from the
+// spine wall's faces); same checks, same tolerances
+const WEST_WALL = layout.spine - 2 * R, SPINE = layout.spine, CENTRE = shedVaultCentres(layout)[0];
 
 /** sRGB 0-255 on the screen of a linear luminance through three's ACES curve (a grey) at the clear day's exposure (core/daylight.ts DAY_EXPOSURE). */
 function screenDay(l: number): number {

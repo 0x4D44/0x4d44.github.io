@@ -41,7 +41,7 @@ import { railShapes, shapeFrom } from '../../core/curves.ts';
 import type { Pt } from '../../core/geo.ts';
 import type { KxData } from '../../core/osm.ts';
 import { PLATFORM_HEIGHT } from '../../core/scene.ts';
-import { isSurfacePlatform, longAxis, platformDrawingOutline, PLATFORM_9_OUTLINE_BASIS, PLATFORM_REFS, pointInPolygon, SHED_PLATFORM_REFS, SHED_SPAN_WIDTH, shedToWorld, stationPlatforms, worldToShed } from '../../core/station.ts';
+import { isSurfacePlatform, longAxis, platformDrawingOutline, PLATFORM_9_OUTLINE_BASIS, PLATFORM_REFS, pointInPolygon, SHED_PLATFORM_REFS, SHED_VAULT_RADIUS, shedToWorld, shedVaultCentres, stationPlatforms, worldToShed } from '../../core/station.ts';
 import { eastArcadeU, PLATFORM_CLOCK, ribPositions, SPINE_WALL, westernPassages } from './shed.ts';
 import type { ShedLayout } from '../../core/station.ts';
 import { Batch, material, rgb, rng, TEXTURES, windowNight } from './materials.ts';
@@ -776,9 +776,9 @@ function slots(f: Frame, spacing: number, phase: number, south: number, north: n
 
 /** The roof height over the shed floor at across-coordinate u: the two circular arches, the flat aisles at the springing line. */
 export function shedRoofY(layout: Pick<ShedLayout, 'spine' | 'springing'>, u: number): number {
-  const r = SHED_SPAN_WIDTH / 2;
-  for (const k of [-1, 1]) {
-    const d = Math.abs(u - (layout.spine + k * r));
+  const r = SHED_VAULT_RADIUS; // B2: each vault springs from its face of the spine wall
+  for (const uc of shedVaultCentres(layout)) {
+    const d = Math.abs(u - uc);
     if (d <= r) return layout.springing + Math.sqrt(r * r - d * d);
   }
   return layout.springing;
@@ -988,6 +988,10 @@ export function furniturePlan(data: FurnitureData, layout: FurnitureLayout): Fur
       }
     } else {
       lampT.push(...slots(f, FIGURES.lampSpacing, index * STAGGER.lamp, FIGURES.endSouth, FIGURES.endNorth));
+      // B7 night (b6-round-2 score: shed-interior's near platform, at platform 4's north tip, a flat dark slab): a platform whose last standard
+      // falls more than half a spacing short of the north keep-clear gets one more, as near it as the platform is wide enough (1 m steps back)
+      const last = lampT[lampT.length - 1];
+      if (last !== undefined) for (let t = f.tHi - FIGURES.endNorth; t - last > FIGURES.lampSpacing / 2; t -= 1) if (bandAt(f, t, FIGURES.lampRadius)) { lampT.push(t); break; }
     }
     lampT.forEach((t, k) => {
       if (canopy) {

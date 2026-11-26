@@ -134,6 +134,8 @@ export interface StreetLightOptions {
   /** Opt-in display-linear pool ceiling. Normal alpha blending approaches this
    * colour through overlaps, without the exposure or additive hot spots. */
   poolCeiling?: number;
+  /** The pools' colour (hex) in place of each lamp kind's own `pool`, at the same ceiling or strength. */
+  poolTint?: number;
   /** Broaden the falloff and reach together, keeping the peak unchanged. */
   poolSpread?: number;
   /** Metres to the edge of this head's own pool, e.g. from fixture spacing. */
@@ -543,7 +545,7 @@ gl_FragColor.a *= ( 1.0 - 0.38 * uPoolWet * poolOpen ) * ( 1.0 - 0.55 * uPoolFog
     matrix.set(rx, 0, 0, x, gx * rx, 1, gz * rz, spot.y + gx * (x - spot.x) + gz * (z - spot.z) + (options.poolLiftAt?.(spot,index) ?? POOL_LIFT), 0, 0, rz, z, 0, 0, 0, 1);
     pools.setMatrixAt(i, matrix);
     const light = lightOf(spot);
-    pools.setColorAt(i, tint.setHex(light.pool).multiplyScalar(options.poolCeiling ?? light.strength));
+    pools.setColorAt(i, tint.setHex(options.poolTint ?? light.pool).multiplyScalar(options.poolCeiling ?? light.strength));
   });
   pools.instanceMatrix.needsUpdate = true;
   if (pools.instanceColor) pools.instanceColor.needsUpdate = true;

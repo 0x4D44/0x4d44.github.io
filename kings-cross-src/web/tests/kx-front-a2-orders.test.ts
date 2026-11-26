@@ -3,7 +3,7 @@ import test from 'node:test';
 import * as THREE from 'three';
 import type { KxData } from '../../core/osm.ts';
 import { readFileSync } from 'node:fs';
-import { SHED_SPAN_WIDTH, shedLayout } from '../../core/station.ts';
+import { SHED_VAULT_RADIUS, shedLayout, shedVaultCentres } from '../../core/station.ts';
 import * as shed from '../src/shed.ts';
 import { buildingNightMaterialsOf } from '../src/materials.ts';
 
@@ -11,14 +11,17 @@ import { buildingNightMaterialsOf } from '../src/materials.ts';
 // arc shadow by day (R-kx-front-a/b), the glazing screen still recessed behind the innermost order, with no new triangle. Measured on the geometry.
 const data: KxData = JSON.parse(readFileSync(new URL('../src/data/kx-track.json', import.meta.url), 'utf8'));
 const layout = shedLayout(data);
-const R = SHED_SPAN_WIDTH / 2, sp = layout.springing, W = shed.FRONT_RELIEF.orderWidth;
+// Re-pinned 2026-11-25 (B2, partner-approved: the vaults spring from the spine wall's two faces, a valley gutter between): each great arch's radius is
+// SHED_VAULT_RADIUS (the published half span less a quarter of the valley) and its centre shedVaultCentres(layout), a quarter of the valley out from the spine -/+ R before.
+const [cw, ce] = shedVaultCentres(layout);
+const R = SHED_VAULT_RADIUS, sp = layout.springing, W = shed.FRONT_RELIEF.orderWidth;
 const group = shed.buildShed(layout, { range: false });
 group.updateMatrixWorld(true);
 const front = group.getObjectByName('shed-front') as THREE.Mesh;
 const glass = group.getObjectByName('shed-front-glass') as THREE.Mesh;
 const bars = group.getObjectByName('shed-front-bars') as THREE.Mesh;
 const masonry = ['shed-front', 'shed-stone', 'shed-brick'].map(n => group.getObjectByName(n)!).filter(Boolean);
-const centres = [layout.spine - R, layout.spine + R];
+const centres = [cw, ce];
 type Hit = { p: THREE.Vector3; n: THREE.Vector3; name: string };
 const cast = (o: [number, number, number], d: [number, number, number], targets: THREE.Object3D[], far = 40): Hit | null => {
   const origin = group.localToWorld(new THREE.Vector3(...o)), dir = new THREE.Vector3(...d).normalize().transformDirection(group.matrixWorld);
@@ -152,5 +155,7 @@ test('A2 orders: each return round the arches is a band 0.17 m or more wide squa
 
 test('A2 orders: no new triangle: the front mesh keeps its count', () => {
   const tris = front.geometry.getAttribute('position').count / 3;
-  assert.equal(tris, 4204, `shed-front ${tris} triangles`);
+  // re-pinned 2026-11-25 (B2): 4204 -> 4208. The two great arches no longer touch at the spine (a 1 m pier of the front stands between their springings,
+  // the valley's width), so the front's outline triangulates into 4 more triangles; no order or part was added
+  assert.equal(tris, 4208, `shed-front ${tris} triangles`);
 });

@@ -13,7 +13,7 @@
 // each ASSUMED figure says so where it is defined.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { CLOCK_TOWER_HEIGHT, SHED_SPAN_WIDTH } from '../../core/station.ts';
+import { CLOCK_TOWER_HEIGHT, SHED_SPAN_WIDTH, SHED_VALLEY_WIDTH, SHED_VAULT_RADIUS, shedVaultCentres } from '../../core/station.ts';
 import type { ClockDial } from './clocks.ts';
 import type { ShedLayout } from '../../core/station.ts';
 import { addCrownAbove, addCrownBelow, addSlateFlank, CROWN_ALPHA, CROWN_OUTSIDE, setShedGlass } from './lighting.ts';
@@ -21,7 +21,8 @@ import { Batch, gableDraw, glintEven, GLAZING, material, paneUv, windowNight, wi
 import type { V2, V3 } from './materials.ts';
 import { GROUND_Y } from './world.ts';
 
-const R = SHED_SPAN_WIDTH / 2;
+/** Each vault's radius: since B2 (core/station.ts SHED_VALLEY_WIDTH) the published half span less a quarter of the valley, the vault springing from the spine wall's face. */
+const R = SHED_VAULT_RADIUS;
 
 /** Roof ribs every 20 ft: ASSUMED, the published sources give no rib spacing. */
 export const RIB_SPACING = 6.1;
@@ -34,7 +35,9 @@ export const RIB_SPACING = 6.1;
  * 27.4 to 30.2 m for the 16 m radius. The first build's 9 m (a quarter of that, ASSUMED) left the soffit a white lining. The photograph is the only
  * source: no drawing of the glazing's extent was found.
  */
-export const GLAZED_STRIP_WIDTH = 29;
+// B2 (core/station.ts SHED_VALLEY_WIDTH): the measure is the glazed share of the arc, so the strip keeps its angle as the vault narrows: 29 m on the
+// published 16.002 m radius is 28.55 m on SHED_VAULT_RADIUS (still inside the 27.4 to 30.2 m read for the photograph)
+export const GLAZED_STRIP_WIDTH = (29 * SHED_VAULT_RADIUS) / (SHED_SPAN_WIDTH / 2);
 /** Thickness of the flank walls: ASSUMED. */
 const WALL_THICK = 0.6;
 /** Thickness of the south front: ASSUMED. */
@@ -491,8 +494,10 @@ export const ROOF_SKIN = 0.3;
 export const EAST_AISLE_OPENING = { fromEast: 3.07, width: 3.5, head: 4.8 } as const;
 /**
  * The central arcaded brick spine wall under the valley, on the line `layout.spine`, from the back of the south front (v = 0) to the north
- * gables (v = length), from the ground up to the valley, where the two vaults' roof skins meet (the springing plus (R + ROOF_SKIN) sin(valleyCut),
- * 8.75 m): brick, two storeys, the ribs landing on stone corbels on its faces. Sources for the wall itself: Historic England list entry 1078328,
+ * gables (v = length), from the ground up to the valley, where the two vaults' roof skins land (the springing plus (R + ROOF_SKIN) sin(valleyCut),
+ * 8.73 m): brick, two storeys, the ribs landing on stone corbels on its faces. Since B2 (2026-11-25, core/station.ts SHED_VALLEY_WIDTH) each vault
+ * springs from its own face of the wall, the skins 1.0 m apart, and the wall's top between them is a valley gutter (ROOF_EXTERIOR.valleyGutter: a
+ * kerb on each face up to the skins, the sole 0.3 m under them, lead on it; ASSUMED sizes). Sources for the wall itself: Historic England list entry 1078328,
  * Interior, a "round-arched brick central colonnade"
  * (https://historicengland.org.uk/listing/the-list/list-entry/1078328?section=official-list-entry), and Camden's delegated report 2009/5099/L
  * under 2007/2611/L, p3, the "central spine wall" (https://camdocs.camden.gov.uk/HPRMWebDrawer/Record/3357544/file/document). Neither gives a
@@ -522,7 +527,7 @@ export const EAST_AISLE_OPENING = { fromEast: 3.07, width: 3.5, head: 4.8 } as c
  * Where furniture stands beside it, it keeps `clear` (ASSUMED, 0.3 m) beyond the wall's face (web/src/furniture.ts bandAt).
  */
 export const SPINE_WALL = {
-  thick: 1.0, opening: 1.5, pitch: 2.66, sill: 0.9, jamb: 3.75, crown: 4.5, clear: 0.3,
+  thick: SHED_VALLEY_WIDTH, opening: 1.5, pitch: 2.66, sill: 0.9, jamb: 3.75, crown: 4.5, clear: 0.3,
   band: 0.3, bandOut: 0.08,
   corbel: { height: 0.95, wide: 0.45, out: 0.5, drop: 0.07, steps: [[0.45, 0.3, 0.5], [0.34, 0.3, 0.33], [0.26, 0.35, 0.17]] as const },
   upperSpan: 4.5, upperBelowValley: 0.45,
@@ -761,6 +766,8 @@ export const MEMBER_SIZE = { boom: [0.26, 0.2], web: [0.06, 0.06] } as const;
  * coming down narrow onto small corbels; the first build kept the full depth to the foot and needed a 0.93 m corbel under it.
  */
 export const RIB_FOOT = SPINE_WALL.thick / 2 + SPINE_WALL.corbel.out - MEMBER_SIZE.boom[0] / 2;
+/** B2: on the spine the vault springs from the wall's face, not its middle line, so the inner boom lands this far in from that springing, on the same cap. */
+export const RIB_FOOT_SPINE = SPINE_WALL.corbel.out - MEMBER_SIZE.boom[0] / 2;
 
 /**
  * One roof rib as a Warren truss in the plane z = 0, centred on the vault axis (u = 0): a top and
@@ -768,12 +775,12 @@ export const RIB_FOOT = SPINE_WALL.thick / 2 + SPINE_WALL.corbel.out - MEMBER_SI
  * truss (top boom to bottom boom) is ASSUMED 1.4 m; the lattice is drawn from photographs of the
  * shed's iron ribs, not a survey.
  */
-export function ribMembers(springing: number, r = R, n = 16): Member[] {
+export function ribMembers(springing: number, r = R, n = 16, feet: readonly [number, number] = [RIB_FOOT, RIB_FOOT]): Member[] {
   const rt = r + 0.1;
   const rb = r - 1.3;
   const node = (rad: number, i: number): [number, number] => vaultPoint(0, springing, rad, (Math.PI * i) / n);
-  // the inner boom's nodes: at the two feet it lands RIB_FOOT inside the springing, on the corbel's cap
-  const inner = (i: number): [number, number] => node(i === 0 || i === n ? r - RIB_FOOT : rb, i);
+  // the inner boom's nodes: at the two feet it lands `feet` (west, east) inside the springing, on the corbel's cap
+  const inner = (i: number): [number, number] => node(i === 0 ? r - feet[0] : i === n ? r - feet[1] : rb, i);
   const out: Member[] = [];
   const add = (p: [number, number], q: [number, number], kind: 'boom' | 'web'): void => {
     const du = q[0] - p[0];
@@ -814,7 +821,7 @@ export interface BarSpec {
  * and two thirds of the height, and one concentric ring at 0.62 r, so the glass reads as bars
  * rather than a hole. All bars lie inside the half disc.
  */
-export function lunetteBars(uc: number, springing: number, r = R, spacing = 1.6): BarSpec[] {
+export function lunetteBars(uc: number, springing: number, r = R, spacing = GLAZING.spacing): BarSpec[] {
   const out: BarSpec[] = [];
   const t = 0.09; // bar width, metres: ASSUMED
   const d = 0.12;
@@ -882,7 +889,8 @@ export function gableBars(uc: number, springing: number, from: number, r = R): B
 // (2.3 -> 1.15 m), so twice F12's diagonals and none crossing, and a vertical at each panel point
 // round F14 (front-round-13b score, B3: 1.15 m panels on 2.4 m read too fine and steep, about 64 degrees, where R-a's are about 50-55): the panel is the
 // glazing's 1.6 m, its points on the screen's mullions (uc + k * 1.6) and the ends of the span, so the diagonals sit at about 56 degrees
-export const GABLE_GIRDER = { depth: 2.4, panel: 1.6, chord: [0.3, 0.3] as const, web: [0.15, 0.15] as const } as const;
+export const GABLE_GIRDER = { depth: 2.4, panel: GLAZING.spacing, // B2: the glazing's bar spacing (1.6252 m since the vaults narrowed)
+  chord: [0.3, 0.3] as const, web: [0.15, 0.15] as const } as const;
 export function gableGirder(uc: number, springing: number, top: number, r = R): BarSpec[] {
   const { depth, panel, chord, web } = GABLE_GIRDER, y0 = top - depth;
   const half = Math.sqrt(Math.max(0, r * r - (y0 - springing) ** 2)) - 0.12;
@@ -958,7 +966,7 @@ export function haunchRingCentres(springing: number, r = R, n = 16): [number, nu
  *   rail     a walkway handrail along each vault's crown: front-d shows a rail with close posts along the far vault's crown (and front-e a rail line along the
  *            top), about 1.1 m high (some 18 px against the gable's 17 px a metre: MEASURED in memory, +-25%); posts every 1.525 m, a quarter rib bay (ASSUMED,
  *            the photographs show them close but not countable), a top and a mid rail, 0.06 m members (ASSUMED);
- *   eaves    a box gutter along each vault's outer springing, `gutter` 0.5 m wide and 0.45 m deep, and a 0.8 m valley gutter over the spine (ASSUMED sizes; front-e
+ *   eaves    a box gutter along each vault's outer springing, `gutter` 0.5 m wide and 0.45 m deep, and a 0.8 m valley gutter sunk 0.3 m into the spine wall's top between the two vaults' skins (B2) (ASSUMED sizes; front-e
  *            shows a dark eaves line along the springing);
  *   PV       none: no photovoltaic rows can be made out on the flanks in R-kx-front-b, -d or -e, so none are drawn (the rubric asks for them only if the reference
  *            shows them).
@@ -1430,7 +1438,7 @@ function frontWash(source: 'brickFoot' | 'stoneFoot', kind: 'front' | 'tower', w
   float spine = abs(x-${(width/2).toFixed(4)});
   float spread = 1.25 + 0.18*y;
   float edge = exp(-pow(endPier/spread,2.0)) + exp(-pow(spine/spread,2.0));
-  float shoulder = abs(abs(spine-${R.toFixed(4)})-${(R*0.88).toFixed(4)});
+  float shoulder = abs(abs(spine-${(SHED_SPAN_WIDTH / 2).toFixed(4)})-${(SHED_SPAN_WIDTH / 2 * 0.88).toFixed(4)});
   float arch = exp(-pow(shoulder/(1.7+0.085*y),2.0)) * smoothstep(1.0,6.0,y);
   // round 24 (front-piers-round-3b score, A2: the spandrel band's soffit stayed a hard black line at night): the floodlights stand below the front, so a
   // face turned down (a soffit) takes FRONT_WASH_SOFFIT of the wash as well as a face turned out
@@ -1492,9 +1500,9 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   const wallH = sp;
   const frontTop = crown + FRONT_ABOVE_CROWN;
   const spine = layout.spine;
-  const centres = [spine - R, spine + R];
+  const centres = shedVaultCentres(layout); // B2: each vault springs from its face of the spine wall, the valley between
   // the south front spans the two vaults only, centred on the spine; the east aisle's south end is a lower plain wall
-  const fx0 = spine - 2 * R, fx1 = spine + 2 * R, FW = fx1 - fx0;
+  const fx0 = spine - SHED_SPAN_WIDTH, fx1 = spine + SHED_SPAN_WIDTH, FW = fx1 - fx0;
   const phi = glazedHalfAngle();
   const disposables: THREE.BufferGeometry[] = [];
 
@@ -1517,6 +1525,13 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
       flanks.push(vaultBand(uc, sp, R + ROOF_SKIN, a0, a1, L, ARC_STEPS));
       lining.push(vaultBand(uc, sp, R + ROOF_SKIN - 0.02, a0, a1, L, ARC_STEPS));
     }
+    // B2 round 2 (b2-valley round-1 score: a sky-blue seam along each spine-side springing): the lining, 2 cm inside the slate, stops 2 cm off the wall's
+    // face, and the cavity between them opened downward there, a sight-line over the kerb and the gutter onto the far vault's outside. A closer board in the
+    // lining, level from its edge into the kerb's top (4 mm under it), shuts it.
+    const s = vault === 0 ? 1 : -1, [eu, ey] = vaultPoint(uc, sp, R + ROOF_SKIN - 0.02, vault === 0 ? Math.PI - cut : cut);
+    const closer = new THREE.PlaneGeometry(0.035 + Math.abs(uc + s * R - eu), L).rotateX(-Math.PI / 2); // facing up: the lining's BackSide shows it from below
+    closer.translate(eu + s * (0.035 + Math.abs(uc + s * R - eu)) / 2 - s * 0.01, ey, -L / 2);
+    lining.push(closer);
     glass.push(vaultBand(uc, sp, R + ROOF_SKIN, Math.PI / 2 - phi, Math.PI / 2 + phi, L, ARC_STEPS)); // (the band is 130 degrees now, not 33: four chords would flatten the crown by half a metre)
   });
   const cladMat = (material('slate') as THREE.MeshLambertMaterial).clone();
@@ -1608,7 +1623,8 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
     const edge = vault === 0 ? uc - rs - gw / 2 + 0.1 : uc + rs + gw / 2 - 0.1;
     outer.box([edge, sp + gh / 2 - 0.1, -L / 2], [gw, gh, L]);
   });
-  outer.box([spine, valleyTop(sp) + ROOF_EXTERIOR.valleyGutter[1] / 2 - 0.1, -L / 2], [ROOF_EXTERIOR.valleyGutter[0], ROOF_EXTERIOR.valleyGutter[1], L]);
+  // B2: the valley gutter's lead, on the sole of the trough sunk into the spine wall's top between the two skins (buildSpineWall)
+  outer.box([spine, valleyTop(sp) - ROOF_EXTERIOR.valleyGutter[1] + 0.005, -L / 2], [ROOF_EXTERIOR.valleyGutter[0], 0.01, L], { skip: ['-y', '+z', '-z'] });
   const barsMat = (material('ribPaint') as THREE.MeshLambertMaterial).clone();
   barsMat.vertexColors = true; // the seams' paler paint (seamPaint)
   barsMat.transparent = true; // its opacity follows the cladding's outside and is 0 inside, see roofBarsOpacity
@@ -1645,13 +1661,15 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
 
   // ---- ribs: one lattice truss, instanced along both vaults ------------------------------------
   const rib = new Batch();
-  for (const m of ribMembers(sp)) rib.box(m.c, m.s, { rotZ: m.rotZ, skip: m.kind === 'boom' ? ['+x', '-x'] : ['+x', '-x', '+y', '-y'] });
+  // B2: the truss of a west vault (its east foot on the spine's face); the east vault's is the same turned half round about the vertical, a proper rotation
+  for (const m of ribMembers(sp, R, 16, [RIB_FOOT, RIB_FOOT_SPINE])) rib.box(m.c, m.s, { rotZ: m.rotZ, skip: m.kind === 'boom' ? ['+x', '-x'] : ['+x', '-x', '+y', '-y'] });
   const ribPos = ribPositions(L);
   const ribs = new THREE.InstancedMesh(rib.build(), ribDay(), ribPos.length * centres.length); // round S1: lighter by day (RIB_DAY_LIFT)
   withBuildingNightMaterial(ribs, material('ribPaint'));
   const mat = new THREE.Matrix4();
   let k = 0;
-  for (const uc of centres) for (const v of ribPos) ribs.setMatrixAt(k++, mat.makeTranslation(uc, 0, -v));
+  const turn = new THREE.Matrix4().makeRotationY(Math.PI);
+  for (const uc of centres) for (const v of ribPos) ribs.setMatrixAt(k++, uc > spine ? mat.makeTranslation(uc, 0, -v).multiply(turn) : mat.makeTranslation(uc, 0, -v));
   ribs.name = 'shed-ribs';
   ribs.instanceMatrix.needsUpdate = true;
   group.add(ribs);
@@ -1729,7 +1747,7 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   }
   const spineBrick = new Batch();
   const spineStone = new Batch();
-  buildSpineWall(spineBrick, spineStone, spine, L, sp, valleyY, [-1, 1]);
+  buildSpineWall(spineBrick, spineStone, spine, L, sp, valleyY, [-1, 1], spineLowerOpenings(L), ROOF_EXTERIOR.valleyGutter);
   buildNorthPier(spineBrick, spineStone, spine, L, valleyY);
   // the east vault's east springing, between the vault and the east aisle, stands on an arcade of the spine wall's pattern (EAST_ARCADE)
   const eastArcade = new Batch();
@@ -2195,7 +2213,7 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   group.rotation.y = -layout.heading;
   group.position.set(layout.origin[0], 0, layout.origin[1]);
   group.updateMatrixWorld();
-  setShedGlass(group, spine - 2 * R, spine + 2 * R, sp, L); // the crown's sky fill lifts the shade in the two vaults, below the springing (lighting.ts SHED_GLASS)
+  setShedGlass(group, spine - SHED_SPAN_WIDTH, spine + SHED_SPAN_WIDTH, sp, L); // the crown's sky fill lifts the shade in the two vaults, below the springing (lighting.ts SHED_GLASS)
   return group;
 }
 
@@ -2273,7 +2291,7 @@ export const ribLanding = (springing: number): number => springing - SPINE_WALL.
  * opening a bay from the band to the top, and the wall's top closed. The caller gives the brick its own batch (`shed-spine`,
  * `shed-east-arcade`), and the stone `shed-spine-stone`: none of them casts a sun shadow.
  */
-export function buildSpineWall(brick: Batch, stone: Batch, x: number, length: number, springing: number, top: number, faces: readonly (-1 | 1)[], lower = spineLowerOpenings(length)): void {
+export function buildSpineWall(brick: Batch, stone: Batch, x: number, length: number, springing: number, top: number, faces: readonly (-1 | 1)[], lower = spineLowerOpenings(length), gutter?: readonly [number, number]): void {
   const { thick, sill } = SPINE_WALL;
   const h = thick / 2;
   const landing = ribLanding(springing);
@@ -2284,10 +2302,17 @@ export function buildSpineWall(brick: Batch, stone: Batch, x: number, length: nu
   arcadeStorey(brick, x, length, sill - 0.02, mid, lower);
   if (upper) {
     const opens = spineUpperOpenings(length, top);
-    arcadeStorey(brick, x, length, landing, top, opens);
+    // B2: with a valley gutter `gutter` ([width, depth]) the storey stops at the gutter's sole and a kerb on each face carries the brick up to `top`,
+    // where the vault on that side lands (the skins stand on the faces, the gutter between them)
+    const sole = gutter ? top - gutter[1] : top;
+    arcadeStorey(brick, x, length, landing, sole, opens);
     // the sill of each great opening, and the wall's top under the valley (seen from above when the roof is x-rayed)
     for (const { vc, r } of opens) brick.poly([[x - h, landing, -(vc - r)], [x + h, landing, -(vc - r)], [x + h, landing, -(vc + r)], [x - h, landing, -(vc + r)]], [[0, vc - r], [thick, vc - r], [thick, vc + r], [0, vc + r]], { facing: [0, 1, 0] });
-    brick.poly([[x - h, top, 0], [x + h, top, 0], [x + h, top, -length], [x - h, top, -length]], [[0, 0], [thick, 0], [thick, length], [0, length]], { facing: [0, 1, 0] });
+    brick.poly([[x - h, sole, 0], [x + h, sole, 0], [x + h, sole, -length], [x - h, sole, -length]], [[0, 0], [thick, 0], [thick, length], [0, length]], { facing: [0, 1, 0] });
+    if (gutter) {
+      const kerb = h - gutter[0] / 2;
+      for (const side of [-1, 1] as const) brick.box([x + side * (h - kerb / 2), (sole + top) / 2, -length / 2], [kerb, top - sole, length], { skip: ['-y'] });
+    }
   }
   for (const side of faces) dressFace(stone, x + side * h, side, length, springing);
 }

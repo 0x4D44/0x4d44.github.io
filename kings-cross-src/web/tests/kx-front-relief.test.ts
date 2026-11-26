@@ -3,7 +3,7 @@ import test from 'node:test';
 import * as THREE from 'three';
 import type { KxData } from '../../core/osm.ts';
 import { readFileSync } from 'node:fs';
-import { SHED_SPAN_WIDTH, shedLayout } from '../../core/station.ts';
+import { SHED_SPAN_WIDTH, SHED_VAULT_RADIUS, shedLayout, shedVaultCentres } from '../../core/station.ts';
 import { buildShed, TOWER_SIZE } from '../src/shed.ts';
 import { material } from '../src/materials.ts';
 import { SHADOW_CASTERS } from '../src/lighting.ts';
@@ -13,7 +13,10 @@ import { GROUND_Y } from '../src/world.ts';
 // Heights are above the model ground; the bands are the photographs' reading plus or minus what the eye can tell.
 const data: KxData = JSON.parse(readFileSync(new URL('../src/data/kx-track.json', import.meta.url), 'utf8'));
 const layout = shedLayout(data);
-const R = SHED_SPAN_WIDTH / 2;
+// Re-pinned 2026-11-25 (B2, partner-approved: the vaults spring from the spine wall's two faces, a valley gutter between): each great arch's radius is
+// SHED_VAULT_RADIUS (the published half span less a quarter of the valley) and its centre shedVaultCentres(layout), a quarter of the valley out from the spine -/+ R before.
+const [cw, ce] = shedVaultCentres(layout);
+const R = SHED_VAULT_RADIUS;
 const X0 = layout.spine - SHED_SPAN_WIDTH;
 const FW = 2 * SHED_SPAN_WIDTH;
 const bay = (FW - TOWER_SIZE) / 6;
@@ -53,7 +56,7 @@ test('A2: proud stone string courses at the lower arcade\'s impost and at the gr
 
 test('A2: each great arch\'s reveal steps back in three orders toward the glass, each step 0.33 to 0.48 m, and a fourth inside the opening', () => {
   const masonry = named('shed-front', 'shed-arch-rings');
-  for (const uc of [layout.spine - R, layout.spine + R]) {
+  for (const uc of [cw, ce]) {
     for (const a of [Math.PI * 0.3, Math.PI * 0.5, Math.PI * 0.7]) {
       const rs: number[] = [];
       for (let r = R + 0.02; r <= R + 2.5; r += 0.02) rs.push(r);

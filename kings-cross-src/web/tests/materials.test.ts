@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import * as THREE from 'three';
 import type { KxData } from '../../core/osm.ts';
-import { SHED_SPAN_WIDTH, shedLayout } from '../../core/station.ts';
+import { SHED_SPAN_WIDTH, SHED_VAULT_RADIUS, shedLayout, shedVaultCentres } from '../../core/station.ts';
 import { buildShed, lunetteBars } from '../src/shed.ts';
 import { Batch, boxProjectUV, CITY_PAINTERS, cityMaterial, footShaded, GLAZING, IN, material, mergeParts, PAINTERS, part, rgb, rng, TEXTURES, terrainMaterial, texelsPerMetre, texture, wallQuad, windowKey } from '../src/materials.ts';
 import { MOTTLE } from '../src/lighting.ts';
@@ -658,8 +658,10 @@ test('the great windows\' panes are the shed\'s real bars (a mullion every 1.6 m
   const centre = layout.spine; // re-pinned 2026-11-24: the shed's centre line is its spine (width / 2 before, the same line while the aisles were even)
   // the constants are the bars': the springing, the third of the half disc, the bar spacing
   close(GLAZING.springing, layout.springing, 1e-3);
-  close(GLAZING.tier, SHED_SPAN_WIDTH / 2 / 3, 1e-3);
-  for (const uc of [layout.spine - SHED_SPAN_WIDTH / 2, layout.spine + SHED_SPAN_WIDTH / 2]) {
+  // re-pinned 2026-11-25 (B2): the great windows are the narrowed vaults' (SHED_VAULT_RADIUS about shedVaultCentres), so a tier is a third of that radius
+  // and the bars are 1.6252 m (ten from the centre line to each window's centre), were a third of SHED_SPAN_WIDTH / 2 and 1.6 m about spine -/+ SHED_SPAN_WIDTH / 2
+  close(GLAZING.tier, SHED_VAULT_RADIUS / 3, 1e-3);
+  for (const uc of shedVaultCentres(layout)) {
     const bars = lunetteBars(uc, layout.springing);
     const mullions = bars.filter((b) => b.kind === 'mullion'), transoms = bars.filter((b) => b.kind === 'transom');
     assert.ok(mullions.length >= 15 && transoms.length === 2, `the bars are found: ${mullions.length} mullions, ${transoms.length} transoms`);
