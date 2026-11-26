@@ -447,8 +447,21 @@ function floorPose(rig, o, walk, sit, pole, yaw, sd0, hx, v) {
     // (from the trailer's last pose, carried with the body from there, and at no more than TRL_EASE over the floor: eased on the clock from a pose fixed in the car, it went 0.11 m a frame)
     if (!rig.sBP) { P.fromArray(rig.sPos).applyMatrix4(par.matrixWorld).applyMatrix4(rig.m); Q.fromArray(rig.sQ).premultiply((rig.tq2 || (rig.tq2 = new rig.T.Quaternion())).copy(ob.quaternion).invert()); rig.sBP = P.toArray(); rig.sBQ = Q.toArray(); }
     P.fromArray(rig.sBP); Q.fromArray(rig.sBQ); const D = P.distanceTo(mesh.position), dt = (o && o.dt) || 1 / 60;
-    mesh.position.lerp(P, rig.sb); mesh.quaternion.slerp(Q, rig.sb); rig.sb = Math.max(0, rig.sb - Math.min(2 * dt, TRL_EASE * dt / Math.max(D, 1e-3)));
+    mesh.position.lerp(P, rig.sb); turnToward(rig, mesh.quaternion, Q, rig.sb); rig.sb = Math.max(0, rig.sb - Math.min(2 * dt, TRL_EASE * dt / Math.max(D, 1e-3)));
   }
+}
+
+/** q turned by the fraction k of the way to Q, along a path that stays on the same side from frame to frame: a slerp takes the short way, and when the two drift past half a
+ *  turn apart (the owner turning while the walk-off ease still pulls toward the trailer's old pose) the short way flips sides, and the case lashed 2.2 rad and 0.94 m in 0.2 s
+ *  (review 73, man_hoodie) */
+function turnToward(rig, q, Q, k) {
+  const T = rig.T, r = rig.ttR || (rig.ttR = new T.Quaternion()); r.copy(Q).multiply(rig.ttI ? rig.ttI.copy(q).invert() : (rig.ttI = q.clone().invert()));
+  if (r.w < 0) r.set(-r.x, -r.y, -r.z, -r.w);
+  const sh = Math.sqrt(Math.max(0, 1 - r.w * r.w)); if (sh < 1e-6) { rig.ttA = null; return; }
+  let ax = [r.x / sh, r.y / sh, r.z / sh], an = 2 * Math.acos(Math.min(1, r.w));
+  const L = rig.ttA; if (L && ax[0] * L[0] + ax[1] * L[1] + ax[2] * L[2] < 0 && an > Math.PI / 2) { ax = [-ax[0], -ax[1], -ax[2]]; an = 2 * Math.PI - an; }   // (the long way: the side it turned on last frame)
+  rig.ttA = ax; const v = rig.ttV || (rig.ttV = new T.Vector3()); v.set(ax[0], ax[1], ax[2]);
+  q.premultiply(r.setFromAxisAngle(v, an * k));
 }
 
 /** the case as a trailer, its owner standing with the handle in their hand (see floorPose): (gx, gz) is the grip on the floor plan, in the body's frame */
@@ -485,7 +498,7 @@ function trailer(rig, o, t, gx, gz, yaw) {
   rig.park = [bx, bz]; rig.parkP = [rig.sP[0], rig.sP[1], psi + ob.rotation.y - yaw]; rig.pT = true; rig.th = th / Math.max(t, 0.05); rig.wP = rig.sP.slice(); rig.wasDown = false;
   mesh.updateMatrix(); const M = rig.tm || (rig.tm = new T.Matrix4()); M.multiplyMatrices(ob.matrix, mesh.matrix);
   const Q = rig.tq || (rig.tq = new T.Quaternion()), S = rig.ts || (rig.ts = new T.Vector3()), W = rig.tw2 || (rig.tw2 = new T.Vector3()); M.decompose(W, Q, S);
-  rig.sPos = [W.x, W.y, W.z]; rig.sQ = [Q.x, Q.y, Q.z, Q.w]; rig.sb = 1; rig.sBP = null;
+  rig.sPos = [W.x, W.y, W.z]; rig.sQ = [Q.x, Q.y, Q.z, Q.w]; rig.sb = 1; rig.sBP = null; rig.ttA = null;
 }
 
 /** take a bag off a clone (the clone is being thrown away; the geometries and the material are shared and stay) */

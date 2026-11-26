@@ -1519,6 +1519,12 @@ export class AnimCrowd {
     for (const q of this.people) { if (q === p || q.hidden || !q.obj || q.static) continue; const dn2 = (q.x - nx) ** 2 + (q.z - nz) ** 2; if (dn2 < R * R && dn2 < (q.x - p.x) ** 2 + (q.z - p.z) ** 2) return false; }
     return true;
   }
+  /** does a step to (nx,nz) keep clear of closing on anyone within R? The shorter-step fallback in _step must not let side-by-side walkers creep into each other: with only the
+   *  0.45 m rule, pelvis pairs under 0.30 m rose from 0 to 98 frames in 130 s at St Enoch (review 73) */
+  _noCloser(p, nx, nz, R) {
+    for (const q of this.people) { if (q === p || q.hidden || !q.obj || q.static) continue; const dn2 = (q.x - nx) ** 2 + (q.z - nz) ** 2; if (dn2 < R * R && dn2 < (q.x - p.x) ** 2 + (q.z - p.z) ** 2) return false; }
+    return true;
+  }
   /** may this person stand at (nx,nz)? On the slab (inset m), clear of furniture, the user and every other person - except that stepping AWAY from something already too close is always allowed */
   _freeStep(p, nx, nz, m = 0.22) {
     if (!this._onFloor(nx, nz, m)) return false;
@@ -1562,7 +1568,7 @@ export class AnimCrowd {
     let sx = -Math.sin(p.yaw) * move, sz = -Math.cos(p.yaw) * move;
     if (!ok(p.x + sx, p.z + sz)) {   // not facing the checked way yet and the way it faces is blocked: hold, turn, then go
       // ... but a shorter step first, if that is clear: zeroed outright, the root halted dead for single frames mid-walk, six times in 0.8 s (review 72: ya_smile_halter)
-      p.sp = Math.max(0, p.sp - 2 * STEER.BMAX * dt); const k = [0.6, 0.3].find((f) => ok(p.x + sx * f, p.z + sz * f)); if (k) { sx *= k; sz *= k; } else sx = sz = 0;
+      p.sp = Math.max(0, p.sp - 2 * STEER.BMAX * dt); const k = [0.6, 0.3].find((f) => ok(p.x + sx * f, p.z + sz * f) && this._noCloser(p, p.x + sx * f, p.z + sz * f, 0.6)); if (k) { sx *= k; sz *= k; } else sx = sz = 0;
     }
     p.x += sx; p.z += sz;
     return true;
