@@ -3,7 +3,7 @@ import test from 'node:test';
 import * as THREE from 'three';
 import type { KxData } from '../../core/osm.ts';
 import { readFileSync } from 'node:fs';
-import { SHED_SPAN_WIDTH, shedLayout } from '../../core/station.ts';
+import { SHED_SPAN_WIDTH, SHED_VAULT_RADIUS, shedLayout, shedVaultCentres } from '../../core/station.ts';
 import { GROUND_Y } from '../src/world.ts';
 import * as shed from '../src/shed.ts';
 
@@ -11,7 +11,10 @@ import * as shed from '../src/shed.ts';
 // A3 the porches deeper, their interiors darker toward the sides and the ceiling.
 const data: KxData = JSON.parse(readFileSync(new URL('../src/data/kx-track.json', import.meta.url), 'utf8'));
 const layout = shedLayout(data);
-const X0 = layout.spine - SHED_SPAN_WIDTH, R = SHED_SPAN_WIDTH / 2, sp = layout.springing;
+// Re-pinned 2026-11-25 (B2, partner-approved: the vaults spring from the spine wall's two faces, a valley gutter between): each great arch's radius is
+// SHED_VAULT_RADIUS (the published half span less a quarter of the valley) and its centre shedVaultCentres(layout), a quarter of the valley out from the spine -/+ R before.
+const [cw, ce] = shedVaultCentres(layout);
+const X0 = layout.spine - SHED_SPAN_WIDTH, R = SHED_VAULT_RADIUS, sp = layout.springing;
 const group = shed.buildShed(layout, { range: false });
 group.updateMatrixWorld(true);
 const S = shed as unknown as Record<string, unknown>;
@@ -28,7 +31,7 @@ const ray = (o: [number, number, number], d: [number, number, number], targets: 
 test('A2: square-on, each order shows a band of its splayed step in the return tone inside a narrower face, each face a step behind the one outside it', () => {
   const F = shed.FRONT_RELIEF as typeof shed.FRONT_RELIEF & { splay: number };
   assert.ok(F.splay >= 0.15 && F.splay <= F.orderWidth - 0.1, `splay ${F.splay}`);
-  for (const uc of [layout.spine - R, layout.spine + R]) for (const a of [Math.PI / 2, Math.PI / 4, (3 * Math.PI) / 4]) for (let i = 0; i < F.orders; i++) {
+  for (const uc of [cw, ce]) for (const a of [Math.PI / 2, Math.PI / 4, (3 * Math.PI) / 4]) for (let i = 0; i < F.orders; i++) {
     // re-pinned round A2: the faces at frontOrderZ, the inner order (shallower, standing on the wall's face) splayed in proportion to its depth
     const zb = Math.max(0, shed.frontOrderZ(i - 1)), zf = shed.frontOrderZ(i), sw = (F.splay * (zf - zb)) / F.orderStep;
     const r0 = R + i * F.orderWidth, at = (r: number): [number, number, number] => [uc + r * Math.cos(a), sp + r * Math.sin(a), 5];
@@ -40,7 +43,7 @@ test('A2: square-on, each order shows a band of its splayed step in the return t
       `and its face: ${face?.mat} at ${face?.z.toFixed(2)}`);
   }
   // the opening's clear width kept: inside the inner order nothing of the front
-  const clear = ray([layout.spine - R - (R - F.orderWidth) + 0.1, sp + 0.3, 5], [0, 0, -1], [front]);
+  const clear = ray([cw - (R - F.orderWidth) + 0.1, sp + 0.3, 5], [0, 0, -1], [front]);
   assert.ok(!clear || clear.z < -1.0, `the opening clear: ${clear?.z}`);
 });
 

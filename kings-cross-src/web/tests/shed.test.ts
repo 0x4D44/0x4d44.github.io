@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import * as THREE from 'three';
 import type { KxData } from '../../core/osm.ts';
-import { CLOCK_TOWER_HEIGHT, SHED_LENGTH, SHED_SPAN_WIDTH, shedLayout, shedToWorld, stationBuilding, worldToShed } from '../../core/station.ts';
+import { CLOCK_TOWER_HEIGHT, SHED_LENGTH, SHED_SPAN_WIDTH, SHED_VALLEY_WIDTH, SHED_VAULT_RADIUS, shedLayout, shedToWorld, shedVaultCentres, stationBuilding, worldToShed } from '../../core/station.ts';
 import { shedRoofY } from '../src/furniture.ts';
 import { createSunShadow, SHADOW_CASTERS } from '../src/lighting.ts';
 import { ARCADE_FRAME, ARCADE_GLASS, buildingNightMaterialsOf, material, PANE_UV, TEXTURES, windowNight } from '../src/materials.ts';
@@ -12,7 +12,11 @@ import { buildShed, buildTower, EAST_ARCADE, eastArcadeOpenings, eastArcadeU, NO
 
 const data: KxData = JSON.parse(readFileSync(new URL('../src/data/kx-track.json', import.meta.url), 'utf8'));
 const layout = shedLayout(data);
-const R = SHED_SPAN_WIDTH / 2;
+// Re-pinned 2026-11-25 (B2, partner-approved: the vaults spring from the spine wall's two faces, a valley gutter between): R is each vault's radius,
+// SHED_VAULT_RADIUS (the published half span less a quarter of the valley), and the vaults' axes [cw, ce] shedVaultCentres, a quarter of the valley out
+// from spine -/+ SHED_SPAN_WIDTH / 2; the vaults' crowns stand R over the springing, 0.25 m under the published layout.crown.
+const R = SHED_VAULT_RADIUS;
+const [cw, ce] = shedVaultCentres(layout);
 const close = (a: number, b: number, eps = 1e-6): void => assert.ok(Math.abs(a - b) <= eps, `${a} != ${b}`);
 /** Geometry is stored as float32, good to about 4e-6 at 50 m: compare it to 0.1 mm. */
 const EPS = 1e-4;
@@ -38,7 +42,8 @@ test('vaultPoint: angle 0 is the west springing, pi the east, pi/2 the crown', (
 
 test('the glazed strip is the 29 m wide band along the crown: about 72% of the vault, as measured in R-lighting-materials-b (27.4 to 30.2 m)', () => {
   close(2 * R * Math.sin(glazedHalfAngle()), GLAZED_STRIP_WIDTH, 1e-9);
-  assert.equal(GLAZED_STRIP_WIDTH, 29);
+  // re-pinned 2026-11-25 (B2): the strip keeps the measured 29 m's angle on the narrowed vault, so its chord is 29 m scaled by the radius (28.55 m); was 29
+  close(GLAZED_STRIP_WIDTH, (29 * R) / (SHED_SPAN_WIDTH / 2), 1e-9);
   const share = (2 * glazedHalfAngle()) / Math.PI;
   assert.ok(share > 0.66 && share < 0.78, `the glass covers ${(100 * share).toFixed(0)}% of the arc, the photograph's 72% plus or minus 6%`);
 });
@@ -208,7 +213,7 @@ test('the roof outside (rubric A5, R-kx-front-e): the glazed crown 72% +-6% of t
   // re-pinned 2026-11-24 (roof-exterior-round-2): the crown's 2.7 m lengthwise bars are gone (the scorer: a cage, front-d and -e show none); their checks moved to the next test's fine seams
   const { ROOF_EXTERIOR } = await import('../src/shed.ts') as typeof import('../src/shed.ts') & { ROOF_EXTERIOR: { ribCap: readonly number[]; gutter: readonly number[] } };
   assert.ok(ROOF_EXTERIOR, 'the roof outside has a spec (ROOF_EXTERIOR)');
-  const rs = SHED_SPAN_WIDTH / 2 + ROOF_SKIN;
+  const rs = R + ROOF_SKIN; // re-pinned 2026-11-25 (B2): the narrowed vaults' skin
   const phi = glazedHalfAngle();
   const cut = valleyCut(rs);
   const share = (2 * phi) / (Math.PI - cut);
@@ -227,9 +232,9 @@ test('the roof outside (rubric A5, R-kx-front-e): the glazed crown 72% +-6% of t
   let gutterW = 0, gutterE = 0;
   for (let i = 0; i < p.count; i++) {
     const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
-    const r = Math.min(Math.hypot(x - (layout.spine - SHED_SPAN_WIDTH / 2), y - layout.springing), Math.hypot(x - (layout.spine + SHED_SPAN_WIDTH / 2), y - layout.springing));
+    const r = Math.min(Math.hypot(x - cw, y - layout.springing), Math.hypot(x - ce, y - layout.springing));
     // (re-pinned 2026-11-24, roof-exterior-round-2: the crown rail and the north end rib stand higher, and are checked in the next test)
-    const rail = y > layout.crown && Math.min(Math.abs(x - (layout.spine - SHED_SPAN_WIDTH / 2)), Math.abs(x - (layout.spine + SHED_SPAN_WIDTH / 2))) < 0.1, endRib = z < -layout.length + 0.6;
+    const rail = y > layout.crown && Math.min(Math.abs(x - cw), Math.abs(x - ce)) < 0.1, endRib = z < -layout.length + 0.6;
     if (y > layout.springing + 2 && Math.abs(x - layout.spine) > 1 && !rail && !endRib) assert.ok(r > rs - 0.05 && r < rs + 0.4, `vertex ${i} off the skin (r ${r.toFixed(2)})`);
     if (y > layout.crown - 1) crownZ.push(z);
     // past the rib caps' feet (0.48 m out): only the gutter reaches there, and the north end rib's foot (re-pinned 2026-11-24, roof-exterior-round-2: that is left out)
@@ -253,11 +258,11 @@ test('the roof\'s outside bars are not seen from inside the shed (roof-exterior-
   const shed = await import('../src/shed.ts') as Record<string, unknown>;
   const barsOpacity = shed.roofBarsOpacity as ((cam: [number, number, number], l: typeof layout, mode?: 'auto' | 'solid' | 'xray') => number) | undefined;
   assert.equal(typeof barsOpacity, 'function', 'roofBarsOpacity is exported');
-  const rs = SHED_SPAN_WIDTH / 2 + ROOF_SKIN;
+  const rs = R + ROOF_SKIN; // re-pinned 2026-11-25 (B2): the narrowed vaults' skin
   // the cause: from a platform eye under the east vault, the west vault's outer face (its glass, where the caps and bars stand) faces the eye
   const eye: [number, number] = [layout.spine + 8, 2.5];
   const a = Math.PI / 2 + glazedHalfAngle() - 0.1;
-  const [pu, py] = vaultPoint(layout.spine - SHED_SPAN_WIDTH / 2, layout.springing, rs, a);
+  const [pu, py] = vaultPoint(cw, layout.springing, rs, a);
   assert.ok(-Math.cos(a) * (eye[0] - pu) + Math.sin(a) * (eye[1] - py) > 0, 'the far vault\'s outer face is a front face from the platform');
   const inside: [number, number, number][] = [[layout.spine + 8, 2.5, -120], [layout.spine - 8, 2.5, -60], [layout.width / 2, layout.crown - 2, -200]];
   for (const mode of ['auto', 'solid', 'xray'] as const) {
@@ -286,8 +291,8 @@ test('the roof outside, round 2 (roof-exterior-round-2, R-kx-front-d and -e): fi
   const crownSeams = shed.crownSeams as ((length: number) => number[]) | undefined;
   assert.ok(typeof crownSeams === 'function' && X.seamPitch && X.seam && X.endRib && X.rail && X.fade, 'the round 2 spec: crownSeams, seamPitch, seam, endRib, rail, fade');
   const barsOpacity = shed.roofBarsOpacity as (cam: [number, number, number], l: typeof layout, mode?: 'auto' | 'solid' | 'xray') => number;
-  const L = layout.length, rs = SHED_SPAN_WIDTH / 2 + ROOF_SKIN, phi = glazedHalfAngle();
-  const centres = [layout.spine - SHED_SPAN_WIDTH / 2, layout.spine + SHED_SPAN_WIDTH / 2];
+  const L = layout.length, rs = R + ROOF_SKIN, phi = glazedHalfAngle(); // re-pinned 2026-11-25 (B2): the narrowed vaults
+  const centres = [cw, ce]; // re-pinned 2026-11-25 (B2)
   // seams: on the glazing's pane module (1.8 m), close (at least 100 a vault), never on a rib cap
   close(X.seamPitch!, 1.8, 1e-12);
   const seams = crownSeams!(L);
@@ -432,7 +437,7 @@ test('buildShed: the published dimensions, in the shed frame', () => {
   close(L, SHED_LENGTH, 1e-9);
   // the glazed strip crowns the vault: skin on the 71 ft crown, the full 800 ft long
   const glass = bbox(byName(group, 'shed-roof-glass'));
-  close(glass.max.y, layout.crown + ROOF_SKIN, EPS);
+  close(glass.max.y, layout.springing + R + ROOF_SKIN, EPS); // re-pinned 2026-11-25 (B2): the narrowed vault's crown, 0.25 m under the published one
   close(glass.min.z, -L, EPS);
   close(glass.max.z, 0, EPS);
   // the front stands 2.4 m above the crowns, across the two vaults (re-pinned 2026-11-24, signed off: the front spans only the two vaults,
@@ -466,16 +471,17 @@ test('buildShed: every mesh has finite positions and the roof skin never crosses
   });
   assert.ok(meshes >= 20, `only ${meshes} meshes`);
   const clad = positions(byName(group, 'shed-roof-cladding').geometry);
-  const west = layout.spine - R; // re-pinned 2026-11-24: the vault centres are a half span either side of the spine
-  const east = layout.spine + R;
+  const west = cw; // re-pinned 2026-11-25 (B2): the vaults' own axes (a half span either side of the spine since 2026-11-24)
+  const east = ce;
   const rs = R + ROOF_SKIN;
+  const face = SPINE_WALL.thick / 2; // re-pinned 2026-11-25 (B2): each skin stops on its own face of the spine wall, short of the valley line by half the wall
   let onWest = 0;
   let onEast = 0;
   for (let i = 0; i < clad.count; i++) {
     const x = clad.getX(i);
     const y = clad.getY(i);
-    if (Math.abs(Math.hypot(x - west, y - sp) - rs) < EPS) { onWest++; assert.ok(x <= valley + EPS, `west skin reaches ${(x - valley).toFixed(2)} m past the valley line`); }
-    if (Math.abs(Math.hypot(x - east, y - sp) - rs) < EPS) { onEast++; assert.ok(x >= valley - EPS, `east skin reaches ${(valley - x).toFixed(2)} m past the valley line`); }
+    if (Math.abs(Math.hypot(x - west, y - sp) - rs) < EPS) { onWest++; assert.ok(x <= valley - face + EPS, `west skin reaches ${(x - valley).toFixed(2)} m past the valley line`); }
+    if (Math.abs(Math.hypot(x - east, y - sp) - rs) < EPS) { onEast++; assert.ok(x >= valley + face - EPS, `east skin reaches ${(valley - x).toFixed(2)} m past the valley line`); }
   }
   assert.ok(onWest > 20 && onEast > 20);
   // the spine wall closes the gap from the springing to where the skins start (re-pinned 2026-11-24: it was the valley girder, the grey fascia
@@ -610,8 +616,8 @@ test('the Range can be left out', () => {
 test('the roof the platform furniture hangs from (shedRoofY) is this shed\'s arch: its crown over each arch centre, the springing over the aisles and at the valley', () => {
   const sp = layout.springing;
   for (const k of [-1, 1]) {
-    const uc = layout.spine + k * R; // re-pinned 2026-11-24: the vault centres from the spine (they were aisle + R and aisle + 3R)
-    close(shedRoofY(layout, uc), layout.crown, 1e-9);
+    const uc = k < 0 ? cw : ce; // re-pinned 2026-11-25 (B2): the vaults' own axes, the crown R over the springing (layout.crown and spine + k R before)
+    close(shedRoofY(layout, uc), layout.springing + R, 1e-9);
     close(shedRoofY(layout, uc - R), sp, 1e-9);
     close(shedRoofY(layout, uc + R), sp, 1e-9);
     // a point on the arch is on the circle the ribs are drawn on: between the radii of the lower and the upper boom
@@ -659,9 +665,11 @@ test('buildShed: the spine wall meets the springing: it stands up to the valley,
   const [west, east] = [...axes].map(Number).sort((a, b) => a - b) as [number, number];
   assert.equal(axes.size, 2);
   // (the instance matrices are float32: 16.002 is stored to about 1e-6)
-  close(west + R, layout.spine, 1e-5); // the west vault's east springing
-  close(east - R, layout.spine, 1e-5); // the east vault's west springing
-  close(2 * R, SHED_SPAN_WIDTH, 1e-12);
+  // re-pinned 2026-11-25 (B2, partner-approved): each vault springs from its own face of the wall, not its middle line, so each span is the published one
+  // less half the valley (the outer springings stay put); were spine, spine and 2R = SHED_SPAN_WIDTH
+  close(west + R, layout.spine - half, 1e-5); // the west vault's east springing
+  close(east - R, layout.spine + half, 1e-5); // the east vault's west springing
+  close(2 * R, SHED_SPAN_WIDTH - SHED_VALLEY_WIDTH / 2, 1e-12);
   close(west - R, 0, 1e-5); // and the west vault springs from the west wall: no west aisle
   // the wall runs on up through the springing to the valley, centred on the spine (re-pinned 2026-11-24: it was the fascia standing on the wall at
   // the springing, centred on it, at 1e-6)
@@ -712,6 +720,9 @@ test('buildShed: the east aisle\'s roof is closed from below over its full width
 test('buildShed: nowhere across the shed, west wall to east wall, does a ray straight up from the platforms see the sky', () => {
   const g = shedWorld();
   for (let u = 0.05; u < layout.width; u += 0.73) {
+    // re-pinned 2026-11-25 (B2): a probe inside the spine wall's brick is skipped: its ray starts in solid masonry, whose faces face out, and since the
+    // vaults spring from the wall's faces no skin stands over it (the wall's own top, the valley gutter, closes it)
+    if (Math.abs(u - layout.spine) < SPINE_WALL.thick / 2) continue;
     for (let v = 3; v < layout.length - 1; v += 40) assert.ok(upHit(g, u, v, 2.6), `open sky at (${u.toFixed(2)}, ${v})`);
   }
 });
@@ -722,7 +733,7 @@ test('buildShed: the east vault\'s east springing stands on the east arcade, a w
   assert.equal(wall.material, material('brickFoot'), 'the brick of the shed');
   assert.ok(!SHADOW_CASTERS.has('shed-east-arcade'), 'not a sun-shadow caster: the pass has no room for it');
   const e = eastArcadeU(layout), half = SPINE_WALL.thick / 2;
-  close(e, layout.spine + 2 * R, 1e-12); // the east vault's east springing
+  close(e, layout.spine + SHED_SPAN_WIDTH, 1e-12); // the east vault's east springing (re-pinned 2026-11-25, B2: spine + 2R while R was the published half span)
   const p = positions(wall.geometry);
   let top = -Infinity, foot = Infinity, xMin = Infinity, xMax = -Infinity, zMin = Infinity, zMax = -Infinity;
   for (let i = 0; i < p.count; i++) {

@@ -8,7 +8,7 @@ import test from 'node:test';
 import * as THREE from 'three';
 import type { KxData } from '../../core/osm.ts';
 import { PLATFORM_HEIGHT } from '../../core/scene.ts';
-import { concourseCanopy, SHED_SPAN_WIDTH, shedLayout, shedToWorld, stationBuilding } from '../../core/station.ts';
+import { concourseCanopy, SHED_VAULT_RADIUS, shedLayout, shedToWorld, shedVaultCentres, stationBuilding } from '../../core/station.ts';
 import { createAtmosphere } from '../src/atmosphere.ts';
 import { buildConcourse } from '../src/concourse.ts';
 import { applyCover, buildCoverMap, COVER_GLSL, coverAt, coverUniforms, groundCoverAt, groundOpenShare } from '../src/cover.ts';
@@ -27,9 +27,12 @@ const layout = shedLayout(data);
 const canopy = concourseCanopy(data);
 const footprint = stationBuilding(data)!.pts;
 const plan = furniturePlan(data, layout);
-const R = SHED_SPAN_WIDTH / 2;
+// Re-pinned 2026-11-25 (B2, partner-approved: the vaults spring from the spine wall's two faces, a valley gutter between): each vault's radius is
+// SHED_VAULT_RADIUS (the published half span less a quarter of the valley) and its axis shedVaultCentres(layout), a quarter of the valley out from the spine -/+ R before.
+const [cw, ce] = shedVaultCentres(layout), R = SHED_VAULT_RADIUS;
 const W = layout.width, L = layout.length;
-const CROWN = layout.crown + ROOF_SKIN;
+// re-pinned 2026-11-25 (B2): the vaults' crowns stand SHED_VAULT_RADIUS over the springing (0.25 m under layout.crown, the published one) since they narrowed
+const CROWN = layout.springing + R + ROOF_SKIN;
 
 // the real station, with the page's own atmosphere over it (which draws the cover map from the roofs, and patches the wet-ground materials)
 const scene = new THREE.Scene();
@@ -156,16 +159,16 @@ const canopyPlan = plan.canopies[0]!;
 const [canopyX, canopyZ] = mid(canopyPlan);
 /** Places to hold the rain to: `under` says whether a roof is over them. `span` is how far the viewer stands back, which sizes the box of drops. */
 const PLACES: { label: string; p: [number, number, number]; under: boolean; span: number }[] = [
-  { label: 'on the platform under the shed\'s first vault, at eye height', p: at(layout.spine - R, 100, PLATFORM_HEIGHT + 1.6), under: true, span: 20 },
-  { label: 'high in the shed\'s first vault', p: at(layout.spine - R, 150, 12), under: true, span: 20 },
-  { label: 'in the shed\'s second vault', p: at(layout.spine + R, 220, 6), under: true, span: 20 },
+  { label: 'on the platform under the shed\'s first vault, at eye height', p: at(cw, 100, PLATFORM_HEIGHT + 1.6), under: true, span: 20 },
+  { label: 'high in the shed\'s first vault', p: at(cw, 150, 12), under: true, span: 20 },
+  { label: 'in the shed\'s second vault', p: at(ce, 220, 6), under: true, span: 20 },
   { label: 'under the shed\'s east aisle roof', p: at(layout.width - layout.aisleEast / 2, 60, 3.2), under: true, span: 20 },
-  { label: 'on the flank of a vault, where the slate is', p: at(layout.spine - R - 11, 120, 8), under: true, span: 20 },
+  { label: 'on the flank of a vault, where the slate is', p: at(cw - 11, 120, 8), under: true, span: 20 },
   { label: 'in the Western Concourse', p: [canopy.centre[0] - canopy.radius * 0.3, 8, canopy.centre[1]], under: true, span: 20 },
   { label: 'on a platform, under its canopy', p: [canopyX, canopyPlan.roofY - 2, canopyZ], under: true, span: 20 },
   { label: 'in the open, beside the shed', p: at(W + 15, 100, 8), under: false, span: 20 },
   { label: 'in the open, past the end of the shed', p: at(W / 2, L + 30, 8), under: false, span: 20 },
-  { label: 'in the open, over the shed\'s crown (rain falls on its roof)', p: at(layout.spine - R, 100, CROWN + 3), under: false, span: 45 },
+  { label: 'in the open, over the shed\'s crown (rain falls on its roof)', p: at(cw, 100, CROWN + 3), under: false, span: 45 },
   { label: 'in the open, over the concourse', p: [canopy.centre[0], 30, canopy.centre[1]], under: false, span: 45 },
   { label: 'in the open, 3 m beside a canopy', p: [canopyX + 14, canopyPlan.roofY - 2, canopyZ + 14], under: false, span: 20 },
 ];
@@ -228,9 +231,9 @@ test('coverAt in GLSL, run on the uploaded texture, answers what the CPU map ans
   assert.ok(counts.under > 1500 && counts.open > 500 && counts.fade > 100 && counts.outside > 50, `every case was tried: ${JSON.stringify(counts)}`);
   // no map: the shader sees no roof, however low the point is
   env.vars.uCoverRect = [0, 0, 0, 0];
-  assert.equal(gpu(...at(layout.spine - R, 100, 1.5)), 0);
+  assert.equal(gpu(...at(cw, 100, 1.5)), 0);
   env.vars.uCoverRect = rect;
-  assert.equal(gpu(...at(layout.spine - R, 100, 1.5)), 1);
+  assert.equal(gpu(...at(cw, 100, 1.5)), 1);
 });
 
 test('coverGroundAt in GLSL, run on the uploaded textures, answers what the CPU map answers: under a roof, in the open, over a roof, across a roof\'s edge, outside the map', () => {
@@ -272,10 +275,10 @@ test('coverGroundAt in GLSL, run on the uploaded textures, answers what the CPU 
   for (let n = 0; n < 1000; n++) check(map.x0 - 40 + rand() * (map.nx * map.cell + 80), rand() * 40, map.z0 - 40 + rand() * (map.nz * map.cell + 80)); // anywhere around
   assert.ok(counts.under > 500 && counts.open > 200 && counts.ramp > 800 && counts.over > 50 && counts.outside > 20, `every case was tried: ${JSON.stringify(counts)}`);
   env.vars.uCoverRect = [0, 0, 0, 0];
-  assert.equal(gpu(...at(layout.spine - R, 100, 1.5)), 0, 'no map, no roof');
+  assert.equal(gpu(...at(cw, 100, 1.5)), 0, 'no map, no roof');
   env.vars.uCoverRect = rect;
-  assert.equal(gpu(...at(layout.spine - R, 100, 1.5)), 1, 'the ground under the shed is under it');
-  assert.equal(gpu(...at(layout.spine - R, 100, CROWN + 1)), 0, 'and a surface above the crown is in the rain');
+  assert.equal(gpu(...at(cw, 100, 1.5)), 1, 'the ground under the shed is under it');
+  assert.equal(gpu(...at(cw, 100, CROWN + 1)), 0, 'and a surface above the crown is in the rain');
 });
 
 test('the edge of a roof is a soft line, as straight as the roof: along the shed\'s eaves the ground goes from dry to wet over about a metre, the same everywhere, with no saw', () => {
@@ -284,7 +287,7 @@ test('the edge of a roof is a soft line, as straight as the roof: along the shed
   const gpu = (x: number, y: number, z: number): number => glsl.call('coverGroundAt', [[x, y, z]], env) as number;
   // re-pinned 2026-11-24: with no west aisle the west eave is the west vault's own skin, which springs ROOF_SKIN outside the arch, beyond the
   // wall line (the flat aisle roof ended on the wall line before); the east eave is still the east aisle roof's, on the wall line
-  for (const [label, uEdge, outward] of [['west eave', layout.spine - 2 * R - ROOF_SKIN, -1], ['east eave', W, 1]] as const) {
+  for (const [label, uEdge, outward] of [['west eave', cw - R - ROOF_SKIN, -1], ['east eave', W, 1]] as const) {
     const crossings: number[] = [], ramps: number[] = [];
     let steps = 0;
     for (let v = 40; v <= L - 40; v += 0.61) {
@@ -329,12 +332,12 @@ test('rain: a streak that is under the shed, the concourse or a canopy has no al
 });
 
 test('rain: a streak goes as a whole. Its head decides, so a streak whose tail is out in the open above the roof is not left drawn', () => {
-  const from = new THREE.Vector3(...at(layout.spine - R, 70, 8)), look = new THREE.Vector3(...at(layout.spine - R, 130, 8));
+  const from = new THREE.Vector3(...at(cw, 70, 8)), look = new THREE.Vector3(...at(cw, 130, 8));
   const cam = frame(from, look);
   const run = rainShader(cam);
   const roofY = CROWN;
   const slice = (below: number): { head: Drop; tail: Drop; plain: Drop[] } => {
-    const target = at(layout.spine - R, 100, roofY - below);
+    const target = at(cw, 100, roofY - below);
     assertInBox(rainUniforms(), target, `${below} m under the crown`);
     const seed = rainSeedAt(target);
     return { head: run({ ...seed, aRand: [0.5, 1] }), tail: run({ ...seed, aRand: [0.5, 0] }), plain: [run({ ...seed, aRand: [0.5, 1] }, false), run({ ...seed, aRand: [0.5, 0] }, false)] };
@@ -375,7 +378,7 @@ test('snow: a flake under a roof has no alpha; in the open, or over a roof, it k
 
 test('drops everywhere in a view: each is held back by exactly the share the roofs give its place, whatever the view, the wind or the clock', () => {
   const VIEWS: [string, THREE.Vector3, THREE.Vector3][] = [
-    ['platform eye, down the shed', new THREE.Vector3(...at(layout.spine - R, 40, PLATFORM_HEIGHT + 1.6)), new THREE.Vector3(...at(layout.spine - R, 140, PLATFORM_HEIGHT + 1.6))],
+    ['platform eye, down the shed', new THREE.Vector3(...at(cw, 40, PLATFORM_HEIGHT + 1.6)), new THREE.Vector3(...at(cw, 140, PLATFORM_HEIGHT + 1.6))],
     ['inside the shed, across it', new THREE.Vector3(...at(3, 120, 4)), new THREE.Vector3(...at(W - 3, 130, 6))],
     ['the Western Concourse', new THREE.Vector3(canopy.centre[0] - 30, 1.7, canopy.centre[1]), new THREE.Vector3(canopy.centre[0] + 10, 3, canopy.centre[1] + 5)],
     ['a canopy over a platform', new THREE.Vector3(canopyX - 12, 2.6, canopyZ - 12), new THREE.Vector3(canopyX + 12, 2.6, canopyZ + 12)],
@@ -434,8 +437,8 @@ function wetGround(m: THREE.Material): { uniforms: Record<string, THREE.IUniform
 }
 
 const GROUND: { label: string; p: [number, number, number]; under: boolean }[] = [
-  { label: 'a platform inside the shed', p: at(layout.spine - R, 100, PLATFORM_HEIGHT), under: true },
-  { label: 'the track bed in the shed\'s second vault', p: at(layout.spine + R, 200, 0.05), under: true },
+  { label: 'a platform inside the shed', p: at(cw, 100, PLATFORM_HEIGHT), under: true },
+  { label: 'the track bed in the shed\'s second vault', p: at(ce, 200, 0.05), under: true },
   { label: 'the floor of the shed\'s east aisle', p: at(layout.width - layout.aisleEast / 2, 50, 0.05), under: true },
   { label: 'the Western Concourse floor', p: [canopy.centre[0] - canopy.radius * 0.3, 0.05, canopy.centre[1]], under: true },
   { label: 'a platform under its canopy', p: [canopyX, PLATFORM_HEIGHT, canopyZ], under: true },
@@ -577,7 +580,7 @@ test('the roofs follow the scene: a roof added is covered after a rescan and not
   assert.ok(after !== before, 'a new roof, a new map');
   assert.equal(coverAt(after, spot[0], 2, spot[2]), 1, 'under the new roof');
   assert.equal(coverAt(after, spot[0], 9, spot[2]), 0, 'and over it');
-  assert.equal(coverAt(after, ...at(layout.spine - R, 100, 1.5)), 1, 'the shed is still covered');
+  assert.equal(coverAt(after, ...at(cw, 100, 1.5)), 1, 'the shed is still covered');
   assert.ok((coverUniforms.uCoverMap.value as THREE.DataTexture).image.data === after.heights && (coverUniforms.uCoverRooms.value as THREE.DataTexture).image.data === after.rooms, 'the shaders have the new map');
   assert.ok((coverUniforms.uCoverSoft.value as THREE.DataTexture).image.data === after.soft, 'and its soft edge');
   assert.equal(coverUniforms.uCoverRect.value.x, after.x0);
@@ -645,14 +648,14 @@ test('disposing the atmosphere takes the roofs away from the shaders: they see n
   atmosphere.dispose();
   assert.equal(coverUniforms.uCoverRect.value.z, 0);
   const glsl = new Glsl(COVER_GLSL);
-  assert.equal(glsl.call('coverAt', [[...at(layout.spine - R, 100, 1.5)]], { vars: uniformValues(coverUniforms), fns: { texture2D } }), 0);
-  assert.equal(glsl.call('coverGroundAt', [[...at(layout.spine - R, 100, 1.5)]], { vars: uniformValues(coverUniforms), fns: { texture2D } }), 0, 'for the ground too');
-  assert.equal(glsl.call('coverRoomAt', [[...at(layout.spine - R, 100, 1.5)]], { vars: uniformValues(coverUniforms), fns: { texture2D } }), 0, 'and for the rooms');
+  assert.equal(glsl.call('coverAt', [[...at(cw, 100, 1.5)]], { vars: uniformValues(coverUniforms), fns: { texture2D } }), 0);
+  assert.equal(glsl.call('coverGroundAt', [[...at(cw, 100, 1.5)]], { vars: uniformValues(coverUniforms), fns: { texture2D } }), 0, 'for the ground too');
+  assert.equal(glsl.call('coverRoomAt', [[...at(cw, 100, 1.5)]], { vars: uniformValues(coverUniforms), fns: { texture2D } }), 0, 'and for the rooms');
   assert.equal((coverUniforms.uCoverSoft.value as THREE.DataTexture).image.width, 1, 'and the soft map is the empty one');
   let reads = 0; // with no map the shaders do not fetch a texel at all, for the drops or for the ground
   const counting: Env = { vars: uniformValues(coverUniforms), fns: { texture2D: (sampler: Value, uv: Value): Value => { reads++; return texture2D(sampler, uv); } } };
-  glsl.call('coverAt', [[...at(layout.spine - R, 100, 1.5)]], counting);
-  glsl.call('coverGroundAt', [[...at(layout.spine - R, 100, 1.5)]], counting);
-  glsl.call('coverRoomAt', [[...at(layout.spine - R, 100, 1.5)]], counting);
+  glsl.call('coverAt', [[...at(cw, 100, 1.5)]], counting);
+  glsl.call('coverGroundAt', [[...at(cw, 100, 1.5)]], counting);
+  glsl.call('coverRoomAt', [[...at(cw, 100, 1.5)]], counting);
   assert.equal(reads, 0, 'and read nothing');
 });

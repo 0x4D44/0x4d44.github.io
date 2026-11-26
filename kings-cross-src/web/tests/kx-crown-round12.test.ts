@@ -3,14 +3,16 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import * as THREE from 'three';
 import type { KxData } from '../../core/osm.ts';
-import { SHED_SPAN_WIDTH, shedLayout } from '../../core/station.ts';
+import { SHED_VAULT_RADIUS, shedLayout, shedVaultCentres } from '../../core/station.ts';
 import { buildShed, glazedHalfAngle, ROOF_SKIN } from '../src/shed.ts';
 
 // Round 12 (crown-glass-round-1 score, item 4: a stippled lattice through the crown glass in gable-oblique): nothing crosses the crown's glass. The ribs inside
 // stand wholly under it and the outside structure (shed-roof-bars) wholly over it, so each reads as a whole bar, under the glass or on it.
 const layout = shedLayout(JSON.parse(readFileSync(new URL('../src/data/kx-track.json', import.meta.url), 'utf8')) as KxData);
 const group = buildShed(layout, { range: false });
-const R = SHED_SPAN_WIDTH / 2, sp = layout.springing, rg = R + ROOF_SKIN, phi = glazedHalfAngle(), steps = 12, da = (2 * phi) / steps;
+// Re-pinned 2026-11-25 (B2, partner-approved: the vaults spring from the spine wall's two faces, a valley gutter between): each vault's radius is
+// SHED_VAULT_RADIUS (the published half span less a quarter of the valley) and its axis shedVaultCentres(layout), a quarter of the valley out from the spine -/+ R before.
+const [cw, ce] = shedVaultCentres(layout), R = SHED_VAULT_RADIUS, sp = layout.springing, rg = R + ROOF_SKIN, phi = glazedHalfAngle(), steps = 12, da = (2 * phi) / steps;
 /** the glass's radius at angle a: its band (vaultBand, 12 chords between its edges) is flat between vertices at rg */
 const glassAt = (a: number): number => { const k = Math.min(steps - 1, Math.max(0, Math.floor((a - (Math.PI / 2 - phi)) / da))); return (rg * Math.cos(da / 2)) / Math.cos(a - (Math.PI / 2 - phi + (k + 0.5) * da)); };
 /** every point along every triangle edge (five a side) over the glass's plan: its height above the glass, for the nearer vault whose glass it is over */
@@ -22,7 +24,7 @@ function clearances(mesh: THREE.Mesh, instances: THREE.Matrix4[]): number[] {
     for (let k = 0; k <= 4; k++) {
       p.lerpVectors(a, b, k / 4);
       if (p.z > 0 || p.z < -layout.length) continue;
-      for (const uc of [layout.spine - R, layout.spine + R]) {
+      for (const uc of [cw, ce]) {
         const ang = Math.atan2(p.y - sp, uc - p.x), r = Math.hypot(p.x - uc, p.y - sp);
         if (Math.abs(ang - Math.PI / 2) < phi - 1e-6 && Math.abs(r - rg) < 0.5) out.push(r - glassAt(ang));
       }

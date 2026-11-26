@@ -19,6 +19,20 @@ import { buildGraph } from './graph.ts';
 export const FT = 0.3048;
 export const SHED_SPAN_WIDTH = 105 * FT; // clear width of each arch, 32.0 m
 export const SHED_LENGTH = 800 * FT; // 243.8 m
+/**
+ * B2 (rubric-shed-interior, partner-approved 2026-11-25): the two vaults spring from the opposite faces of the central spine wall, this far apart (the
+ * wall's thickness, shed.ts SPINE_WALL.thick, ASSUMED), with a valley gutter between them. The outer walls stay where the published spans put them, so
+ * each vault's span is the published one less half of this, taken at the spine side: SHED_VAULT_RADIUS. Until then both vaults sprang on the spine's
+ * middle line and their skins met there.
+ */
+export const SHED_VALLEY_WIDTH = 1.0;
+/** Each vault's radius: the published span less half the valley, halved (15.752 m). */
+export const SHED_VAULT_RADIUS = (SHED_SPAN_WIDTH - SHED_VALLEY_WIDTH / 2) / 2;
+/** u of the two vaults' axes (their crowns), west then east: each a radius in from the spine wall's face. */
+export function shedVaultCentres(layout: { spine: number }): [number, number] {
+  const off = SHED_VALLEY_WIDTH / 2 + SHED_VAULT_RADIUS;
+  return [layout.spine - off, layout.spine + off];
+}
 export const SHED_CROWN_HEIGHT = 71 * FT; // 21.6 m above the platform
 export const CLOCK_TOWER_HEIGHT = 112 * FT; // 34.1 m
 export const GAUGE = 1.435; // standard gauge, metres between the inner rail faces

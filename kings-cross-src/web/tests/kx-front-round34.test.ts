@@ -94,7 +94,8 @@ test('B3 (F14): the girder\'s panel is the glazing\'s 1.6 m: its inner verticals
     if (i) assert.ok(Math.sign(d.rotZ) === -Math.sign(diagonals[i - 1]!.rotZ), 'alternating');
     const a = verticals[i]!.c[0], b = verticals[i + 1]!.c[0];
     assert.ok(d.c[0] > a && d.c[0] < b && Math.abs(d.c[0] - (a + b) / 2) < 1e-9, 'within its own panel: none crossing');
-    if (i > 0 && i < diagonals.length - 1) assert.ok(Math.abs(Math.abs(d.rotZ) * 180 / Math.PI - Math.atan2(2.4, 1.6) * 180 / Math.PI) < 1e-6, `about 56 degrees: ${(Math.abs(d.rotZ) * 180 / Math.PI).toFixed(1)}`);
+    // re-pinned 2026-11-25 (B2): the panel is the glazing's bar, P (1.6252 m since the vaults narrowed: GLAZING.spacing), was the literal 1.6
+    if (i > 0 && i < diagonals.length - 1) assert.ok(Math.abs(Math.abs(d.rotZ) * 180 / Math.PI - Math.atan2(2.4, P) * 180 / Math.PI) < 1e-6, `about 56 degrees: ${(Math.abs(d.rotZ) * 180 / Math.PI).toFixed(1)}`);
   });
   const ends = [verticals[1]!.c[0] - verticals[0]!.c[0], verticals.at(-1)!.c[0] - verticals.at(-2)!.c[0]];
   for (const e of ends) assert.ok(e >= 0.4 - 1e-9 && e < 1.6 + 0.4 + 1e-9, `end panel ${e.toFixed(2)}`);

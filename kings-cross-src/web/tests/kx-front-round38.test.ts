@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { SHED_SPAN_WIDTH } from '../../core/station.ts';
+import { SHED_VAULT_RADIUS } from '../../core/station.ts';
 import { GABLE_SHEET, GLAZING, material } from '../src/materials.ts';
 import * as shed from '../src/shed.ts';
 import { Glsl, Mat } from './glsl.ts';
@@ -23,7 +23,8 @@ const G = (x: number, y: number, cos = 1, even = 1): number => {
 };
 // re-pinned round F16b (front-round-16 score, A6/B3: square panes, an even grid, a quilt of dark offsets; kx-front-round39 pins the new figures): the pane
 // half a tier tall, its offset +-3.5-6 levels head-on and +-4.5-9 at 30 degrees, the transoms a half tier apart, 4-5 rows; were a third, +-6-11, +-11-16, 6-8
-const R = SHED_SPAN_WIDTH / 2, row = GLAZING.tier / 2;
+// re-pinned 2026-11-25 (B2): the gables' radius is the narrowed vaults' (SHED_VAULT_RADIUS; the tier is a third of it), was SHED_SPAN_WIDTH / 2
+const R = SHED_VAULT_RADIUS, row = GLAZING.tier / 2;
 
 test('A6 (F16, re-pinned F16b): each pane holds its own tone, +-3.5-6 levels head-on and +-4.5-9 at gable-oblique\'s 30 degrees, on panes half a tier tall', () => {
   assert.ok(body.includes(lift), 'the cloud\'s lift times its smoothstep');

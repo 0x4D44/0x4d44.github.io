@@ -1372,7 +1372,9 @@ export function litWalls(m: THREE.MeshLambertMaterial, tile: readonly [number, n
  * and two thirds of the half disc's radius (SHED_SPAN_WIDTH / 2 / 3 = 5.334 m) above the springing (SHED_CROWN_HEIGHT - SHED_SPAN_WIDTH / 2 = 5.6388 m): a pane is 1.6 by 5.334 m. The two windows
  * are 2 x SHED_SPAN_WIDTH = 20 bars apart (to 4 mm), so one grid, counted from the shed's centre line, serves both. ASSUMED to match shed.ts: tests/materials.test.ts holds them to its bars.
  */
-export const GLAZING = { spacing: 1.6, tier: 5.334, springing: 5.6388 } as const;
+// B2 (core/station.ts SHED_VALLEY_WIDTH): the vaults narrowed to SHED_VAULT_RADIUS and their axes moved out a quarter of the valley, so the two windows' centres
+// are 2 x 16.252 m apart: the bar is 1.6252 m (ten bars from the centre line to each window's), and a tier a third of the new radius (5.2507 m)
+export const GLAZING = { spacing: (SHED_VALLEY_WIDTH / 2 + SHED_VAULT_RADIUS) / 10, tier: SHED_VAULT_RADIUS / 3, springing: 5.6388 } as const;
 
 /**
  * GLSL for the sky in the great windows of the shed's front and in the gables behind it (R-lighting-materials-a2: the arched glazing mirrors the sky in pale
@@ -1906,6 +1908,7 @@ export function wallQuad(b: Batch, x0: number, z0: number, x1: number, z1: numbe
 // sizes come from core/city.ts (FACADE), so the rules that fit windows to walls and the textures that draw
 // them cannot drift apart; web/tests/city.test.ts holds every texture to its texel density.
 import { FACADE, FACADE_TEXELS_PER_M, facadeTint } from '../../core/city.ts';
+import { SHED_VALLEY_WIDTH, SHED_VAULT_RADIUS } from '../../core/station.ts';
 import type { FacadeKey } from '../../core/city.ts';
 
 export type CityTextureName = FacadeKey | 'grass' | 'water';

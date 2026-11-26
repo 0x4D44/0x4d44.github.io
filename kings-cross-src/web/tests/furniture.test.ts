@@ -9,7 +9,7 @@ import * as THREE from 'three';
 import type { Pt } from '../../core/geo.ts';
 import type { KxData } from '../../core/osm.ts';
 import { PLATFORM_HEIGHT } from '../../core/scene.ts';
-import { PLATFORM_REFS, pointInPolygon, polygonArea, SHED_PLATFORM_REFS, SHED_SPAN_WIDTH, shedLayout, stationPlatforms, worldToShed } from '../../core/station.ts';
+import { PLATFORM_REFS, pointInPolygon, polygonArea, SHED_PLATFORM_REFS, SHED_SPAN_WIDTH, SHED_VAULT_RADIUS, shedLayout, shedVaultCentres, stationPlatforms, worldToShed } from '../../core/station.ts';
 import { material, texelsPerMetre, TEXTURES } from '../src/materials.ts';
 import { GROUND_Y } from '../src/world.ts';
 import {
@@ -653,9 +653,11 @@ test('night: the totems\' screens and numbers glow: an unlit face on both sides 
 });
 
 test('shedRoofY: the crown over each arch centre, the springing over the aisles and where the two arches meet', () => {
-  const r = SHED_SPAN_WIDTH / 2;
-  near(shedRoofY(layout, layout.spine - r), layout.crown, 1e-9, 'west crown');
-  near(shedRoofY(layout, layout.spine + r), layout.crown, 1e-9, 'east crown');
+  // re-pinned 2026-11-25 (B2, partner-approved): the vaults spring from the spine wall's faces, so each crown stands over its own axis
+  // (shedVaultCentres), SHED_VAULT_RADIUS over the springing, 0.25 m under the published crown; it was spine -/+ r at layout.crown
+  const r = SHED_SPAN_WIDTH / 2, [cw, ce] = shedVaultCentres(layout);
+  near(shedRoofY(layout, cw), layout.springing + SHED_VAULT_RADIUS, 1e-9, 'west crown');
+  near(shedRoofY(layout, ce), layout.springing + SHED_VAULT_RADIUS, 1e-9, 'east crown');
   near(shedRoofY(layout, layout.spine), layout.springing, 1e-9, 'the valley between the arches');
   near(shedRoofY(layout, 0), layout.springing, 1e-9, 'the west wall, where the west vault springs (no west aisle since 2026-11-24: the probe was u = 1 in the aisle)');
   near(shedRoofY(layout, layout.width - 1), layout.springing, 1e-9, 'the east aisle');

@@ -16,7 +16,7 @@ import { material } from './materials.ts';
 import { olePlan } from '../../core/ole.ts';
 import type { Member, OlePlan } from '../../core/ole.ts';
 import type { KxData } from '../../core/osm.ts';
-import { SHED_SPAN_WIDTH } from '../../core/station.ts';
+import { SHED_VAULT_RADIUS, shedVaultCentres } from '../../core/station.ts';
 import type { ShedLayout } from '../../core/station.ts';
 import type { Pt } from '../../core/geo.ts';
 
@@ -66,7 +66,7 @@ export function buildOle(data: Pick<KxData, 'nodes' | 'rails'> & Partial<Pick<Kx
     data, layout, mouths,
     inZone: (x, z) => inStationZone(layout, x, z),
     roofY: (u) => shedRoofY(layout, u),
-    arches: [-1, 0].map(k => [layout.spine + k * SHED_SPAN_WIDTH, layout.spine + (k + 1) * SHED_SPAN_WIDTH] as [number, number]),
+    arches: shedVaultCentres(layout).map(uc => [uc - SHED_VAULT_RADIUS, uc + SHED_VAULT_RADIUS] as [number, number]), // B2: each vault's own span, the valley between
   });
   const group = new THREE.Group();
   group.name = 'ole';
