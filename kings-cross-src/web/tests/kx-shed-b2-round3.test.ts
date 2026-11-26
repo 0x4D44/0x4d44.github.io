@@ -64,7 +64,8 @@ test('B2 round 3: the gutter\'s lead is its own pale lead grey, well lighter tha
 
 test('B2 round 3: under every rib, on each face of the spine wall, a stone corbel and on its cap a dark iron shoe the rib lands in', () => {
   const { tall, clear } = shed.RIB_SHOE, { corbel } = shed.SPINE_WALL;
-  const ribs = named('shed-ribs'), stone = named('shed-spine-stone');
+  // re-pinned 2026-11-26 (B2 round 4): the shoes are their own mesh (shed-rib-shoes, darker iron), so the shoe rays look at the ribs and the shoes together
+  const ribs = [named('shed-ribs'), named('shed-rib-shoes')], stone = named('shed-spine-stone');
   const ribPos = shed.ribPositions(L);
   for (const v of ribPos) for (const s of [-1, 1] as const) {
     const where = `${s < 0 ? 'west' : 'east'} face, rib at v ${v.toFixed(2)}`;
@@ -73,11 +74,11 @@ test('B2 round 3: under every rib, on each face of the spine wall, a stone corbe
       const c = cast([spine + s * (half + off), landing + 0.01, v], [0, -1, 0], [stone])[0];
       assert.ok(c && Math.abs(localY(c) - landing) < 0.005, `${where}: the corbel's cap at ${off.toFixed(2)} m off the face, ${c ? localY(c).toFixed(3) : 'nothing'}`);
       // the shoe: a level iron top `tall` over the cap, at the same place
-      const shoe = cast([spine + s * (half + off), landing + tall + 0.05, v], [0, -1, 0], [ribs])[0];
+      const shoe = cast([spine + s * (half + off), landing + tall + 0.05, v], [0, -1, 0], ribs)[0];
       assert.ok(shoe && shoe.face && shoe.face.normal.y > 0.99 && Math.abs(localY(shoe) - (landing + tall)) < 0.005, `${where}: the shoe's top at ${off.toFixed(2)} m off the face, ${shoe ? localY(shoe).toFixed(3) : 'nothing'}`);
     }
     // the shoe stops at the cap's edge: nothing of it beyond
-    const beyond = cast([spine + s * (half + corbel.out + 0.02), landing + tall - 0.02, v], [0, -1, 0], [ribs]).filter(h => localY(h) > landing - 0.01);
+    const beyond = cast([spine + s * (half + corbel.out + 0.02), landing + tall - 0.02, v], [0, -1, 0], ribs).filter(h => localY(h) > landing - 0.01);
     assert.deepEqual(beyond.filter(h => h.face && h.face.normal.y > 0.99).map(localY), [], `${where}: a shoe's top beyond the cap`);
   }
   // the shoe in the ribs' dark paint against the corbel's pale stone

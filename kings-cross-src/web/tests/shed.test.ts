@@ -377,7 +377,9 @@ test('the ironwork is dark grey steel, as in R-lighting-materials-a2 and -b, and
     assert.ok(m.emissive.r + m.emissive.g + m.emissive.b < 0.2, `${name}'s lift is a floor, not a glow`);
   }
   assert.ok(!group.getObjectByName('shed-valley-girder'), 'no grey fascia in the valley: R-c shows brick');
-  assert.equal(byName(group, 'shed-spine').material, material('brickFoot'), 'the valley is the spine wall\'s brick');
+  // re-pinned 2026-11-26 (B2 round 4): the spine's brick is brickFoot's own clone with vertex colours (the valley kerbs' tones): the same colour, texture and shader defines
+  const spineMat = byName(group, 'shed-spine').material as THREE.MeshLambertMaterial, brickFoot = material('brickFoot') as THREE.MeshLambertMaterial;
+  assert.ok(spineMat.color.equals(brickFoot.color) && spineMat.map === brickFoot.map && JSON.stringify(spineMat.defines) === JSON.stringify(brickFoot.defines) && spineMat.vertexColors, 'the valley is the spine wall\'s brick');
   for (const [name, key] of [['shed-roof-lining', 'lining']] as const) {
     const m = byName(group, name).material as THREE.MeshLambertMaterial;
     assert.equal(m, material(key), name);
@@ -641,7 +643,9 @@ test('buildShed: the spine wall meets the springing: it stands up to the valley,
   const group = buildShed(layout);
   // the wall is its own mesh, the shed's brick, and casts no sun shadow (lead follow-up 2026-11-24: the shadow pass has no room for it)
   const brick = byName(group, 'shed-spine');
-  assert.equal(brick.material, material('brickFoot'), 'the brick of the shed');
+  // re-pinned 2026-11-26 (B2 round 4): brickFoot's clone with vertex colours (the valley kerbs' tones), the same colour, texture and shader defines
+  const brickMat = brick.material as THREE.MeshLambertMaterial, brickFoot = material('brickFoot') as THREE.MeshLambertMaterial;
+  assert.ok(brickMat.color.equals(brickFoot.color) && brickMat.map === brickFoot.map && JSON.stringify(brickMat.defines) === JSON.stringify(brickFoot.defines), 'the brick of the shed');
   assert.ok(!SHADOW_CASTERS.has('shed-spine'), 'not a sun-shadow caster');
   const p = positions(brick.geometry);
   const sp = layout.springing, half = SPINE_WALL.thick / 2;

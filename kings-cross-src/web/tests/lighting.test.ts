@@ -354,7 +354,7 @@ test('createSunShadow: one directional light casts one 2048 map by hand; the cas
   assert.equal(world.lights.fills.some((f) => f.castShadow) || world.lights.hemisphere.castShadow === true, false, 'one caster: the sun');
   const casting = meshes.filter((m) => m.castShadow);
   assert.deepEqual(new Set(casting.map((m) => m.name)), new Set(meshes.filter((m) => SHADOW_CASTERS.has(m.name)).map((m) => m.name)), 'exactly the named ones');
-  assert.ok(casting.length >= 30 && casting.length <= 46, `${casting.length} casters`); // 45 before the trees (one more draw, instanced) joined them
+  assert.ok(casting.length >= 30 && casting.length <= 47, `${casting.length} casters`); // 45 before the trees (one more draw, instanced) joined them; re-pinned 2026-11-26 (B2 round 4): 46 -> 47, the rib shoes (shed-rib-shoes) are their own instanced caster
   for (const m of casting) for (const mat of materialsOf(m)) assert.equal(mat.shadowSide, THREE.DoubleSide, `${m.name}: both faces go into the map`);
   for (const m of meshes) {
     const lit = materialsOf(m).some((mat) => (mat as THREE.MeshLambertMaterial).isMeshLambertMaterial || (mat as THREE.MeshPhongMaterial).isMeshPhongMaterial);
@@ -545,7 +545,8 @@ test('createSunShadow.update: the lattice and columns cast while the camera is i
   const camera = new THREE.PerspectiveCamera();
   const target = new THREE.Vector3();
   // the casters that belong to no room and are not the trees (the city's walls and roofs, the hotels, the front, the canopies) cast wherever the camera stands
-  const roomed = new Set(['concourse-lattice', 'concourse-column', 'shed-ribs', 'city-trees']);
+  // re-pinned 2026-11-26 (B2 round 4): the rib shoes (shed-rib-shoes) are their own mesh, in the shed's room with the ribs
+  const roomed = new Set(['concourse-lattice', 'concourse-column', 'shed-ribs', 'shed-rib-shoes', 'city-trees']);
   const stand = (p: THREE.Vector3, y: number): number => {
     camera.position.set(p.x, y, p.z);
     target.set(p.x + 10, 5, p.z);

@@ -26,7 +26,7 @@ MUTATIONS = [
     ('the axes back on the old lines', 'web/src/shed.ts', 'const centres = shedVaultCentres(layout);', 'const centres = [spine - R, spine + R];', 'B2: nothing of either vault'),
     ('the spine foot as the outer one', 'web/src/shed.ts', '[RIB_FOOT, RIB_FOOT_SPINE])) rib.box(', '[RIB_FOOT, RIB_FOOT])) rib.box(', "B2: the ribs"),
     ('the east truss not turned', 'web/src/shed.ts', 'uc > spine ? mat.makeTranslation(uc, 0, -v).multiply(turn) :', 'false ? mat.makeTranslation(uc, 0, -v).multiply(turn) :', "B2: the ribs"),
-    ('no gutter in the wall', 'web/src/shed.ts', 'spineLowerOpenings(L), ROOF_EXTERIOR.valleyGutter, ROOF_EXTERIOR.valleyKerbUp);', 'spineLowerOpenings(L));', 'B2: a valley gutter'),
+    ('no gutter in the wall', 'web/src/shed.ts', 'spineLowerOpenings(L), ROOF_EXTERIOR.valleyGutter, ROOF_EXTERIOR.valleyKerbUp,', 'spineLowerOpenings(L), undefined, 0,', 'B2: a valley gutter'),
     ('no kerbs', 'web/src/shed.ts', '    if (gutter) {\n      const kerb', '    if (false) {\n      const kerb', 'B2: a valley gutter'),
     ('the lead on the wall top', 'web/src/shed.ts', 'valleyTop(sp) - ROOF_EXTERIOR.valleyGutter[1] + 0.005', 'valleyTop(sp) + 0.005', 'B2: a valley gutter'),
     ('the roof height at the old radius', 'web/src/furniture.ts', 'const r = SHED_VAULT_RADIUS; // B2', 'const r = SHED_VAULT_RADIUS + 0.25; // B2', "B2: the ribs"),

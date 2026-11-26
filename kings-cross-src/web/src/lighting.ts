@@ -117,7 +117,7 @@ export const SHADOW_STEPS: readonly number[] = [48, 72, 108, 160, 240, 360, 540,
 /** The meshes that cast the sun's shadow, by name (the census of the scene's meshes is in tests/lighting.test.ts). Glass and small things are left out. */
 export const SHADOW_CASTERS: ReadonlySet<string> = new Set([
   // the train shed (shed.ts): the slate vaults and aisle roofs (not the glazed crowns), the ribs, the south front, its porch arches, the walls, the towers and the range
-  'shed-roof-cladding', 'shed-aisle-roofs', 'shed-ribs', 'shed-front', 'shed-front-porch-arches', 'shed-brick', 'shed-stone', 'shed-arch-rings',
+  'shed-roof-cladding', 'shed-aisle-roofs', 'shed-ribs', 'shed-front', 'shed-front-porch-arches', 'shed-brick', 'shed-stone', 'shed-arch-rings', 'shed-rib-shoes',
   'range-brick', 'range-stone', 'range-roof', 'tower-brick', 'tower-stone', 'tower-cap',
   // the Western Concourse (concourse.ts): the lattice, the roof panels and the columns (not the glass)
   'concourse-lattice', 'concourse-panels', 'concourse-column',
@@ -135,12 +135,12 @@ export const SHADOW_CASTERS: ReadonlySet<string> = new Set([
 ]);
 
 /**
- * The casters that shade only what stands under their own roof, by room: 0 the Western Concourse's lattice and columns, 1 the shed's ribs. They cast while the camera is within
+ * The casters that shade only what stands under their own roof, by room: 0 the Western Concourse's lattice and columns, 1 the shed's ribs and their shoes. They cast while the camera is within
  * `ROOM_REACH` of their room (a camera outside sees their shadow through no more than a glazed roof), and the trees, whose shadows are in the open, cast while it is in none. The
  * rest of the pass is whole-city meshes that three can only cull whole: with these on everywhere the pass came to 237,000 triangles and the frame to 879,000, over the page's
  * 800,000 (round 5's ruling); with them as here no view of the rubric's nine is over 780,000, and each draws what its own picture shows.
  */
-const ROOM_OF: ReadonlyMap<string, number> = new Map([['concourse-lattice', 0], ['concourse-column', 0], ['shed-ribs', 1]]);
+const ROOM_OF: ReadonlyMap<string, number> = new Map([['concourse-lattice', 0], ['concourse-column', 0], ['shed-rib-shoes', 1], ['shed-ribs', 1]]);
 export const ROOM_REACH = 10;
 
 type V3 = readonly [number, number, number];

@@ -17,7 +17,7 @@ import { CLOCK_TOWER_HEIGHT, SHED_SPAN_WIDTH, SHED_VALLEY_WIDTH, SHED_VAULT_RADI
 import type { ClockDial } from './clocks.ts';
 import type { ShedLayout } from '../../core/station.ts';
 import { addCrownAbove, addCrownBelow, addSlateFlank, CROWN_ALPHA, CROWN_OUTSIDE, setShedGlass } from './lighting.ts';
-import { Batch, gableDraw, glintEven, GLAZING, material, paneUv, windowNight, withBuildingNightMaterial } from './materials.ts';
+import { Batch, gableDraw, glintEven, GLAZING, material, paneUv, TEXTURES, windowNight, withBuildingNightMaterial } from './materials.ts';
 import type { V2, V3 } from './materials.ts';
 import { GROUND_Y } from './world.ts';
 
@@ -808,7 +808,24 @@ export function ribMembers(springing: number, r = R, n = 16, feet: readonly [num
  * shows the ribs ending on the corbels, not the shoe's size). The outer feet's shoes start `outerFrom` in from the springing, clear of both outer walls'
  * faces (the west arcade's at WEST_ARCADE.depth 0.72 m, the east arcade's at 0.5 m), since one truss serves both vaults.
  */
-export const RIB_SHOE = { tall: 0.3, wide: 0.34, clear: 0.02, outerFrom: WEST_ARCADE.depth + 0.02 } as const;
+export const RIB_SHOE = {
+  // B2 round 4 (b2-valley-round-3 score, section 5: from platform-eye and shed-interior the shoes read as the ribs' blue-grey): 0.3 -> 0.4 m tall and 0.34 -> 0.42 m
+  // wide (the cap is SPINE_WALL.corbel.wide 0.45 m along the shed), in their own darker iron (`shade`, below)
+  tall: 0.4, wide: 0.42, clear: 0.02, outerFrom: WEST_ARCADE.depth + 0.02,
+  /** B2 round 4: their own mesh (shed-rib-shoes), the ribs' day paint and glow (ribDay) times this, so they read as dark iron against the rib, same hue (ASSUMED) */
+  shade: 0.4,
+} as const;
+let shoeIronMaterial: THREE.MeshLambertMaterial | undefined;
+/** B2 round 4: the shoes' iron, the ribs' day paint and its glow (ribDay) times RIB_SHOE.shade: the same hue, darker; at night as by day (the ribs' night paint is near it). */
+function shoeIron(): THREE.MeshLambertMaterial {
+  if (shoeIronMaterial) return shoeIronMaterial;
+  const original = ribDay(), m = original.clone();
+  m.defines = { ...original.defines };
+  m.color.multiplyScalar(RIB_SHOE.shade);
+  m.emissive.multiplyScalar(RIB_SHOE.shade);
+  shoeIronMaterial = m;
+  return m;
+}
 /** The two shoes of one rib (RIB_SHOE) in the truss's frame (ribMembers'), west foot then east, for feet `feet` in from the springing; `from` how far in each starts. */
 export function ribShoes(springing: number, r = R, feet: readonly [number, number] = [RIB_FOOT, RIB_FOOT], from: readonly [number, number] = [RIB_SHOE.outerFrom, RIB_SHOE.outerFrom]): { c: V3; s: V3 }[] {
   const { tall, wide } = RIB_SHOE, y = ribLanding(springing) + tall / 2;
@@ -999,7 +1016,15 @@ export const ROOF_EXTERIOR = {
    * face; the lead on the sole is `leadColour`, a pale weathered-lead grey, lighter than the slate and the ribs' paint, so the sole reads as a lined channel
    * between two kerbs. ASSUMED sizes and tone: the references do not show the gutter.
    */
-  valleyKerbUp: 0.15, leadColour: 0x8e969d,
+  valleyKerbUp: 0.15, leadColour: 0xb3bbc1,
+  /**
+   * B2 round 4 (b2-valley-round-3 score, section 5: from roof-above the kerbs and the lead still read as one strip, the brick's average 0xa0895a about as light as
+   * the lead 0x8e969d). The lead paler (0x8e969d -> `leadColour` 0xb3bbc1, a weathered lead's white-grey patina), each kerb's top a warm brick, `kerbTop` (the
+   * average the brick is tinted to there), and its face into the gutter `kerbFace` of the brick's tone: a shadow baked in, since the spine's brick casts no sun
+   * shadow (lighting.ts SHADOW_CASTERS). Linear luminance: face about 0.08, slate 0.10, kerb top 0.21, lead 0.49. The kerbs stay 0.2 m: the wall is
+   * SPINE_WALL.thick 1.0 m and the gutter 0.6 m (Arthur, round 4), so a wider top would need a coping over the slate, which the references do not show. ASSUMED tones.
+   */
+  kerbTop: 0xa8714a, kerbFace: 0.3,
   /**
    * Round 9 (the roof-exterior-round-2 score: the north end rib "cannot be told apart from the brick arch ring"; A6 "needs the dark metal end rib in front
    * of the ring"): R-kx-front-d shows each north gable framed by a dark, heavy arched metal rib at its face, no pale ring; about 0.9 m deep in the gable's
@@ -1436,6 +1461,17 @@ function frontReturn(): THREE.MeshLambertMaterial {
   frontReturnMaterial = m;
   return m;
 }
+let spineBrickMaterial_: THREE.MeshLambertMaterial | undefined;
+/** B2 round 4: the spine wall's brick, brickFoot with vertex colours (the valley kerbs' tops and faces, ROOF_EXTERIOR.kerbTop and kerbFace; white elsewhere). */
+function spineBrickMaterial(): THREE.MeshLambertMaterial {
+  if (spineBrickMaterial_) return spineBrickMaterial_;
+  const original = material('brickFoot') as THREE.MeshLambertMaterial;
+  const m = original.clone();
+  m.defines = { ...original.defines };
+  m.vertexColors = true;
+  spineBrickMaterial_ = m;
+  return m;
+}
 let frontOrderMaterial: THREE.MeshLambertMaterial | undefined;
 /** Round 27: the orders' faces, the front's brick lightened by FRONT_ORDER_FACE (its texture and program). */
 function frontOrderFace(): THREE.MeshLambertMaterial {
@@ -1689,8 +1725,10 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   const rib = new Batch();
   // B2: the truss of a west vault (its east foot on the spine's face); the east vault's is the same turned half round about the vertical, a proper rotation
   for (const m of ribMembers(sp, R, 16, [RIB_FOOT, RIB_FOOT_SPINE])) rib.box(m.c, m.s, { rotZ: m.rotZ, skip: m.kind === 'boom' ? ['+x', '-x'] : ['+x', '-x', '+y', '-y'] });
-  // B2 round 3: a shoe at each foot on its corbel (RIB_SHOE), the spine's from the wall's face; no underside, none on the wall's side
-  ribShoes(sp, R, [RIB_FOOT, RIB_FOOT_SPINE], [RIB_SHOE.outerFrom, RIB_SHOE.clear]).forEach((m, i) => rib.box(m.c, m.s, { skip: ['-y', i === 0 ? '-x' : '+x'] }));
+  // B2 round 3: a shoe at each foot on its corbel (RIB_SHOE), the spine's from the wall's face; no underside, none on the wall's side. B2 round 4: in their own
+  // mesh (shed-rib-shoes, the same instances), in a darker iron than the ribs' day paint (RIB_SHOE.shade)
+  const shoe = new Batch({ uv: false });
+  ribShoes(sp, R, [RIB_FOOT, RIB_FOOT_SPINE], [RIB_SHOE.outerFrom, RIB_SHOE.clear]).forEach((m, i) => shoe.box(m.c, m.s, { skip: ['-y', i === 0 ? '-x' : '+x'] }));
   const ribPos = ribPositions(L);
   const ribs = new THREE.InstancedMesh(rib.build(), ribDay(), ribPos.length * centres.length); // round S1: lighter by day (RIB_DAY_LIFT)
   withBuildingNightMaterial(ribs, material('ribPaint'));
@@ -1701,6 +1739,11 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   ribs.name = 'shed-ribs';
   ribs.instanceMatrix.needsUpdate = true;
   group.add(ribs);
+  const shoes = new THREE.InstancedMesh(shoe.build(), shoeIron(), ribs.count);
+  for (let i = 0; i < ribs.count; i++) { ribs.getMatrixAt(i, mat); shoes.setMatrixAt(i, mat); }
+  shoes.name = 'shed-rib-shoes'; // a sun-shadow caster in the shed's room, as the ribs (lighting.ts)
+  shoes.instanceMatrix.needsUpdate = true;
+  group.add(shoes);
   // round S1 (B1): a ring in each rib's haunch, both feet (HAUNCH_RING, haunchRingCentres): instanced, in the ribs' paint, not a shadow caster
   const ringCentres = haunchRingCentres(sp);
   const haunch = new THREE.InstancedMesh(new THREE.TorusGeometry(HAUNCH_RING.radius, HAUNCH_RING.tube, 4, 16), ribDay(), ribPos.length * centres.length);
@@ -1773,9 +1816,11 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
     if (o0 > a) brick.box([(a + o0) / 2, (head + GROUND_Y) / 2, z], [o0 - a, head - GROUND_Y, WALL_THICK]); // the jamb on the vault side
     if (W > o1) brick.box([(o1 + W) / 2, (head + GROUND_Y) / 2, z], [W - o1, head - GROUND_Y, WALL_THICK]); // the jamb against the east wall
   }
-  const spineBrick = new Batch();
+  const spineBrick = new Batch({ colored: true }); // B2 round 4: the valley kerbs' tops and gutter-side faces in their own tone (ROOF_EXTERIOR.kerbTop, kerbFace)
   const spineStone = new Batch();
-  buildSpineWall(spineBrick, spineStone, spine, L, sp, valleyY, [-1, 1], spineLowerOpenings(L), ROOF_EXTERIOR.valleyGutter, ROOF_EXTERIOR.valleyKerbUp);
+  const brickAvg = new THREE.Color(TEXTURES.brick.average), kerbRgb = new THREE.Color(ROOF_EXTERIOR.kerbTop), kerbFace = ROOF_EXTERIOR.kerbFace;
+  buildSpineWall(spineBrick, spineStone, spine, L, sp, valleyY, [-1, 1], spineLowerOpenings(L), ROOF_EXTERIOR.valleyGutter, ROOF_EXTERIOR.valleyKerbUp,
+    { top: [kerbRgb.r / brickAvg.r, kerbRgb.g / brickAvg.g, kerbRgb.b / brickAvg.b], face: [kerbFace, kerbFace, kerbFace] });
   buildNorthPier(spineBrick, spineStone, spine, L, valleyY);
   // the east vault's east springing, between the vault and the east aisle, stands on an arcade of the spine wall's pattern (EAST_ARCADE)
   const eastArcade = new Batch();
@@ -2225,7 +2270,7 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
 
   group.add(mesh(brick.build(), material('brickFoot'), 'shed-brick'));
   // its own mesh, the same brick, so that it is not a sun-shadow caster (lighting.ts SHADOW_CASTERS): the pass has no room for it
-  group.add(mesh(spineBrick.build(), material('brickFoot'), 'shed-spine'));
+  group.add(mesh(spineBrick.build(), spineBrickMaterial(), 'shed-spine'));
   group.add(mesh(eastArcade.build(), material('brickFoot'), 'shed-east-arcade')); // not a sun-shadow caster either, for the same reason
   group.add(mesh(westArcade.build(), material('brickFoot'), 'shed-west-arcade')); // not a sun-shadow caster either
   group.add(mesh(westPanes.build(), material('arcadeGlass'), 'shed-west-arcade-panes'));
@@ -2319,7 +2364,7 @@ export const ribLanding = (springing: number): number => springing - SPINE_WALL.
  * opening a bay from the band to the top, and the wall's top closed. The caller gives the brick its own batch (`shed-spine`,
  * `shed-east-arcade`), and the stone `shed-spine-stone`: none of them casts a sun shadow.
  */
-export function buildSpineWall(brick: Batch, stone: Batch, x: number, length: number, springing: number, top: number, faces: readonly (-1 | 1)[], lower = spineLowerOpenings(length), gutter?: readonly [number, number], kerbUp = 0): void {
+export function buildSpineWall(brick: Batch, stone: Batch, x: number, length: number, springing: number, top: number, faces: readonly (-1 | 1)[], lower = spineLowerOpenings(length), gutter?: readonly [number, number], kerbUp = 0, kerbPaint?: { top: [number, number, number]; face: [number, number, number] }): void {
   const { thick, sill } = SPINE_WALL;
   const h = thick / 2;
   const landing = ribLanding(springing);
@@ -2340,7 +2385,14 @@ export function buildSpineWall(brick: Batch, stone: Batch, x: number, length: nu
     if (gutter) {
       const kerb = h - gutter[0] / 2;
       // B2 round 3: each kerb stands `kerbUp` over the skins' landing (ROOF_EXTERIOR.valleyKerbUp)
-      for (const side of [-1, 1] as const) brick.box([x + side * (h - kerb / 2), (sole + top + kerbUp) / 2, -length / 2], [kerb, top + kerbUp - sole, length], { skip: ['-y'] });
+      // B2 round 4: its top and its face into the gutter in `kerbPaint` (vertex colours: only a `colored` batch keeps them)
+      for (const side of [-1, 1] as const) {
+        const c: V3 = [x + side * (h - kerb / 2), (sole + top + kerbUp) / 2, -length / 2], s: V3 = [kerb, top + kerbUp - sole, length], inner = side < 0 ? '+x' : '-x';
+        const all = ['+x', '-x', '+y', '-y', '+z', '-z'], only = (f: string): string[] => all.filter(n => n !== f);
+        brick.box(c, s, { skip: ['-y', '+y', inner] });
+        brick.box(c, s, { skip: only('+y'), ...(kerbPaint ? { color: kerbPaint.top } : {}) });
+        brick.box(c, s, { skip: only(inner), ...(kerbPaint ? { color: kerbPaint.face } : {}) });
+      }
     }
   }
   for (const side of faces) dressFace(stone, x + side * h, side, length, springing);
