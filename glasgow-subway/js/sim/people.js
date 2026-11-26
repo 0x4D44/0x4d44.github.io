@@ -469,9 +469,9 @@ export class AnimCrowd {
   _clone(ch, lod) { const o = this.SU.clone((lod && ch.lodNode) || !ch.node ? ch.lodNode : ch.node); o.traverse((n) => { if (n.isBone) n.name = this.canon(n.name); }); return o; }
   // ------------------------------------------------------------------ measuring
   /** soles/head/hips of a character in a clip, from the real skinned vertices over the clip. Cached. */
-  measure(ch, clip) {
-    const key = ch.id + ':' + clip.name, hit = this.meas.get(key); if (hit) return hit;
-    const THREE = this.THREE, obj = this._clone(ch), mixer = new THREE.AnimationMixer(obj); mixer.clipAction(clip).play();
+  measure(ch, clip, lod = false) {
+    const lo = !!(lod && ch.node && ch.lodNode), key = ch.id + ':' + clip.name + (lo ? ':L' : ''), hit = this.meas.get(key); if (hit) return hit;   // (lod: the far model's own soles - see _yOffset)
+    const THREE = this.THREE, obj = this._clone(ch, lo), mixer = new THREE.AnimationMixer(obj); mixer.clipAction(clip).play();
     const sk = []; obj.traverse((o) => { if (o.isSkinnedMesh) sk.push(o); }); const hipsB = sk[0].skeleton.bones.find((b) => /^(pelvis|hips)$/i.test(b.name)) || sk[0].skeleton.bones[0];
     const v = new THREE.Vector3(), h = new THREE.Vector3(), N = 4, keep = []; const feetB = ['foot_l', 'foot_r', 'ball_l', 'ball_r'].map((n) => sk[0].skeleton.bones.find((b) => b.name === n)).filter(Boolean), feet = [0, 0], ankles = [0, 0], ankles2 = [[0, 0], [0, 0]]; let minY = 1e9, maxY = -1e9, hx = 0, hy = 0, hz = 0, contact = 0, minX = 1e9, maxX = -1e9, minZ = 1e9, maxZ = -1e9;
     // where each hand closes (the crook of the curled middle finger, as for a bag handle): a rider holding a pole is placed so that this point is on the pole (review 14)
@@ -829,7 +829,12 @@ export class AnimCrowd {
   /** feet exactly on the surface (p.y): lowest sole over the clip sits on it; seated: pelvis contact on the seat top (p.seatY) */
   _yOffset(p) {
     const m = p.m; if (!m) return 0;
-    if (p.state === 'sit' && p.seatY != null) return this._sitOff(m, p.seatY - p.y);
+    if (p.state === 'sit' && p.seatY != null) {
+      const o = this._sitOff(m, p.seatY - p.y);
+      // drawn on the far model, the soles are that model's: in a knees-up clip baked on one rig they can sit 5 cm lower on the other (review 70: elder_shorts' feet 5 cm through the car floor for 15 s)
+      if (p.lod && p.curClip && p.char.node && p.char.lodNode) return Math.max(o, -this.measure(p.char, p.curClip, true).minY);
+      return o;
+    }
     const gs = p.gait, b = p.mFrom || m;   // (b: the pose the person is walking out of while the gait takes the legs over - see _enter - otherwise the clip they are in)
     if (gs && gs.wL > 0) return -b.minY * (1 - gs.wL) - gs.gb.sole * gs.wL;   // under the gait the soles are where the gait puts them (the body is NOT lifted to hide a captured stride's feet)
     if (p.mFrom && this._gaitDue(p)) return -p.mFrom.minY;   // the first walking frame: the gait is made after the person has been placed, and is about to have the legs
@@ -1015,7 +1020,7 @@ export class AnimCrowd {
       for (let it = 0; it < 7; it++) { const a = (lo + hi) / 2, nc = this._kneeClip(c, clip, a); if (!nc) return clip; this.meas.delete(c.id + ':' + clip.name); const d = gap(this.measure(c, nc)); this.meas.delete(c.id + ':' + clip.name);
         if (d > -0.012) { best = nc; hi = a; } else lo = a; }
       if (!best) { const nc = this._kneeClip(c, clip, hi); this.meas.delete(c.id + ':' + clip.name); if (nc && gap(this.measure(c, nc)) > d0 + 0.01) best = nc; }   // (not all the way: still better than as it was)
-      this.meas.delete(c.id + ':' + clip.name); return best || clip;
+      this.meas.delete(c.id + ':' + clip.name); this.meas.delete(c.id + ':' + clip.name + ':L'); return best || clip;
     });
   }
   /** clip with the thighs pitched up by a (radians) about the pelvis's x axis, the calves countering it so their world turn is unchanged */
