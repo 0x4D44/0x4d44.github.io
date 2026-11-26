@@ -418,7 +418,12 @@ function trackReach(g, dt) {
 }
 
 function walkStep(g, dt, P) {
-  const F = g.feet, half0 = g.phase < 0.5 ? 0 : 1; g.walkT += dt; g.phase = wrap1(g.phase + dt * P.fs * 0.5 * (g.v > 0.02 ? 1 : 0));
+  const F = g.feet, half0 = g.phase < 0.5 ? 0 : 1; g.walkT += dt;
+  // a quick step: on one foot with that leg already out of reach (its margin to the bob, f.mTO, from the frame before), the stride's clock runs faster so the swinging foot comes down
+  // sooner. On the clock alone, a walker coming out of a tight turn stood on a foot left 0.5 m behind while the other was still in the air and the pelvis sank 15 - 20 cm (review 75's crouch tail)
+  let quick = 0; if (g.deep && g.stopD == null) for (let s = 0; s < 2; s++) {   // (not on the way to a planned stop, whose last steps are shortened on purpose; not where g.deep is off, as for TO_DEEP)
+    const m = F[s].mTO; if (F[s].mode === 'stance' && F[1 - s].mode === 'swing' && m != null) quick = Math.max(quick, clamp((-m - QUICK_M0) / QUICK_M1, 0, 1)); }
+  g.phase = wrap1(g.phase + dt * P.fs * 0.5 * (1 + QUICK_K * quick) * (g.v > 0.02 ? 1 : 0));
   if ((g.phase < 0.5 ? 0 : 1) !== half0) g.eT = VARY.rho * g.eT + Math.sqrt(1 - VARY.rho * VARY.rho) * VARY.T * g.var.vary * gauss(g.rng);   // a new step has begun: its own pace
   g.rate += (1 + g.eT - g.rate) * (1 - Math.exp(-dt / VARY.tau));
   for (let s = 0; s < 2; s++) {
@@ -606,6 +611,7 @@ const KNEE_MIN = 9, KNEE_TOE = 14;
 // (TO_DEEP, at any walking pace: a trailing leg already 2 cm out of reach, and going further, in the last TO_DEEP_W of its stance leaves now - a walker speeding up from a queue overran
 // the clock and dragged the pelvis 6 - 12 cm down behind the foot, review 66)
 const WO_S0 = 0.3, REAIM_ACC = 1, MARK_RATE = 2;   // (walk-off from a foot in the air: see gaitUpdate; a mark re-aimed on a hard stop: see footOut)   // (walk-off from a foot in the air: see gaitUpdate)
+const QUICK_M0 = 0.005, QUICK_M1 = 0.02, QUICK_K = 1.0;   // m, m, -: the quick step comes in from 0.5 cm out of reach, in full at 2.5 cm, and then runs the clock at up to twice its rate
 const TO_DEEP = 0.02, TO_DEEP_W = 0.15, TO_EARLY = 0.1, TO_LOOK = 0.008, TO_V0 = 1.25, TO_V1 = 1.6, SW_LIFT = 0.03, SW_FADE = 0.4;   // (off up to TO_V0 m/s, and TO_LOOK reached from 0 by TO_V1: below that the jolt was small and a foot sent off at the fit's own 2 mm margin left before it had pushed off - plantarflexion at toe-off 2 - 6 deg toes-UP in five people at 0.8 - 1.2 m/s, pmall2)
 function earlyToeOff(g, P) {
   const T = gaitTargets(g), hb = T.bobH;

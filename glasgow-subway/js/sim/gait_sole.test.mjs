@@ -86,9 +86,9 @@ test('a shoe that is just the gait\'s own three points (heel, ball of the foot, 
   for (const id of PEOPLE) for (const v of [0.6, 1.2, 1.7]) {
     const B0 = bodyOf(id), B1 = bodyWith(id, profOf(B0, flatThree(B0)), undefined, { roll: false }), rec = [];
     assert.ok(B1.leg[0].prof);
-    gait(B0, v, 7, (k, g) => rec.push(g.feet.map((f) => f.cur.A.concat(f.cur.th, f.cur.thb))));
+    gait(B0, v, 7, (k, g) => rec.push(g.feet.map((f) => f.cur.A.concat(f.cur.th, f.cur.thb))), false);   // (no reach remedies - TO_DEEP and the quick step: they feed the leg's reach back into the clock, and the quick step's continuous gain grew the profile's 0.2 micron into 5 over a walk)
     let k = 0, worst = 0;
-    gait(B1, v, 7, (_, g) => { g.feet.forEach((f, s) => { const a = f.cur.A.concat(f.cur.th, f.cur.thb); for (let i = 0; i < 5; i++) worst = Math.max(worst, Math.abs(a[i] - rec[k][s][i])); }); k++; });
+    gait(B1, v, 7, (_, g) => { g.feet.forEach((f, s) => { const a = f.cur.A.concat(f.cur.th, f.cur.thb); for (let i = 0; i < 5; i++) worst = Math.max(worst, Math.abs(a[i] - rec[k][s][i])); }); k++; }, false);
     // not 1e-9: the three-point model itself leaves a landmark up to 0.2 micron off the floor in a few frames of terminal stance (measured: 0.19 micron at most, over every person and speed here),
     // and the profile - which puts the lowest of the same three points exactly on it - removes that, and the swing that follows carries the difference. A micron is far below anything drawn.
     assert.ok(worst < 1e-6, `${id} @ ${v}: the ankles differ by ${worst}`);
