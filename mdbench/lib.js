@@ -35,8 +35,12 @@ export function validateIndex(ix) {
   }
   for (const s of ix.suites || []) {
     if (!isStr(s.id) || !isStr(s.title)) p.push(`suite entry without id/title`);
-    if (!["results", "sample", "planned"].includes(s.status)) p.push(`suite ${s.id}: status ${s.status}`);
-    if (s.status !== "planned" && !isStr(s.file)) p.push(`suite ${s.id}: file missing`);
+    if (!["results", "sample", "planned", "page"].includes(s.status)) p.push(`suite ${s.id}: status ${s.status}`);
+    if (s.status === "page") {
+      if (!isStr(s.page)) p.push(`suite ${s.id}: page missing`);
+      if (!isStr(s.data)) p.push(`suite ${s.id}: data missing`);
+      if (s.file !== null) p.push(`suite ${s.id}: file must be null`);
+    } else if (s.status !== "planned" && !isStr(s.file)) p.push(`suite ${s.id}: file missing`);
   }
   return p;
 }

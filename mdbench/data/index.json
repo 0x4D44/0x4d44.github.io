@@ -1,6 +1,6 @@
 {
  "schema": "mdbench-site/1",
- "generated": "2026-11-25T19:17:01Z",
+ "generated": "2026-11-26T22:05:56Z",
  "families": [
   {
    "id": "claude",
@@ -34,8 +34,11 @@
    "id": "strange-machine",
    "title": "Strange machine",
    "file": null,
-   "status": "planned",
-   "description": "Coming soon: scored rounds. A model designs, builds and programs its own one-instruction computer; the pilot results are on the Strange Machine page."
+   "status": "page",
+   "page": "strange-machine.html",
+   "data": "strange-machine.json",
+   "meta": "1 scored round · 4 seats · 12 runs",
+   "description": "A model designs, builds and programs its own one-instruction computer: requirements and design, then an emulator and assembler in Rust, then a ladder of programs on it."
   }
  ],
  "seats": [

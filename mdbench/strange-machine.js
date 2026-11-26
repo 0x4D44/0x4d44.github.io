@@ -1,7 +1,6 @@
+import { esc, loadIndex, loadJSON, renderNav } from "./ui.js";
+
 const el = (id) => document.getElementById(id);
-const escape = (value) => String(value).replace(/[&<>"']/g, (char) => ({
-  "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
-})[char]);
 const mean = (runs, field) => runs.reduce((sum, run) => sum + run[field], 0) / runs.length;
 const score = (value) => value.toFixed(1);
 const cost = (value) => "$" + value.toFixed(2);
@@ -39,8 +38,8 @@ function renderSeats(id, ranked, colors) {
   el(id).innerHTML = ranked.map(([seat, runs]) => {
     const overall = mean(runs, "overall");
     return `<tr class="${colors.get(seat)}">
-      <th scope="row"><span class="dot" aria-hidden="true"></span>${escape(seat)}</th>
-      <td class="num"><strong>${score(overall)}</strong><span class="scorebar" aria-hidden="true"><span style="width: ${overall}%"></span></span></td>
+      <th scope="row"><span class="dot" aria-hidden="true"></span>${esc(seat)}</th>
+      <td class="num"><strong>${score(overall)}</strong><span class="scorebar" aria-hidden="true"><i style="width: ${overall}%"></i></span></td>
       <td class="num">${score(mean(runs, "judged"))}</td>
       <td class="num">${score(mean(runs, "machine"))}</td>
       <td class="num">${score(mean(runs, "programs"))}</td>
@@ -58,7 +57,7 @@ function renderRoundGrid(ranked, colors, envelopeNames) {
   el("round-envelope-headings").insertAdjacentHTML("beforeend", headers.join(""));
   el("round-grid").innerHTML = rows.map(([seat, runs]) => `
     <tr class="${colors.get(seat)}">
-      <th scope="row"><span class="dot" aria-hidden="true"></span>${escape(seat)}</th>
+      <th scope="row"><span class="dot" aria-hidden="true"></span>${esc(seat)}</th>
       ${runs.map((run) => `<td class="num"><strong>${score(run.overall)}</strong>${run.nonconforming ? '<small class="flag">Nonconforming</small>' : ""}</td>`).join("")}
     </tr>`).join("");
 }
@@ -90,7 +89,7 @@ function renderChart(runs, colors) {
         const x = center + (runIndex - (rows.length - 1) / 2) * 13;
         const verdict = run.nonconforming ? " · nonconforming" : "";
         return `<circle class="${color}${run.nonconforming ? " hollow" : ""}" cx="${x}" cy="${y(run.overall)}" r="5">
-          <title>${escape(run.run)} · ${label} · ${score(run.overall)}/100${verdict}</title>
+          <title>${esc(run.run)} · ${label} · ${score(run.overall)}/100${verdict}</title>
         </circle>`;
       }).join("");
     }).join("");
@@ -98,11 +97,11 @@ function renderChart(runs, colors) {
   }).join("");
 
   el("legend").innerHTML = [...colors].map(([seat, color]) =>
-    `<span class="${color}"><span class="dot" aria-hidden="true"></span>${escape(seat)}</span>`).join("");
+    `<span class="${color}"><span class="dot" aria-hidden="true"></span>${esc(seat)}</span>`).join("");
   el("chart").innerHTML = `<svg class="chart" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="plot-title plot-desc" viewBox="0 0 ${width} 280" style="min-width: ${width}px">
     <title id="plot-title">Overall score per pilot run</title>
     <desc id="plot-desc">Scores from 0 to 100, grouped by data and program word widths. Each point is a run. Within an envelope, seats follow the legend order from left to right. Hollow points are nonconforming. All values are in the pilot run table.</desc>
-    ${ticks}<path class="axis" fill="none" d="M${left} ${top} V${bottom} H${right}"/>${points}
+    ${ticks}<path class="ax" fill="none" d="M${left} ${top} V${bottom} H${right}"/>${points}
   </svg>`;
 }
 
@@ -110,8 +109,8 @@ function renderRuns(id, runs, colors) {
   el(id).innerHTML = runs.map((run) => {
     const wallMinutes = run.wall_s.reduce((sum, seconds) => sum + seconds, 0) / 60;
     return `<tr class="${colors.get(run.seat)}">
-      <th scope="row"><code>${escape(run.run)}</code></th>
-      <td><span class="dot" aria-hidden="true"></span>${escape(run.seat)}</td>
+      <th scope="row"><code>${esc(run.run)}</code></th>
+      <td><span class="dot" aria-hidden="true"></span>${esc(run.seat)}</td>
       <td>${envelope(run.envelope)}${run.envelope.two_ended ? '<span class="marker">two-ended</span>' : ""}</td>
       <td class="num"><strong>${score(run.overall)}</strong></td>
       <td class="num">${score(run.judged)}</td>
@@ -157,7 +156,7 @@ function renderPilotFindings(runs, bySeat) {
   if (sonnet) bullets.push(`<strong>Sonnet</strong> had a wide spread of overall scores (${range(sonnet, "overall")}).`);
   if (haiku) bullets.push(`<strong>Haiku</strong> usually built a sound machine. Its machine checks scored ${range(haiku, "machine")}, while its programs averaged ${score(mean(haiku, "programs"))} before the conformance adjustment.`);
   if (verdicts.length) {
-    const ids = verdicts.map((run) => `<code>${escape(run.run)}</code>`).join(", ");
+    const ids = verdicts.map((run) => `<code>${esc(run.run)}</code>`).join(", ");
     bullets.push(`<strong>Nonconforming runs (${verdicts.length})</strong> were ${ids}. Each received half its program score in the overall calculation.`);
   }
   el("findings").innerHTML = bullets.map((bullet) => `<li>${bullet}</li>`).join("");
@@ -167,9 +166,10 @@ function renderPilotFindings(runs, bySeat) {
 const status = el("results-status");
 status.hidden = false;
 try {
-  const response = await fetch("./data.json", { cache: "no-cache" });
-  if (!response.ok) throw new Error(`HTTP ${response.status}`);
-  const data = await response.json();
+  const ix = await loadIndex();
+  const suite = ix.suites.find((s) => s.id === "strange-machine");
+  renderNav(ix, suite.page);
+  const data = await loadJSON(`data/${suite.data}`);
   const runs = data.runs.toSorted((a, b) => numeric.compare(a.run, b.run));
   const roundRuns = runs.filter((run) => run.phase === "round r1" && run.round === "r1");
   const pilotRuns = runs.filter((run) => run.phase === "pilot");
@@ -177,8 +177,10 @@ try {
   const { weights, references } = data;
   el("scoring").textContent = `The seat is scored against requirements it never sees. Opus judges score the design, documents and conformance (${weights.judged}%). Automatic machine checks count for ${weights.machine}% and the programs count for ${weights.programs}%. A nonconforming machine keeps its machine checks and gets half credit for its programs.`;
   el("scoring").hidden = false;
-  el("generated").dateTime = data.generated;
-  el("generated").textContent = data.generated.replace("T", " ").replace(/Z$/, " UTC");
+  const generated = data.generated ?? ix.generated;
+  if (!data.generated) el("source-label").textContent = "mdbench index generated";
+  el("generated").dateTime = generated;
+  el("generated").textContent = generated.replace("T", " ").replace(/Z$/, " UTC");
   el("source").hidden = false;
 
   if (roundRuns.length) {
@@ -211,9 +213,13 @@ try {
   if (roundRuns.length || pilotRuns.length) {
     el("results").hidden = false;
     status.hidden = true;
+    document.body.dataset.ready = "1";
   } else {
     status.textContent = "No runs are available.";
+    document.body.dataset.ready = "error";
   }
 } catch {
+  status.classList.add("err");
   status.textContent = "Results could not be loaded. Try reloading the page.";
+  document.body.dataset.ready = "error";
 }

@@ -11,15 +11,23 @@ const DATA = join(dirname(fileURLToPath(import.meta.url)), "..", "data");
 const load = async (f) => JSON.parse(await readFile(join(DATA, f), "utf8"));
 const ix = await load("index.json");
 
-test("index is valid: swe and recall have results, strange-machine is planned", () => {
+test("index is valid: swe and recall have results, strange-machine has a suite page", () => {
   assert.deepEqual(validateIndex(ix), []);
-  assert.deepEqual(ix.suites.map((s) => [s.id, s.status]), [["swe", "results"], ["recall", "results"], ["strange-machine", "planned"]]);
+  assert.deepEqual(ix.suites.map((s) => [s.id, s.status]), [["swe", "results"], ["recall", "results"], ["strange-machine", "page"]]);
   for (const s of ix.suites.filter((x) => x.status === "planned")) {
     assert.equal(s.file, null);
     assert.match(s.description, /^Coming soon/);
   }
   assert.ok(ix.seats.find((s) => s.id === "o3-high").baseline);
   assert.equal(ix.seats.find((s) => s.id === "opus-5.5-medium").billing, "subscription");
+});
+
+const strange = ix.suites.find((s) => s.id === "strange-machine");
+test("page suites require page and data paths and a null file", () => {
+  for (const [field, value, message] of [["page", null, "page missing"], ["data", 1, "data missing"], ["file", "suite.json", "file must be null"]]) {
+    const suites = ix.suites.map((s) => s === strange ? { ...s, [field]: value } : s);
+    assert.ok(validateIndex({ ...ix, suites }).includes(`suite ${strange.id}: ${message}`), field);
+  }
 });
 
 for (const s of ix.suites.filter((x) => x.file)) {
@@ -45,12 +53,37 @@ test("swe: 10 exercises, the six phase-1 seats on all of them, later seats on so
 });
 
 test("no sample data ships, and every data file is one the index lists", async () => {
-  const listed = new Set(["index.json", ...ix.suites.filter((x) => x.file).map((x) => x.file), ...(ix.pages || []).map((x) => x.file)]);
+  const listed = new Set(["index.json", ...ix.suites.flatMap((s) => [s.file, s.data].filter(Boolean)), ...(ix.pages || []).map((x) => x.file)]);
   for (const f of await readdir(DATA)) {
     assert.ok(listed.has(f), `${f} is not listed in index.json`);
     if (f !== "index.json") assert.equal((await load(f)).sample, false, `${f} is sample data`);
   }
   assert.ok(ix.suites.every((s) => s.status !== "sample"));
+});
+
+test("strange-machine: public scored round and pilot data", async () => {
+  const json = await readFile(join(DATA, strange.data), "utf8");
+  const d = JSON.parse(json);
+  assert.equal(d.schema, "mdbench-site/1");
+  assert.equal(d.sample, false);
+  const r1 = d.rounds.r1;
+  assert.equal(r1.judges, 3);
+  assert.equal(r1.envelopes.length, 3);
+  assert.equal(new Set(r1.envelopes).size, 3);
+  assert.ok(r1.envelopes.every((name) => typeof name === "string" && name.trim()), "envelope names must be non-empty strings");
+  assert.ok(d.runs.length > 0, "the export has scored runs");
+  for (const run of d.runs) {
+    assert.ok((run.phase === "pilot" && run.round === null) ||
+      (run.phase === "round r1" && run.round === "r1"), `${run.run} has a matching phase and round`);
+  }
+
+  const forbidden = /\b(?:R(?:1[6-9]|2[0-5])|mandel|storm|life|paint|tune|sort|card)\b/;
+  const page = join(DATA, "..", strange.page);
+  for (const [name, source] of [[strange.data, json], [strange.page, await readFile(page, "utf8")],
+    ["strange-machine.js", await readFile(join(DATA, "..", "strange-machine.js"), "utf8")]]) {
+    assert.ok(!forbidden.test(source), `${name} contains a private benchmark term`);
+  }
+  assert.ok(!/"judged_requirements"\s*:/.test(json), "the public export omits private per-requirement scores");
 });
 
 test("code-mode: every run has an arm, a known task and the numbers the page reads", async () => {

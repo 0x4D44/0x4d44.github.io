@@ -50,25 +50,23 @@
 
 <footer>
   <p>Data generated <span id="generated">–</span> from the benchmark's own records. Each suite page has its full methodology.</p>
-  <p>See also <a href="/strange-machine/">Strange Machine pilot results</a>.</p>
 </footer>
 </div>
 <script type="module">
-import { loadIndex, loadSuite, leaderboard, seatHTML, sampleBadge, esc, showError } from "./ui.js";
+import { loadIndex, loadSuite, renderNav, suiteHref, leaderboard, seatHTML, sampleBadge, esc, showError } from "./ui.js";
 const main = document.querySelector(".wrap");
 try {
   const ix = await loadIndex();
   document.getElementById("generated").textContent = ix.generated.slice(0, 10);
-  document.getElementById("nav").innerHTML = `<a href="./" aria-current="page">Overview</a>` +
-    ix.suites.filter((s) => s.file).map((s) => `<a href="suite.html?s=${encodeURIComponent(s.id)}">${esc(s.title)}</a>`).join("") +
-    (ix.pages || []).map((p) => `<a href="${esc(p.id)}.html">${esc(p.title)}</a>`).join("");
+  renderNav(ix, "./");
   const loaded = {};
   for (const s of ix.suites.filter((s) => s.file)) loaded[s.id] = await loadSuite(ix, s.id);
   document.getElementById("suite-cards").innerHTML = ix.suites.map((s) => {
     const su = loaded[s.id];
-    const meta = su ? `${su.tasks.length} tasks · ${su.agg.seats.length} seats · ${su.results.length} runs` : "not yet run";
+    const meta = s.status === "page" ? s.meta : su ? `${su.tasks.length} tasks · ${su.agg.seats.length} seats · ${su.results.length} runs` : "not yet run";
     const badge = s.status === "sample" ? '<span class="badge sample">sample data</span>' : s.status === "planned" ? '<span class="badge planned">planned</span>' : "";
-    const title = su ? `<a href="suite.html?s=${encodeURIComponent(s.id)}">${esc(s.title)}</a>` : esc(s.title);
+    const href = suiteHref(s);
+    const title = href ? `<a href="${esc(href)}">${esc(s.title)}</a>` : esc(s.title);
     return `<div class="card"><h3>${title} ${badge}</h3><p>${esc(s.description)}</p><span class="meta">${esc(meta)}</span></div>`;
   }).join("");
   document.getElementById("boards").innerHTML = Object.values(loaded).map((su) => `<div class="panel">

@@ -60,7 +60,7 @@ td.d { font-family: var(--mono); font-size: 0.86em; white-space: nowrap; }
 <footer><p>Data generated <span id="generated">–</span>. <a href="./">Back to the mdbench overview</a>.</p></footer>
 </div>
 <script type="module">
-import { loadIndex, loadJSON, esc, showError } from "./ui.js";
+import { loadIndex, loadJSON, renderNav, esc, showError } from "./ui.js";
 const main = document.querySelector(".wrap");
 const mean = (xs) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null);
 const sum = (xs) => xs.reduce((a, b) => a + b, 0);
@@ -83,10 +83,7 @@ const delta = (m, p, c) => {
 };
 try {
   const ix = await loadIndex();
-  const live = ix.suites.filter((s) => s.file);
-  document.getElementById("nav").innerHTML = `<a href="./">Overview</a>` +
-    live.map((s) => `<a href="suite.html?s=${encodeURIComponent(s.id)}">${esc(s.title)}</a>`).join("") +
-    (ix.pages || []).map((p) => `<a href="${esc(p.id)}.html"${p.id === "code-mode" ? ' aria-current="page"' : ""}>${esc(p.title)}</a>`).join("");
+  renderNav(ix, "code-mode.html");
   const page = (ix.pages || []).find((p) => p.id === "code-mode");
   if (!page) throw new Error("no Code Mode data yet");
   const d = await loadJSON(`data/${page.file}`);

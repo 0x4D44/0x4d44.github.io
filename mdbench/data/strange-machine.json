@@ -1,6 +1,9 @@
 {
- "generated": "2026-11-25T15:14Z",
- "phase": "round r1 scored",
+ "schema": "mdbench-site/1",
+ "suite": "strange-machine",
+ "title": "Strange machine",
+ "description": "A model designs, builds and programs its own one-instruction computer: requirements and design, then an emulator and assembler in Rust, then a ladder of programs on it.",
+ "sample": false,
  "scoring_rule": "2026-11-19",
  "rounds": {
   "r1": {
@@ -10,6 +13,12 @@
     "d04p04e",
     "d03p02e",
     "d03p04e"
+   ],
+   "seats": [
+    "haiku-5.5-high",
+    "opus-5.5-medium",
+    "sol-6.2-xhigh",
+    "sonnet-5.5-high"
    ],
    "judges": 3,
    "caps_min": [

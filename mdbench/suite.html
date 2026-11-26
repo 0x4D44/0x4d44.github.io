@@ -74,18 +74,18 @@
 <footer><p>Data generated <span id="generated">–</span>. <a href="./">Back to the mdbench overview</a>.</p></footer>
 </div>
 <script type="module">
-import { loadIndex, loadSuite, loadJSON, listenTable, leaderboard, heatTable, groupTable, scatter, seatDetail, methodology, familyLegend, sampleBanner, sampleBadge, esc, showError } from "./ui.js";
+import { loadIndex, loadSuite, loadJSON, renderNav, listenTable, leaderboard, heatTable, groupTable, scatter, seatDetail, methodology, familyLegend, sampleBanner, sampleBadge, esc, showError } from "./ui.js";
 const q = new URLSearchParams(location.search);
 const main = document.querySelector(".wrap");
 try {
   const ix = await loadIndex();
   const live = ix.suites.filter((s) => s.file);
   const id = q.get("s") || live[0].id;
-  document.getElementById("nav").innerHTML = `<a href="./">Overview</a>` +
-    live.map((s) => `<a href="suite.html?s=${encodeURIComponent(s.id)}"${s.id === id ? ' aria-current="page"' : ""}>${esc(s.title)}</a>`).join("") +
-    (ix.pages || []).map((p) => `<a href="${esc(p.id)}.html">${esc(p.title)}</a>`).join("");
+  renderNav(ix, `suite.html?s=${encodeURIComponent(id)}`);
   const entry = ix.suites.find((s) => s.id === id);
-  if (entry && !entry.file) {
+  if (entry?.status === "page") {
+    location.replace(entry.page);
+  } else if (entry && !entry.file) {
     // A planned suite: say so, and show none of the result sections.
     document.title = `mdbench: ${entry.title}`;
     document.getElementById("title").innerHTML = `${esc(entry.title)} <span class="badge planned">coming soon</span>`;

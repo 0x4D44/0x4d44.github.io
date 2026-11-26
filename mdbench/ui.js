@@ -18,6 +18,19 @@ export async function loadIndex() {
   return ix;
 }
 
+export const suiteHref = (s) => s.status === "page" ? s.page : s.file ? `suite.html?s=${encodeURIComponent(s.id)}` : null;
+
+export function renderNav(ix, current) {
+  const links = [["./", "Overview"]];
+  for (const s of ix.suites) {
+    const href = suiteHref(s);
+    if (href) links.push([href, s.title]);
+  }
+  for (const p of ix.pages || []) links.push([`${p.id}.html`, p.title]);
+  document.getElementById("nav").innerHTML = links.map(([href, title]) =>
+    `<a href="${esc(href)}"${href === current ? ' aria-current="page"' : ""}>${esc(title)}</a>`).join("");
+}
+
 export async function loadSuite(ix, id) {
   const entry = ix.suites.find((s) => s.id === id);
   if (!entry || !entry.file) throw new Error(`no data for suite ${id}`);

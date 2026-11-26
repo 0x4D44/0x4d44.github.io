@@ -16,18 +16,6 @@
 
 window.ESSAYS = [
   {
-    slug: "strange-machine",
-    title: "Strange Machine: first scored round",
-    tagline: "Four coding model seats designed and programmed a one-instruction computer across three word-width envelopes. See how each seat scored on design, machine checks and programs in the first scored round.",
-    url: "https://0x4d44.github.io/strange-machine/",
-    illustration: "ill-strange-machine",
-    date: "2026-11-25T15:30:00",
-    year: 2026,
-    readingMin: 4,
-    tags: ["software", "engineering"],
-    real: true,
-  },
-  {
     slug: "mdbench",
     title: "mdbench: which model holds which seat",
     tagline: "Results from a private benchmark of AI coding models on real engineering problems from our own emulator and kernel projects, rewound to before they were solved. Who should design, code, test, review and fix: a seat-by-lane table, leaderboards, and score against cost and time. More suites to come. Vanilla JS, no libraries.",
@@ -2196,7 +2184,7 @@ window.COLLECTIONS = [
   { id: "ai", name: "Minds & Models", icon: "ill-ai",
     blurb: "AI, language models and the writing around them.",
     slugs: ["model-zoo", "model-welfare", "j-space", "benchmarks", "ai-history", "mdtoken", "cold-cache", "chasing-dosbox-x",
-      "codex-seat-trials", "mdbench", "strange-machine", "claude-workflows", "the-ai-who-watched", "influence", "three-clocks"] },
+      "codex-seat-trials", "mdbench", "claude-workflows", "the-ai-who-watched", "influence", "three-clocks"] },
   { id: "music", name: "Music & Instruments", icon: "ill-piano",
     blurb: "How instruments work, and what becomes of the sound afterwards — the physics of the string, the mechanism, and the codecs that carry the result.",
     slugs: ["instruments", "audio-compression"] },

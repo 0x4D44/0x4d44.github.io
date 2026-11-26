@@ -106,6 +106,8 @@ const PAGES = [
     check: (r) => r.title === "Recall" && r.rows === RECALL_SEATS && r.group === RECALL_G0 && r.heat === RECALL_G0_ROWS && r.allHeat === RECALL_ROWS && r.sticky === "sticky" && r.stickyTask !== "sticky" && r.boardSeat === "sticky" && r.listen === !!LISTEN_T0 && r.listenRows === LISTEN_ROWS && r.players === LISTEN_PLAYERS && (!LISTEN_T0 || r.players > 1) && !r.banner && !r.err },
   { name: "zeta", url: "/mdbench/suite.html?s=zeta", expect: `({ title: document.getElementById("title").textContent, cell: [...document.querySelectorAll("table.heat td.heat")].map((t) => t.textContent), head: [...document.querySelectorAll("table.leaderboard th")].map((t) => t.textContent), nocost: document.getElementById("sc-cost").textContent, banner: document.querySelector(".banner")?.textContent || "", note: document.querySelector("#heat .tasknotes")?.textContent || "" })`,
     check: (r) => r.title === "Zeta probe sample data" && /Synthetic test data/.test(r.banner) && /Z-2: Zeta note/.test(r.note) && r.cell.some((c) => c.startsWith("11.50 MIPS")) && r.head.includes("Emulated MIPS") && r.head.includes("Boots pass") && /no cost/.test(r.nocost) },
+  { name: "strange-machine", url: "/mdbench/strange-machine.html", expect: `({ seats: document.querySelectorAll("#round-seats tr").length, runs: document.querySelectorAll("#round-runs tr").length, current: document.querySelector('#nav a[aria-current="page"]')?.textContent })`,
+    check: (r) => r.seats === 4 && r.runs === 12 && r.current === "Strange machine" },
 ];
 const CM = (realIndex.pages || []).find((p) => p.id === "code-mode");
 if (CM) {
