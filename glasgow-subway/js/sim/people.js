@@ -178,7 +178,7 @@ if (vMapUv.x > ${f(u0)} && vMapUv.x < ${f(u1)} && vMapUv.y > ${f(v0)} && vMapUv.
 #endif`); };
   mat.customProgramCacheKey = () => key; mat.needsUpdate = true;
 }
-const GARMENT_TINT = { teen_tee: [[/^alpha_hair_/i, 0.25, 0.1, 0.032]], woman_student: [[/^alpha_hair_/i, 0.147, 0.088, 0.058]],   // (dyed caramel and ash brown: with adult_baggy_knit they share one face, one skin and the same near-black bob - plainly the same woman at a glance, review 73)
+const GARMENT_TINT = { teen_tee: [[/^alpha_hair_/i, 0.13, 0.065, 0.03]], woman_student: [[/^alpha_hair_/i, 0.147, 0.088, 0.058]],   // (dyed caramel and ash brown: with adult_baggy_knit they share one face, one skin and the same near-black bob - plainly the same woman at a glance, review 73)
   woman_mini: [[/skirt/i, 0.09, 0.12, 0.1], [/camisole/i, 0.22, 0.3, 0.55]], elder_woman_coat: [[/^cloth_coat\./i, 0.33, 0.2, 0.09, 'flat']],
   ya_winter: [[/^cloth_coat\./i, 0.035, 0.045, 0.09, 'flat']], teen_tube: [[/skirt/i, 0.07, 0.12, 0.3, 'flat']], ya_ginger_lad: [[/casualsuit/i, 0.32, 0.32, 0.32]],
   man_kilt_casual: [[/sweater/i, 0.3, 0.26, 0.3]], teen_skater: [[/tennisshoes/i, 0.06, 0.06, 0.07]],
@@ -502,8 +502,9 @@ export class AnimCrowd {
               const px = x + 0.5, py = y + 0.5, l0 = ((y1 - y2) * (px - x2) + (x2 - x1) * (py - y2)) / den, l1 = ((y2 - y0) * (px - x2) + (x0 - x2) * (py - y2)) / den; if (l0 >= -0.02 && l1 >= -0.02 && 1 - l0 - l1 >= -0.02) occ[y * N + x] = 1; } } }
         for (const i of F) drop[i] = polar(i)[0] > 0.04 ? 2 : 1;   // (2: so far down the arm that a face touching it is the cut hem's flare - review 72)
         // the old sleeve's cut edge flared out round the elbow, a ledge over the tube: its last few cm drawn in to just inside the tube, which covers it from T0 (in place: the geometry is shared). Drawn to 3 % outside, the cut ring still stood proud at the elbow (review 73)
-        for (let i = 0; i < P.count; i++) { if (drop[i] || !(dom[i] === iu || fore(dom[i]))) continue; v.fromBufferAttribute(P, i).sub(E); const t = v.dot(d) / len; if (t < -0.22) continue;
-          const ax = v.clone().addScaledVector(d, -t * len), r = ax.length(), tg = rad(Math.min(t, 0.02)) * shape(Math.atan2(ax.dot(a2), ax.dot(a1))) * 0.97, x = Math.min(1, Math.max(0, (t + 0.22) / 0.1)), wgt = x * x * (3 - 2 * x);
+        for (let i = 0; i < P.count; i++) { if (drop[i] === 2 || !(dom[i] === iu || fore(dom[i]))) continue;   // (drop 1 too: a cut vertex is still drawn by a face it shares with a kept one, and left out it stood as a flap at the elbow - review 73)
+          v.fromBufferAttribute(P, i).sub(E); const t = v.dot(d) / len; if (t < -0.45) continue;
+          const ax = v.clone().addScaledVector(d, -t * len), r = ax.length(), tg = rad(Math.min(t, 0.02)) * shape(Math.atan2(ax.dot(a2), ax.dot(a1))) * 0.97, x = Math.min(1, Math.max(0, (t + 0.45) / 0.31)), wgt = x * x * (3 - 2 * x);
           if (r > tg && r > 1e-6) { const nr = r + (tg - r) * wgt; ax.multiplyScalar(nr / r); v.copy(E).addScaledVector(d, t * len).add(ax); P.setXYZ(i, v.x, v.y, v.z); } }
         add.push({ E, d, len, a1, a2, rad, shape, src, smp, il, occ }); g.userData.sleeveTube++;
       }
