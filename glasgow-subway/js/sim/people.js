@@ -1524,7 +1524,12 @@ export class AnimCrowd {
   /** does a step to (nx,nz) keep clear of closing on anyone within R? The shorter-step fallback in _step must not let side-by-side walkers creep into each other: with only the
    *  0.45 m rule, pelvis pairs under 0.30 m rose from 0 to 98 frames in 130 s at St Enoch (review 73) */
   _noCloser(p, nx, nz, R) {
-    for (const q of this.people) { if (q === p || q.hidden || !q.obj || q.static) continue; const dn2 = (q.x - nx) ** 2 + (q.z - nz) ** 2; if (dn2 < R * R && dn2 < (q.x - p.x) ** 2 + (q.z - p.z) ** 2) return false; }
+    const sx = nx - p.x, sz = nz - p.z, sl = Math.hypot(sx, sz) || 1;
+    for (const q of this.people) { if (q === p || q.hidden || !q.obj || q.static) continue; const dn2 = (q.x - nx) ** 2 + (q.z - nz) ** 2; if (dn2 >= R * R || dn2 >= (q.x - p.x) ** 2 + (q.z - p.z) ** 2) continue;
+      // ... but someone straight ahead is a leader to follow, not a neighbour to creep into: closing on them is fine while the gap stays 0.40 m (refusing it halted
+      // staff_woman dead five times in 0.55 s, trailing a walker 0.45 m ahead - review 74)
+      const qx = q.x - p.x, qz = q.z - p.z; if ((qx * sx + qz * sz) / sl > 0.8 * Math.hypot(qx, qz) && dn2 >= 0.40 * 0.40) continue;
+      return false; }
     return true;
   }
   /** may this person stand at (nx,nz)? On the slab (inset m), clear of furniture, the user and every other person - except that stepping AWAY from something already too close is always allowed */
@@ -1570,7 +1575,7 @@ export class AnimCrowd {
     let sx = -Math.sin(p.yaw) * move, sz = -Math.cos(p.yaw) * move;
     if (!ok(p.x + sx, p.z + sz)) {   // not facing the checked way yet and the way it faces is blocked: hold, turn, then go
       // ... but a shorter step first, if that is clear: zeroed outright, the root halted dead for single frames mid-walk, six times in 0.8 s (review 72: ya_smile_halter)
-      p.sp = Math.max(0, p.sp - 2 * STEER.BMAX * dt); const k = [0.6, 0.3].find((f) => ok(p.x + sx * f, p.z + sz * f) && this._noCloser(p, p.x + sx * f, p.z + sz * f, 0.6)); if (k) { sx *= k; sz *= k; } else sx = sz = 0;
+      p.sp = Math.max(0, p.sp - 2 * STEER.BMAX * dt); const k = [0.6, 0.3, 0.15].find((f) => ok(p.x + sx * f, p.z + sz * f) && this._noCloser(p, p.x + sx * f, p.z + sz * f, 0.6)); if (k) { sx *= k; sz *= k; } else { const cm = p.sp * dt; if (cm > 1e-4 && this._onFloor(p.x - Math.sin(p.yaw) * cm, p.z - Math.cos(p.yaw) * cm, 0.12) && this._core(p, p.x - Math.sin(p.yaw) * cm, p.z - Math.cos(p.yaw) * cm, 0.34)) { sx = -Math.sin(p.yaw) * cm; sz = -Math.cos(p.yaw) * cm; } else sx = sz = 0; }   // (none clear: coast on at the braking speed while 0.34 m stays clear, rather than a one-frame dead stop)
     }
     p.x += sx; p.z += sz;
     return true;
@@ -1604,7 +1609,9 @@ export class AnimCrowd {
         // someone standing in the way (a waiter at the stair foot) steps aside, out of the line of the stairs, and the walker waits for them (review 5: they held whole flights
         // up for 98 s; review 6: ignoring them walked people through each other)
         if (q.mode !== 'go' && q.mode !== 'walk' && !(q.madeWayT > 0)) { q.madeWayT = 4; const sx = -uz, sz = ux, k = ex * sx + ez * sz >= 0 ? 1 : -1; this._makeWay(q, sx * k, sz * k); }
-        p.sp = Math.max(0, (p.sp || 0) - 2 * STEER.BMAX * dt); p.yawT = Math.atan2(-dx, -dz); return false; } }
+        // braking, not a dead stop: the walker coasts on at its falling speed while that keeps 0.34 m from everyone (stopped dead from 1.07 m/s in one frame - review 74, adult_piper)
+        p.sp = Math.max(0, (p.sp || 0) - 2 * STEER.BMAX * dt); const cm = p.sp * dt, cx = p.x - Math.sin(p.yaw) * cm, cz = p.z - Math.cos(p.yaw) * cm; if (cm > 1e-4 && this._core(p, cx, cz, 0.34)) { p.x = cx; p.z = cz; }
+        p.yawT = Math.atan2(-dx, -dz); return false; } }
     const move = steerStep(p, dt, { hT: Math.atan2(-ux, -uz), want: Math.min(sp, (p.char ? p.char.walkSpeed : 1.3) * 1.3, this._followCap(p, ux, uz)), d, stop: !!p.stopHere });
     p.steered = true; p.yawT = p.yaw;
     // even walking past, a step never ends inside another body (0.32 m, centre to centre) unless it moves away from them: the walker edges sideways round them instead
