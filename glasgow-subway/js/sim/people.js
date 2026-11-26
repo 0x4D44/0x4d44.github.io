@@ -164,11 +164,15 @@ export function pickChar(chars, pool, filter, rng, local, global = IN_USE) {
 }
 // id -> [[material name, r, g, b multiplier (linear: 0.15 shows as ~0.42)], ...]. Review 8: the two long-coat women wore one pale striped coat that read as a bathrobe (now
 // camel and dark navy); adult_casual2 and ya_ginger_lad one sweatshirt; teen_skirt and woman_mini one top (woman_mini's goes blue; her tartan was turned green at build)
+/** garments whose asset left the body's skin in under them: the skin comes out through the cloth wherever the two are skinned differently. What the garment covers is not drawn
+ *  (_hideSkinUnder). Review 68: ya_ginger_long's blouse showed a 4 cm patch of skin at the right shoulder blade and specks down the back */
+const SKIN_UNDER = { ya_ginger_long: /lace_up_blouse/i };
 const GARMENT_TINT = { woman_mini: [[/skirt/i, 0.09, 0.12, 0.1], [/camisole/i, 0.22, 0.3, 0.55]], elder_woman_coat: [[/^cloth_coat\./i, 0.33, 0.2, 0.09, 'flat']],
   ya_winter: [[/^cloth_coat\./i, 0.035, 0.045, 0.09, 'flat']], teen_tube: [[/skirt/i, 0.07, 0.12, 0.3, 'flat']], ya_ginger_lad: [[/casualsuit/i, 0.32, 0.32, 0.32]],
   man_kilt_casual: [[/sweater/i, 0.3, 0.26, 0.3]], teen_skater: [[/tennisshoes/i, 0.06, 0.06, 0.07]],
   adult_lusekofta: [[/winterboots/i, 0.12, 0.06, 0.025, 'flat']], adult_beret: [[/riding_boots/i, 0.05, 0.05, 0.05]],
-  man_elder: [[/^skin_/, 1.6, 1.35, 1.15]], man_longcoat: [[/^skin_/, 0.78, 0.84, 1.05]], elder_man_suit: [[/^skin_/, 0.74, 0.86, 1.25]] };   // (review 67: man_elder's skin grey and grimy, man_longcoat's orange - warmed and cooled)   // (review 13: the one maze-striped coat on two women - now a plain camel coat and a plain navy one; the tartan mini on two girls - teen_tube's now plain blue)   // (review 13: the boots' white texture parts stretched into white wedges at the boot tops - now the boot's own colour throughout)   // (review 11: man_beard's red jumper on man_kilt_casual too - now a dark burgundy; teen_skater's white trainers on sum_loose_shorts_w's template - now black)
+  man_elder: [[/^skin_/, 1.6, 1.35, 1.15]], man_longcoat: [[/^skin_/, 0.78, 0.84, 1.05]], elder_man_suit: [[/^skin_/, 0.74, 0.86, 1.25]],
+  woman_midi: [[/^alpha_brows/, 0.16, 0.1, 0.07]], ya_tube_heels: [[/^alpha_brows/, 0.16, 0.1, 0.07]] };   // (review 68: near-black brows read as a frown - a soft dark brown)   // (review 67: man_elder's skin grey and grimy, man_longcoat's orange - warmed and cooled)   // (review 13: the one maze-striped coat on two women - now a plain camel coat and a plain navy one; the tartan mini on two girls - teen_tube's now plain blue)   // (review 13: the boots' white texture parts stretched into white wedges at the boot tops - now the boot's own colour throughout)   // (review 11: man_beard's red jumper on man_kilt_casual too - now a dark burgundy; teen_skater's white trainers on sum_loose_shorts_w's template - now black)
 /** the four garment groups the crowd keeps any one of under half of the people near by (_pick) */
 const garmentGroup = (c) => (/skirt|dress|sash/.test(c.outfit) ? 'skirt' : /kilt|highland/.test(c.outfit) && !/trews/.test(c.outfit) ? 'kilt' : /shorts|leggings/.test(c.outfit) ? 'bare' : 'trousers');
 /** 'f' or 'm', from the body's skin material (MPFB2 names them skin_..._female / skin_..._male), '' if neither */
@@ -206,6 +210,8 @@ export class AnimCrowd {
     // brows and lashes: the texture's hairs are mostly half-transparent, and the export's cut-off at 0.5 kept only their cores - brows of a few black dashes (reviews 31 - 36,
     // 'dotted brows' on most faces). Blended instead, over the skin they lie on, with only the faintest wisps cut.
     for (const c of this.chars) for (const r of [c.node, c.lodNode]) if (r) r.traverse((m) => { const mt = m.isMesh && m.material; if (!mt || !/^alpha_(brows|lashes)/.test(mt.name || '') || mt.userData.soft) return; mt.userData.soft = true; mt.transparent = true; mt.alphaTest = 0.04; mt.depthWrite = false; mt.needsUpdate = true; });
+    // hair cards: cut off hard at the export's 0.5, their tips are jagged shards and slabs across the face (reviews 67, 68); with multisampling on, alpha to coverage feathers the cut
+    for (const c of this.chars) for (const r of [c.node, c.lodNode]) if (r) r.traverse((m) => { const mt = m.isMesh && m.material; if (!mt || !/^alpha_hair/.test(mt.name || '') || mt.alphaToCoverage || !(mt.alphaTest > 0)) return; mt.alphaToCoverage = true; mt.needsUpdate = true; });
     for (const c of this.chars) { const T = GARMENT_TINT[c.id]; if (T) for (const r of [c.node, c.lodNode]) if (r) r.traverse((m) => { if (!m.isMesh || !m.material || m.material.userData.tintOf === c.id) return; const t = T.find((x) => x[0].test(m.material.name || '')); if (!t) return; m.material = m.material.clone(); m.material.color.setRGB(t[1], t[2], t[3]); if (t[4] === 'flat') { m.material.map = null; m.material.needsUpdate = true; } m.material.userData.tintOf = c.id; }); }   // ('flat': the picture goes and the colour stands alone - a texture whose light parts stretch into wedges)   // (a clone: one material can be shared by several characters in the file)
     // the 21 rigs share bone names; GLTFLoader suffixed the duplicates (hips_5 ...). The shared clips address the plain names -> canonicalise per clone.
     this.boneNames = new Set(); { const f = this.chars[0]; if (f) (f.node || f.lodNode).traverse((o) => { if (o.isBone) this.boneNames.add(o.name); }); }   // first rig keeps the plain names (spine_01 ... are REAL names: never strip blindly)
@@ -264,6 +270,7 @@ export class AnimCrowd {
     f.underTop = !sk && /trousers|shorts|trews|leggings/.test(c.outfit) ? trimUnderTop(T, n) : null;
     f.under = !sk && /trousers|shorts|trews|leggings/.test(c.outfit) ? trimUnderTrousers(T, n) : null;   // no skin left under trousers to come through the seat
     f.web = trimWebbing(T, n);
+    f.skinHid = SKIN_UNDER[c.id] ? this._hideSkinUnder(n, SKIN_UNDER[c.id]) : 0;
     f.shoes = fitShoes(T, n);   // a stiff shoe that bends at the ball of the foot (the full-detail model only: the simplified one's few big faces gain nothing from it, and it is seen from beyond ~11 m)
   }
   /** the fits of the simplified model (people_lod.glb). Its cloth is made of far bigger flat faces, so its hidden skin gives way more; its own skin is too coarse to
@@ -280,7 +287,8 @@ export class AnimCrowd {
     f.cuffsLod = !sk && /trousers|trews|leggings/.test(c.outfit) ? this._extendCuffs(n) : 0;
     f.underTopLod = !sk && /trousers|shorts|trews|leggings/.test(c.outfit) ? trimUnderTop(T, n) : null;
     f.underLod = !sk && /trousers|shorts|trews|leggings/.test(c.outfit) ? trimUnderTrousers(T, n) : null;
-    f.webLod = trimWebbing(T, n);   // the simplified body has a few triangles joining a hand to a thigh
+    f.webLod = trimWebbing(T, n);
+    f.skinHidLod = SKIN_UNDER[c.id] ? this._hideSkinUnder(n, SKIN_UNDER[c.id]) : 0;   // the simplified body has a few triangles joining a hand to a thigh
     f.puffLod = this._puffOuter(n);
   }
   /** On the simplified model the layers under an outer garment were simplified harder than it (the staff work suit is 137 vertices under a 1714-vertex vest), so their
@@ -330,6 +338,27 @@ export class AnimCrowd {
       }
       const tri = []; for (const [a, b] of edges) if (best.has(a) && best.has(b)) { const a2 = nv.get(a), b2 = nv.get(b); tri.push(b, a, a2, b, a2, b2); }
       const ni = new Uint32Array(idx.count + tri.length); for (let i = 0; i < idx.count; i++) ni[i] = idx.getX(i); ni.set(tri, idx.count); g.setIndex(new THREE.BufferAttribute(ni, 1));
+  }
+  /** body skin under a garment (material name re) is not drawn, on the back of the torso (z over back.z: these bodies face -z in their bind pose; between heights back.y0 and back.y1: the front has a neckline to
+   *  see through, and dropping skin there opened the V). A skin triangle goes when each corner is within back.r of the cloth's surface in the bind pose (the skin comes out
+   *  only once the shoulder moves, so the bind pose's gap is large) and over 6 mm from any open edge of the cloth (the patch review 68 saw came through right under the back of the collar). Returns the number of triangles dropped */
+  _hideSkinUnder(root, re, back = { z: -0.02, y0: 0.85, y1: 1.42, r: 0.07 }) {
+    const cl = [], sk = []; root.traverse((o) => { if (!o.isSkinnedMesh || !o.material) return; const nm = o.material.name || ''; if (re.test(nm)) cl.push(o); else if (/^(skin|scalp)_/i.test(nm)) sk.push(o); });   // (the scalp too: a hair-coloured copy of the skin under long hair, down to the shoulder blades - the patch review 68 saw was this)
+    if (!cl.length || !sk.length) return 0; const C = 0.02, H = new Map(), E = [], key = (x, y, z) => Math.floor(x / C) + ',' + Math.floor(y / C) + ',' + Math.floor(z / C);
+    for (const o of cl) { const P = o.geometry.attributes.position, idx = o.geometry.index; if (!idx) continue; const put = (x, y, z) => { const k = key(x, y, z); (H.get(k) || H.set(k, []).get(k)).push(x, y, z); };
+      for (let t = 0; t < idx.count; t += 3) { const a = idx.getX(t), b = idx.getX(t + 1), c = idx.getX(t + 2), A = [P.getX(a), P.getY(a), P.getZ(a)], B = [P.getX(b), P.getY(b), P.getZ(b)], D = [P.getX(c), P.getY(c), P.getZ(c)];   // (the cloth's surface, sampled every cm or so: its vertices are up to 5 cm apart)
+        const L = Math.max(Math.hypot(A[0] - B[0], A[1] - B[1], A[2] - B[2]), Math.hypot(A[0] - D[0], A[1] - D[1], A[2] - D[2]), Math.hypot(B[0] - D[0], B[1] - D[1], B[2] - D[2])), m = Math.min(12, Math.ceil(L / 0.01));
+        for (let i = 0; i <= m; i++) for (let j = 0; i + j <= m; j++) { const u = i / m, v = j / m, w = 1 - u - v; put(A[0] * w + B[0] * u + D[0] * v, A[1] * w + B[1] * u + D[1] * v, A[2] * w + B[2] * u + D[2] * v); } } const q = (i) => Math.round(P.getX(i) * 2e3) + ',' + Math.round(P.getY(i) * 2e3) + ',' + Math.round(P.getZ(i) * 2e3), ec = new Map();
+      for (let t = 0; t < idx.count; t += 3) for (let e = 0; e < 3; e++) { const a = idx.getX(t + e), b = idx.getX(t + (e + 1) % 3), ka = q(a), kb = q(b); if (ka === kb) continue; const k = ka < kb ? ka + '|' + kb : kb + '|' + ka; const r = ec.get(k); if (r) r[0]++; else ec.set(k, [1, a]); }
+      for (const [, [n, a]] of ec) if (n === 1) E.push(P.getX(a), P.getY(a), P.getZ(a)); }
+    const EH = new Map(); for (let i = 0; i < E.length; i += 3) { const k = key(E[i], E[i + 1], E[i + 2]); (EH.get(k) || EH.set(k, []).get(k)).push(E[i], E[i + 1], E[i + 2]); }
+    const near = (M, x, y, z, r) => { const R = Math.ceil(r / C), bx = Math.floor(x / C), by = Math.floor(y / C), bz = Math.floor(z / C); for (let i = -R; i <= R; i++) for (let j = -R; j <= R; j++) for (let k = -R; k <= R; k++) { const a = M.get((bx + i) + ',' + (by + j) + ',' + (bz + k)); if (a) for (let u = 0; u < a.length; u += 3) { const dx = a[u] - x, dy = a[u + 1] - y, dz = a[u + 2] - z; if (dx * dx + dy * dy + dz * dz < r * r) return true; } } return false; };
+    let n = 0;
+    for (const o of sk) { const g = o.geometry, idx = g.index, P = g.attributes.position; if (!idx) continue; if (g.userData.skinHid != null) { n += g.userData.skinHid; continue; }
+      const cov = new Uint8Array(P.count); for (let i = 0; i < P.count; i++) { const x = P.getX(i), y = P.getY(i), z = P.getZ(i); cov[i] = z > back.z && y > back.y0 && y < back.y1 && near(H, x, y, z, back.r) && !near(EH, x, y, z, 0.006) ? 1 : 0; }
+      const keep = []; for (let t = 0; t < idx.count; t += 3) { const a = idx.getX(t), b = idx.getX(t + 1), c = idx.getX(t + 2); if (!(cov[a] && cov[b] && cov[c])) keep.push(a, b, c); }
+      g.userData.skinHid = (idx.count - keep.length) / 3; n += g.userData.skinHid; if (keep.length < idx.count) g.setIndex(new this.THREE.BufferAttribute(P.count > 65535 ? new Uint32Array(keep) : new Uint16Array(keep), 1)); }
+    return n;
   }
   /** Full-length trousers: each ankle cuff is carried a few cm down into the shoe. The decimated cuff is a ragged loop and the ankle skin showed between it
    *  and the shoe as jagged skin-coloured teeth (people review 1: 'ragged hems'). Returns the number of cuffs extended. */
@@ -936,6 +965,42 @@ export class AnimCrowd {
     }
     return made;
   }
+  /** a person whose shins are longer than the seat is high sits as a tall person does on a low seat: knees up. Each sit clip is baked again for them (once, for the first
+   *  seat height asked) with both thighs pitched up about the pelvis's own side-to-side axis and the calves turned back, so each shin keeps its slope and the soles stay
+   *  flat while they rise to the floor. Up to 32 degrees; past that, or with no thigh/calf keys, the clip is left as it was (and the feet test may still stand them) */
+  _kneesUp(c, seatRel) {
+    if (c.kneeSeat !== undefined) return; c.kneeSeat = seatRel;
+    for (const cat of ['sit', 'sitalt', 'sitphone']) if (c.pools[cat]) c.pools[cat] = c.pools[cat].map((clip) => {
+      const gap = (m) => seatRel - m.contact + m.minY;   // soles' height over the floor with the pelvis on the seat (< 0: through it)
+      const d0 = gap(this.measure(c, clip)); if (d0 > -0.012) return clip;
+      let lo = 0, hi = 32 * Math.PI / 180, best = null;
+      for (let it = 0; it < 7; it++) { const a = (lo + hi) / 2, nc = this._kneeClip(c, clip, a); if (!nc) return clip; this.meas.delete(c.id + ':' + clip.name); const d = gap(this.measure(c, nc)); this.meas.delete(c.id + ':' + clip.name);
+        if (d > -0.012) { best = nc; hi = a; } else lo = a; }
+      if (!best) { const nc = this._kneeClip(c, clip, hi); this.meas.delete(c.id + ':' + clip.name); if (nc && gap(this.measure(c, nc)) > d0 + 0.01) best = nc; }   // (not all the way: still better than as it was)
+      this.meas.delete(c.id + ':' + clip.name); return best || clip;
+    });
+  }
+  /** clip with the thighs pitched up by a (radians) about the pelvis's x axis, the calves countering it so their world turn is unchanged */
+  _kneeClip(c, clip, a) {
+    if (!this.THREE || !this.SU || !(c.node || c.lodNode) || !clip.tracks) return null;   // (nothing to bake on)
+    const T = this.THREE, obj = this._clone(c); const bones = {}; obj.traverse((o) => { if (o.isBone && !bones[o.name]) bones[o.name] = o; });
+    const mixer = new T.AnimationMixer(obj), act = mixer.clipAction(clip); act.play();
+    const qp = new T.Quaternion(), R = new T.Quaternion(), Rw = new T.Quaternion(), w = new T.Quaternion(), q = new T.Quaternion(), X = new T.Vector3(1, 0, 0); let ok = 0;
+    const tracks = clip.tracks.map((tr) => {
+      const m = /^(thigh|calf)_([lr])\.quaternion$/.exec(tr.name); if (!m) return tr; const th = bones['thigh_' + m[2]]; if (!th || !th.parent) return tr;
+      const nt = tr.clone(), v = nt.values, t = nt.times;
+      for (let k = 0; k < t.length; k++) {
+        mixer.setTime(t[k]); obj.updateMatrixWorld(true); th.parent.getWorldQuaternion(qp);
+        // Rw: about the body's side-to-side axis (x; the person faces +z), knee forward-and-up. In the thigh's parent frame that is qp^-1 Rw qp
+        Rw.setFromAxisAngle(X, a); q.set(v[k * 4], v[k * 4 + 1], v[k * 4 + 2], v[k * 4 + 3]);
+        if (m[1] === 'thigh') q.premultiply(R.copy(qp).invert().multiply(Rw).multiply(qp));
+        else { w.copy(qp).multiply(th.quaternion); q.premultiply(R.copy(w).invert().multiply(Rw.invert()).multiply(w)); }   // calf' = W^-1 Rw^-1 W calf (W: the thigh's turn in the body): the shin keeps its slope
+        v[k * 4] = q.x; v[k * 4 + 1] = q.y; v[k * 4 + 2] = q.z; v[k * 4 + 3] = q.w;
+      }
+      ok++; return nt;
+    });
+    mixer.stopAllAction(); return ok >= 4 ? new T.AnimationClip(clip.name, clip.duration, tracks, clip.blendMode) : null;
+  }
   _canSit(c, s) {   // every vertex of the seated body, in every sit clip, must stay under the ceiling profile and inside the side walls at this seat
     // a knee-length winter coat (punkduck_winter_coat, MakeHuman's rig) balloons into a crumpled shell over the thighs in every sit clip: its wearers stand (review 4)
     if (c.longCoat === undefined) { c.longCoat = false; const n = c.node || c.lodNode; if (n) n.traverse((o) => { if (o.isMesh && o.material && /^cloth_coat\./i.test(o.material.name || '')) c.longCoat = true; }); }
@@ -947,6 +1012,7 @@ export class AnimCrowd {
     if (!this._seatDraped(c) && /^(teen_tube|man_kilt_casual|man_highland|adult_piper|boy_kilt|woman_mini|teen_skirt|elder_woman_dress|woman_sash|woman_midi|adult_beret|woman_dress|woman_coat|ya_smile_dress|girl_small|girl_school_kilt)$/.test(c.id)) return false;   // (review 37: let sit again after stills in the viewer looked whole, in the game elder_woman_dress's skirt rode to the hip in stiff flaps and ya_smile_dress's hem hung as a half-disc below the seat - both stand again)   // (review 18: woman_dress torn at the knee, woman_coat showing the underside of her skirt) (review 16: woman_sash's dress a stiff tube with the knee through it, woman_midi's skirt holed at both knees, adult_beret's knees through her pencil skirt)   // (review 11: seated, the short pleated minis stood as a hoop round the hips with the crotch showing, at eye height in the car; review 12: elder_woman_dress's dress parted to the hip)
     // and the soles must reach the floor with the pelvis on the seat: _sitOff lifts a body whose feet would go through the floor, so legs (with heels) too long
     // for this seat would leave the person hovering above it (the audit allows 8 cm). Such a person stands instead.
+    if (s.seatY != null) this._kneesUp(c, s.seatY - s.y);   // (long legs: the knees come up rather than the person standing - review 68 had 13 trouser and shorts wearers who never sat)
     if (s.seatY != null) for (const cat of ['sit', 'sitalt', 'sitphone']) for (const clip of c.pools[cat] || []) { const m = this.measure(c, clip); if (s.seatY - s.y - m.contact + m.minY < -SIT_FEET) return false; }
     if (!s.ceilAt) return true; const cs = Math.cos(s.yaw), sn = Math.sin(s.yaw);
     for (const cat of ['sit', 'sitalt', 'sitphone']) for (const clip of c.pools[cat] || []) {

@@ -751,6 +751,17 @@ test('people: nobody is seated whose feet cannot reach the floor with the pelvis
     if (ok) { const y = c._sitOff(ch(minY).m, seat.seatY - seat.y) + 0.1; assert.ok(y - seat.seatY <= 0.08, 'a person allowed to sit has the pelvis within the audit\'s 8 cm of the seat'); }
   }
 });
+// Long legs: before they are stood, the sit clips are baked again with the knees up (_kneesUp / _kneeClip). A bake that brings the soles to the floor is taken; one that
+// cannot be made (no rig) leaves the clip, and the person, as they were.
+test('people: a long-legged person whose knees can come up sits, on the baked clip', () => {
+  const c = Object.create(AnimCrowd.prototype), clip = { name: 'sit_a' }, M = new Map(); c.meas = { delete: () => {} };
+  const ch = { id: 'tall', pools: { sit: [clip] } }; M.set(clip, { contact: 0.1, minY: -0.45 });   // soles 12 cm through the floor as it is
+  c.measure = (who, cl) => M.get(cl); c._kneeClip = (who, cl, a) => { const nc = { name: cl.name, a }; M.set(nc, { contact: 0.1, minY: -0.45 + 0.42 * Math.sin(a) }); return nc; };   // thigh 0.42 m
+  const seat = { x: 0, y: 0, yaw: 0, seatY: 0.43, mode: 'sit' };
+  assert.equal(c._canSit(ch, seat), true, 'with the knees up the soles reach the floor');
+  const k = ch.pools.sit[0]; assert.notEqual(k, clip, 'the sit pool now holds the baked clip'); assert.ok(k.a > 0.2 && k.a < 0.35, 'knees up by about 16 degrees, no more: ' + k.a);
+  const gap = 0.43 - 0.1 + M.get(k).minY; assert.ok(gap > -0.012 && gap < 0.01, 'soles within a centimetre of the floor: ' + gap.toFixed(3));
+});
 // The game builds its crowds from people_lod.glb alone and attaches people.glb later (index.js _streamFullPeople), so the simplified model's skirt fit cannot
 // measure the legs on the full skin: it takes them from legradii.js. Every skirted person needs an entry, or their LOD skirt fit would measure its own coarse skin.
 // Whether the numbers are current is tools/legradii.mjs's check (it needs a browser); AnimCrowd.attachFull also warns in the console when they are stale.
