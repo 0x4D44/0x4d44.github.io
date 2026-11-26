@@ -356,7 +356,11 @@ function easeBranch(rig, obj, live, dt) {
   if (!(rig.brP && rig.brP.isVector3 && rig.brQ && rig.brQ.isQuaternion && rig.brD && rig.brD.isVector3 && rig.brDq && rig.brDq.isQuaternion)) { rig.brKey = undefined; rig.brP = new T.Vector3(); rig.brQ = new T.Quaternion(); rig.brD = new T.Vector3(); rig.brDq = new T.Quaternion(); rig.brT = EASE_T; }
   const dn = rig.down && (rig.brNd || 0) >= 10; rig.brNd = rig.down ? 0 : (rig.brNd || 0) + 1;
   const tr = !!rig.trl, te = rig.brTr !== undefined && tr !== rig.brTr && (rig.brTrN || 0) >= 6; rig.brTrN = tr !== rig.brTr ? 0 : (rig.brTrN || 0) + 1; rig.brTr = tr;   // (into or out of the trailer, after a steady run: a set-down that stopped short handed the case to the trailer, which tipped it 0.33 m to the hand in a frame - review 71 replay, adult_casual5)   // (the start of a set-down: down after a run of not, so a flicker at walking pace starts one fade, not one a frame)
-  if (live && !swap && ((rig.brKey !== undefined && key !== rig.brKey) || dn || te)) { rig.brD.copy(rig.brP).sub(cp); rig.brDq.copy(cq).invert().premultiply(rig.brQ); rig.brT = 0; }   // (eDq: last frame's drawn = eDq * this frame's)
+  let jump = false;   // a one-frame leap of the pose itself, whatever its cause (a case spun 1.3 rad for two frames as its owner stopped, review 72): faded from where it was drawn
+  if (rig.brRp && rig.brRp.isVector3 && rig.brRq && rig.brRq.isQuaternion) jump = rig.brKey !== undefined && (rig.brRp.distanceTo(mesh.position) > 0.15 || rig.brRq.angleTo(mesh.quaternion) > 0.5);   // (in the owner's frame: on a moving train the world pose moves 0.25 m a frame)
+  else { rig.brRp = new T.Vector3(); rig.brRq = new T.Quaternion(); }
+  rig.brRp.copy(mesh.position); rig.brRq.copy(mesh.quaternion);
+  if (live && !swap && ((rig.brKey !== undefined && key !== rig.brKey) || dn || te || jump)) { rig.brD.copy(rig.brP).sub(cp); rig.brDq.copy(cq).invert().premultiply(rig.brQ); rig.brT = 0; }   // (eDq: last frame's drawn = eDq * this frame's)
   if (!live) rig.brT = EASE_T;
   rig.brKey = key; rig.brLive = true;
   if (rig.brT < EASE_T) {
@@ -427,8 +431,9 @@ function floorPose(rig, o, walk, sit, pole, yaw, sd0, hx, v) {
     const P = rig.pv || (rig.pv = new rig.T.Vector3());
     P.set(rig.wP[0], 0, rig.wP[1]).applyMatrix4(par.matrixWorld).applyMatrix4(rig.m);
     const dx0 = tx - gx, dz0 = tz - gzw, dx1 = P.x - gx, dz1 = P.z - gzw;
-    if (Math.hypot(dx1, dz1) > 0.05 && Math.hypot(dx0, dz0) > 0.05) al = Math.max(-1.3, Math.min(1.3, Math.atan2(dx1 * dz0 - dz1 * dx0, dx1 * dx0 + dz1 * dz0)));
+    if (Math.hypot(dx1, dz1) > 0.05 && Math.hypot(dx0, dz0) > 0.05) { let a = Math.atan2(dx1 * dz0 - dz1 * dx0, dx1 * dx0 + dz1 * dz0); const a0 = rig.alL; if (a0 !== undefined) a = a0 + Math.atan2(Math.sin(a - a0), Math.cos(a - a0)); al = Math.max(-1.3, Math.min(1.3, a)); }   // (unwrapped against last frame's before the clamp: pulled round past behind, atan2 crossed pi and the clamp sent it from +1.3 to -1.3 - a towed case flipped 2.8 rad and its handle 0.87 m in a frame, review 72)
   }
+  rig.alL = k > 0 && par && !rig.fresh && rig.wP ? al : undefined;
   const ca = Math.cos(al), sa = Math.sin(al), rx = gx + (tx - gx) * ca + (tz - gzw) * sa, rz = gzw - (tx - gx) * sa + (tz - gzw) * ca;   // (the rigid pose turned by al about the vertical through the grip)
   if (k > 0 && par) { const P = rig.pv || (rig.pv = new rig.T.Vector3()), pm = rig.pm || (rig.pm = new rig.T.Matrix4()); pm.copy(par.matrixWorld).invert(); P.set(rx, 0, rz).applyMatrix4(ob.matrixWorld).applyMatrix4(pm); rig.wP = [P.x, P.z]; }
   else rig.wP = null;
