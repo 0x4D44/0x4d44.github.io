@@ -74,8 +74,8 @@ test('the lowest vertex is reported even when it carries weight on the calf, and
 });
 
 // ------------------------------------------------------------------------------------------------------------------------ a profile that IS the three points changes nothing
-const gait = (B, v, secs, onFrame) => {
-  const g = G.newGait(B, { armOut: [6, 6] }), dt = 1 / 60; let z = 0, pv = 0; const n = Math.round(secs / dt);
+const gait = (B, v, secs, onFrame, deep = true) => {
+  const g = G.newGait(B, { armOut: [6, 6], deepToeOff: deep }), dt = 1 / 60; let z = 0, pv = 0; const n = Math.round(secs / dt);
   for (let k = 0; k < n; k++) {
     const want = k < n * 0.75 ? v : 0; pv += (want - pv) * Math.min(1, dt * 12); z -= pv * dt;   // walks, then stops (the last quarter: the feet are brought together)
     G.gaitUpdate(g, dt, { x: 0, z, yaw: 0, v: pv, walking: k < n * 0.75 });
@@ -142,9 +142,9 @@ test('on a three-point shoe the rolling foot and the heel pivot are the same thi
   for (const id of PEOPLE) for (const v of [0.6, 1.2, 1.7]) {
     const B0 = bodyOf(id), Br = bodyWith(id, profOf(B0, flatThree(B0))), Bp = bodyWith(id, profOf(B0, flatThree(B0)), undefined, { roll: false }), rec = [];
     assert.ok(Br.leg[0].roll && !Bp.leg[0].roll);
-    gait(Bp, v, 7, (k, g) => rec.push(g.feet.map((f) => ({ A: f.cur.A.slice(), th: f.cur.th }))));
+    gait(Bp, v, 7, (k, g) => rec.push(g.feet.map((f) => ({ A: f.cur.A.slice(), th: f.cur.th }))), false);   // (no TO_DEEP: the two soles stand the ankle mm apart in foot-flat, so a leg near the edge of reach can leave a frame apart and the walks part)
     let k = 0, worst = 0, n = 0;
-    gait(Br, v, 7, (_, g) => { g.feet.forEach((f, s) => { const a = f.cur, b = rec[k][s]; if (f.mode === 'stance' && a.th > 0.02 && a.th === b.th) { worst = Math.max(worst, Math.hypot(a.A[0] - b.A[0], a.A[2] - b.A[2])); n++; } }); k++; });
+    gait(Br, v, 7, (_, g) => { g.feet.forEach((f, s) => { const a = f.cur, b = rec[k][s]; if (f.mode === 'stance' && a.th > 0.02 && a.th === b.th) { worst = Math.max(worst, Math.hypot(a.A[0] - b.A[0], a.A[2] - b.A[2])); n++; } }); k++; }, false);
     assert.ok(n > 30, `${id} @ ${v}: only ${n} heel-strike frames`);
     assert.ok(worst < 1e-5, `${id} @ ${v}: the ankle is ${(worst * 1e6).toFixed(1)} micron off the heel pivot at heel strike`);
   }

@@ -1250,7 +1250,8 @@ export class AnimCrowd {
     p.intent = Math.hypot(p.x - p.px, p.z - p.pz) / dt;
     if (p.paused && !p.static && p.intent < 0.5) { p.x = p.px; p.z = p.pz; }
     const v = Math.hypot(p.x - p.px, p.z - p.pz) / dt; p.px = p.x; p.pz = p.z;
-    p.v = v > 4 ? 0 : p.v + (v - p.v) * Math.min(1, dt * (v < 0.7 && p.v < 0.7 ? 4 : 12));   // teleports are not walking   (shuffling in a queue the crowd's nudges come and go frame to frame: smoothed at 12/s there, the speed flicked 0.16 - 0.41 - 0.20 m/s and the planted foot stepped 5 cm a frame - review 65)
+    p.vRise = v > p.v + 0.02 ? (p.vRise || 0) + dt : 0;   // (how long the speed has been rising, frame on frame: a walk-off, not a queue's nudge)
+    p.v = v > 4 ? 0 : p.v + (v - p.v) * Math.min(1, dt * (v < 0.7 && p.v < 0.7 && !(p.vRise > 0.066) ? 4 : 12));   // teleports are not walking   (shuffling in a queue the crowd's nudges come and go frame to frame: smoothed at 12/s there, the speed flicked 0.16 - 0.41 - 0.20 m/s and the planted foot stepped 5 cm a frame - review 65; but a speed rising for more than two frames is a walk-off and is followed at once: eased at 4/s, the gait was told 0.37 m/s of a body doing 0.62, and its feet fell behind - review 66)
     if (p.v > 0.15 && p.hold && p.hold.target > 0 && p.state !== 'sit' && !p.settleTurn && !p.settleGait) this._holdTo(p, null);   // moving off (stepping aside for someone, shuffled along): the phone goes away (not the slide back into a seat: that put the phone away for good and left the sit_phone clip cupping nothing - review 45)
     if ((p.state === 'walk' || p.state === 'go') && p.cur) {
       // held up (a jam on the way to the doors): after half a second still, they stand - feet together, the quiet stance - and walk on when there is room. Left in the walk
