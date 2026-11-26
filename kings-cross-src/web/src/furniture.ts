@@ -988,6 +988,10 @@ export function furniturePlan(data: FurnitureData, layout: FurnitureLayout): Fur
       }
     } else {
       lampT.push(...slots(f, FIGURES.lampSpacing, index * STAGGER.lamp, FIGURES.endSouth, FIGURES.endNorth));
+      // B7 night (b6-round-2 score: shed-interior's near platform, at platform 4's north tip, a flat dark slab): a platform whose last standard
+      // falls more than half a spacing short of the north keep-clear gets one more, as near it as the platform is wide enough (1 m steps back)
+      const last = lampT[lampT.length - 1];
+      if (last !== undefined) for (let t = f.tHi - FIGURES.endNorth; t - last > FIGURES.lampSpacing / 2; t -= 1) if (bandAt(f, t, FIGURES.lampRadius)) { lampT.push(t); break; }
     }
     lampT.forEach((t, k) => {
       if (canopy) {

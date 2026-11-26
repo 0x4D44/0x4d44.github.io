@@ -73,7 +73,8 @@ export function nightLightSites({ lamps, layout, data, canopy, footprint }: Nigh
   for (const lamp of lamps) platform.push(lamp.x, PLATFORM_HEIGHT + FIGURES.lampHeight - 0.14, lamp.z);
 
   // One row over each island under the vaults, a light every second rib (12.2 m), hung below the vault above it. A row that would meet a
-  // wall zig-zags across it, a light over each platform under the vaults in turn (4/5, either side of the spine); a platform beyond the
+  // wall splits across it into a row over each platform under the vaults (4/5, either side of the spine: B7 night pools, b6-round-2 score:
+  // the row zig-zagged across the spine, so platform 4 had a pool only every 24.4 m and read flat); a platform beyond the
   // vaults (0, in the east aisle beyond the east arcade) gets a row of its own under the aisle roof, off the wall, and its neighbour (1)
   // keeps its row over its own middle, so both track-side edges are in a pool (the 0/1 island is 11.5 m across, too wide for one row).
   const shed: number[] = [];
@@ -86,7 +87,7 @@ export function nightLightSites({ lamps, layout, data, canopy, footprint }: Nigh
     const wall = walls.find((w) => Math.abs(island.centre - w) < WALL_CLEAR);
     if (wall === undefined) { rows.push({ line: [island.centre], aisle: false }); continue; }
     const vault = island.platforms.filter(underVault), beyond = island.platforms.filter((u) => !underVault(u));
-    rows.push({ line: vault.length ? vault : [wall + Math.sign(island.centre - wall || -1) * WALL_CLEAR], aisle: false });
+    for (const u of vault.length ? vault : [wall + Math.sign(island.centre - wall || -1) * WALL_CLEAR]) rows.push({ line: [u], aisle: false });
     if (beyond.length) rows.push({ line: beyond.map((u) => Math.max(u, wall + WALL_CLEAR)), aisle: true });
   }
   for (const { line, aisle } of rows) {
