@@ -328,7 +328,7 @@ export class AnimCrowd {
       const strip = (b) => b.name.replace(/_\d+$/, ''), lodAt = new Map(m.skeleton.bones.map((b, i) => [strip(b), i])), map = s.skeleton.bones.map((b) => lodAt.get(strip(b)));
       if (!m.bindMatrix.equals(s.bindMatrix) && m.bindMatrix.elements.some((e, i) => Math.abs(e - s.bindMatrix.elements[i]) > 1e-4)) return;
       const used = new Set(), SI0 = s.geometry.attributes.skinIndex, SW0 = s.geometry.attributes.skinWeight; for (let i = 0; i < SI0.count; i++) for (let k = 0; k < 4; k++) if (SW0.getComponent(i, k) > 0.001) used.add(SI0.getComponent(i, k));   // (only the bones it hangs from: the two rigs' roots differ by a centimetre)
-      for (const i of used) if (map[i] !== undefined && s.skeleton.boneInverses[i].elements.some((e, k) => Math.abs(e - m.skeleton.boneInverses[map[i]].elements[k]) > 0.01)) return;   // (the rigs differ by 2 - 5 mm a bone: invisible on a jumper)
+      for (const i of used) if (map[i] !== undefined && s.skeleton.boneInverses[i].elements.some((e, k) => Math.abs(e - m.skeleton.boneInverses[map[i]].elements[k]) > 0.02)) return;   // (the rigs differ by 2 - 5 mm a bone: invisible on a jumper; man_kilt_casual's by 12 - 17 mm at the shoulders, still far less than his far jumper's 42 faces were off - review 72)
       const g = s.geometry.clone(), SI = g.attributes.skinIndex, SW = g.attributes.skinWeight;
       for (let i = 0; i < SI.count; i++) for (let k = 0; k < 4; k++) { const j = map[SI.getComponent(i, k)]; if (j === undefined) { if (SW.getComponent(i, k) > 0.001) return; SI.setComponent(i, k, 0); } else SI.setComponent(i, k, j); }
       // written into the shared geometry in place: the far model's clones made before the full model arrived (attachFull) hold this very geometry
@@ -378,14 +378,15 @@ export class AnimCrowd {
   _extrudeLoop(g, best, edges, drop, floor) {
     const THREE = this.THREE, P = g.attributes.position, idx = g.index;
       const nv = new Map(), attrs = Object.keys(g.attributes), n0 = P.count; let add = 0;
-      for (const v of best) nv.set(v, n0 + add++);
+      // a copy per original vertex of the edge, not per point: a hem crossing the texture's UV seam takes each side's own UV, where a shared copy drew a strip across the island's orange padding
+      for (const [a, b, oa, ob] of edges) if (best.has(a) && best.has(b)) for (const o of [oa ?? a, ob ?? b]) if (!nv.has(o)) nv.set(o, n0 + add++);
       for (const name of attrs) {   // glTF attributes can be interleaved (array is the shared buffer): read through stride/offset, write a plain packed copy
         const A = g.attributes[name], it = A.itemSize, stride = A.isInterleavedBufferAttribute ? A.data.stride : it, off = A.isInterleavedBufferAttribute ? A.offset : 0, src = A.isInterleavedBufferAttribute ? A.data.array : A.array;
         const arr = new src.constructor((n0 + add) * it); for (let i = 0; i < n0; i++) for (let c = 0; c < it; c++) arr[i * it + c] = src[i * stride + off + c];
         for (const [v, w] of nv) { for (let c = 0; c < it; c++) arr[w * it + c] = src[v * stride + off + c]; if (name === 'position') arr[w * 3 + 1] = Math.max(floor, arr[w * 3 + 1] - drop); }
         g.setAttribute(name, new THREE.BufferAttribute(arr, it, A.normalized));
       }
-      const tri = []; for (const [a, b] of edges) if (best.has(a) && best.has(b)) { const a2 = nv.get(a), b2 = nv.get(b); tri.push(b, a, a2, b, a2, b2); }
+      const tri = []; for (const [a0, b0, oa, ob] of edges) if (best.has(a0) && best.has(b0)) { const a = oa ?? a0, b = ob ?? b0, a2 = nv.get(a), b2 = nv.get(b); tri.push(b, a, a2, b, a2, b2); }
       const ni = new Uint32Array(idx.count + tri.length); for (let i = 0; i < idx.count; i++) ni[i] = idx.getX(i); ni.set(tri, idx.count); g.setIndex(new THREE.BufferAttribute(ni, 1));
   }
   /** body skin under a garment (material name re) is not drawn, on the back of the torso (z over back.z: these bodies face -z in their bind pose; between heights back.y0 and back.y1: the front has a neckline to
@@ -422,8 +423,8 @@ export class AnimCrowd {
       const key = (i) => Math.round(P.getX(i) * 2e3) + ',' + Math.round(P.getY(i) * 2e3) + ',' + Math.round(P.getZ(i) * 2e3);
       const canon = new Map(), cid = new Int32Array(P.count); for (let i = 0; i < P.count; i++) { const k = key(i); let c = canon.get(k); if (c == null) { c = i; canon.set(k, c); } cid[i] = c; }
       const ec = new Map(), dir = new Map();
-      for (let t = 0; t < idx.count; t += 3) for (let e = 0; e < 3; e++) { const a = cid[idx.getX(t + e)], b = cid[idx.getX(t + (e + 1) % 3)]; if (a === b) continue; const k = a < b ? a + '_' + b : b + '_' + a; ec.set(k, (ec.get(k) || 0) + 1); dir.set(k, [a, b]); }
-      const adj = new Map(), edges = []; for (const [k, c] of ec) if (c === 1) { const [a, b] = dir.get(k); edges.push([a, b]); (adj.get(a) || adj.set(a, []).get(a)).push(b); (adj.get(b) || adj.set(b, []).get(b)).push(a); }
+      for (let t = 0; t < idx.count; t += 3) for (let e = 0; e < 3; e++) { const oa = idx.getX(t + e), ob = idx.getX(t + (e + 1) % 3), a = cid[oa], b = cid[ob]; if (a === b) continue; const k = a < b ? a + '_' + b : b + '_' + a; ec.set(k, (ec.get(k) || 0) + 1); dir.set(k, [a, b, oa, ob]); }
+      const adj = new Map(), edges = []; for (const [k, c] of ec) if (c === 1) { const [a, b, oa, ob] = dir.get(k); edges.push([a, b, oa, ob]); (adj.get(a) || adj.set(a, []).get(a)).push(b); (adj.get(b) || adj.set(b, []).get(b)).push(a); }
       const seen = new Set(); for (const v of adj.keys()) { if (seen.has(v)) continue; const comp = [], st = [v]; seen.add(v); while (st.length) { const u = st.pop(); comp.push(u); for (const w of adj.get(u)) if (!seen.has(w)) { seen.add(w); st.push(w); } }
         let y = 0; for (const u of comp) y += P.getY(u); y /= comp.length;
         if (comp.length >= 6 && y < lo + 0.06) { this._extrudeLoop(g, new Set(comp), edges, drop, 0.025); g.userData.cuffExt++; }
@@ -480,14 +481,30 @@ export class AnimCrowd {
         if (gap < Math.PI / 2) continue;   // (a whole sleeve: measured below the top third, where the cut ran)
         const near = []; for (let i = 0; i < P.count; i++) if (dom[i] === iu) { const [t, r] = polar(i); if (t > -0.25 && t < 0.02) near.push(r); }
         near.sort((x, y) => x - y); const rTop = near.length ? near[Math.floor(near.length * 0.5)] : prof[0];
+        // the sleeve is oval, not round: its width round the arm near the elbow, in 12 sectors, as a factor on the radius (review 72: a round tube came out through its back)
+        const sec = Array.from({ length: 12 }, () => []); for (let i = 0; i < P.count; i++) if (dom[i] === iu) { const [t, r, a] = polar(i); if (t > -0.3 && t < 0.02) sec[((Math.floor((a + Math.PI) / (2 * Math.PI) * 12) % 12) + 12) % 12].push(r); }
+        const sf = sec.map((L) => { if (!L.length) return 0; L.sort((x, y) => x - y); return L[Math.floor(L.length / 2)] / Math.max(1e-6, rTop); });
+        for (let k = 0; k < 12; k++) if (!sf[k]) { let j = 1; while (j < 6 && !sf[(k + j) % 12] && !sf[(k + 12 - j) % 12]) j++; sf[k] = sf[(k + j) % 12] || sf[(k + 12 - j) % 12] || 1; }
+        const shape = (a) => { const x = ((a + Math.PI) / (2 * Math.PI) * 12 - 0.5 + 24) % 12, k = Math.floor(x), f = x - k; return Math.min(1.25, Math.max(0.75, sf[k] * (1 - f) + sf[(k + 1) % 12] * f)); };
         for (let b = 1; b < 8; b++) if (!prof[b]) prof[b] = prof[b - 1]; if (!prof[0]) prof[0] = rTop;
-        const pr = (t) => prof[Math.min(7, Math.max(0, Math.floor(t * 8)))] * 1.02, r0 = Math.min(rTop * 0.96, prof[0] * 1.12);
-        const rad = (t) => (t <= 0 ? r0 : t < 0.3 ? r0 + (pr(t) - r0) * (t / 0.3) * (t / 0.3) * (3 - 2 * t / 0.3) : pr(t));   // (just inside the upper sleeve at the joint, tapering to the forearm: review 72 saw a step and flare)
+        const r0 = Math.min(rTop * 0.96, prof[0] * 1.12), pr = (t) => Math.min(r0, prof[Math.min(7, Math.max(0, Math.floor(t * 8)))] * 1.02);   // (never wider than at the elbow)
+        const sm = (x) => (x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x)), rH = r0;   // (the tube stays inside; the old sleeve is drawn in to just over it, below)
+        const rad = (t) => (t <= -0.06 ? r0 : t <= 0.02 ? r0 + (rH - r0) * sm((t + 0.06) / 0.08) : rH + (pr(t) - rH) * sm((t - 0.02) / 0.4));   // (inside the upper sleeve, out to its hem's own width where it emerges, then tapering)   // (just inside the upper sleeve at the joint, tapering to the forearm: review 72 saw a step and flare)
         // the tube's texture: the intact upper sleeve's own, mirrored down the forearm (review 72: a flat patch round the remnant's mean UV, with the island's orange padding at the inner elbow)
         const U = g.attributes.uv, smp = []; if (U) for (let i = 0; i < P.count; i++) if (dom[i] === iu) { const [t, , a] = polar(i); if (t > -0.75 && t < -0.03) smp.push([t, a, U.getX(i), U.getY(i)]); }
         const src = []; for (let i = 0; i < P.count; i++) if (fore(dom[i]) || dom[i] === iu) src.push(i);
+        let occ = null; if (U && g.index) {   // (the texels the sleeve's own faces cover: rasterised in UV)
+          const N = 128, I = g.index; occ = new Uint8Array(N * N); const arm = (i) => dom[i] === iu || fore(dom[i]);
+          for (let tt = 0; tt < I.count; tt += 3) { const a = I.getX(tt), b2 = I.getX(tt + 1), c2 = I.getX(tt + 2); if (!arm(a) || !arm(b2) || !arm(c2)) continue;
+            const x0 = U.getX(a) * N, y0 = U.getY(a) * N, x1 = U.getX(b2) * N, y1 = U.getY(b2) * N, x2 = U.getX(c2) * N, y2 = U.getY(c2) * N, den = (y1 - y2) * (x0 - x2) + (x2 - x1) * (y0 - y2); if (Math.abs(den) < 1e-9) continue;
+            for (let y = Math.max(0, Math.floor(Math.min(y0, y1, y2))); y <= Math.min(N - 1, Math.ceil(Math.max(y0, y1, y2))); y++) for (let x = Math.max(0, Math.floor(Math.min(x0, x1, x2))); x <= Math.min(N - 1, Math.ceil(Math.max(x0, x1, x2))); x++) {
+              const px = x + 0.5, py = y + 0.5, l0 = ((y1 - y2) * (px - x2) + (x2 - x1) * (py - y2)) / den, l1 = ((y2 - y0) * (px - x2) + (x0 - x2) * (py - y2)) / den; if (l0 >= -0.02 && l1 >= -0.02 && 1 - l0 - l1 >= -0.02) occ[y * N + x] = 1; } } }
         for (const i of F) drop[i] = polar(i)[0] > 0.04 ? 2 : 1;   // (2: so far down the arm that a face touching it is the cut hem's flare - review 72)
-        add.push({ E, d, len, a1, a2, rad, src, smp, il }); g.userData.sleeveTube++;
+        // the old sleeve's cut edge flared out round the elbow, a ledge over the tube: its last few cm drawn in to the tube's width (in place: the geometry is shared)
+        for (let i = 0; i < P.count; i++) { if (drop[i] || !(dom[i] === iu || fore(dom[i]))) continue; v.fromBufferAttribute(P, i).sub(E); const t = v.dot(d) / len; if (t < -0.22) continue;
+          const ax = v.clone().addScaledVector(d, -t * len), r = ax.length(), tg = rad(Math.min(t, 0.02)) * shape(Math.atan2(ax.dot(a2), ax.dot(a1))) * 1.03, x = Math.min(1, Math.max(0, (t + 0.22) / 0.15)), wgt = x * x * (3 - 2 * x);
+          if (r > tg && r > 1e-6) { const nr = r + (tg - r) * wgt; ax.multiplyScalar(nr / r); v.copy(E).addScaledVector(d, t * len).add(ax); P.setXYZ(i, v.x, v.y, v.z); } }
+        add.push({ E, d, len, a1, a2, rad, shape, src, smp, il, occ }); g.userData.sleeveTube++;
       }
       if (!add.length) return;
       const idx = g.index, keep = []; for (let t = 0; t < idx.count; t += 3) { const a = idx.getX(t), b = idx.getX(t + 1), c = idx.getX(t + 2); if (!(drop[a] && drop[b] && drop[c]) && !(this._hemCut !== false && (drop[a] === 2 || drop[b] === 2 || drop[c] === 2))) keep.push(a, b, c); }
@@ -499,18 +516,35 @@ export class AnimCrowd {
       for (const S of add) {
         const base = o;
         // the tube's seam goes where the sleeve's UV island has its own: the widest UV jump between neighbouring angles
-        let th0 = 0; if (S.smp.length > 8) { let jb = -1; for (let s = 0; s < 24; s++) { const p0 = pick(S, -0.2, 2 * Math.PI * s / 24), p1 = pick(S, -0.2, 2 * Math.PI * (s + 1) / 24), j = Math.hypot(p0[0] - p1[0], p0[1] - p1[1]); if (j > jb) { jb = j; th0 = 2 * Math.PI * (s + 0.5) / 24; } } }
+        let th0 = 0; S.fit = null; if (S.smp.length > 8) { let jb = -1; for (let s = 0; s < 24; s++) { const p0 = pick(S, -0.2, 2 * Math.PI * s / 24), p1 = pick(S, -0.2, 2 * Math.PI * (s + 1) / 24), j = Math.hypot(p0[0] - p1[0], p0[1] - p1[1]); if (j > jb) { jb = j; th0 = 2 * Math.PI * (s + 0.5) / 24; } }
+          // least squares u, v = a + b w + c t over the upper sleeve, w its angle unwrapped from that seam (the vertices right at the seam left out: they belong to either side)
+          const M = [0, 0, 0, 0, 0, 0, 0, 0, 0], ru = [0, 0, 0], rv = [0, 0, 0]; let nn = 0;
+          for (const c of S.smp) { const w = ((c[1] - th0) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI); if (w < 0.25 || w > 2 * Math.PI - 0.25) continue; const x = [1, w, c[0]]; nn++; for (let i = 0; i < 3; i++) { ru[i] += x[i] * c[2]; rv[i] += x[i] * c[3]; for (let j = 0; j < 3; j++) M[i * 3 + j] += x[i] * x[j]; } }
+          const inv = nn > 8 ? new T.Matrix3().fromArray(M).invert() : null;   // (symmetric, so column- or row-major alike)
+          if (inv && inv.elements.every(Number.isFinite)) { const e = inv.elements, mul = (r) => [0, 1, 2].map((i) => e[i] * r[0] + e[3 + i] * r[1] + e[6 + i] * r[2]), fu = mul(ru), fv = mul(rv); S.fit = [fu[0], fu[1], fu[2], fv[0], fv[1], fv[2]]; }
+          // ... but the unwrap is not linear across the island, and off it is the texture's orange padding: the patch is scaled about the island's deepest point until every
+          // one of its vertices lands on a texel the sleeve's own faces cover
+          if (S.fit && S.occ) {
+            const N = 128, O = S.occ, inn = (u, v) => { const x = Math.floor(u * N), y = Math.floor(v * N); return x >= 1 && y >= 1 && x < N - 1 && y < N - 1 && O[y * N + x] && O[y * N + x + 1] && O[y * N + x - 1] && O[(y + 1) * N + x] && O[(y - 1) * N + x]; };
+            let cu = 0, cv = 0, cd = -1; const D = new Float32Array(N * N).fill(1e9);
+            for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (!O[y * N + x]) D[y * N + x] = 0;
+            for (let it = 0; it < 2; it++) for (let y = 1; y < N - 1; y++) for (let x = 1; x < N - 1; x++) { const k = it ? (N - 1 - y) * N + (N - 1 - x) : y * N + x, sg = it ? -1 : 1; D[k] = Math.min(D[k], D[k - sg] + 1, D[k - sg * N] + 1, D[k - sg * N - sg] + 1.4, D[k - sg * N + sg] + 1.4); }
+            for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (D[y * N + x] > cd && D[y * N + x] < 1e8) { cd = D[y * N + x]; cu = (x + 0.5) / N; cv = (y + 0.5) / N; }
+            const f = S.fit, bu = f[1], bv = f[4], tu = f[2], tv = f[5], at = (k, w, tq) => [cu + k * (bu * (w - Math.PI) + tu * tq), cv + k * (bv * (w - Math.PI) + tv * tq)];
+            const ok = (k) => { for (let a = 0; a <= 8; a++) for (let b2 = 0; b2 <= 6; b2++) { const q2 = at(k, 0.3 + (2 * Math.PI - 0.6) * a / 8, -0.275 + 0.55 * b2 / 6); if (!inn(q2[0], q2[1])) return false; } return true; };
+            let lo = 0, hi = 1; if (!ok(hi)) for (let i = 0; i < 12; i++) { const m2 = (lo + hi) / 2; if (ok(m2)) lo = m2; else hi = m2; } else lo = 1;
+            S.patch = (w, tq) => at(lo, w, tq);
+          } }
 
         for (let r = 0; r < RINGS; r++) {
           const t = T0 + (T1 - T0) * r / (RINGS - 1), rr = S.rad(t);
-          let ruv = null; if (S.smp.length > 8) {   // (each vertex next to the one before it in UV, so no face spans the island's seam; the first ring vertex last, beside the second)
-            const tp = -0.05 - 0.6 * (t - T0) / (T1 - T0), at = (k) => th0 + 0.05 + (2 * Math.PI - 0.1) * k / SEG; ruv = new Array(SEG + 1);
-            for (let k = 1; k <= SEG; k++) { let uv = pick(S, tp, at(k)); const pv = ruv[k - 1]; if (pv && Math.hypot(uv[0] - pv[0], uv[1] - pv[1]) > 0.06) uv = pick(S, tp, at(k), pv) || uv; ruv[k] = uv; }
-            ruv[0] = pick(S, tp, at(0), ruv[1]) || pick(S, tp, at(0));
+          let ruv = null; if (S.fit) {   // (the sleeve's own unwrap, fitted, mirrored down the forearm and kept off the island's seam edges, whose padding bled orange - review 72)
+            const tp = -0.08 - 0.55 * (t - T0) / (T1 - T0); ruv = [];
+            for (let k = 0; k <= SEG; k++) { const w = 0.3 + (2 * Math.PI - 0.6) * k / SEG, f = S.fit; ruv.push(S.patch ? S.patch(w, tp + 0.355) : [f[0] + f[1] * w + f[2] * tp, f[3] + f[4] * w + f[5] * tp]); }
           }
           for (let s = 0; s <= SEG; s++) {
             const th = th0 + 0.05 + (2 * Math.PI - 0.1) * s / SEG; nrm.copy(S.a1).multiplyScalar(Math.cos(th)).addScaledVector(S.a2, Math.sin(th));
-            q.copy(S.E).addScaledVector(S.d, t * S.len).addScaledVector(nrm, rr);
+            q.copy(S.E).addScaledVector(S.d, t * S.len).addScaledVector(nrm, rr * S.shape(th));
             let best = S.src[0], bd = 1e9; for (const i of S.src) { const dd = v.fromBufferAttribute(P, i).distanceToSquared(q); if (dd < bd) { bd = dd; best = i; } }
             for (const k of Object.keys(A)) { const at = g.attributes[k], sz = at.itemSize; for (let c = 0; c < sz; c++) A[k].array[o * sz + c] = at.array[best * sz + c]; }
             A.position.setXYZ(o, q.x, q.y, q.z); if (A.normal) A.normal.setXYZ(o, nrm.x, nrm.y, nrm.z);
@@ -536,8 +570,8 @@ export class AnimCrowd {
       const key = (i) => Math.round(P.getX(i) * 2e3) + ',' + Math.round(P.getY(i) * 2e3) + ',' + Math.round(P.getZ(i) * 2e3);
       const canon = new Map(), cid = new Int32Array(P.count); for (let i = 0; i < P.count; i++) { const k = key(i); let c = canon.get(k); if (c == null) { c = i; canon.set(k, c); } cid[i] = c; }
       const ec = new Map(), dir = new Map();   // undirected edge use count, and its directed original
-      for (let t = 0; t < idx.count; t += 3) for (let e = 0; e < 3; e++) { const a = cid[idx.getX(t + e)], b = cid[idx.getX(t + (e + 1) % 3)]; if (a === b) continue; const k = a < b ? a + '_' + b : b + '_' + a; ec.set(k, (ec.get(k) || 0) + 1); dir.set(k, [a, b]); }
-      const adj = new Map(), edges = []; for (const [k, n] of ec) if (n === 1) { const [a, b] = dir.get(k); edges.push([a, b]); (adj.get(a) || adj.set(a, []).get(a)).push(b); (adj.get(b) || adj.set(b, []).get(b)).push(a); }
+      for (let t = 0; t < idx.count; t += 3) for (let e = 0; e < 3; e++) { const oa = idx.getX(t + e), ob = idx.getX(t + (e + 1) % 3), a = cid[oa], b = cid[ob]; if (a === b) continue; const k = a < b ? a + '_' + b : b + '_' + a; ec.set(k, (ec.get(k) || 0) + 1); dir.set(k, [a, b, oa, ob]); }
+      const adj = new Map(), edges = []; for (const [k, n] of ec) if (n === 1) { const [a, b, oa, ob] = dir.get(k); edges.push([a, b, oa, ob]); (adj.get(a) || adj.set(a, []).get(a)).push(b); (adj.get(b) || adj.set(b, []).get(b)).push(a); }
       // connected loops of boundary vertices; the torso hem = the loop that encloses x = 0 (and z centre) with the lowest mean y
       const seen = new Set(), loops = []; for (const v of adj.keys()) { if (seen.has(v)) continue; const comp = [], st = [v]; seen.add(v); while (st.length) { const u = st.pop(); comp.push(u); for (const w of adj.get(u)) if (!seen.has(w)) { seen.add(w); st.push(w); } } loops.push(comp); }
       let best = null, bestY = 1e9;
