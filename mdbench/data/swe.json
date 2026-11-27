@@ -243,7 +243,7 @@
    "title": "Kernel swap file",
    "description": "Implement a kernel's swap-file component from its approved design. Graded by hidden tests.",
    "tags": [],
-   "note": "The top two seats score within 3 points of each other; their order is within judge noise. The four seats added on 19 Nov ran this exercise on the Windows host, as did Opus 4.5 high, GPT-6.2 Astra medium and GPT-6.2 Sol xhigh; the other published seats ran it on the Mac. The four seats added on 19 Nov (GPT-6.2 Sol ultra, GPT-6.2 Astra xhigh, Opus 4.8 high and GPT-5 high) were judged in a separate panel with four of the published seats as anchors; their scores sit on the same scale (anchors moved by at most 1.2 points) but they have no panel rank. In the separate panel these seats score within 3 points of the next, so their order is within judge noise: GPT-6.2 Sol ultra, GPT-6 Astra xhigh, GPT-6.2 Astra xhigh and GPT-6.1 Sol ultra."
+   "note": "The top two seats score within 3 points of each other; their order is within judge noise. The four seats added on 19 Nov ran this exercise on the Windows host, as did Opus 4.5 high, GPT-6.2 Astra medium and GPT-6.2 Sol xhigh; the other published seats ran it on the Mac. The four seats added on 19 Nov (GPT-6.2 Sol ultra, GPT-6.2 Astra xhigh, Opus 4.8 high and GPT-5 high) were judged in a separate panel with four of the published seats as anchors; their scores sit on the same scale (anchors moved by at most 1.2 points) but they have no panel rank. In the separate panel these seats score within 3 points of the next, so their order is within judge noise: GPT-6.2 Sol ultra, GPT-6 Astra xhigh, GPT-6.2 Astra xhigh and GPT-6.1 Sol ultra. The three seats added on 25 Nov (GPT-5.6 Sol high, GPT-5.3-Codex high and GPT-4.1) were judged in a separate panel with four of the published seats as anchors; their scores sit on the same scale (anchors moved by at most 1.1 points) but they have no panel rank. In the separate panel, o3 high and GPT-4.1 score within 3 points of each other; their order is within judge noise."
   },
   {
    "id": "TST-01",
@@ -2280,6 +2280,73 @@
     "gates_ok": false,
     "builds": true,
     "hidden_pass": 0.944
+   },
+   "flags": [
+    "separate_panel"
+   ]
+  },
+  {
+   "seat": "gpt-4.1",
+   "task": "COD-02",
+   "run": 1,
+   "date": "2026-11-25",
+   "metrics": {
+    "score": 9.5,
+    "rubric": 11.9,
+    "score_claude": 7.0,
+    "score_gpt": 12.0,
+    "judge_sd": 3.5,
+    "bonus": 0.0,
+    "cost_usd": 2.119,
+    "wall_min": 1.5,
+    "gates_ok": false,
+    "builds": true,
+    "hidden_pass": 0.0
+   },
+   "flags": [
+    "nudged",
+    "separate_panel"
+   ]
+  },
+  {
+   "seat": "gpt-5.6-sol-high",
+   "task": "COD-02",
+   "run": 1,
+   "date": "2026-11-25",
+   "metrics": {
+    "score": 75.2,
+    "rubric": 76.7,
+    "score_claude": 76.3,
+    "score_gpt": 74.0,
+    "judge_sd": 1.6,
+    "bonus": 0.0,
+    "cost_usd": 2.481,
+    "wall_min": 8.0,
+    "gates_ok": false,
+    "builds": true,
+    "hidden_pass": 0.972
+   },
+   "flags": [
+    "separate_panel"
+   ]
+  },
+  {
+   "seat": "gpt-5.3-codex-high",
+   "task": "COD-02",
+   "run": 1,
+   "date": "2026-11-25",
+   "metrics": {
+    "score": 68.2,
+    "rubric": 72.9,
+    "score_claude": 67.7,
+    "score_gpt": 68.7,
+    "judge_sd": 0.9,
+    "bonus": 0.0,
+    "cost_usd": 2.47,
+    "wall_min": 11.8,
+    "gates_ok": false,
+    "builds": true,
+    "hidden_pass": 0.972
    },
    "flags": [
     "separate_panel"
