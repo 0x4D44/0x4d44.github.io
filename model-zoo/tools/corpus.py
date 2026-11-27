@@ -181,6 +181,87 @@ def prep_wiki(n=50):
     print(f"wikipedia: {len(got)} passages")
 
 
+NEWS_ROWS = ("https://datasets-server.huggingface.co/rows?dataset=RealTimeData/bbc_news_alltime"
+             "&config={}&split=train&offset={}&length=5")
+NEWS_MONTHS = ["%d-%02d" % (y, m) for y in (2024, 2025) for m in range(1, 13)][:18]     # Jan 2024 to Jun 2025
+NEWS_SKIP = re.compile(r"^(?:Watch|Live|Listen|In pictures|Quiz|Video)\b|weekly quiz|BBC Verify Live", re.I)
+NEWS_JUNK = re.compile(r", external\b|^Follow (?:BBC|us)|^Listen to|^Sign up|^Get in touch|bbc\.co\.uk|^Related|^Read more", re.I)
+
+
+BRAND = re.compile(r"\b(?:the\s+)?BBC(?:\s+(?:News|Sport|Radio(?:\s+\d+)?|World Service|Arabic|Verify|Wales|Scotland|London|One|Two|Three|Four|Breakfast|Newshour))*\b", re.I)
+
+
+def unbrand(text):
+    """The newsroom's name out of its own copy ("told the BBC"): a word only the human side would use."""
+    t = text or ""
+    return BRAND.sub(lambda m: "The broadcaster" if re.search(r"(?:^|[.!?\"”]\s+|\n)$", t[:m.start()]) else "the broadcaster", t)
+
+
+def news_passage(text, lo=250, hi=400):
+    """About 300 words of an article's body: past its opening paragraph, without the BBC's own sign-off lines."""
+    paras = [p.strip() for p in text.split("\n") if p.strip()]
+    paras = [p for p in paras[1:] if not NEWS_JUNK.search(p) and len(p.split()) >= 8]
+    cur = []
+    for p in paras:
+        cur.append(p)
+        if sum(len(c.split()) for c in cur) >= lo:
+            words = "\n\n".join(cur).split(" ")
+            if len(words) > hi:
+                t = " ".join(words[:hi])
+                return t[:t.rfind(". ") + 1] if t.rfind(". ") > len(t) // 2 else t
+            return " ".join(words)
+    return None
+
+
+def prep_news(n=150):
+    """Human non-fiction written since the models above were trained: BBC News articles, January 2024 to
+    June 2025, an even spread over the months. The first 50 (every month represented) are the ones the
+    models are asked to match; the rest only add to the human side."""
+    import time, urllib.request
+    rnd = random.Random(0x4D44 + 7)
+    sizes = {}
+    meta = json.load(urllib.request.urlopen(
+        "https://datasets-server.huggingface.co/size?dataset=RealTimeData/bbc_news_alltime", timeout=60))
+    for c in meta["size"]["configs"]:
+        sizes[c["config"]] = c["num_rows"]
+    per = -(-n // len(NEWS_MONTHS))
+    by_month, seen = {}, set()
+    for month in NEWS_MONTHS:
+        got = []
+        for off in rnd.sample(range(0, sizes[month] - 5), 60):
+            for wait in (2, 5, 15, 30, 60, 0):
+                try:
+                    rows = json.load(urllib.request.urlopen(NEWS_ROWS.format(month, off), timeout=60))["rows"]
+                    break
+                except OSError:              # the rows API answers 429 to bursts
+                    if not wait:
+                        raise
+                    time.sleep(wait)
+            time.sleep(1)
+            for r in rows:
+                a = r["row"]
+                title = re.sub(r"\s*-\s*BBC (?:News|Sport)\s*$", "", a.get("title") or "").strip()
+                body = a.get("content") or ""
+                if not title or title in seen or NEWS_SKIP.search(title) or len(body.split()) < 450:
+                    continue
+                t = news_passage(body)
+                t = t and unbrand(t)
+                if t:
+                    seen.add(title)
+                    got.append((month, title, t))
+                    break                   # one article per random offset
+            if len(got) >= per:
+                break
+        by_month[month] = got
+        print(f"  {month}: {len(got)}", flush=True)
+    order = [by_month[m][k] for k in range(per) for m in NEWS_MONTHS if k < len(by_month[m])][:n]
+    with open(os.path.join(HUMAN, "news.jsonl"), "w") as f:
+        for i, (month, title, t) in enumerate(order):
+            f.write(json.dumps({"source": "bbc-news", "month": month, "group": f"news-{i // 10}", "id": f"news-{i:03d}",
+                                "title": title, "text": t}) + "\n")
+    print(f"news: {len(order)} passages")
+
+
 def embed():
     import run
     os.makedirs(EMB, exist_ok=True)
@@ -216,4 +297,4 @@ def embed():
 
 if __name__ == "__main__":
     {"prep": lambda: prep(sys.argv[2]), "author": lambda: prep_author(sys.argv[2]), "wiki": prep_wiki,
-     "embed": embed}[sys.argv[1]]()
+     "news": prep_news, "embed": embed}[sys.argv[1]]()

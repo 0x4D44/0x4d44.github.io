@@ -232,7 +232,9 @@ class GroupedSplit(unittest.TestCase):
             gb = [{"group": "Saki", "id": "pg-%d" % i, "text": "Clovis %d." % i} for i in range(3)]
             wk = [{"group": "wiki-%d" % (i // 2), "id": "wiki-%02d" % i, "title": "Zeppelin harbour %d" % i,
                    "text": "Encyclopaedic %d." % i} for i in range(6)]
-            for name, rows in (("writingprompts", wp), ("author", ax), ("gutenberg", gb), ("wikipedia", wk)):
+            nw = [{"group": "news-%d" % (i // 3), "id": "news-%03d" % i, "title": "Ferry strike %d" % i,
+                   "text": "Bulletin %d." % i} for i in range(7)]       # four matched, three human-side only
+            for name, rows in (("writingprompts", wp), ("author", ax), ("gutenberg", gb), ("wikipedia", wk), ("news", nw)):
                 with open(os.path.join(d, "human", name + ".jsonl"), "w") as f:
                     f.write("\n".join(json.dumps(r) for r in rows) + "\n")
                 for r in rows:
@@ -243,7 +245,9 @@ class GroupedSplit(unittest.TestCase):
                     for m in ("gpt-a", "claude-b") for t in range(3)]
             gen += [{"set": "nf", "model": m, "topic": "wiki-%02d" % t, "sample": 0, "ok": True, "text": "Explainer %d" % t}
                     for m in ("gpt-a", "claude-b") for t in range(6)]
-            for kind in ("wp", "essay", "nf"):
+            gen += [{"set": "news", "model": m, "topic": "news-%03d" % t, "sample": 0, "ok": True, "text": "Report %d" % t}
+                    for m in ("gpt-a", "claude-b") for t in range(4)]
+            for kind in ("wp", "essay", "nf", "news"):
                 with open(os.path.join(d, "detect-%s.jsonl" % kind), "w") as f:
                     f.write("\n".join(json.dumps(r) for r in gen if r["set"] == kind) + "\n")
             for r in gen:
@@ -254,7 +258,7 @@ class GroupedSplit(unittest.TestCase):
             out = D.build(data_dir=d)
             blob = json.dumps(out).lower()
             for w in ("lighthouse", "quentin", "marmalade", "private title", "clovis", "wp-0", "ax-",
-                      "zeppelin", "encyclopaedic", "wiki-"):
+                      "zeppelin", "encyclopaedic", "wiki-", "ferry", "bulletin", "news-"):
                 self.assertNotIn(w, blob)
             self.assertEqual(out["base"]["kinds"]["reddit"]["n_human"], 9)
             self.assertEqual(out["base"]["kinds"]["claude"]["n_model"], 8)
@@ -271,12 +275,16 @@ class GroupedSplit(unittest.TestCase):
             self.assertEqual(nf_row["matched_new"]["n_human"], 6)
             self.assertEqual(nf_row["matched_new"]["n_model"], 6)
             self.assertEqual(out["matched"]["humans_new"]["wiki"]["n_human"], 6)
+            news_row = [r for r in out["matched"]["rows"] if r["genre"] == "news" and r["family"] == "gpt"][0]
+            self.assertEqual(news_row["matched_new"]["n_human"], 4)      # only the matched articles in the matched row
+            self.assertEqual(out["matched"]["humans_new"]["news"]["n_human"], 7)   # every article for false alarms
+            self.assertIn("news", out["distances"])
             fixed = out["better"]["fixed"]["both"]
-            n_h = {"reddit": 9, "gutenberg": 3, "author": 3, "wiki": 6}
+            n_h = {"reddit": 9, "gutenberg": 3, "author": 3, "wiki": 6, "news": 7}
             called = sum(fixed["humans_called_ai"][k] * n for k, n in n_h.items()) / sum(n_h.values())
             self.assertLessEqual(called, out["better"]["false_alarms"])   # the threshold holds false alarms to the target
             self.assertEqual({(g["genre"], g["family"]) for g in out["better"]["genres"]},
-                             {(g, f) for g in ("stories", "essays", "nonfiction") for f in ("gpt", "claude")})
+                             {(g, f) for g in ("stories", "essays", "nonfiction", "news") for f in ("gpt", "claude")})
 
     def test_style_vec_ignores_typesetting_but_sees_habits(self):
         a = D.style_vec("“Well,” she said -- it's late. *Very* late.")
@@ -284,6 +292,20 @@ class GroupedSplit(unittest.TestCase):
         self.assertEqual(a, b)
         semi = D.MARKS.index(";")
         self.assertGreater(D.style_vec("We ate; we left; we slept.")[semi], D.style_vec("We ate. We left. We slept.")[semi])
+
+    def test_news_passage_skips_the_lead_and_the_sign_off(self):
+        lead = "Lead paragraph that sums the whole story up in one go for the reader."
+        body = ["Body paragraph number %d says something new about the ferry dispute today." % i for i in range(30)]
+        text = "\n".join([lead] + body[:15] + ["Follow BBC Wales on Facebook, external and X, external."] + body[15:])
+        t = D.corpus.news_passage(text)
+        self.assertNotIn("Lead paragraph", t)
+        self.assertNotIn("external", t)
+        self.assertGreaterEqual(len(t.split()), 250)
+        self.assertIsNone(D.corpus.news_passage(lead + "\nToo short."))
+
+    def test_unbrand(self):
+        self.assertEqual(D.corpus.unbrand("He told BBC Radio Ulster's show. The BBC has asked. BBC News said it, told the BBC."),
+                         "He told the broadcaster Ulster's show. The broadcaster has asked. The broadcaster said it, told the broadcaster.")
 
     def test_scrub_drops_the_heading_and_the_title(self):
         t = D.scrub("# On Owning Nothing\n\nI wrote on owning nothing last year. On Owning Nothing, again.", "On Owning Nothing")

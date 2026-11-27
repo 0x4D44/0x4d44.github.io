@@ -1,5 +1,5 @@
 {
- "generated": "2026-11-26T22:44:42Z",
+ "generated": "2026-11-27T23:06:06Z",
  "n_passages": 1496,
  "n_files": 431,
  "n_labelled": 1328,
@@ -11,7 +11,7 @@
    "n_docs": 3,
    "plain": 0.2558,
    "matched": 0.5581,
-   "with_nonfiction": 0.4419,
+   "with_nonfiction": 0.3023,
    "documents": 0.3333
   },
   {
@@ -21,7 +21,7 @@
    "n_docs": 3,
    "plain": 0.2558,
    "matched": 0.5581,
-   "with_nonfiction": 0.4419,
+   "with_nonfiction": 0.3023,
    "documents": 0.3333
   },
   {
@@ -31,7 +31,7 @@
    "n_docs": 1,
    "plain": 0.0167,
    "matched": 0.2,
-   "with_nonfiction": 0.2417,
+   "with_nonfiction": 0.3833,
    "documents": 0.0
   },
   {
@@ -41,7 +41,7 @@
    "n_docs": 1,
    "plain": 0.0167,
    "matched": 0.2,
-   "with_nonfiction": 0.2417,
+   "with_nonfiction": 0.3833,
    "documents": 0.0
   },
   {
@@ -51,7 +51,7 @@
    "n_docs": 9,
    "plain": 0.2734,
    "matched": 0.9453,
-   "with_nonfiction": 0.9297,
+   "with_nonfiction": 0.9453,
    "documents": 1.0
   },
   {
@@ -61,8 +61,8 @@
    "n_docs": 61,
    "plain": 0.3625,
    "matched": 0.8313,
-   "with_nonfiction": 0.8688,
-   "documents": 0.918
+   "with_nonfiction": 0.8375,
+   "documents": 0.8689
   },
   {
    "model": "claude-opus-4.1",
@@ -71,8 +71,8 @@
    "n_docs": 61,
    "plain": 0.3625,
    "matched": 0.8313,
-   "with_nonfiction": 0.8688,
-   "documents": 0.918
+   "with_nonfiction": 0.8375,
+   "documents": 0.8689
   },
   {
    "model": "claude-opus-4.5",
@@ -81,7 +81,7 @@
    "n_docs": 10,
    "plain": 0.5603,
    "matched": 0.9741,
-   "with_nonfiction": 0.9483,
+   "with_nonfiction": 0.9397,
    "documents": 1.0
   },
   {
@@ -91,7 +91,7 @@
    "n_docs": 10,
    "plain": 0.5603,
    "matched": 0.9741,
-   "with_nonfiction": 0.9483,
+   "with_nonfiction": 0.9397,
    "documents": 1.0
   },
   {
@@ -101,7 +101,7 @@
    "n_docs": 9,
    "plain": 0.2734,
    "matched": 0.9453,
-   "with_nonfiction": 0.9297,
+   "with_nonfiction": 0.9453,
    "documents": 1.0
   },
   {
@@ -131,8 +131,8 @@
    "n_docs": 292,
    "plain": 0.3187,
    "matched": 0.8187,
-   "with_nonfiction": 0.9563,
-   "documents": 0.9281
+   "with_nonfiction": 0.8375,
+   "documents": 0.8253
   },
   {
    "model": "claude-sonnet-4.5",
@@ -141,7 +141,7 @@
    "n_docs": 110,
    "plain": 0.1803,
    "matched": 0.9672,
-   "with_nonfiction": 0.9508,
+   "with_nonfiction": 0.918,
    "documents": 0.9455
   },
   {
@@ -151,8 +151,8 @@
    "n_docs": 49,
    "plain": 0.3103,
    "matched": 0.2069,
-   "with_nonfiction": 0.931,
-   "documents": 0.7959
+   "with_nonfiction": 0.5172,
+   "documents": 0.2857
   },
   {
    "model": "claude-sonnet-4.5",
@@ -161,8 +161,8 @@
    "n_docs": 133,
    "plain": 0.4429,
    "matched": 0.9429,
-   "with_nonfiction": 0.9714,
-   "documents": 0.9624
+   "with_nonfiction": 0.9,
+   "documents": 0.9248
   },
   {
    "model": "gemini",
@@ -171,7 +171,7 @@
    "n_docs": 8,
    "plain": 0.0625,
    "matched": 0.875,
-   "with_nonfiction": 0.9062,
+   "with_nonfiction": 0.9583,
    "documents": 1.0
   },
   {
@@ -181,7 +181,7 @@
    "n_docs": 8,
    "plain": 0.0625,
    "matched": 0.875,
-   "with_nonfiction": 0.9062,
+   "with_nonfiction": 0.9583,
    "documents": 1.0
   },
   {
@@ -191,7 +191,7 @@
    "n_docs": 32,
    "plain": 0.3185,
    "matched": 0.4904,
-   "with_nonfiction": 0.9809,
+   "with_nonfiction": 0.9682,
    "documents": 1.0
   },
   {
@@ -221,7 +221,7 @@
    "n_docs": 6,
    "plain": 0.1724,
    "matched": 0.4138,
-   "with_nonfiction": 0.9655,
+   "with_nonfiction": 0.931,
    "documents": 1.0
   },
   {
@@ -231,7 +231,7 @@
    "n_docs": 20,
    "plain": 0.26,
    "matched": 0.38,
-   "with_nonfiction": 0.99,
+   "with_nonfiction": 0.98,
    "documents": 1.0
   },
   {
@@ -251,8 +251,8 @@
    "n_docs": 2,
    "plain": 0.0,
    "matched": 0.087,
-   "with_nonfiction": 0.7391,
-   "documents": 1.0
+   "with_nonfiction": 0.5217,
+   "documents": 0.5
   },
   {
    "model": "o3-mini",
@@ -281,8 +281,8 @@
    "n_docs": 2,
    "plain": 0.0,
    "matched": 0.087,
-   "with_nonfiction": 0.7391,
-   "documents": 1.0
+   "with_nonfiction": 0.5217,
+   "documents": 0.5
   },
   {
    "model": "unknown",
@@ -291,8 +291,8 @@
    "n_docs": 189,
    "plain": 0.2619,
    "matched": 0.6369,
-   "with_nonfiction": 0.744,
-   "documents": 0.9259
+   "with_nonfiction": 0.7798,
+   "documents": 0.8254
   },
   {
    "model": "unknown",
@@ -301,7 +301,7 @@
    "n_docs": 4,
    "plain": 0.0,
    "matched": 0.25,
-   "with_nonfiction": 0.7083,
+   "with_nonfiction": 0.6875,
    "documents": 0.5
   },
   {
@@ -311,8 +311,8 @@
    "n_docs": 175,
    "plain": 0.2667,
    "matched": 0.7222,
-   "with_nonfiction": 0.6889,
-   "documents": 0.9314
+   "with_nonfiction": 0.7667,
+   "documents": 0.8229
   },
   {
    "model": "unknown",
@@ -758,7 +758,7 @@
    "top": "o1-pro",
    "top_share": 0.4,
    "claude_share": 0.35,
-   "caught": 1.0
+   "caught": 0.95
   },
   {
    "date": "2025.10.02",
@@ -776,7 +776,7 @@
    "top": "claude-sonnet-4.5",
    "top_share": 0.6333,
    "claude_share": 1.0,
-   "caught": 1.0
+   "caught": 0.9667
   },
   {
    "date": "2025.10.27",
@@ -785,7 +785,7 @@
    "top": "claude-fable-5.2",
    "top_share": 0.5,
    "claude_share": 0.8667,
-   "caught": 0.1333
+   "caught": 0.3667
   },
   {
    "date": "2025.10.30",
@@ -803,7 +803,7 @@
    "top": "claude-opus-4.1",
    "top_share": 0.5667,
    "claude_share": 1.0,
-   "caught": 0.9333
+   "caught": 0.9667
   }
  ]
 }

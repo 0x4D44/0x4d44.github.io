@@ -271,12 +271,16 @@ Zoo.chapter("stories", ["stories", "detect", "books"], function (el, data) {
     el.appendChild(h("h4", { class: "sub", text: "Is it the writer, or the subject?" }));
     var nWpP = (M.humans_new && M.humans_new.reddit.n_human) || 0, nM = (D.models_matched || []).length;
     var nWk = (M.humans_new && M.humans_new.wiki && M.humans_new.wiki.n_human) || 0;
+    var nNw = (M.humans_new && M.humans_new.news && M.humans_new.news.n_human) || 0;
+    var nNwM = (M.rows.filter(function (r) { return r.genre === "news"; })[0] || { matched_new: {} }).matched_new.n_human || 0;
     el.appendChild(h("p", { class: "note", text: "That test is easy in a way that has nothing to do with authorship. Every model answered the same one-line request, " +
       "while each Reddit writer answered a different prompt and the classic authors and this site’s author wrote about other things entirely. " +
       "So we built a topic-matched set. " + nM + " models, old and new from both families, each wrote a story of about 300 words for the actual prompts of " +
       nWpP + " of the Reddit stories, and three 300-word essay passages for each title of this site’s author’s ten sampled essays (they saw only the titles). " +
       (nWk ? "Later we added non-fiction, which the first sets lacked: " + nWk + " passages of about 300 words from random English Wikipedia articles (the November 2023 copy), " +
         "and from each model an encyclopedia passage on each of the same titles. " : "") +
+      (nNw ? "Wikipedia is old and much of it was in the models’ training, so we added modern writing too: " + nNw + " passages of about 300 words from BBC News articles " +
+        "published from January 2024 to June 2025, and from each model a news passage on the headlines of " + nNwM + " of them. The rest count only on the human side. " : "") +
       "No prompt or title was on both sides of a split: each one went into one of " + D.k_topic + " folds, and a detector being tested on a fold never trained on any text from it." }));
     function aucF(x) { return x == null ? "–" : x > 0.9995 && x < 1 ? x.toFixed(4) : x.toFixed(3); }
     function cellR(r, f) { return r && r[f] != null ? rate(r, f) + " (" + frac(r, f) + "/" + (f === "fpr" ? r.n_human : r.n_model) + ")" : "–"; }
@@ -285,7 +289,7 @@ Zoo.chapter("stories", ["stories", "detect", "books"], function (el, data) {
       h("thead", null, [h("tr", null, hdr.map(function (t, i) { return h("th", { class: i ? "num wrap" : "", text: t }); }))]),
       h("tbody", null, M.rows.map(function (r) {
         var who = (r.family === "gpt" ? "GPT" : "Claude") + (r.genre === "stories" ? " stories on the Reddit prompts" :
-          r.genre === "nonfiction" ? " encyclopedia passages on the Wikipedia titles" : " essays on the author’s titles");
+          r.genre === "nonfiction" ? " encyclopedia passages on the Wikipedia titles" : r.genre === "news" ? " news passages on the BBC headlines" : " essays on the author’s titles");
         return h("tr", null, [h("td", null, [h("span", { class: "who" }, [h("span", { class: "dot " + (r.family === "gpt" ? "openai" : "anthropic") }), who])]),
           h("td", { class: "num", text: cellR(r.unmatched, "fnr") }), h("td", { class: "num", text: cellR(r.matched_old, "fnr") }),
           h("td", { class: "num", text: cellR(r.matched_new, "fnr") }), h("td", { class: "num", text: cellR(r.matched_new, "fpr") }),
@@ -294,7 +298,7 @@ Zoo.chapter("stories", ["stories", "detect", "books"], function (el, data) {
     el.appendChild(h("p", { class: "note", text: "“Same detector” is the one from the table above, trained only on the free stories and the human texts. " +
       "“Retrained” also learns from the matched texts of the other models and the other folds. " +
       "AUC is the chance that a random model text scores above a random human one: 1.000 is a perfect ranking, 0.5 a coin toss. " +
-      "Human rates in each row are for the Reddit stories whose prompts were used, this site’s ten passages, or the Wikipedia passages." }));
+      "Human rates in each row are for the Reddit stories whose prompts were used, this site’s ten passages, the Wikipedia passages, or the BBC articles whose headlines were used." }));
 
     var mh = (M.models || []).map(function (m) {
       var n = 0, newMiss = 0, oldMiss = 0;
@@ -363,13 +367,14 @@ Zoo.chapter("stories", ["stories", "detect", "books"], function (el, data) {
   function better(D) {
     var B = D.better, E = B.fixed.embedding, C = B.fixed.both, p100 = function (x) { return Math.round(x * 100) + "%"; };
     var nH = ["reddit", "gutenberg", "author"].reduce(function (s, k) { return s + ((D.base.kinds[k] || {}).n_human || 0); }, 0) +
-      ((D.matched.humans_new.wiki || {}).n_human || 0);
+      ((D.matched.humans_new.wiki || {}).n_human || 0) + ((D.matched.humans_new.news || {}).n_human || 0);
     var nWiki = (D.matched.humans_new.wiki || {}).n_human || 0;
     el.appendChild(h("h4", { class: "sub", text: "Making it better" }));
     el.appendChild(h("p", { class: "note", text: "The first version looked only at the embedding, and an embedding records what a text is about more than how it is written. " +
       "Where the subject is matched, as in the non-fiction, that left little to go on. So we added the style counts as a second view. Every number above already uses both; this is what the second view bought, " +
       "measured the same way (AUC, held-out writers and topics):" }));
-    var G = { stories: "stories on the Reddit prompts", essays: "essays on the author’s titles", nonfiction: "encyclopedia passages" };
+    var G = { stories: "stories on the Reddit prompts", essays: "essays on the author’s titles", nonfiction: "encyclopedia passages", news: "news passages" };
+    var nNews = (D.matched.humans_new.news || {}).n_human || 0;
     el.appendChild(h("div", { class: "table-wrap" }, [h("table", { class: "data detect" }, [
       h("thead", null, [h("tr", null, [h("th", { text: "" }), h("th", { class: "num wrap", text: "Embedding only" }), h("th", { class: "num wrap", text: "With style counts" })])]),
       h("tbody", null, B.genres.map(function (g) {
@@ -380,13 +385,16 @@ Zoo.chapter("stories", ["stories", "detect", "books"], function (el, data) {
     el.appendChild(h("p", { class: "note", text: "A 50% line is arbitrary. A detector that will be used on people should set its line by how often it may wrongly accuse one. " +
       "Set the line so that only " + p100(B.false_alarms) + " of the " + nH + " human texts score above it (" + Math.floor(B.false_alarms * nH) + " texts), and the embedding alone catches " +
       p100(E.caught) + " of the model texts; with the style counts, " + p100(C.caught) + ". On the encyclopedia passages that is " + p100(E.caught_by_set.nf) + " against " + p100(C.caught_by_set.nf) + ". " +
-      "Wikipedia stays the hardest human writing to clear: " + Math.round(C.humans_called_ai.wiki * nWiki) + " of its " + nWiki + " passages still sit above the line" + (C.humans_called_ai.reddit === 0 ? ", where no Reddit story does. " : ". ") +
+      "Wikipedia stays the hardest human writing to clear: " + Math.round(C.humans_called_ai.wiki * nWiki) + " of its " + nWiki + " passages still sit above the line" + (C.humans_called_ai.reddit === 0 ? ", where no Reddit story does" : "") +
+      (nNews && C.humans_called_ai.news != null ? "; of the " + nNews + " BBC passages, " + Math.round(C.humans_called_ai.news * nNews) + " do. " : ". ") +
+      (C.caught_by_set.news != null ? "Model news passages caught at that line: " + p100(E.caught_by_set.news) + " by the embedding alone, " + p100(C.caught_by_set.news) + " with both. " : "") +
       "The line was read off these same held-out scores, so on fresh human writing expect a little more than " + p100(B.false_alarms) + "." }));
   }
 
   // The closing paragraph's numbers come from the data, so it stays true if the data is rebuilt.
   function HONEST(D) {
-    var R = D.matched.rows.filter(function (r) { return r.genre !== "nonfiction"; }), Ds = D.distances || {};
+    var R = D.matched.rows.filter(function (r) { return r.genre !== "nonfiction" && r.genre !== "news"; }), Ds = D.distances || {};
+    var NW = D.matched.rows.filter(function (r) { return r.genre === "news" && r.matched_new.n_human; });
     var NF = D.matched.rows.filter(function (r) { return r.genre === "nonfiction" && r.matched_new.n_human; });
     function span(f) {
       var v = R.map(f).filter(function (x) { return x != null; });
@@ -411,10 +419,18 @@ Zoo.chapter("stories", ["stories", "detect", "books"], function (el, data) {
         p100(D.matched.humans_new.wiki.fpr) + " of the Wikipedia passages AI and missed " + p100(Math.min.apply(null, nfMiss)) + " to " + p100(Math.max.apply(null, nfMiss)) +
         " of the model ones (AUC " + f3(Math.min.apply(null, nfAu)) + " to " + f3(Math.max.apply(null, nfAu)) + ").";
     }
+    if (NW.length && Ds.news && D.matched.humans_new.news) {
+      var nwAu = NW.map(function (r) { return r.matched_new.auc; }), nwMiss = NW.map(function (r) { return r.matched_new.fnr; });
+      shows += " The modern news is " + (Math.min.apply(null, nwAu) > Math.max.apply(null, NF.map(function (r) { return r.matched_new.auc; }).concat([0])) ? "easier" : "no easier") +
+        " to tell apart, even though a model’s news passage sits only " + Ds.news.matched.toFixed(2) + " from the BBC article on its headline, and two BBC articles " + Ds.news.human_human.toFixed(2) +
+        " apart. The detector called " + p100(D.matched.humans_new.news.fpr) + " of the " + D.matched.humans_new.news.n_human + " BBC passages AI and missed " +
+        p100(Math.min.apply(null, nwMiss)) + " to " + p100(Math.max.apply(null, nwMiss)) + " of the model ones (AUC " + f3(Math.min.apply(null, nwAu)) + " to " + f3(Math.max.apply(null, nwAu)) + ").";
+    }
     return [
       ["What it shows.", shows],
       ["What it does not show.", "This is not a usable detector. The humans are few: " + D.matched.humans_new.reddit.n_human + " Reddit stories, " +
-        (D.matched.humans_new.wiki && D.matched.humans_new.wiki.n_human ? D.matched.humans_new.wiki.n_human + " Wikipedia passages " : "") +
+        (D.matched.humans_new.wiki && D.matched.humans_new.wiki.n_human ? D.matched.humans_new.wiki.n_human + " Wikipedia passages, " : "") +
+        (D.matched.humans_new.news && D.matched.humans_new.news.n_human ? D.matched.humans_new.news.n_human + " BBC News passages (one newsroom’s house style) " : "") +
         "and ten passages by one author on the matched side, against " +
         D.map.length + " model texts. The models wrote at their default settings, with no attempt to sound human, and every text is about 300 words. " +
         (axWrong ? "After retraining, " + axWrong + " of this site’s author’s ten passages was called AI. One in ten, from ten, is not a rate to rely on either way. " : "") +
@@ -461,10 +477,10 @@ Zoo.chapter("stories", ["stories", "detect", "books"], function (el, data) {
       "One passage is a noisy witness and a file of ten is judged on all ten, so most models’ files are caught more often than their passages. " +
       "Where the passages split close to even (Fable 5.2, Sonnet 4.5’s scripts, the unlabelled non-fiction) the file verdict can land lower. Where a model has one file (Claude Opus 3, Sonnet 3.5), that column is one verdict." }));
     var nfr = rows.filter(function (r) { return r.form === "non-fiction"; });
-    if (nfr.length) el.appendChild(h("p", { class: "note", text: "Fiction is easy for it once it has seen matched texts. Non-fiction is harder. Before it learned from the Wikipedia set it called " +
+    if (nfr.length) el.appendChild(h("p", { class: "note", text: "Fiction is easy for it once it has seen matched texts. Non-fiction is harder. Before it learned from the Wikipedia and news sets it called " +
       nfr.map(function (r) { return pc(r.matched) + " of " + nm(r.model) + "’s"; }).join(", ") + " passages AI; after, " +
       nfr.map(function (r) { return pc(r.with_nonfiction); }).join(", ") + ". That same detector calls " +
-      pc(D.matched.humans_new.wiki && D.matched.humans_new.wiki.fpr) + " of the human Wikipedia passages AI, so it is still wrong about non-fiction in both directions." }));
+      pc(D.matched.humans_new.wiki && D.matched.humans_new.wiki.fpr) + " of the human Wikipedia passages AI" + (D.matched.humans_new.news ? " and " + pc(D.matched.humans_new.news.fpr) + " of the BBC ones" : "") + ", so it is still wrong about non-fiction in both directions." }));
 
     var W = BK.who || {};
     if (W.models && W.families) {
