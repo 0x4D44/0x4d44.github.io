@@ -261,7 +261,7 @@
    "tags": [
     "perf"
    ],
-   "note": "The four seats added on 19 Nov (GPT-6.2 Astra xhigh, GPT-6.2 Sol ultra, Opus 4.8 high and GPT-5 high) were judged in a separate panel with four of the published seats as anchors; their scores sit on the same scale (anchors moved by at most 1.1 points) but they have no panel rank. In the separate panel these seats score within 3 points of the next, so their order is within judge noise: GPT-6.2 Astra xhigh and GPT-6.1 Sol ultra; GPT-6 Astra xhigh and GPT-6.2 Sol ultra; GPT-5 high, Opus 4.5 high and o3 high."
+   "note": "The four seats added on 19 Nov (GPT-6.2 Astra xhigh, GPT-6.2 Sol ultra, Opus 4.8 high and GPT-5 high) were judged in a separate panel with four of the published seats as anchors; their scores sit on the same scale (anchors moved by at most 1.1 points) but they have no panel rank. In the separate panel these seats score within 3 points of the next, so their order is within judge noise: GPT-6.2 Astra xhigh and GPT-6.1 Sol ultra; GPT-6 Astra xhigh and GPT-6.2 Sol ultra; GPT-5 high, Opus 4.5 high and o3 high. The three seats added on 25 Nov (GPT-5.6 Sol high, GPT-5.3-Codex high and GPT-4.1) were judged in a separate panel with four of the published seats as anchors; their scores sit on the same scale (anchors moved by at most 0.7 points) but they have no panel rank. In the separate panel, GPT-5.6 Sol high and GPT-5.3-Codex high score within 3 points of each other; their order is within judge noise."
   },
   {
    "id": "REV-01",
@@ -3169,6 +3169,69 @@
     "bonus": 0.0,
     "cost_usd": 7.513,
     "wall_min": 18.2,
+    "gates_ok": true,
+    "builds": true
+   },
+   "flags": [
+    "separate_panel"
+   ]
+  },
+  {
+   "seat": "gpt-4.1",
+   "task": "TST-02",
+   "run": 1,
+   "date": "2026-11-25",
+   "metrics": {
+    "score": 0.0,
+    "rubric": 0.0,
+    "score_claude": 0.0,
+    "score_gpt": 0.0,
+    "judge_sd": 0.0,
+    "bonus": 0.0,
+    "cost_usd": 5.033,
+    "wall_min": 3.0,
+    "gates_ok": false
+   },
+   "flags": [
+    "nudged",
+    "separate_panel"
+   ]
+  },
+  {
+   "seat": "gpt-5.6-sol-high",
+   "task": "TST-02",
+   "run": 1,
+   "date": "2026-11-25",
+   "metrics": {
+    "score": 65.8,
+    "rubric": 65.7,
+    "score_claude": 65.3,
+    "score_gpt": 66.3,
+    "judge_sd": 0.9,
+    "bonus": 0.0,
+    "cost_usd": 2.013,
+    "wall_min": 4.5,
+    "gates_ok": true,
+    "builds": true
+   },
+   "flags": [
+    "separate_panel"
+   ]
+  },
+  {
+   "seat": "gpt-5.3-codex-high",
+   "task": "TST-02",
+   "run": 1,
+   "date": "2026-11-25",
+   "metrics": {
+    "score": 64.3,
+    "rubric": 65.0,
+    "score_claude": 63.7,
+    "score_gpt": 65.0,
+    "judge_sd": 1.1,
+    "bonus": 0.0,
+    "cost_usd": 0.959,
+    "wall_min": 3.7,
     "gates_ok": true,
     "builds": true
    },
