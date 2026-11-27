@@ -225,7 +225,7 @@
    "title": "Kernel demand paging",
    "description": "Design paged and non-paged memory for a hobby operating-system kernel, starting from what the code can support today.",
    "tags": [],
-   "note": "The top four seats score within 3 points of each other; their order is within judge noise. The four seats added on 19 Nov ran this exercise on the Windows host; every other seat, the anchors included, ran it on the Mac. The four seats added on 19 Nov (GPT-6.2 Astra xhigh, GPT-6.2 Sol ultra, Opus 4.8 high and GPT-5 high) were judged in a separate panel with four of the published seats as anchors; their scores sit on the same scale (anchors moved by at most 1.8 points) but they have no panel rank. In the separate panel, GPT-6.2 Astra xhigh and GPT-6.2 Sol ultra score within 3 points of each other; their order is within judge noise."
+   "note": "The top four seats score within 3 points of each other; their order is within judge noise. The four seats added on 19 Nov ran this exercise on the Windows host; every other seat, the anchors included, ran it on the Mac. The four seats added on 19 Nov (GPT-6.2 Astra xhigh, GPT-6.2 Sol ultra, Opus 4.8 high and GPT-5 high) were judged in a separate panel with four of the published seats as anchors; their scores sit on the same scale (anchors moved by at most 1.8 points) but they have no panel rank. In the separate panel, GPT-6.2 Astra xhigh and GPT-6.2 Sol ultra score within 3 points of each other; their order is within judge noise. The three seats added on 25 Nov (GPT-5.6 Sol high, GPT-5.3-Codex high and GPT-4.1) were judged in a separate panel with four of the published seats as anchors; their scores sit on the same scale (anchors moved by at most 0.8 points) but they have no panel rank. In the separate panel these seats score within 3 points of the next, so their order is within judge noise: Opus 4.5 high, o3 high and GPT-4.1."
   },
   {
    "id": "COD-01",
@@ -1214,6 +1214,67 @@
     "bonus": 0.0,
     "cost_usd": 3.769,
     "wall_min": 11.7,
+    "gates_ok": true
+   },
+   "flags": [
+    "separate_panel"
+   ]
+  },
+  {
+   "seat": "gpt-4.1",
+   "task": "DES-02",
+   "run": 1,
+   "date": "2026-11-25",
+   "metrics": {
+    "score": 20.7,
+    "rubric": 22.8,
+    "score_claude": 19.3,
+    "score_gpt": 22.0,
+    "judge_sd": 1.6,
+    "bonus": 0.0,
+    "cost_usd": 4.81,
+    "wall_min": 1.5,
+    "gates_ok": true
+   },
+   "flags": [
+    "nudged",
+    "separate_panel"
+   ]
+  },
+  {
+   "seat": "gpt-5.6-sol-high",
+   "task": "DES-02",
+   "run": 1,
+   "date": "2026-11-25",
+   "metrics": {
+    "score": 64.2,
+    "rubric": 65.5,
+    "score_claude": 64.3,
+    "score_gpt": 64.0,
+    "judge_sd": 0.7,
+    "bonus": 0.0,
+    "cost_usd": 2.351,
+    "wall_min": 5.5,
+    "gates_ok": true
+   },
+   "flags": [
+    "separate_panel"
+   ]
+  },
+  {
+   "seat": "gpt-5.3-codex-high",
+   "task": "DES-02",
+   "run": 1,
+   "date": "2026-11-25",
+   "metrics": {
+    "score": 37.2,
+    "rubric": 37.7,
+    "score_claude": 36.7,
+    "score_gpt": 37.7,
+    "judge_sd": 0.7,
+    "bonus": 0.0,
+    "cost_usd": 3.389,
+    "wall_min": 7.3,
     "gates_ok": true
    },
    "flags": [
