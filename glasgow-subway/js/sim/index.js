@@ -373,7 +373,7 @@ class Sim {
       if (!seat && !sc._fitsStandAt(p.char, here)) return free('too tall here');
       // handed over well short of the place they were given (more than HOV_REACH): they are made where they really stand and step across to it, not drawn there and eased 1 - 1.4 m
       // in the 0.4 s blend - the body slid and both feet, planted on the old body's, were left out of reach and floated 0.3 - 0.45 m off the floor (review 62, 1 boarder in 10)
-      const near = { x: (c.x < 0 ? -1 : 1) * Math.max(0.14, Math.min(0.25, Math.abs(c.x))), y: PY, z: at || (seat && reached && spot.feet) ? c.z : here.z, yaw: c.yaw, ceilAt, mode: 'stand' }, far = Math.hypot(c.x - here.x, c.z - here.z) > HOV_REACH && sc._fitsStandAt(p.char, near), walkTo = far ? { x: here.x, z: here.z } : null;
+      const near = { x: (c.x < 0 ? -1 : 1) * Math.max(0.14, Math.min(0.25, Math.abs(c.x))), y: PY, z: at || (seat && reached && spot.feet) ? c.z : here.z, yaw: c.yaw, ceilAt, mode: 'stand' }, far = Math.hypot(c.x - here.x, c.z - here.z) > HOV_REACH && (this._nearVest(sc, p.char, near, c) || sc._fitsStandAt(p.char, near)), walkTo = far ? { x: here.x, z: here.z } : null;
       if (far) Object.assign(here, { x: near.x, z: near.z });
       p.print = null; const np = sc.add({ ...look, ...here, yaw: c.yaw, static: true, state: 'stand' }, car); if (!np.obj) return free('not added');
       np.rootOff = { x: c.x - np.x, z: c.z - np.z }; sc._place(np, true);   // (drawn first where they really are)
@@ -394,6 +394,9 @@ class Sim {
       if (on) { sc.maxHi = this.quality === 'low' ? (k === 0 ? 3 : 2) : (k === 0 ? (this.mode === 'ride' ? 24 : 16) : 16); sc.update(dt, this.time, null, this.camera.position); }   // (2026-11-15, people review 2: 8 of 17 people within 6 m of a platform beside a train were still on the far model, 14/9/7 -> 24/16/12. nearest riders get the full-detail model: fewer when the platform crowd is the focus. 14 when riding: a full train puts that many within a few metres, and the simplified models do not stand being looked at that close)
     });
   }
+  /** a boarder handed over still in the door vestibule (out past the aisle, up to 0.8 m from the centre line) is made there, where they stand, if they fit under the roof:
+   *  made at the aisle's edge instead, they were drawn in the vestibule and eased 0.5 m sideways in 0.4 s, feet floating 8-27 cm (e2e, Kinning Park, after review 78) */
+  _nearVest(sc, ch, near, c) { const ax = Math.min(0.8, Math.abs(c.x)); if (ax <= Math.abs(near.x) + 0.05) return false; const x = (c.x < 0 ? -1 : 1) * ax; if (!sc._fitsStandAt(ch, { ...near, x })) return false; near.x = x; return true; }
   /** Regression audit of every spawned person (real skinned vertices): soles on the floor/platform/seat, heads under the ceiling, inside the walls, no overlaps. */
   _peopleAudit() {
     const out = { checked: 0, bad: [], seated: 0, standing: 0, platform: 0, maxFootErr: 0, minHeadGap: 9, trains: {} }, bad = (m) => { if (out.bad.length < 12) out.bad.push(m); };
