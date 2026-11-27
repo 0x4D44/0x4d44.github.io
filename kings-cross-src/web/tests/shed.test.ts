@@ -444,7 +444,9 @@ test('buildShed: the published dimensions, in the shed frame', () => {
   const glass = bbox(byName(group, 'shed-roof-glass'));
   close(glass.max.y, layout.springing + R + ROOF_SKIN, EPS); // re-pinned 2026-11-25 (B2): the narrowed vault's crown, 0.25 m under the published one
   close(glass.min.z, -L, EPS);
-  close(glass.max.z, 0, EPS);
+  // re-pinned 2026-11-27 (front phase 1b): the skins start at the front's back face, 1.2 m in (FRONT_THICK), not its face: with the spandrel panels
+  // recessed over the smaller windows, their first 0.6 m stood out of the brick along the old vault outline
+  close(glass.max.z, -1.2, EPS);
   // the front stands 2.4 m above the crowns, across the two vaults (re-pinned 2026-11-24, signed off: the front spans only the two vaults,
   // centred on the spine; it spanned the whole width W before, aisles included)
   const front = bbox(byName(group, 'shed-front'));

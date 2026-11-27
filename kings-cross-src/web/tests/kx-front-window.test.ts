@@ -9,7 +9,7 @@ import * as THREE from 'three';
 import type { KxData } from '../../core/osm.ts';
 import { SHED_SPAN_WIDTH, shedLayout, shedVaultCentres } from '../../core/station.ts';
 import { SHADOW_CASTERS } from '../src/lighting.ts';
-import { buildShed } from '../src/shed.ts';
+import { buildShed, TOWER_SIZE } from '../src/shed.ts';
 import { GROUND_Y } from '../src/world.ts';
 
 const data: KxData = JSON.parse(readFileSync(new URL('../src/data/kx-track.json', import.meta.url), 'utf8'));
@@ -92,4 +92,30 @@ test('the window\'s glass counts its panes on its own bars: the rows the sky gli
   const bars = group.getObjectByName('shed-front-bars') as THREE.Mesh;
   bars.geometry.computeBoundingBox();
   assert.ok(bars.geometry.boundingBox!.max.y - GROUND_Y < crown + 0.05, 'and the bars stay in the window');
+});
+
+// front phase 1b (the lead's day captures: a pale line and a dark band traced the old vault-section outline across the new brick over each window): from
+// the forecourt, along the old outline (the vaults' radius, either side of it) nothing of the vault stands on or out of the front's brick. Each ray from a
+// forecourt eye to the front's face there (not behind the tower) meets the front (behind the tower or a proud brick or stone dressing, at most) before anything else, and nothing
+// else lies within a few mm behind that hit
+test('the old vault outline over each window is plain brick from the forecourt: nothing of the vault stands on or out of the front', () => {
+  const front = new Set(['shed-front', 'shed-brick', 'shed-stone']), R = layout.crown - layout.springing, sp = layout.springing;
+  const bad: string[] = [];
+  let rays = 0;
+  for (const uc of shedVaultCentres(layout)) for (let a = 0.1; a < Math.PI; a += 0.05) for (const dr of [-0.3, 0, 0.15, 0.3, 0.45]) {
+    const x = uc + (R + dr) * Math.cos(a);
+    if (Math.abs(x - layout.spine) < TOWER_SIZE / 2) continue; // behind the tower (the spine wall's end meets the front there, both brick, unseen)
+    for (const [ex, ey, ez] of [[-25, 2, 40], [25, 2, 40], [0, 30, 60], [0, 2, 25]]) {
+      const eye = group.localToWorld(new THREE.Vector3(uc + ex, GROUND_Y + ey, ez));
+      const at = group.localToWorld(new THREE.Vector3(x, sp + (R + dr) * Math.sin(a), -0.3));
+      const hits = new THREE.Raycaster(eye, at.sub(eye).normalize(), 0, 200).intersectObject(group, true).filter(h => !h.object.name.startsWith('tower'));
+      const k = hits.findIndex(h => h.object.name === 'shed-front');
+      if (k < 0) continue;
+      rays++;
+      const wrong = hits.filter((h, i) => (i < k && !front.has(h.object.name)) || (i > k && !front.has(h.object.name) && h.distance - hits[k]!.distance < 0.005));
+      if (wrong.length) bad.push(`${wrong[0]!.object.name} at the vault ${uc.toFixed(1)}, ${a.toFixed(2)} rad, r ${(R + dr).toFixed(2)}`);
+    }
+  }
+  assert.ok(rays > 1000, `rays reaching the front: ${rays}`);
+  assert.deepEqual(bad.slice(0, 5), [], `${bad.length} of ${rays} rays meet something of the vault on or out of the front's brick`);
 });
