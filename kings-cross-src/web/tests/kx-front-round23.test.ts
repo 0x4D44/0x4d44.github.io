@@ -12,7 +12,10 @@ import { GROUND_Y } from '../src/world.ts';
 // string course across the piers' masses at the springing.
 const data: KxData = JSON.parse(readFileSync(new URL('../src/data/kx-track.json', import.meta.url), 'utf8'));
 const layout = shedLayout(data);
-const X0 = layout.spine - SHED_SPAN_WIDTH, X1 = layout.spine + SHED_SPAN_WIDTH, FW = 2 * SHED_SPAN_WIDTH, sp = layout.springing;
+const X0 = layout.spine - SHED_SPAN_WIDTH, X1 = layout.spine + SHED_SPAN_WIDTH, FW = 2 * SHED_SPAN_WIDTH;
+// re-pinned 2026-11-26 (front phase 1, signed off): the springing course is at the great windows' springing (FRONT_WINDOW, 7.5 m over the forecourt),
+// not the vaults'
+const sp = shed.FRONT_WINDOW_SPRING;
 const bay = (FW - shed.TOWER_SIZE) / 6;
 const doors = [...[0, 1, 2].map(i => X0 + (i + 0.5) * bay), ...[2, 1, 0].map(i => X0 + FW - (i + 0.5) * bay)];
 const group = shed.buildShed(layout, { range: false });

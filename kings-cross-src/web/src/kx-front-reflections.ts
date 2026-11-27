@@ -3,12 +3,12 @@
 // glazing (shed.ts, FRONT_THICK / 2 + 0.1), transformed by the shed frame.
 import * as THREE from 'three';
 import type { LightSource } from '../../core/light-sources.ts';
-import { shedToWorld, SHED_SPAN_WIDTH } from '../../core/station.ts';
+import { shedToWorld, SHED_SPAN_WIDTH, shedVaultCentres } from '../../core/station.ts';
 import type { ShedLayout } from '../../core/station.ts';
 import { lampSurfaceAt } from './lamp-wet-surface.ts';
 import type { LampWetSurface } from './lamp-wet-surface.ts';
 import { createLampWeather } from './streetlight-weather.ts';
-import { lunetteBars } from './shed.ts';
+import { FRONT_RELIEF, FRONT_WINDOW_R, FRONT_WINDOW_SPRING, lunetteBars } from './shed.ts';
 import { MIDLAND_PANE_GLSL, windowNight, WIN_NIGHT_GLSL } from './materials.ts';
 
 export interface KxFrontSource {
@@ -22,8 +22,9 @@ export interface KxFrontSource {
 
 /** Intersect the actual bar rectangles with a horizontal glass section.
  * The ring clips some bays to slivers; the arch trims the outermost bays. */
-function frontApertures(centre:number,springing:number) {
-  const bars=lunetteBars(centre,springing),radius=SHED_SPAN_WIDTH/2;
+// front phase 1: the great windows are shed.ts FRONT_WINDOW's semicircles on the vaults' axes, not the vault sections
+function frontApertures(centre:number,springing:number=FRONT_WINDOW_SPRING) {
+  const radius=FRONT_WINDOW_R,bars=lunetteBars(centre,springing,radius);
   const transom=bars.find(b=>b.kind==='transom')!;
   const y=springing+(transom.c[1]-springing)*2/3;
   const half=Math.sqrt((radius-.02)**2-(y-springing)**2);
@@ -63,8 +64,8 @@ function frontApertures(centre:number,springing:number) {
  * source remains at the real recessed glass surface. */
 export function kxFrontSources(layout:ShedLayout,surface:LampWetSurface):KxFrontSource[] {
   const sources:KxFrontSource[]=[];
-  for(const centre of [layout.spine-SHED_SPAN_WIDTH/2,layout.spine+SHED_SPAN_WIDTH/2]) {
-    for(const aperture of frontApertures(centre,layout.springing)) {
+  for(const centre of shedVaultCentres(layout)) {
+    for(const aperture of frontApertures(centre)) {
       const [x,z]=shedToWorld(layout,aperture.u,.7);
       for(const out of [1,2,3,4,6,8,12]) {
         const [bx,bz]=shedToWorld(layout,aperture.u,-out),[y,weight]=lampSurfaceAt(surface,bx,bz);
@@ -87,10 +88,11 @@ export function createKxFrontReflections(layout:ShedLayout,surface:LampWetSurfac
  * amber uplight. Mirror those surfaces, with no invented points in the glass. */
 export function kxFacadeSources(layout:ShedLayout,surface:LampWetSurface):KxFrontSource[] {
   // the front spans the two vaults, centred on the spine: its end piers stand 0.5 m in from each end
-  const sites = [layout.spine-SHED_SPAN_WIDTH+.5,layout.spine,layout.spine+SHED_SPAN_WIDTH-.5].map(u=>({u,y:layout.springing*.6,widthScale:.9}));
-  const r=SHED_SPAN_WIDTH/2+.5;
-  for(const centre of [layout.spine-SHED_SPAN_WIDTH/2,layout.spine+SHED_SPAN_WIDTH/2]) {
-    for(const side of [-1,1])sites.push({u:centre+side*r*Math.cos(Math.PI/6),y:layout.springing+r*.5,widthScale:.65});
+  // front phase 1: the piers' samples at the same share of the raised lower storey, the shoulders on each window's orders (their middle) at 30 degrees
+  const sites = [layout.spine-SHED_SPAN_WIDTH+.5,layout.spine,layout.spine+SHED_SPAN_WIDTH-.5].map(u=>({u,y:FRONT_WINDOW_SPRING*.6,widthScale:.9}));
+  const r=FRONT_WINDOW_R+FRONT_RELIEF.orders*FRONT_RELIEF.orderWidth/2;
+  for(const centre of shedVaultCentres(layout)) {
+    for(const side of [-1,1])sites.push({u:centre+side*r*Math.cos(Math.PI/6),y:FRONT_WINDOW_SPRING+r*.5,widthScale:.65});
   }
   return sites.flatMap(s=>{
     const [x,z]=shedToWorld(layout,s.u,-.05);

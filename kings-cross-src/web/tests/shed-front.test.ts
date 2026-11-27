@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import type { KxData } from '../../core/osm.ts';
 import { readFileSync } from 'node:fs';
 import { SHED_SPAN_WIDTH, shedLayout } from '../../core/station.ts';
-import { buildShed, TOWER_SIZE } from '../src/shed.ts';
+import { buildShed, FRONT_WINDOW_SPRING, TOWER_SIZE } from '../src/shed.ts';
 import { GROUND_Y } from '../src/world.ts';
 
 const data: KxData = JSON.parse(readFileSync(new URL('../src/data/kx-track.json', import.meta.url), 'utf8'));
@@ -16,7 +16,8 @@ const W = 2 * SHED_SPAN_WIDTH;
 const perSide = 3;
 const openingWidth = 6.8; // ASSUMED clear width; six porch openings are sourced, their dimensions are not.
 const jambHeight = 2.0;
-const archRise = 2.0;
+// re-pinned 2026-11-26 (front phase 1, signed off: front-measure-2 puts the arcade's crowns at 5.4-5.8 m): the rise 3.3 m (was 2.0), crowns at 5.5 m
+const archRise = 3.3;
 const ringWidth = 0.4;
 const foot = GROUND_Y + 0.2; // ASSUMED threshold is 0.2 m above the model ground.
 const bay = (W - TOWER_SIZE) / (2 * perSide);
@@ -71,7 +72,7 @@ test('each entrance has a visible stone arch ring on the south face', () => {
   ring.geometry.computeBoundingBox();
   const b = ring.geometry.boundingBox!;
   assert.ok(b.max.x - b.min.x > openingWidth, 'the merged rings span all six openings');
-  assert.ok(b.max.y > foot + jambHeight + archRise && b.max.y < 5.64, 'segmental arch rings rise above the head while staying below the sill');
+  assert.ok(b.max.y > foot + jambHeight + archRise && b.max.y < FRONT_WINDOW_SPRING, 'segmental arch rings rise above the head while staying below the sill'); // re-pinned 2026-11-26 (front phase 1): the sill is the great windows' (7.3 m in the shed frame), was the vaults' springing 5.64
   assert.ok(b.max.z > 0.4, 'arch outlines stand proud of the south face');
   for (const x of centers) assert.equal(rayHits(group, x, foot + jambHeight + archRise + ringWidth / 2, ring), true, `no physical arch ring at x=${x.toFixed(2)}`);
 });

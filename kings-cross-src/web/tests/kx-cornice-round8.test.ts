@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import type { KxData } from '../../core/osm.ts';
 import { readFileSync } from 'node:fs';
 import { SHED_SPAN_WIDTH, shedLayout } from '../../core/station.ts';
-import { buildShed, TOWER_SIZE } from '../src/shed.ts';
+import { buildShed, FRONT_WINDOW_SPRING, TOWER_SIZE } from '../src/shed.ts';
 import { SHADOW_CASTERS } from '../src/lighting.ts';
 
 // Round 8 (the signs-hands score, A2: "a painted line is not relief"): the springing course across the screen and the cornice's corona are
@@ -24,7 +24,8 @@ const hit = (o: THREE.Vector3, d: THREE.Vector3): { z: number; y: number; name: 
 };
 
 test('A2: a springing course 0.95 m or more proud runs across the whole screen at the great arches\' springing, and casts', () => {
-  const sp = layout.springing;
+  // re-pinned 2026-11-26 (front phase 1): the great windows spring from FRONT_WINDOW's sill, 7.5 m over the forecourt, not the vaults' springing
+  const sp = FRONT_WINDOW_SPRING;
   let n = 0;
   for (let x = X0 + 0.5; x < X0 + FW - 0.5; x += 1.0) {
     if (Math.abs(x - layout.spine) < TOWER_SIZE / 2 + 0.5) continue; // behind the tower

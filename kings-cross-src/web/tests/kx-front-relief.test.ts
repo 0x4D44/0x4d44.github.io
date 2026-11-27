@@ -3,8 +3,8 @@ import test from 'node:test';
 import * as THREE from 'three';
 import type { KxData } from '../../core/osm.ts';
 import { readFileSync } from 'node:fs';
-import { SHED_SPAN_WIDTH, SHED_VAULT_RADIUS, shedLayout, shedVaultCentres } from '../../core/station.ts';
-import { buildShed, TOWER_SIZE } from '../src/shed.ts';
+import { SHED_SPAN_WIDTH, shedLayout, shedVaultCentres } from '../../core/station.ts';
+import { buildShed, FRONT_WINDOW_R, FRONT_WINDOW_SPRING, TOWER_SIZE } from '../src/shed.ts';
 import { material } from '../src/materials.ts';
 import { SHADOW_CASTERS } from '../src/lighting.ts';
 import { GROUND_Y } from '../src/world.ts';
@@ -16,7 +16,9 @@ const layout = shedLayout(data);
 // Re-pinned 2026-11-25 (B2, partner-approved: the vaults spring from the spine wall's two faces, a valley gutter between): each great arch's radius is
 // SHED_VAULT_RADIUS (the published half span less a quarter of the valley) and its centre shedVaultCentres(layout), a quarter of the valley out from the spine -/+ R before.
 const [cw, ce] = shedVaultCentres(layout);
-const R = SHED_VAULT_RADIUS;
+// Re-pinned 2026-11-26 (front phase 1, signed off: the great windows decoupled from the vaults): each arch's radius and springing are the window's,
+// FRONT_WINDOW (19.5 m span, sill 7.5 m over the forecourt), on the same centres; were SHED_VAULT_RADIUS and layout.springing
+const R = FRONT_WINDOW_R, SP = FRONT_WINDOW_SPRING;
 const X0 = layout.spine - SHED_SPAN_WIDTH;
 const FW = 2 * SHED_SPAN_WIDTH;
 const bay = (FW - TOWER_SIZE) / 6;
@@ -44,13 +46,16 @@ test('A2: proud stone string courses at the lower arcade\'s impost and at the gr
   const masonry = named('shed-front', 'shed-stone');
   const x = X0 + bay; // the pier between the first two porch openings: clear of the tower, the end piers and the openings
   const ys: number[] = [];
-  for (let y = GROUND_Y + 2.5; y <= layout.springing + 0.5; y += 0.025) ys.push(y);
+  for (let y = GROUND_Y + 2.5; y <= SP + 0.5; y += 0.025) ys.push(y);
   const zs = ys.map(y => hitZ(x, y, masonry) ?? -9);
   const bands = runs(ys, i => (zs[i] as number) > 0.1).map(([a, b]) => ({ mid: (a + b) / 2 - GROUND_Y, h: b - a }));
   assert.ok(bands.length >= 2, `two proud courses between the arcade and the springing, found ${bands.length}`);
-  const impost = bands.find(b => b.mid > 4.5 && b.mid < 5.2);
-  const sill = bands.find(b => b.mid > 5.2 && b.mid < 6.0);
-  assert.ok(impost && impost.h >= 0.15 && impost.h <= 0.5, 'a string course over the lower arches\' crowns, 4.5 to 5.2 m up, 0.15 to 0.5 m deep');
+  // re-pinned 2026-11-26 (front phase 1): the lower storey re-measured (front-measure-2: the sill 7.5 +-1 m, the arcade's crowns 5.4-5.8 m; the
+  // impost 4.9 and sill 5.5 m read off R-a before were on the old scale), the string course at 6.3 m and the sill course's middle at 7.2 m: the same
+  // 0.7 and 0.8 m bands about them (were 4.5-5.2 and 5.2-6.0)
+  const impost = bands.find(b => b.mid > 5.95 && b.mid < 6.65);
+  const sill = bands.find(b => b.mid > 6.8 && b.mid < 7.6);
+  assert.ok(impost && impost.h >= 0.15 && impost.h <= 0.5, 'a string course over the lower arches\' crowns, 5.95 to 6.65 m up, 0.15 to 0.5 m deep');
   assert.ok(sill && sill.h >= 0.4, 'the sill course at the great windows\' springing');
 });
 
@@ -60,7 +65,7 @@ test('A2: each great arch\'s reveal steps back in three orders toward the glass,
     for (const a of [Math.PI * 0.3, Math.PI * 0.5, Math.PI * 0.7]) {
       const rs: number[] = [];
       for (let r = R + 0.02; r <= R + 2.5; r += 0.02) rs.push(r);
-      const zs = rs.map(r => hitZ(uc + r * Math.cos(a), layout.springing + r * Math.sin(a), masonry));
+      const zs = rs.map(r => hitZ(uc + r * Math.cos(a), SP + r * Math.sin(a), masonry));
       // plateaus of constant face depth, from the glass outward
       // re-pinned round 26 (front-round-5 score, A2): each order's step is splayed, a slope of ever-changing depth between the faces, so a level is a
       // plateau, three or more samples (0.06 m) at one depth, not every depth sampled
@@ -83,7 +88,7 @@ test('A2: each great arch\'s reveal steps back in three orders toward the glass,
       }
       assert.ok((orders[0] as number) > -0.1, 'the innermost order is still a reveal, in front of the glass');
       // the fourth order: inside the opening, a step back from the third, still in front of the glass
-      const inner = hitZ(uc + (R - 0.2) * Math.cos(a), layout.springing + (R - 0.2) * Math.sin(a), masonry);
+      const inner = hitZ(uc + (R - 0.2) * Math.cos(a), SP + (R - 0.2) * Math.sin(a), masonry);
       // re-pinned round A2: the fourth order now stands back of the wall's face (frontOrderZ(-1), -0.22), still well in front of the glass (-0.7)
       assert.ok(inner !== null && inner > -0.4 && (orders[0] as number) - inner >= 0.2, `a fourth order inside the opening, ${inner?.toFixed(2)} against the third's ${orders[0]}`);
     }

@@ -18,7 +18,7 @@ const sheet = [0.29, 0.31, 0.34, 0.98];
 const field = (src: string): ((x: number, y: number) => number) => {
   const g = new Glsl('');
   return (x, y) => {
-    const env = { vars: { gl_FragColor: [...sheet], gl_FrontFacing: true, fogColor: day, cameraPosition: [0, 0, 0], viewMatrix: identity, vViewPosition: [0, 0, 50], normal: [0, 0, 1], vGlassPos: [x, y], uPaneX: 0, uGlintEven: 1, uGableBars: 0 } };
+    const env = { vars: { gl_FragColor: [...sheet], gl_FrontFacing: true, fogColor: day, cameraPosition: [0, 0, 0], viewMatrix: identity, vViewPosition: [0, 0, 50], normal: [0, 0, 1], vGlassPos: [x, y], uPaneX: 0, uPaneY: [GLAZING.springing, GLAZING.tier], uGlintEven: 1, uGableBars: 0 } };
     g.run(src, env);
     return (env.vars.gl_FragColor as number[])[1]! * 255;
   };

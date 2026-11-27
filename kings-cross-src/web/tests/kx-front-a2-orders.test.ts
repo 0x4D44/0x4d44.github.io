@@ -3,7 +3,7 @@ import test from 'node:test';
 import * as THREE from 'three';
 import type { KxData } from '../../core/osm.ts';
 import { readFileSync } from 'node:fs';
-import { SHED_VAULT_RADIUS, shedLayout, shedVaultCentres } from '../../core/station.ts';
+import { SHED_SPAN_WIDTH, shedLayout, shedVaultCentres } from '../../core/station.ts';
 import * as shed from '../src/shed.ts';
 import { buildingNightMaterialsOf } from '../src/materials.ts';
 
@@ -14,7 +14,9 @@ const layout = shedLayout(data);
 // Re-pinned 2026-11-25 (B2, partner-approved: the vaults spring from the spine wall's two faces, a valley gutter between): each great arch's radius is
 // SHED_VAULT_RADIUS (the published half span less a quarter of the valley) and its centre shedVaultCentres(layout), a quarter of the valley out from the spine -/+ R before.
 const [cw, ce] = shedVaultCentres(layout);
-const R = SHED_VAULT_RADIUS, sp = layout.springing, W = shed.FRONT_RELIEF.orderWidth;
+// Re-pinned 2026-11-26 (front phase 1, signed off: the great windows decoupled from the vaults): each arch's radius and springing are the window's,
+// shed.FRONT_WINDOW (19.5 m span, sill 7.5 m over the forecourt), on the same centres; were SHED_VAULT_RADIUS and layout.springing
+const R = shed.FRONT_WINDOW_R, sp = shed.FRONT_WINDOW_SPRING, W = shed.FRONT_RELIEF.orderWidth;
 const group = shed.buildShed(layout, { range: false });
 group.updateMatrixWorld(true);
 const front = group.getObjectByName('shed-front') as THREE.Mesh;
@@ -148,7 +150,8 @@ test('A2 orders: each return round the arches is a band 0.17 m or more wide squa
   }
   // a porch opening's reveal, under the springing: a return; re-pinned arcade round 2 (the A2 score: the arcade's returns read paler than the great
   // arches'): shaded alike now (kx-front-arcade-round2)
-  const x = shed.southFrontArcadeCentres(4 * R, shed.TOWER_SIZE)[0]! + layout.spine - 2 * R;
+  // re-pinned 2026-11-26 (front phase 1): R is the window's now, so the front's width is written 2 * SHED_SPAN_WIDTH (was 4 * R)
+  const x = shed.southFrontArcadeCentres(2 * SHED_SPAN_WIDTH, shed.TOWER_SIZE)[0]! + layout.spine - SHED_SPAN_WIDTH;
   const p = new THREE.Raycaster(group.localToWorld(new THREE.Vector3(x, layout.springing - 4, -0.3)), new THREE.Vector3(-1, 0, 0).transformDirection(group.matrixWorld), 0, 8).intersectObject(front)[0];
   assert.ok(p && p.face!.materialIndex === 1 && Math.abs(shadeAt(p) - S) < 1e-6, `a porch reveal shaded alike: ${p?.face?.materialIndex} ${p && shadeAt(p)}`);
 });
@@ -157,5 +160,7 @@ test('A2 orders: no new triangle: the front mesh keeps its count', () => {
   const tris = front.geometry.getAttribute('position').count / 3;
   // re-pinned 2026-11-25 (B2): 4204 -> 4208. The two great arches no longer touch at the spine (a 1 m pier of the front stands between their springings,
   // the valley's width), so the front's outline triangulates into 4 more triangles; no order or part was added
-  assert.equal(tris, 4208, `shed-front ${tris} triangles`);
+  // re-pinned 2026-11-26 (front phase 1): 4208 -> 3744. The great windows' holes are FRONT_WINDOW's smaller semicircles and the outline is drawn at 32
+  // segments a curve (was 40; the 9.75 m radius keeps the old chord sag), each spandrel one panel round its arch (was two); no order or part was added
+  assert.equal(tris, 3744, `shed-front ${tris} triangles`);
 });

@@ -3,7 +3,7 @@ import test from 'node:test';
 import * as THREE from 'three';
 import type { KxData } from '../../core/osm.ts';
 import { readFileSync } from 'node:fs';
-import { SHED_SPAN_WIDTH, SHED_VAULT_RADIUS, shedLayout, shedVaultCentres } from '../../core/station.ts';
+import { SHED_SPAN_WIDTH, shedLayout, shedVaultCentres } from '../../core/station.ts';
 import { buildingNightMaterialsOf, material } from '../src/materials.ts';
 import * as shed from '../src/shed.ts';
 
@@ -14,7 +14,9 @@ const layout = shedLayout(data);
 // Re-pinned 2026-11-25 (B2, partner-approved: the vaults spring from the spine wall's two faces, a valley gutter between): each great arch's radius is
 // SHED_VAULT_RADIUS (the published half span less a quarter of the valley) and its centre shedVaultCentres(layout), a quarter of the valley out from the spine -/+ R before.
 const [cw, ce] = shedVaultCentres(layout);
-const X0 = layout.spine - SHED_SPAN_WIDTH, R = SHED_VAULT_RADIUS, sp = layout.springing;
+// Re-pinned 2026-11-26 (front phase 1, signed off: the great windows decoupled from the vaults): each arch's radius and springing are the window's,
+// shed.FRONT_WINDOW (19.5 m span, sill 7.5 m over the forecourt), on the same centres; were SHED_VAULT_RADIUS and layout.springing
+const X0 = layout.spine - SHED_SPAN_WIDTH, R = shed.FRONT_WINDOW_R, sp = shed.FRONT_WINDOW_SPRING;
 const group = shed.buildShed(layout, { range: false });
 group.updateMatrixWorld(true);
 const S = shed as unknown as Record<string, unknown>;

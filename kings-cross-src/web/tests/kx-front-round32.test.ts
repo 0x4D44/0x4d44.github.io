@@ -20,7 +20,7 @@ const day = [0.6635, 0.8039, 0.9644], night = [0.0553, 0.0863, 0.1497];
 /** the colour out (0-255) of a lit pane `lit` at glass point (x, y), seen along a view whose cosine to the pane's normal is `cos` */
 const shade = (even: number, x: number, y: number, cos = 1, lit = [0.45, 0.47, 0.5, 0.86], fog = day): number[] => {
   const view = [Math.sqrt(1 - cos * cos), 0, cos];
-  const env = { vars: { gl_FragColor: [...lit], gl_FrontFacing: true, fogColor: fog, cameraPosition: [0, 0, 0], viewMatrix: identity, vViewPosition: view.map(v => v * 50), normal: [0, 0, 1], vGlassPos: [x, y], uPaneX: 0, uGlintEven: even } };
+  const env = { vars: { gl_FragColor: [...lit], gl_FrontFacing: true, fogColor: fog, cameraPosition: [0, 0, 0], viewMatrix: identity, vViewPosition: view.map(v => v * 50), normal: [0, 0, 1], vGlassPos: [x, y], uPaneX: 0, uPaneY: [materials.GLAZING.springing, materials.GLAZING.tier], uGlintEven: even } };
   glsl.run(body, env);
   return (env.vars.gl_FragColor as number[]).slice(0, 3).map(c => c * 255);
 };
@@ -78,7 +78,7 @@ test('A6 (F12): with glintEven 0 (inside, on the plane, night, every other windo
   for (const fog of [day, night]) for (const [x, y, cos] of [[3, 15, 1], [-12, 20, 0.3], [20, 11, 0.7]] as const) {
     const run = (src: string, g: Glsl): number[] => {
       const view = [Math.sqrt(1 - cos * cos), 0, cos];
-      const env = { vars: { gl_FragColor: [0.3, 0.4, 0.5, 0.42], gl_FrontFacing: true, fogColor: fog, cameraPosition: [0, 0, 0], viewMatrix: identity, vViewPosition: view.map(v => v * 50), normal: [0, 0, 1], vGlassPos: [x, y], uPaneX: 0, uGlintEven: 0 } };
+      const env = { vars: { gl_FragColor: [0.3, 0.4, 0.5, 0.42], gl_FrontFacing: true, fogColor: fog, cameraPosition: [0, 0, 0], viewMatrix: identity, vViewPosition: view.map(v => v * 50), normal: [0, 0, 1], vGlassPos: [x, y], uPaneX: 0, uPaneY: [materials.GLAZING.springing, materials.GLAZING.tier], uGlintEven: 0 } };
       g.run(src, env);
       return env.vars.gl_FragColor as number[];
     };

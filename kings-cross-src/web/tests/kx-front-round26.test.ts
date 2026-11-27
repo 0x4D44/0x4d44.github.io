@@ -3,7 +3,7 @@ import test from 'node:test';
 import * as THREE from 'three';
 import type { KxData } from '../../core/osm.ts';
 import { readFileSync } from 'node:fs';
-import { SHED_SPAN_WIDTH, SHED_VAULT_RADIUS, shedLayout, shedVaultCentres } from '../../core/station.ts';
+import { SHED_SPAN_WIDTH, shedLayout, shedVaultCentres } from '../../core/station.ts';
 import { GROUND_Y } from '../src/world.ts';
 import * as shed from '../src/shed.ts';
 
@@ -14,7 +14,9 @@ const layout = shedLayout(data);
 // Re-pinned 2026-11-25 (B2, partner-approved: the vaults spring from the spine wall's two faces, a valley gutter between): each great arch's radius is
 // SHED_VAULT_RADIUS (the published half span less a quarter of the valley) and its centre shedVaultCentres(layout), a quarter of the valley out from the spine -/+ R before.
 const [cw, ce] = shedVaultCentres(layout);
-const X0 = layout.spine - SHED_SPAN_WIDTH, R = SHED_VAULT_RADIUS, sp = layout.springing;
+// Re-pinned 2026-11-26 (front phase 1, signed off: the great windows decoupled from the vaults): each arch's radius and springing are the window's,
+// shed.FRONT_WINDOW (19.5 m span, sill 7.5 m over the forecourt), on the same centres; were SHED_VAULT_RADIUS and layout.springing
+const X0 = layout.spine - SHED_SPAN_WIDTH, R = shed.FRONT_WINDOW_R, sp = shed.FRONT_WINDOW_SPRING;
 const group = shed.buildShed(layout, { range: false });
 group.updateMatrixWorld(true);
 const S = shed as unknown as Record<string, unknown>;
@@ -68,7 +70,7 @@ test('A3: the porch glass 1.0 m or more back; the interior darker toward its sid
   const lo = D.gradient[0], hi = D.gradient[1];
   for (const u of [0.33, 0.78]) for (const v of [0, 0.4, 0.8]) assert.ok(Math.abs(at(u, v) - (lo + (hi - lo) * Math.min(1, v / 0.85))) < 0.04, `behind a figure at ${u}, ${v}: ${at(u, v).toFixed(2)}`);
   // the interior on the glass, at that depth, over the figures' heads
-  const A = shed.SOUTH_FRONT_ARCADES, x = shed.southFrontArcadeCentres(4 * R, shed.TOWER_SIZE)[0]! + layout.spine - 2 * R;
+  const A = shed.SOUTH_FRONT_ARCADES, x = shed.southFrontArcadeCentres(2 * SHED_SPAN_WIDTH, shed.TOWER_SIZE)[0]! + X0; // re-pinned 2026-11-26 (front phase 1): R is the window's now, the front's width written as 2 * SHED_SPAN_WIDTH (was 4 * R)
   const g = ray([x + 0.3, GROUND_Y + A.footAboveGround + 2.1, 5], [0, 0, -1], [infill]);
   assert.ok(g && g.mat === 4 && Math.abs(g.z + D.glass) < 0.01, `the interior: ${g?.mat} at ${g?.z.toFixed(2)}`);
 });

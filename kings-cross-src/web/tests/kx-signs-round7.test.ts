@@ -3,8 +3,8 @@ import test from 'node:test';
 import * as THREE from 'three';
 import type { KxData } from '../../core/osm.ts';
 import { readFileSync } from 'node:fs';
-import { SHED_SPAN_WIDTH, shedLayout } from '../../core/station.ts';
-import { buildShed, FRONT_CANOPY, FRONT_FASCIA_TEXT, FRONT_RELIEF, fasciaLevels, frontOrderZ, paintFascia } from '../src/shed.ts';
+import { SHED_SPAN_WIDTH, shedLayout, shedVaultCentres } from '../../core/station.ts';
+import { buildShed, FRONT_CANOPY, FRONT_FASCIA_TEXT, FRONT_RELIEF, FRONT_WINDOW_R, FRONT_WINDOW_SPRING, fasciaLevels, frontOrderZ, paintFascia } from '../src/shed.ts';
 import { HAND_OUTLINE, handGeometry, HANDS } from '../src/clocks.ts';
 import { GROUND_Y } from '../src/world.ts';
 
@@ -76,8 +76,11 @@ test('A2: the cornice has a dark soffit and shadow line, and the great arches\' 
   const yb = top - 0.9 - FRONT_RELIEF.bedMould.height;
   const face = first(new THREE.Vector3(x, yb - 0.1, 5), new THREE.Vector3(0, 0, -1), [front, stone, infill]);
   assert.ok(face && face.object === infill, 'a dark shadow line on the wall under the bed mould');
-  const sp = layout.springing;
-  for (const xe of [X0 + 0.7, X0 + FW - 0.7]) {
+  // re-pinned 2026-11-26 (front phase 1, signed off): the orders come down beside each great window (FRONT_WINDOW), not at the front's ends, so the
+  // imposts are under each window's feet at its own springing: probed under the fourth order, where the wall stands back above the impost as the end
+  // pier did (were X0 + 0.7 and X0 + FW - 0.7 at the vaults' springing)
+  const sp = FRONT_WINDOW_SPRING;
+  for (const xe of shedVaultCentres(layout).flatMap(uc => [uc - FRONT_WINDOW_R + 0.25, uc + FRONT_WINDOW_R - 0.25])) {
     const h = first(new THREE.Vector3(xe, sp + FRONT_RELIEF.impost.height / 2, 5), new THREE.Vector3(0, 0, -1), [front, stone]);
     const z = h ? group.worldToLocal(h.point.clone()).z : -9;
     assert.ok(h?.object === stone && z >= frontOrderZ(FRONT_RELIEF.orders - 1) + 0.05, // re-pinned round A2: the outer order's face at frontOrderZ

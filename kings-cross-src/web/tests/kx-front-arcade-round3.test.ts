@@ -166,5 +166,7 @@ test('A3 round 3c: at the capture\'s night (2026-11-23T22:00Z) every day term ad
 test('A3 round 3: no new draw or triangle: the infill keeps its eight materials and its triangle count', () => {
   assert.equal(mats.length, 8);
   const n = infill.geometry.getAttribute('position').count / 3;
-  assert.equal(n, 1628, `the infill's triangles: ${n}`);
+  // re-pinned 2026-11-26 (front phase 1): 1628 -> 1692. The porch heads rose to near semicircles (SOUTH_FRONT_ARCADES.archRise 3.3), so their fanlight
+  // frames are cut in 20 segments (PORCH_FANLIGHT.headSegments, was 12) to stay on the arch line; no part or material was added
+  assert.equal(n, 1692, `the infill's triangles: ${n}`);
 });

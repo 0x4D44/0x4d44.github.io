@@ -21,7 +21,7 @@ const R = SHED_SPAN_WIDTH / 2, F = (M as Record<string, unknown>).GABLE_FINE as 
 // the second block alone, over a given colour: `bars` the gables' own draw, `even` outside by day
 const after = (x: number, opts: { bars?: number; even?: number; fw?: number; rgba?: number[]; cam?: number[]; y?: number } = {}): number[] => {
   DERIVATIVES.width = opts.fw ?? 0.002;
-  const env = { vars: { gl_FragColor: [...(opts.rgba ?? [0.3, 0.33, 0.37, 0.6])], gl_FrontFacing: false, fogColor: day, cameraPosition: opts.cam ?? [0, 0, 0], viewMatrix: identity, vViewPosition: [0, 0, 50], normal: [0, 0, 1], vGlassPos: [x, opts.y ?? 15], uPaneX: 0, uGlintEven: opts.even ?? 0, uGableBars: opts.bars ?? 1 } };
+  const env = { vars: { gl_FragColor: [...(opts.rgba ?? [0.3, 0.33, 0.37, 0.6])], gl_FrontFacing: false, fogColor: day, cameraPosition: opts.cam ?? [0, 0, 0], viewMatrix: identity, vViewPosition: [0, 0, 50], normal: [0, 0, 1], vGlassPos: [x, opts.y ?? 15], uPaneX: 0, uPaneY: [GLAZING.springing, GLAZING.tier], uGlintEven: opts.even ?? 0, uGableBars: opts.bars ?? 1 } };
   g.run(block, env);
   DERIVATIVES.width = 0.002;
   return env.vars.gl_FragColor as number[];

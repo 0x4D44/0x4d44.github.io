@@ -18,7 +18,7 @@ const glsl = new Glsl(''), identity = new Mat(4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 
 const day = [0.6635, 0.8039, 0.9644], P = GLAZING.spacing;
 const run = (src: string, g: Glsl, even: number, x: number, y: number, cos = 1, cam: number[] = [0, 0, 0]): number[] => {
   const view = [Math.sqrt(1 - cos * cos), 0, cos];
-  const env = { vars: { gl_FragColor: [0.45, 0.47, 0.5, 0.93], gl_FrontFacing: true, fogColor: day, cameraPosition: cam, viewMatrix: identity, vViewPosition: view.map(v => v * 50), normal: [0, 0, 1], vGlassPos: [x, y], uPaneX: 0, uGlintEven: even } };
+  const env = { vars: { gl_FragColor: [0.45, 0.47, 0.5, 0.93], gl_FrontFacing: true, fogColor: day, cameraPosition: cam, viewMatrix: identity, vViewPosition: view.map(v => v * 50), normal: [0, 0, 1], vGlassPos: [x, y], uPaneX: 0, uPaneY: [GLAZING.springing, GLAZING.tier], uGlintEven: even } };
   g.run(src, env);
   return (env.vars.gl_FragColor as number[]).map((c, i) => (i < 3 ? c * 255 : c));
 };

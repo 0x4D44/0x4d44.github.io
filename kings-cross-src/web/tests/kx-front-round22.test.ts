@@ -3,7 +3,7 @@ import test from 'node:test';
 import * as THREE from 'three';
 import type { KxData } from '../../core/osm.ts';
 import { readFileSync } from 'node:fs';
-import { SHED_SPAN_WIDTH, shedLayout } from '../../core/station.ts';
+import { SHED_SPAN_WIDTH, shedLayout, shedVaultCentres } from '../../core/station.ts';
 import * as shed from '../src/shed.ts';
 import { GROUND_Y } from '../src/world.ts';
 
@@ -64,12 +64,13 @@ test('A1: the parapet\'s step either side of the tower is coped like the parapet
   }
 });
 
-test('A2: at the front\'s ends each order of the great arch runs down onto the springing course, standing on the impost', () => {
-  const F = shed.FRONT_RELIEF;
-  for (const sd of [-1, 1]) {
-    const end = sd < 0 ? X0 : X1;
+// re-pinned 2026-11-26 (front phase 1, signed off): the great windows are FRONT_WINDOW's semicircles, so the orders come down beside each window, at its
+// own springing (7.5 m over the forecourt), not at the front's ends at the vaults' springing; every foot is held as each end's was
+test('A2: beside each great window each order of its arch runs down onto the springing course, standing on the impost', () => {
+  const F = shed.FRONT_RELIEF, sp = shed.FRONT_WINDOW_SPRING;
+  for (const uc of shedVaultCentres(layout)) for (const sd of [-1, 1]) {
     for (let i = 0; i < F.orders; i++) {
-      const x = end + sd * (i + 0.5) * F.orderWidth;
+      const x = uc + sd * (shed.FRONT_WINDOW_R + (i + 0.5) * F.orderWidth);
       const foot = zAt(x, sp + F.impost.height + 0.15);
       assert.ok(foot && foot.name === 'shed-front' && Math.abs(foot.z - shed.frontOrderZ(i)) < 0.02, // re-pinned round A2: the orders' faces set back by FRONT_RELIEF.set (frontOrderZ)
         `order ${i}'s foot at x ${x.toFixed(2)}: ${foot?.name} ${foot?.z.toFixed(2)}`);

@@ -1463,7 +1463,7 @@ export const GABLE_FINE = { spacing: GLAZING.spacing / 3, width: 0.02, shade: 0.
 export const GABLE_REFLECT = { amp: 0.28, waves: [0.22, 0.05, 0.06, 0.11], blotch: { waves: [0.61, 0.23, -0.37, 0.47], weight: 0.2 } } as const;
 const SKY_GLINT_GLSL = /* glsl */`
 #if defined( USE_FOG ) && ! defined( FLIP_SIDED )
-vec2 gm = ( floor( vec2( ( vGlassPos.x - uPaneX ) / ${GLAZING.spacing}, ( vGlassPos.y - ${GLAZING.springing} ) / ${GLAZING.tier} ) ) + 0.5 ) * vec2( ${GLAZING.spacing}, ${GLAZING.tier} ) + vec2( uPaneX, ${GLAZING.springing} );
+vec2 gm = ( floor( vec2( ( vGlassPos.x - uPaneX ) / ${GLAZING.spacing}, ( vGlassPos.y - uPaneY.x ) / uPaneY.y ) ) + 0.5 ) * vec2( ${GLAZING.spacing}, uPaneY.y ) + vec2( uPaneX, uPaneY.x );
 float gp = dot( gm, vec2( 0.9, 0.5 ) );
 float gb = sin( gp ) + 0.8 * sin( 0.37 * gp + 1.3 ) + 0.5 * sin( 2.3 * gp + 4.0 ) + 0.35 * sin( dot( gm, vec2( -0.45, 0.8 ) ) + 0.7 );
 float gs = gl_FrontFacing ? smoothstep( 0.55, 0.8, fogColor.g ) : 0.0;
@@ -1495,6 +1495,11 @@ gl_FragColor.a = mix( gl_FragColor.a, 1.0, gfk );
 
 /** The x, in the glass's own frame, that the panes are counted from: the middle of the geometry being drawn (the shed's centre line, for the front's glass and the gables'). */
 const paneX = { value: 0 };
+/**
+ * The panes' rows (front phase 1): the height they are counted from and a row's height, the mesh's `userData.paneRows` ([springing, tier]) where it has one
+ * (the front's great windows, smaller than the vaults since then, shed.ts FRONT_WINDOW), the vaults' GLAZING otherwise (the gables).
+ */
+const paneY = { value: new THREE.Vector2(GLAZING.springing, GLAZING.tier) };
 
 /**
  * Give a Phong glass the sky above (see `SKY_GLINT_GLSL`). Its program key says so, so it never shares a compile with a plain Phong. The glass's own x and height reach the
@@ -1506,16 +1511,19 @@ export function skyGlint<T extends THREE.MeshPhongMaterial>(m: T): T {
     shader.uniforms.uPaneX = paneX;
     shader.uniforms.uGlintEven = glintEven;
     shader.uniforms.uGableBars = gableDraw;
+    shader.uniforms.uPaneY = paneY;
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', '#include <common>\nvarying vec2 vGlassPos;')
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvGlassPos = position.xy;');
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nvarying vec2 vGlassPos;\nuniform float uPaneX;\nuniform float uGlintEven;\nuniform float uGableBars;')
+      .replace('#include <common>', '#include <common>\nvarying vec2 vGlassPos;\nuniform float uPaneX;\nuniform float uGlintEven;\nuniform float uGableBars;\nuniform vec2 uPaneY;')
       .replace('#include <fog_fragment>', `${SKY_GLINT_GLSL}#include <fog_fragment>`);
   };
-  m.onBeforeRender = (_renderer, _scene, _camera, geometry) => {
+  m.onBeforeRender = (_renderer, _scene, _camera, geometry, object) => {
     const box = geometry.boundingBox ?? (geometry.computeBoundingBox(), geometry.boundingBox);
     if (box) paneX.value = (box.min.x + box.max.x) / 2;
+    const rows = object?.userData.paneRows as readonly [number, number] | undefined;
+    paneY.value.set(rows?.[0] ?? GLAZING.springing, rows?.[1] ?? GLAZING.tier);
   };
   m.customProgramCacheKey = () => 'skyGlint';
   return m;

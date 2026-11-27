@@ -17,7 +17,7 @@ const flat = body.replace(lift, '0.0 * smoothstep('); // the sheet without its c
 const identity = new Mat(4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]), day = [0.6635, 0.8039, 0.9644], P = GLAZING.spacing, g = new Glsl('');
 const G = (x: number, y: number, cos = 1, even = 1): number => {
   const view = [Math.sqrt(1 - cos * cos), 0, cos];
-  const env = { vars: { gl_FragColor: [0.45, 0.47, 0.5, 0.98], gl_FrontFacing: true, fogColor: day, cameraPosition: [0, 0, 0], viewMatrix: identity, vViewPosition: view.map(v => v * 50), normal: [0, 0, 1], vGlassPos: [x, y], uPaneX: 0, uGlintEven: even } };
+  const env = { vars: { gl_FragColor: [0.45, 0.47, 0.5, 0.98], gl_FrontFacing: true, fogColor: day, cameraPosition: [0, 0, 0], viewMatrix: identity, vViewPosition: view.map(v => v * 50), normal: [0, 0, 1], vGlassPos: [x, y], uPaneX: 0, uPaneY: [GLAZING.springing, GLAZING.tier], uGlintEven: even } };
   g.run(flat, env);
   return (env.vars.gl_FragColor as number[])[1]! * 255;
 };

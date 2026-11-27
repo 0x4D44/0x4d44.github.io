@@ -20,7 +20,7 @@ const body = f.slice(at, f.indexOf('#endif', at)).split('\n').slice(1).join('\n'
 const glsl = new Glsl(''), identity = new Mat(4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
 const day = [0.6635, 0.8039, 0.9644];
 const run = (even: number, x: number, y: number, alpha = 0.93): number[] => {
-  const env = { vars: { gl_FragColor: [0.45, 0.47, 0.5, alpha], gl_FrontFacing: true, fogColor: day, cameraPosition: [0, 0, 0], viewMatrix: identity, vViewPosition: [0, 0, 50], normal: [0, 0, 1], vGlassPos: [x, y], uPaneX: 0, uGlintEven: even } };
+  const env = { vars: { gl_FragColor: [0.45, 0.47, 0.5, alpha], gl_FrontFacing: true, fogColor: day, cameraPosition: [0, 0, 0], viewMatrix: identity, vViewPosition: [0, 0, 50], normal: [0, 0, 1], vGlassPos: [x, y], uPaneX: 0, uPaneY: [GLAZING.springing, GLAZING.tier], uGlintEven: even } };
   glsl.run(body, env);
   return (env.vars.gl_FragColor as number[]).map((c, i) => (i < 3 ? c * 255 : c));
 };
@@ -111,7 +111,7 @@ test('A6 (F13b): from outside by day the glass thickens off the normal: its alph
   const f13 = lines.filter(l => l !== last).join('\n'), old = new Glsl('');
   const alpha = (src: string, g: Glsl, even: number, cos: number, a = 0.93): number => {
     const view = [Math.sqrt(1 - cos * cos), 0, cos];
-    const env = { vars: { gl_FragColor: [0.45, 0.47, 0.5, a], gl_FrontFacing: true, fogColor: day, cameraPosition: [0, 0, 0], viewMatrix: identity, vViewPosition: view.map(v => v * 50), normal: [0, 0, 1], vGlassPos: [0.4, 15], uPaneX: 0, uGlintEven: even } };
+    const env = { vars: { gl_FragColor: [0.45, 0.47, 0.5, a], gl_FrontFacing: true, fogColor: day, cameraPosition: [0, 0, 0], viewMatrix: identity, vViewPosition: view.map(v => v * 50), normal: [0, 0, 1], vGlassPos: [0.4, 15], uPaneX: 0, uPaneY: [GLAZING.springing, GLAZING.tier], uGlintEven: even } };
     g.run(src, env);
     return (env.vars.gl_FragColor as number[])[3]!;
   };

@@ -3,7 +3,7 @@ import test from 'node:test';
 import * as THREE from 'three';
 import type { KxData } from '../../core/osm.ts';
 import { readFileSync } from 'node:fs';
-import { SHED_SPAN_WIDTH, SHED_VAULT_RADIUS, shedLayout, shedVaultCentres } from '../../core/station.ts';
+import { SHED_SPAN_WIDTH, shedLayout, shedVaultCentres } from '../../core/station.ts';
 import { buildingNightMaterialsOf, material } from '../src/materials.ts';
 import * as shed from '../src/shed.ts';
 
@@ -14,7 +14,10 @@ const layout = shedLayout(data);
 // Re-pinned 2026-11-25 (B2, partner-approved: the vaults spring from the spine wall's two faces, a valley gutter between): each great arch's radius is
 // SHED_VAULT_RADIUS (the published half span less a quarter of the valley) and its centre shedVaultCentres(layout), a quarter of the valley out from the spine -/+ R before.
 const [cw, ce] = shedVaultCentres(layout);
-const X0 = layout.spine - SHED_SPAN_WIDTH, R = SHED_VAULT_RADIUS, sp = layout.springing;
+// Re-pinned 2026-11-26 (front phase 1, signed off: the great windows decoupled from the vaults): each arch's radius and springing are the window's,
+// shed.FRONT_WINDOW (19.5 m span, sill 7.5 m over the forecourt), on the same centres; were SHED_VAULT_RADIUS and layout.springing (the front's
+// own width, which was written 4 * R, is now 2 * SHED_SPAN_WIDTH)
+const X0 = layout.spine - SHED_SPAN_WIDTH, R = shed.FRONT_WINDOW_R, sp = shed.FRONT_WINDOW_SPRING;
 const group = shed.buildShed(layout, { range: false });
 group.updateMatrixWorld(true);
 const S = shed as unknown as Record<string, unknown>;
@@ -50,7 +53,7 @@ test('A2: each spandrel panel\'s head, under the frame\'s band, is in the return
   const T = S.FRONT_TYMPANUM as { band: number; recess: number }, Hd = S.FRONT_PANEL_HEAD as { height: number };
   assert.ok(Hd.height >= 0.25 && Hd.height <= 0.6, `head ${Hd.height}`);
   const yH = frontTop - 0.9 - 0.25 - 0.25 - 0.1 - T.band + 0.05;
-  for (const xa of [X0 + 2.5, layout.spine + shed.TOWER_SIZE / 2 + 1.5, layout.spine - shed.TOWER_SIZE / 2 - 1.5, X0 + 4 * R - 2.5]) {
+  for (const xa of [X0 + 2.5, layout.spine + shed.TOWER_SIZE / 2 + 1.5, layout.spine - shed.TOWER_SIZE / 2 - 1.5, X0 + 2 * SHED_SPAN_WIDTH - 2.5]) {
     const head = ray([xa, yH - Hd.height / 2, 5], [front]), below = ray([xa, yH - Hd.height - 0.3, 5], [front]);
     assert.ok(head && head.mat === 1 && Math.abs(head.z + T.recess) < 0.02, `the head at x ${xa.toFixed(1)}: ${head?.mat} at ${head?.z.toFixed(2)}`);
     assert.ok(below && below.mat === 0 && Math.abs(below.z + T.recess) < 0.02, `under it: ${below?.mat} at ${below?.z.toFixed(2)}`);
@@ -74,7 +77,7 @@ test('A2 (round 27b): each panel head carries the brick map in metres as the pan
   const T = S.FRONT_TYMPANUM as { band: number; recess: number }, Hd = S.FRONT_PANEL_HEAD as { height: number };
   const yH = frontTop - 0.9 - 0.25 - 0.25 - 0.1 - T.band + 0.05;
   const pos = front.geometry.getAttribute('position'), nrm = front.geometry.getAttribute('normal');
-  for (const xa of [X0 + 2.5, layout.spine + shed.TOWER_SIZE / 2 + 1.5, layout.spine - shed.TOWER_SIZE / 2 - 1.5, X0 + 4 * R - 2.5]) {
+  for (const xa of [X0 + 2.5, layout.spine + shed.TOWER_SIZE / 2 + 1.5, layout.spine - shed.TOWER_SIZE / 2 - 1.5, X0 + 2 * SHED_SPAN_WIDTH - 2.5]) {
     const a = ray([xa, yH - 0.1, 5], [front]), b = ray([xa + 0.7, yH - Hd.height + 0.1, 5], [front]), below = ray([xa, yH - Hd.height - 0.3, 5], [front]);
     assert.ok(a && b && below && a.mat === 1 && a.uv && b.uv && below.uv, `the head at x ${xa.toFixed(1)}`);
     // the panel's face maps 1 m to 1 unit of uv: so must the head, and on the same grid
@@ -89,5 +92,7 @@ test('A2 (round 27b): each panel head carries the brick map in metres as the pan
     const y = pos.getY(k), z = pos.getZ(k);
     if (Math.abs(z + T.recess - 0.005) < 1e-4 && y > yH - Hd.height - 1e-3 && y < yH + 1e-3) { n++; assert.ok(nrm.getZ(k) > 0.99, `a head vertex's normal ${nrm.getZ(k).toFixed(2)}`); }
   }
-  assert.ok(n >= 24, `${n} head vertices`);
+  // re-pinned 2026-11-26 (front phase 1): each spandrel is one panel round its smaller window (FRONT_WINDOW), so one head each, 2 x 6 vertices (was two
+  // panels a spandrel, 24)
+  assert.ok(n >= 12, `${n} head vertices`);
 });

@@ -7,7 +7,7 @@ import { CLOCK_TOWER_HEIGHT, SHED_LENGTH, SHED_SPAN_WIDTH, SHED_VALLEY_WIDTH, SH
 import { shedRoofY } from '../src/furniture.ts';
 import { createSunShadow, SHADOW_CASTERS } from '../src/lighting.ts';
 import { ARCADE_FRAME, ARCADE_GLASS, buildingNightMaterialsOf, material, PANE_UV, TEXTURES, windowNight } from '../src/materials.ts';
-import { FRONT_RELIEF, WEST_ARCADE, westArcadeOpenings, WEST_GLAZING } from '../src/shed.ts';
+import { FRONT_WINDOW_R, FRONT_WINDOW_SPRING, WEST_ARCADE, westArcadeOpenings, WEST_GLAZING } from '../src/shed.ts';
 import { buildShed, buildTower, EAST_ARCADE, ROOF_EXTERIOR, eastArcadeOpenings, eastArcadeU, NORTH_PIER, RIB_FOOT, ribLanding, spineLowerOpenings, spineUpperOpenings, valleyTop, buildWesternRange, gableBars, GABLE_GLASS_FROM, glazedHalfAngle, GLAZED_STRIP_WIDTH, GLASS_OPACITY, glazingOpacity, lunetteBars, MEMBER_SIZE, RIB_SPACING, ribMembers, ribPositions, ROOF_SKIN, roofOpacity, SPINE_WALL, spineOpenings, TOWER_SIZE, TOWER_TOP, valleyCut, vaultBand, vaultPoint, WESTERN_RANGE, WESTERN_RANGE_DEPTH_BEFORE, westernArches, westernBays, westernBlock, westernWindows, XRAY_OPACITY } from '../src/shed.ts';
 
 const data: KxData = JSON.parse(readFileSync(new URL('../src/data/kx-track.json', import.meta.url), 'utf8'));
@@ -451,7 +451,9 @@ test('buildShed: the published dimensions, in the shed frame', () => {
   close(front.max.y, layout.crown + 2.4, EPS);
   // re-pinned 2026-11-24 (round 22, A2): the great arches' orders now run down onto the springing course at the front's ends too, so their feet
   // stand their own width (orders x orderWidth) past each end, against the end piers' masses; the wall itself still spans the two vaults
-  close(front.max.x - front.min.x, 2 * SHED_SPAN_WIDTH + 2 * FRONT_RELIEF.orders * FRONT_RELIEF.orderWidth, EPS);
+  // re-pinned 2026-11-26 (front phase 1, signed off): the great windows are FRONT_WINDOW's semicircles, so their orders come down beside each window,
+  // inside the wall, and the wall alone sets the width again: the two vaults
+  close(front.max.x - front.min.x, 2 * SHED_SPAN_WIDTH, EPS);
   close(byName(group, 'shed-front').position.x + (front.min.x + front.max.x) / 2, layout.spine, EPS);
   assert.ok(W > 2 * SHED_SPAN_WIDTH, 'the east aisle lies beyond it');
   // 40 ribs on each of the two vaults
@@ -505,7 +507,7 @@ test('buildShed: the front has its two great windows, glazed and barred, and no 
   const front = positions(byName(group, 'shed-front-glass').geometry);
   let hi = -Infinity;
   for (let i = 0; i < front.count; i++) hi = Math.max(hi, front.getY(i));
-  close(hi, layout.springing + R - 0.02, 0.01);
+  close(hi, FRONT_WINDOW_SPRING + FRONT_WINDOW_R - 0.02, 0.01); // re-pinned 2026-11-26 (front phase 1): the window's own crown, FRONT_WINDOW (was the vault's, springing + R)
   const gable = positions(byName(group, 'shed-gable-glass').geometry);
   let lo = Infinity;
   for (let i = 0; i < gable.count; i++) lo = Math.min(lo, gable.getY(i));

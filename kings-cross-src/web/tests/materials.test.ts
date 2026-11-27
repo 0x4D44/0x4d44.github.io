@@ -564,7 +564,7 @@ test('the shed\'s great windows mirror a clear sky in diagonal streaks on their 
     const length = Math.hypot(...toCamera);
     // the glass is in the plane z = 0 of its own frame here, so a point's x and y are the glass's (`vGlassPos`), and the panes are counted from x = 0 (`uPaneX`)
     // round F11b: uGlintEven is the gables' flattening (materials.ts glintEven), 0 here as for every other window: the streaks as round six made them
-    const env = { vars: { gl_FragColor: [...glass], gl_FrontFacing: front, fogColor: fog, cameraPosition: camera, viewMatrix: identity, vViewPosition: toCamera, normal: normal ?? toCamera.map((c) => c / length), vGlassPos: [point[0]!, point[1]!], uPaneX: 0, uGlintEven: 0 } };
+    const env = { vars: { gl_FragColor: [...glass], gl_FrontFacing: front, fogColor: fog, cameraPosition: camera, viewMatrix: identity, vViewPosition: toCamera, normal: normal ?? toCamera.map((c) => c / length), vGlassPos: [point[0]!, point[1]!], uPaneX: 0, uPaneY: [GLAZING.springing, GLAZING.tier], uGlintEven: 0 } };
     glsl.run(body, env);
     const out = env.vars.gl_FragColor as number[];
     return { rgb: out.slice(0, 3), alpha: out[3]!, share: (out[3]! - glass[3]!) / (0.8 * (1 - glass[3]!)) };
@@ -626,7 +626,7 @@ test('the shed\'s great windows mirror a clear sky in diagonal streaks on their 
   assert.ok(Math.abs(paneAt(3, 1, 0.5, 0.999) - paneAt(3, 1, 0.5, 0.5)) < 1e-9 && Math.abs(paneAt(3, 1, 0.5, 1.001) - paneAt(3, 2, 0.5, 0.5)) < 1e-9, 'and at its transom');
   // the panes are counted from `uPaneX`: move it and the grid moves with it
   const shifted = (shift: number): number => {
-    const env = { vars: { gl_FragColor: [...glass], gl_FrontFacing: true, fogColor: day, cameraPosition: [0, 0, 60], viewMatrix: identity, vViewPosition: [0, 0, 60], normal: [0, 0, 1], vGlassPos: [10.2, 12], uPaneX: shift, uGlintEven: 0 } };
+    const env = { vars: { gl_FragColor: [...glass], gl_FrontFacing: true, fogColor: day, cameraPosition: [0, 0, 60], viewMatrix: identity, vViewPosition: [0, 0, 60], normal: [0, 0, 1], vGlassPos: [10.2, 12], uPaneX: shift, uPaneY: [GLAZING.springing, GLAZING.tier], uGlintEven: 0 } };
     glsl.run(body, env);
     return ((env.vars.gl_FragColor as number[])[3]! - glass[3]!) / (0.8 * (1 - glass[3]!));
   };

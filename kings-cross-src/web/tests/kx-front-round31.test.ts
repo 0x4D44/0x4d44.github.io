@@ -111,7 +111,7 @@ test('A6 (F11b): with glintEven at 1 the glint is one even sheen: over a 60 m by
   const day = [0.6635, 0.8039, 0.9644], dark = [0.035, 0.054, 0.076, 0.86], eye = [-45, 12, 35];
   const shade = (flat: number, x: number, y: number): number[] => {
     const toCamera = eye.map((c, i) => c - [x, y, 0][i]!);
-    const env = { vars: { gl_FragColor: [...dark], gl_FrontFacing: true, fogColor: day, cameraPosition: eye, viewMatrix: identity, vViewPosition: toCamera, normal: [0, 0, 1], vGlassPos: [x, y], uPaneX: 0, uGlintEven: flat } };
+    const env = { vars: { gl_FragColor: [...dark], gl_FrontFacing: true, fogColor: day, cameraPosition: eye, viewMatrix: identity, vViewPosition: toCamera, normal: [0, 0, 1], vGlassPos: [x, y], uPaneX: 0, uPaneY: [materials.GLAZING.springing, materials.GLAZING.tier], uGlintEven: flat } };
     glsl.run(body, env);
     return (env.vars.gl_FragColor as number[]).slice(0, 3).map(c => c * 255);
   };
@@ -138,7 +138,7 @@ test('A6 (F11b): with glintEven at 1 the glint is one even sheen: over a 60 m by
   // vary pane to pane either (a streak's alpha over a lit room is a mosaic too), and stays near the sheet's own 0.86
   const alpha = (flat: number, x: number, y: number): number => {
     const toCamera = eye.map((c, i) => c - [x, y, 0][i]!);
-    const env = { vars: { gl_FragColor: [...dark], gl_FrontFacing: true, fogColor: day, cameraPosition: eye, viewMatrix: identity, vViewPosition: toCamera, normal: [0, 0, 1], vGlassPos: [x, y], uPaneX: 0, uGlintEven: flat } };
+    const env = { vars: { gl_FragColor: [...dark], gl_FrontFacing: true, fogColor: day, cameraPosition: eye, viewMatrix: identity, vViewPosition: toCamera, normal: [0, 0, 1], vGlassPos: [x, y], uPaneX: 0, uPaneY: [materials.GLAZING.springing, materials.GLAZING.tier], uGlintEven: flat } };
     glsl.run(body, env);
     return (env.vars.gl_FragColor as number[])[3]!;
   };

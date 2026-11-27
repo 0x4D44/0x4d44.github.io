@@ -6,7 +6,7 @@ import { readFileSync } from 'node:fs';
 import { SHED_SPAN_WIDTH, shedLayout } from '../../core/station.ts';
 import type { CityData } from '../../core/city.ts';
 import { addCity } from '../src/city.ts';
-import { buildShed, FRONT_CANOPY, TOWER_SIZE } from '../src/shed.ts';
+import { buildShed, FRONT_CANOPY, FRONT_WINDOW_SPRING, TOWER_SIZE } from '../src/shed.ts';
 import { material, windowNight } from '../src/materials.ts';
 import { GROUND_Y } from '../src/world.ts';
 
@@ -157,9 +157,11 @@ test('at night a row of downlights shows under the canopy\'s soffit and the entr
 
 test('the great windows\' sill course is the front\'s boldest band: 0.6 m or more deep, 0.45 m or more proud, its foot clear above the canopy', () => {
   const stone = group.getObjectByName('shed-stone') as THREE.Mesh;
+  // re-pinned 2026-11-26 (front phase 1): the sill course is at the great windows' own springing, FRONT_WINDOW's 7.5 m sill, not the vaults'
+  const springing = FRONT_WINDOW_SPRING;
   const x = X0 + bay;
   let lo = Infinity, hi = -Infinity, out = 0;
-  for (let y = layout.springing - 1.2; y <= layout.springing + 0.2; y += 0.01) {
+  for (let y = springing - 1.2; y <= springing + 0.2; y += 0.01) {
     const o = group.localToWorld(new THREE.Vector3(x, y, 10));
     const h = new THREE.Raycaster(o, new THREE.Vector3(0, 0, -1).transformDirection(group.matrixWorld), 0, 13).intersectObject(stone, false)[0];
     if (!h) continue;
@@ -171,7 +173,7 @@ test('the great windows\' sill course is the front\'s boldest band: 0.6 m or mor
   assert.ok(lo - GROUND_Y > 3.85 + 0.5, 'its foot well above the canopy\'s top');
   // the round-2a hold: at 0.5 m proud, flat, the band did not read; an overhanging cap casts the shadow line that makes it read
   assert.ok(out >= 0.75, `an overhanging cap at least 0.75 m proud (${out.toFixed(2)})`);
-  const eye = group.localToWorld(new THREE.Vector3(x, GROUND_Y + 1.7, 30)), at = group.localToWorld(new THREE.Vector3(x, layout.springing - 0.35, 0.5));
+  const eye = group.localToWorld(new THREE.Vector3(x, GROUND_Y + 1.7, 30)), at = group.localToWorld(new THREE.Vector3(x, springing - 0.35, 0.5));
   const first = new THREE.Raycaster(eye, at.clone().sub(eye).normalize(), 0, 60).intersectObjects([stone, porch], false)[0];
   assert.ok(first?.object === stone, 'and it shows over the canopy to a walker 30 m out');
 });

@@ -113,7 +113,23 @@ export const TOWER_SLITS = { slit: { from: 13.5, to: 18.5, width: 0.6 }, slot: {
  * Equal bays, 6.8 m openings, 2 m jambs and rise, 0.2 m threshold and 0.4 m stone rings
  * are ASSUMED. The infill is PORCH_INFILL.
  */
-export const SOUTH_FRONT_ARCADES = { perSide: 3, openingWidth: 6.8, jambHeight: 2.0, archRise: 2.0, footAboveGround: 0.2 } as const;
+// Front phase 1 (front-measure-2: the arcade's crowns 5.4-5.8 m over the forecourt, the model's 4.2; its springing hidden under the canopy): the
+// rise 3.3 m (was 2.0), so the crowns stand at 5.5 m with the storey raised under the great windows (FRONT_WINDOW); the springing, the fanlight's
+// transom and the infill under the canopy stay where they were, and the head is near semicircular (3.3 m on a 3.4 m half-span)
+export const SOUTH_FRONT_ARCADES = { perSide: 3, openingWidth: 6.8, jambHeight: 2.0, archRise: 3.3, footAboveGround: 0.2 } as const;
+/**
+ * Front phase 1 (wrk-designs 2026.11.26 - KX - front re-proportion, signed off 2026-11-26): each great window in the south front is a semicircle
+ * `span` m across on its vault's axis (shedVaultCentres), its sill and springing `sill` m over the forecourt (GROUND_Y), not the vault's own section.
+ * MEASURED (front-measure-2, R-kx-front-a/b): span 19.5 +-1.5 m by cross-ratios against the published 216 ft front; sill 7.5 +-1 m and crown about
+ * 17.7 m by a camera fit scaled on the 112 ft tower (a 19.5 m semicircle rises 9.75 m, so its crown is at 17.25 m, inside that crown's error). The
+ * vault end round it is brick (the front's slab, and inside it the end wall); the vault, its ribs, its roof and the interior light keep the vault's section.
+ */
+export const FRONT_WINDOW = { span: 19.5, sill: 7.5 } as const;
+/** The great windows' radius and their springing (and sill) in the shed's frame. */
+export const FRONT_WINDOW_R = FRONT_WINDOW.span / 2;
+export const FRONT_WINDOW_SPRING = GROUND_Y + FRONT_WINDOW.sill;
+/** The vault end wall's inner face stands this far inside the front's back face, clear of it at depth (ASSUMED). */
+const FRONT_END_WALL_GAP = 0.05;
 /**
  * Arcade round 1 (A3, the scorer against R-kx-front-a/b): each porch arch is turned in the wall's brick in `orders` stepped rings, not pale stone
  * voussoirs: each order `depth` m on the face (a brick's length; ASSUMED from the photographs' coursing) and `step` m proud of the one inside it (a
@@ -127,7 +143,8 @@ export const PORCH_ORDERS = { orders: 2, depth: 0.23, step: 0.11, toGround: true
  * `bar` m frame round the head, all in the frames' charcoal (FRONT_COLOURS.steel, 0x2a2c2e, the scorer's 'about #2a2e33'); the screen's mullions stop
  * under the transom, the doors' leaves too (their head at the transom).
  */
-export const PORCH_FANLIGHT = { bar: 0.08, headSegments: 12 } as const;
+// front phase 1: 20 segments round the head (was 12), as the head rose to near a semicircle (SOUTH_FRONT_ARCADES.archRise), so its chords stay within a cm of the arch line
+export const PORCH_FANLIGHT = { bar: 0.08, headSegments: 20 } as const;
 /**
  * Arcade round 1 (A3: the canopy's soffit near black, its lamps floating boxes): the canopy steel's faces turned down take `soffit` (sRGB), and the
  * lamps are linear strips (FRONT_CANOPY.lamp). The porch interiors' figures and barriers take `figure`, a mid tone, by day and a warm glow after
@@ -192,7 +209,9 @@ export const PORCH_GLASS = {
  * the default sun (high in the south-west, world.ts LIGHTS) only the crown and the haunches facing away from it can take one, and the round A2a
  * capture showed none. Values ASSUMED, read in memory from the photographs; no new triangle, only vertices move.
  */
-export const FRONT_RELIEF = { orders: 3, orderWidth: 0.4, orderStep: 0.4, set: 0.22, splay: 0.22, innerOrder: true, bedMould: { height: 0.25, out: 0.35 }, impost: { height: 0.35, out: 1.1, past: 0.15 }, shadowLine: 0.25, springing: { height: 0.3, out: 1.0 }, corona: { height: 0.3, out: 1.1 }, impostAboveGround: 4.95, impostHeight: 0.25, impostOut: 0.2 } as const;
+// front phase 1: the string course over the arcade's crowns raised with them (FRONT_WINDOW, SOUTH_FRONT_ARCADES), 0.8 m over the 5.5 m crowns and about
+// half a metre under the sill course, as front-a has it (was 4.95 m, over 4.2 m crowns)
+export const FRONT_RELIEF = { orders: 3, orderWidth: 0.4, orderStep: 0.4, set: 0.22, splay: 0.22, innerOrder: true, bedMould: { height: 0.25, out: 0.35 }, impost: { height: 0.35, out: 1.1, past: 0.15 }, shadowLine: 0.25, springing: { height: 0.3, out: 1.0 }, corona: { height: 0.3, out: 1.1 }, impostAboveGround: 6.3, impostHeight: 0.25, impostOut: 0.2 } as const;
 /** The face of great-arch order `i` in metres proud of the front's wall face (negative: behind it); -1 is the fourth order, inside the opening. */
 export const frontOrderZ = (i: number): number => (i + 1) * FRONT_RELIEF.orderStep - FRONT_RELIEF.set;
 /**
@@ -1416,6 +1435,37 @@ function archRing(uc: number, springing: number, r0: number, r1: number): THREE.
   return s;
 }
 
+/**
+ * Front phase 1: an extruded arch ring's two caps (its first group) re-cut as a strip, each triangle between neighbouring points of its inner and outer
+ * arcs. The triangulator's own cut may run a chord across several of the inner arc's steps; on a ring as tight as the great windows' orders (radius about
+ * 26 times its width) such a chord crossed the splayed inner edge (FRONT_RELIEF.splay), and the face covered its step at the haunches. Same triangles.
+ */
+function ringCaps(g: THREE.BufferGeometry, cx: number, cy: number): void {
+  const pos = g.getAttribute('position') as THREE.BufferAttribute, uv = g.getAttribute('uv') as THREE.BufferAttribute, cap = g.groups[0]!;
+  const caps = new Map<number, [number, number][]>();
+  for (let k = cap.start; k < cap.start + cap.count; k++) {
+    const z = Math.round(pos.getZ(k) * 1e5) / 1e5, pts = caps.get(z) ?? [];
+    if (!pts.some(([x, y]) => Math.abs(x - pos.getX(k)) < 1e-5 && Math.abs(y - pos.getY(k)) < 1e-5)) pts.push([pos.getX(k), pos.getY(k)]);
+    caps.set(z, pts);
+  }
+  if (caps.size !== 2) throw new Error('ringCaps: an extruded ring has two caps');
+  let k = cap.start;
+  const put = (p: [number, number], z: number): void => { pos.setXYZ(k, p[0], p[1], z); uv.setXY(k, p[0], p[1]); k++; };
+  const [zLo, zHi] = [...caps.keys()].sort((a, b) => a - b) as [number, number];
+  for (const z of [zLo, zHi]) {
+    const pts = caps.get(z)!, rad = pts.map(([x, y]) => Math.hypot(x - cx, y - cy)), mid = (Math.min(...rad) + Math.max(...rad)) / 2;
+    const arc = (inner: boolean): [number, number][] => pts.filter((_, i) => (rad[i]! < mid) === inner).sort((a, b) => Math.atan2(a[1] - cy, a[0] - cx) - Math.atan2(b[1] - cy, b[0] - cx));
+    const i = arc(true), o = arc(false);
+    if (i.length !== o.length || 6 * (i.length - 1) !== cap.count / 2) throw new Error('ringCaps: the caps are not one strip of the ring');
+    for (let j = 0; j + 1 < i.length; j++) {
+      const t = z === zHi ? [o[j]!, o[j + 1]!, i[j]!, i[j]!, o[j + 1]!, i[j + 1]!] : [o[j + 1]!, o[j]!, i[j]!, o[j + 1]!, i[j]!, i[j + 1]!]; // the face out (+z), the back in
+      for (const p of t) put(p, z);
+    }
+  }
+  pos.needsUpdate = true;
+  uv.needsUpdate = true;
+}
+
 function mesh<M extends THREE.Material | THREE.Material[]>(g: THREE.BufferGeometry, m: M, name: string): THREE.Mesh<THREE.BufferGeometry, M> {
   const o = new THREE.Mesh(g, m);
   o.name = name;
@@ -1498,8 +1548,10 @@ function frontWash(source: 'brickFoot' | 'stoneFoot', kind: 'front' | 'tower', w
   float spine = abs(x-${(width/2).toFixed(4)});
   float spread = 1.25 + 0.18*y;
   float edge = exp(-pow(endPier/spread,2.0)) + exp(-pow(spine/spread,2.0));
-  float shoulder = abs(abs(spine-${(SHED_SPAN_WIDTH / 2).toFixed(4)})-${(SHED_SPAN_WIDTH / 2 * 0.88).toFixed(4)});
-  float arch = exp(-pow(shoulder/(1.7+0.085*y),2.0)) * smoothstep(1.0,6.0,y);
+  // front phase 1: the uplight's shoulder band on each window's orders at their feet (FRONT_WINDOW, its centre a vault's axis off the spine), rising to
+  // full at its springing, where it rose to the vault section's (ASSUMED, as before)
+  float shoulder = abs(abs(spine-${(SHED_VALLEY_WIDTH / 2 + SHED_VAULT_RADIUS).toFixed(4)})-${(FRONT_WINDOW_R + (FRONT_RELIEF.orders * FRONT_RELIEF.orderWidth) / 2).toFixed(4)});
+  float arch = exp(-pow(shoulder/(1.7+0.085*y),2.0)) * smoothstep(${(FRONT_WINDOW_SPRING - 5).toFixed(4)},${FRONT_WINDOW_SPRING.toFixed(4)},y);
   // round 24 (front-piers-round-3b score, A2: the spandrel band's soffit stayed a hard black line at night): the floodlights stand below the front, so a
   // face turned down (a soffit) takes FRONT_WASH_SOFFIT of the wash as well as a face turned out
   float wash = (0.84*edge*exp(-y/7.8) + 0.17*arch*exp(-y/11.0)) * (max(vKxWashNormal.z,0.0) + ${FRONT_WASH_SOFFIT.toFixed(2)}*max(-vKxWashNormal.y,0.0));
@@ -1834,7 +1886,9 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
 
   // ---- the south front: across the two vaults, centred on the spine (the mesh's x runs from its west end, fx0) ------------
   const outline = new THREE.Shape([new THREE.Vector2(0, GROUND_Y), new THREE.Vector2(FW, GROUND_Y), new THREE.Vector2(FW, frontTop), new THREE.Vector2(0, frontTop)]);
-  for (const uc of centres) outline.holes.push(halfDisc(uc - fx0, sp, R));
+  // front phase 1: the great windows are FRONT_WINDOW's semicircles on the vaults' axes, the rest of each vault's end wall (wr, wsp: their radius and springing)
+  const wr = FRONT_WINDOW_R, wsp = FRONT_WINDOW_SPRING;
+  for (const uc of centres) outline.holes.push(halfDisc(uc - fx0, wsp, wr));
   const entryR = SOUTH_FRONT_ARCADES.openingWidth / 2;
   const entryFoot = GROUND_Y + SOUTH_FRONT_ARCADES.footAboveGround;
   const entryCentres = southFrontArcadeCentres(FW, TOWER_SIZE).map(x => x + fx0);
@@ -1845,25 +1899,24 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   const panels: THREE.Path[] = [];
   const heads: [number, number, number][] = []; // round 27: each panel's top edge, (x from, x to, y) in the mesh's frame
   {
-    const { band, strip } = FRONT_TYMPANUM, rH = R + FRONT_RELIEF.orders * FRONT_RELIEF.orderWidth - 0.1;
-    const yH = frontTop - 0.9 - FRONT_RELIEF.bedMould.height - FRONT_RELIEF.shadowLine - 0.1 - band + 0.05, n = 6;
+    // front phase 1: the window's outer order stays well under the frame's band, so each spandrel is one panel round the arch: down the frame's strips to
+    // the springing course (its foot a little inside the course, so the recess's floor is hidden in it), in to the outer order, over the arch and out again
+    const { band, strip } = FRONT_TYMPANUM, rH = wr + FRONT_RELIEF.orders * FRONT_RELIEF.orderWidth - 0.1;
+    const yH = frontTop - 0.9 - FRONT_RELIEF.bedMould.height - FRONT_RELIEF.shadowLine - 0.1 - band + 0.05, yF = wsp - 0.05, n = 12;
+    if (wsp + rH > yH - 0.5) throw new Error('the great window\'s orders run into the spandrel frame\'s band');
     centres.forEach((uc, vault) => {
       const xa = (vault === 0 ? fx0 + 1.0 : spine + TOWER_SIZE / 2) + strip - 0.05, xb = (vault === 0 ? spine - TOWER_SIZE / 2 : fx1 - 1.0) - strip + 0.05;
-      const reach = Math.sqrt(Math.max(0, rH * rH - (yH - sp) ** 2));
-      for (const [xo, xi] of [[xa, uc - reach], [xb, uc + reach]] as const) {
-        if (Math.abs(xi - xo) < 0.5 || (xi - xo) * (xo < uc ? 1 : -1) < 0) continue;
-        const ao = Math.atan2(Math.sqrt(Math.max(0, rH * rH - (xo - uc) ** 2)), xo - uc), ai = Math.atan2(yH - sp, xi - uc);
-        const pts = [new THREE.Vector2(xo - fx0, yH)];
-        for (let k = 0; k <= n; k++) { const a = ai + ((ao - ai) * k) / n; pts.push(new THREE.Vector2(uc + rH * Math.cos(a) - fx0, sp + rH * Math.sin(a))); }
-        heads.push([xo - fx0, xi - fx0, yH]);
-        if (xo > uc) pts.reverse();
-        panels.push(new THREE.Path(xo < uc ? pts : [pts[pts.length - 1]!, ...pts.slice(0, -1)]));
-      }
+      const pts = [new THREE.Vector2(xa - fx0, yH), new THREE.Vector2(xa - fx0, yF), new THREE.Vector2(uc - rH - fx0, yF)];
+      for (let k = 0; k <= n; k++) { const a = Math.PI * (1 - k / n); pts.push(new THREE.Vector2(uc + rH * Math.cos(a) - fx0, wsp + rH * Math.sin(a))); }
+      pts.push(new THREE.Vector2(uc + rH - fx0, yF), new THREE.Vector2(xb - fx0, yF), new THREE.Vector2(xb - fx0, yH));
+      heads.push([xa - fx0, xb - fx0, yH]);
+      panels.push(new THREE.Path(pts));
     });
     outline.holes.push(...panels);
   }
   const orderParts = new Set<THREE.BufferGeometry>(); // round 27: the orders, their faces in FRONT_ORDER_FACE
-  const frontParts: THREE.BufferGeometry[] = [new THREE.ExtrudeGeometry(outline, { depth: FRONT_THICK, bevelEnabled: false, curveSegments: 40 })];
+  // front phase 1: 32 segments a curve (was 40): the window's 9.75 m radius keeps the 15.75 m vault section's chord sag, about 1 cm
+  const frontParts: THREE.BufferGeometry[] = [new THREE.ExtrudeGeometry(outline, { depth: FRONT_THICK, bevelEnabled: false, curveSegments: 32 })];
   for (const h of panels) frontParts.push(new THREE.ExtrudeGeometry(new THREE.Shape(h.getPoints()), { depth: FRONT_THICK - FRONT_TYMPANUM.recess, bevelEnabled: false }));
   // each great arch's reveal: three brick orders, the outermost standing furthest forward, each inner one a step back toward the glass
   // (FRONT_RELIEF); round 22 (A2: the orders stopped in mid-air at the front's end) each runs down onto the springing course at both ends, its
@@ -1872,16 +1925,17 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
     // round 26 (front-round-5 score, A2: "one broad ring with thin lines" square-on): each order is a layer on the one inside it (the wall's face behind
     // the first, its hole the arch's own), out to the band's outer edge, and its inner edge splayed: its face's inner edge FRONT_RELIEF.splay out from its foot, so its step is a
     // chamfer seen square-on as a band of the return tone (FRONT_RETURN). The same contours and triangles as the square steps; only vertices move
-    const rOut = R + FRONT_RELIEF.orders * FRONT_RELIEF.orderWidth, { splay } = FRONT_RELIEF;
+    const rOut = wr + FRONT_RELIEF.orders * FRONT_RELIEF.orderWidth, { splay } = FRONT_RELIEF;
     for (let i = 0; i < FRONT_RELIEF.orders; i++) {
-      const r0 = R + i * FRONT_RELIEF.orderWidth, zBack = FRONT_THICK + Math.max(0, frontOrderZ(i - 1)), zFace = FRONT_THICK + frontOrderZ(i); // round A2: order 0 stands on the wall's face, the fourth (frontOrderZ(-1)) behind it
-      const g = new THREE.ExtrudeGeometry(archRing(uc - fx0, sp, r0, rOut), { depth: zFace - zBack, bevelEnabled: false, curveSegments: 12 });
+      const r0 = wr + i * FRONT_RELIEF.orderWidth, zBack = FRONT_THICK + Math.max(0, frontOrderZ(i - 1)), zFace = FRONT_THICK + frontOrderZ(i); // round A2: order 0 stands on the wall's face, the fourth (frontOrderZ(-1)) behind it
+      const g = new THREE.ExtrudeGeometry(archRing(uc - fx0, wsp, r0, rOut), { depth: zFace - zBack, bevelEnabled: false, curveSegments: 12 });
       g.translate(0, 0, zBack);
       const pos = g.getAttribute('position') as THREE.BufferAttribute, sw = (splay * (zFace - zBack)) / FRONT_RELIEF.orderStep; // round A2: a shallower order's splay in proportion, so every step keeps one slope
       for (let k = 0; k < pos.count; k++) {
-        const dx = pos.getX(k) - (uc - fx0), dy = pos.getY(k) - sp, r = Math.hypot(dx, dy);
-        if (Math.abs(pos.getZ(k) - zFace) < 1e-6 && Math.abs(r - r0) < 1e-4) pos.setXY(k, uc - fx0 + (dx * (r0 + sw)) / r, sp + (dy * (r0 + sw)) / r);
+        const dx = pos.getX(k) - (uc - fx0), dy = pos.getY(k) - wsp, r = Math.hypot(dx, dy);
+        if (Math.abs(pos.getZ(k) - zFace) < 1e-6 && Math.abs(r - r0) < 1e-4) pos.setXY(k, uc - fx0 + (dx * (r0 + sw)) / r, wsp + (dy * (r0 + sw)) / r);
       }
+      ringCaps(g, uc - fx0, wsp);
       g.computeVertexNormals();
       frontParts.push(g);
       orderParts.add(g);
@@ -1892,13 +1946,13 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
       const u = uc - fx0, w = FRONT_RELIEF.orderWidth, n = 14, inner = new Batch(), zi = FRONT_THICK + frontOrderZ(-1); // round 27: 14 steps (was 16), its 16 triangles a vault paying for the panels' heads
       for (let k = 0; k < n; k++) {
         const [a0, a1] = [(k * Math.PI) / n, ((k + 1) * Math.PI) / n];
-        const p = (r: number, a: number, z: number): V3 => [u + r * Math.cos(a), sp + r * Math.sin(a), z];
+        const p = (r: number, a: number, z: number): V3 => [u + r * Math.cos(a), wsp + r * Math.sin(a), z];
         // round A2: its outer edge's chords circumscribe the opening (vertices R / cos(half a step), inside the wall's mass), so no sliver of the glass
         // shows between it and the opening's side at the soffit's foot, now that it stands back of the face
-        const ro = R / Math.cos(Math.PI / (2 * n));
-        inner.poly([p(R - w, a0, zi), p(ro, a0, zi), p(ro, a1, zi), p(R - w, a1, zi)], undefined, { facing: [0, 0, 1] });
+        const ro = wr / Math.cos(Math.PI / (2 * n));
+        inner.poly([p(wr - w, a0, zi), p(ro, a0, zi), p(ro, a1, zi), p(wr - w, a1, zi)], undefined, { facing: [0, 0, 1] });
         const am = (a0 + a1) / 2;
-        inner.poly([p(R - w, a0, 0), p(R - w, a0, zi), p(R - w, a1, zi), p(R - w, a1, 0)], undefined, { facing: [-Math.cos(am), -Math.sin(am), 0] });
+        inner.poly([p(wr - w, a0, 0), p(wr - w, a0, zi), p(wr - w, a1, zi), p(wr - w, a1, 0)], undefined, { facing: [-Math.cos(am), -Math.sin(am), 0] });
       }
       frontParts.push(plainGeometry(inner.build().toNonIndexed()));
     }
@@ -1934,11 +1988,11 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
     // round A2b: FRONT_ORDER_SHADE on the returns round the great arches (from the opening out to the outer order); arcade round 2: and on the porch
     // openings' reveals (inside an opening's outline, from its foot to its crown); 1 elsewhere
     const pos = frontGeo.getAttribute('position'), col = new Float32Array(pos.count * 3).fill(1), ret = frontGeo.groups.find(g => g.materialIndex === 1)!;
-    const rMax = R + FRONT_RELIEF.orders * FRONT_RELIEF.orderWidth + 0.01;
+    const rMax = wr + FRONT_RELIEF.orders * FRONT_RELIEF.orderWidth + 0.01;
     for (let k = ret.start; k < ret.start + ret.count; k++) {
-      const x = pos.getX(k), y = pos.getY(k) - sp;
-      const porchReveal = y + sp > entryFoot - 0.01 && y + sp < entryFoot + SOUTH_FRONT_ARCADES.jambHeight + SOUTH_FRONT_ARCADES.archRise + 0.01 && entryCentres.some(xc => Math.abs(x - (xc - fx0)) < entryR + 0.01);
-      if (porchReveal || centres.some(uc => { const r = Math.hypot(x - (uc - fx0), y); return r > R - 0.01 && r < rMax; })) col.fill(FRONT_ORDER_SHADE, 3 * k, 3 * k + 3);
+      const x = pos.getX(k), y = pos.getY(k) - wsp;
+      const porchReveal = y + wsp > entryFoot - 0.01 && y + wsp < entryFoot + SOUTH_FRONT_ARCADES.jambHeight + SOUTH_FRONT_ARCADES.archRise + 0.01 && entryCentres.some(xc => Math.abs(x - (xc - fx0)) < entryR + 0.01);
+      if (porchReveal || centres.some(uc => { const r = Math.hypot(x - (uc - fx0), y); return r > wr - 0.01 && r < rMax; })) col.fill(FRONT_ORDER_SHADE, 3 * k, 3 * k + 3);
     }
     frontGeo.setAttribute('color', new THREE.BufferAttribute(col, 3));
   }
@@ -1960,11 +2014,11 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
     plinthStart = right;
   }
   if (plinthStart < fx1 + feet + 0.1) plinth((plinthStart + fx1 + feet + 0.1) / 2, GROUND_Y + 0.7, fx1 + feet + 0.1 - plinthStart, 1.4, 0.35); // plinth interrupted at each entrance
-  proud(spine, sp - 0.325, FW + toMass, 0.65, 0.5); // sill course at the springing: bolder since round 5's second pass (R-kx-front-a, the main band of the front)
+  proud(spine, wsp - 0.325, FW + toMass, 0.65, 0.5); // sill course at the springing: bolder since round 5's second pass (R-kx-front-a, the main band of the front)
   // its weathered cap, overhanging: the shadow line under it is what makes the band read (the round-2a hold); round 8 (R-kx-front-b: the
   // great arches spring from a proud course running across the screen) makes it the springing course, 0.3 m thick and `springing.out` proud
   const { springing: sc, corona } = FRONT_RELIEF;
-  stone.box([spine, sp - sc.height / 2, (sc.out - FRONT_THICK) / 2], [FW + 0.8 + across, sc.height, FRONT_THICK + sc.out], { skip: ['-z'] });
+  stone.box([spine, wsp - sc.height / 2, (sc.out - FRONT_THICK) / 2], [FW + 0.8 + across, sc.height, FRONT_THICK + sc.out], { skip: ['-z'] });
   proud(spine, GROUND_Y + FRONT_RELIEF.impostAboveGround, FW + toMass, FRONT_RELIEF.impostHeight, FRONT_RELIEF.impostOut); // string course over the arcade's crowns
   // cornice: round 20 (cornice-round-1 score, A2: in south-front the whole face under the corona sat in shadow, where front-a shows it lit but for a crisp
   // band under the corona) its face brought to FRONT_CORNICE.out, so the corona (`corona.out`) overhangs it by 0.2 m, not 0.4: the band its soffit throws
@@ -1979,8 +2033,13 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   // orders come down onto the pier; since round 22 it runs under their feet too), prouder than the outer order (FRONT_RELIEF.impost), so the arch has a
   // defined springing there (the spine's ends are behind the tower)
   {
-    const { height: ih, out: io, past } = FRONT_RELIEF.impost, span = 1.0 + past; // the end pier's 1 m, and a little past it
-    for (const [x0, x1] of [[fx0 - feet - 0.05, fx0 + span], [fx1 - span, fx1 + feet + 0.05]]) stone.box([(x0 + x1) / 2, sp + ih / 2, (io - FRONT_THICK) / 2], [x1 - x0, ih, FRONT_THICK + io], { skip: ['-z'] });
+    // front phase 1: the orders now come down beside each window, not at the front's ends, so an impost under each foot: from the outer order's back
+    // edge in under the fourth order and a little past it (`past`)
+    const { height: ih, out: io, past } = FRONT_RELIEF.impost, span = FRONT_RELIEF.orderWidth + past;
+    for (const uc of centres) for (const sd of [-1, 1]) {
+      const xo = uc + sd * (wr + feet + 0.05), xi = uc + sd * (wr - span);
+      stone.box([(xo + xi) / 2, wsp + ih / 2, (io - FRONT_THICK) / 2], [Math.abs(xo - xi), ih, FRONT_THICK + io], { skip: ['-z'] });
+    }
   }
   proud(spine, frontTop + 0.15, FW + toMass, 0.3, 0.4); // its coping
   // end piers: round 21 (front-infill-round-1 score, A1; R-kx-front-a: the end piers rise as taller blocks over the cornice) the same box run up past the
@@ -1997,7 +2056,7 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
     stone.box([(inner + outer) / 2, top + cap / 2, (po - FRONT_THICK) / 2], [width + 0.5, cap, FRONT_THICK + 0.5 + po], { skip: ['-z'] });
     // round 23 (A2: front-b shows a string course across the piers at the springing): a stone band on the mass at the springing, round 23b 0.25 m proud of
     // the mass's face so its shadow shows obliquely
-    stone.box([(mid + outer) / 2 + sd * 0.1, sp - 0.325, (po + 0.25 - FRONT_THICK) / 2], [width - 1.0 - feet + 0.2, 0.65, FRONT_THICK + po + 0.25], { skip: ['-z'] });
+    stone.box([(mid + outer) / 2 + sd * 0.1, wsp - 0.325, (po + 0.25 - FRONT_THICK) / 2], [width - 1.0 - feet + 0.2, 0.65, FRONT_THICK + po + 0.25], { skip: ['-z'] });
   }
   for (const sd of [-1, 1]) {
     const x0 = spine + sd * (TOWER_SIZE / 2), x1 = x0 + sd * stepRun, xc = (x0 + x1) / 2;
@@ -2008,13 +2067,13 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   // the great arches' spandrels: round 21 (A2: one flat plane of brick) a recessed panel, read by a brick frame FRONT_TYMPANUM.out proud round it: a band
   // under the cornice's shadow line, and strips down the end pier's and the tower's sides to the outer order; the arch's orders close it below
   {
-    const { out, band, strip } = FRONT_TYMPANUM, rO = R + FRONT_RELIEF.orders * FRONT_RELIEF.orderWidth;
+    const { out, band, strip } = FRONT_TYMPANUM, rO = wr + FRONT_RELIEF.orders * FRONT_RELIEF.orderWidth;
     const yTop = frontTop - 0.9 - FRONT_RELIEF.bedMould.height - FRONT_RELIEF.shadowLine - 0.1, yBand = yTop - band;
     centres.forEach((uc, vault) => {
       const xa = vault === 0 ? fx0 + 1.0 : spine + TOWER_SIZE / 2, xb = vault === 0 ? spine - TOWER_SIZE / 2 : fx1 - 1.0;
       brick.box([(xa + xb) / 2, yTop - band / 2, out / 2], [xb - xa, band, out], { skip: ['-z'] });
       for (const x of [xa + strip / 2, xb - strip / 2]) {
-        const yArc = sp + Math.sqrt(Math.max(0, rO * rO - (x - uc) ** 2));
+        const yArc = wsp + Math.sqrt(Math.max(0, rO * rO - (x - uc) ** 2));
         if (yArc < yBand - 0.3) brick.box([x, (yArc + yBand) / 2, out / 2], [strip, yBand - yArc, out], { skip: ['-z', '-y'] });
       }
     });
@@ -2096,14 +2155,20 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   disposables.push(...entryRings, entryRingGeo, canopyGeo);
   const rings: THREE.BufferGeometry[] = [];
   const lunGlass: THREE.BufferGeometry[] = [];
+  const endWall: THREE.BufferGeometry[] = [];
   const bars = new Batch();
   for (const uc of centres) {
     // (the reveal round each great window is the front's brick orders, FRONT_RELIEF; the stone ring that stood proud here until round 5 is gone)
     // the glass is set back in the opening, the bars in front of it
-    const g = new THREE.ShapeGeometry(halfDisc(uc, sp, R - 0.02), 40);
+    const g = new THREE.ShapeGeometry(halfDisc(uc, wsp, wr - 0.02), 32);
     g.translate(0, 0, -FRONT_THICK / 2 - 0.1);
     lunGlass.push(g);
-    addBars(bars, lunetteBars(uc, sp), -FRONT_THICK / 2);
+    addBars(bars, lunetteBars(uc, wsp, wr), -FRONT_THICK / 2);
+    // front phase 1: the vault's end round the window, seen from inside the shed: the vault's section less the window, in the interior's brick, just
+    // inside the front's back face (its own mesh, not a sun-shadow caster: the pass is full)
+    const end = halfDisc(uc, sp, R);
+    end.holes.push(halfDisc(uc, wsp, wr));
+    endWall.push(facingNorth(new THREE.ShapeGeometry(end, 16)).translate(0, 0, -FRONT_THICK - FRONT_END_WALL_GAP));
   }
   // the porch openings' infill (PORCH_INFILL): dark tinted glass at the lunettes' depth, charcoal frames, the blue signage fascia, and the
   // canopy's downlights, one mesh of four materials (FRONT_COLOURS, FRONT_NIGHT): the glass, the fascia and the lamps glow at night
@@ -2215,8 +2280,11 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   disposables.push(...infillGlass, ...infillParts);
   const lunMesh = mesh(mergeGeometries(lunGlass, false), material('glass'), 'shed-front-glass');
   lunMesh.renderOrder = GLASS_ORDER.front;
+  lunMesh.userData.paneRows = [wsp, wr / 3]; // front phase 1: the glass's pane rows are its own bars' (lunetteBars' transoms at a third of the window's radius), materials.ts skyGlint
   dimInXray(lunMesh, group);
   group.add(lunMesh, mesh(bars.build(), material('ribPaint'), 'shed-front-bars'));
+  group.add(mesh(mergeGeometries(endWall, false), material('brickFoot'), 'shed-front-endwall'));
+  disposables.push(...endWall);
 
 
   // ---- the north gables: glass above the trains' height, in bars, framed in stone --------------

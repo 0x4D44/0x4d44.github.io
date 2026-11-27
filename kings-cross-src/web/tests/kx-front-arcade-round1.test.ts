@@ -25,8 +25,8 @@ const centres = shed.southFrontArcadeCentres(4 * R, shed.TOWER_SIZE).map(x => x 
 const named = (n: string): THREE.Mesh => group.getObjectByName(n) as THREE.Mesh;
 const porch = named('shed-front-porch-arches'), infill = named('shed-front-infill');
 const masonry = ['shed-front', 'shed-brick', 'shed-stone', 'shed-front-porch-arches'].map(named);
-const first = (x: number, y: number, targets: THREE.Object3D[]): { z: number; name: string; mat: number } | null => {
-  const o = group.localToWorld(new THREE.Vector3(x, y, 10)), d = new THREE.Vector3(0, 0, -1).transformDirection(group.matrixWorld);
+const first = (x: number, y: number, targets: THREE.Object3D[], from = 10): { z: number; name: string; mat: number } | null => {
+  const o = group.localToWorld(new THREE.Vector3(x, y, from)), d = new THREE.Vector3(0, 0, -1).transformDirection(group.matrixWorld);
   const h = new THREE.Raycaster(o, d, 0, 30).intersectObjects(targets, false)[0];
   return h ? { z: group.worldToLocal(h.point.clone()).z, name: h.object.name, mat: h.face?.materialIndex ?? -1 } : null;
 };
@@ -97,8 +97,10 @@ test('A3: each arch head is a dark-framed fanlight: a transom at the springing a
     for (let dx = -entryR + 0.25; dx <= entryR - 0.25; dx += 0.01) if (Math.abs(dx) > 0.1 && isBar(hit(c + dx, spring + 0.5))) others++;
     assert.equal(others, 0, 'no other bar across the head');
     // its frame round the head, on the arch line
+    // re-pinned 2026-11-26 (front phase 1: the heads rose 1.3 m with the storey, over the canopy's lamp line, so square-on a lamp hangs in front of a
+    // haunch): the ray starts in the opening, in front of the frames (was 10 m out)
     for (const deg of [20, 45, 70, 110, 135, 160]) {
-      const t = (deg * Math.PI) / 180, h = hit(c - (entryR - F.bar / 2) * Math.cos(t), spring + (A.archRise - F.bar / 2) * Math.sin(t));
+      const t = (deg * Math.PI) / 180, h = first(c - (entryR - F.bar / 2) * Math.cos(t), spring + (A.archRise - F.bar / 2) * Math.sin(t), [infill], 0.5);
       assert.ok(isBar(h), `the head frame on the arch line at ${deg} deg: ${h?.mat} ${h?.z.toFixed(2)}`);
     }
     // the doors' leaves stop under the transom (they ran to 2.15 m, over the springing)

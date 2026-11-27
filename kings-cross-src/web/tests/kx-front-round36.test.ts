@@ -17,7 +17,7 @@ const shader = (src: string): ((even: number, x: number, y: number, cos?: number
   const g = new Glsl('');
   return (even, x, y, cos = 1, cam = [0, 0, 0], a = GABLE_OUTSIDE.opacity) => {
     const view = [Math.sqrt(1 - cos * cos), 0, cos];
-    const env = { vars: { gl_FragColor: [0.45, 0.47, 0.5, a], gl_FrontFacing: true, fogColor: day, cameraPosition: cam, viewMatrix: identity, vViewPosition: view.map(v => v * 50), normal: [0, 0, 1], vGlassPos: [x, y], uPaneX: 0, uGlintEven: even } };
+    const env = { vars: { gl_FragColor: [0.45, 0.47, 0.5, a], gl_FrontFacing: true, fogColor: day, cameraPosition: cam, viewMatrix: identity, vViewPosition: view.map(v => v * 50), normal: [0, 0, 1], vGlassPos: [x, y], uPaneX: 0, uPaneY: [GLAZING.springing, GLAZING.tier], uGlintEven: even } };
     g.run(src, env);
     return (env.vars.gl_FragColor as number[]).map((c, i) => (i < 3 ? c * 255 : c));
   };
