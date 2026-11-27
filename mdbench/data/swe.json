@@ -287,7 +287,7 @@
    "title": "Missing score digits",
    "description": "A DOS game shows no score digits. From the symptom report, find the root cause and fix it with a regression test.",
    "tags": [],
-   "note": "Most seats fail the hidden display-register test, so All gates shows fail for them; the judge score reflects how much of the fix each seat got right. The top ten seats score within 3 points of each other; their order is within judge noise. The four seats added on 19 Nov (GPT-6.2 Astra xhigh, GPT-6.2 Sol ultra, Opus 4.8 high and GPT-5 high) were judged in a separate panel with four of the published seats as anchors; their scores sit on the same scale (anchors moved by at most 1.2 points) but they have no panel rank. In the separate panel these seats score within 3 points of the next, so their order is within judge noise: GPT-6 Astra xhigh, GPT-6.1 Sol ultra, GPT-6.2 Astra xhigh, GPT-6.2 Sol ultra and Opus 4.8 high."
+   "note": "Most seats fail the hidden display-register test, so All gates shows fail for them; the judge score reflects how much of the fix each seat got right. The top ten seats score within 3 points of each other; their order is within judge noise. The four seats added on 19 Nov (GPT-6.2 Astra xhigh, GPT-6.2 Sol ultra, Opus 4.8 high and GPT-5 high) were judged in a separate panel with four of the published seats as anchors; their scores sit on the same scale (anchors moved by at most 1.2 points) but they have no panel rank. In the separate panel these seats score within 3 points of the next, so their order is within judge noise: GPT-6 Astra xhigh, GPT-6.1 Sol ultra, GPT-6.2 Astra xhigh, GPT-6.2 Sol ultra and Opus 4.8 high. The three seats added on 25 Nov (GPT-5.6 Sol high, GPT-5.3-Codex high and GPT-4.1) were judged in a separate panel with four of the published seats as anchors; their scores sit on the same scale (anchors moved by at most 2.1 points) but they have no panel rank. In the separate panel these seats score within 3 points of the next, so their order is within judge noise: GPT-6.1 Sol ultra, GPT-6 Astra xhigh, GPT-5.6 Sol high and GPT-5.3-Codex high; GPT-4.1 and o3 high."
   },
   {
    "id": "FIX-02",
@@ -4671,6 +4671,70 @@
     "gates_ok": true,
     "builds": true,
     "hidden_pass": 1.0
+   },
+   "flags": [
+    "separate_panel"
+   ]
+  },
+  {
+   "seat": "gpt-4.1",
+   "task": "FIX-01",
+   "run": 1,
+   "date": "2026-11-25",
+   "metrics": {
+    "score": 8.6,
+    "rubric": 9.2,
+    "score_claude": 8.0,
+    "score_gpt": 9.1,
+    "judge_sd": 1.2,
+    "bonus": 0.0,
+    "cost_usd": 1.083,
+    "wall_min": 2.5,
+    "gates_ok": false
+   },
+   "flags": [
+    "separate_panel"
+   ]
+  },
+  {
+   "seat": "gpt-5.6-sol-high",
+   "task": "FIX-01",
+   "run": 1,
+   "date": "2026-11-25",
+   "metrics": {
+    "score": 99.5,
+    "rubric": 100.0,
+    "score_claude": 99.0,
+    "score_gpt": 100.0,
+    "judge_sd": 1.1,
+    "bonus": 0.0,
+    "cost_usd": 2.629,
+    "wall_min": 6.1,
+    "gates_ok": false,
+    "builds": true,
+    "hidden_pass": 0.5
+   },
+   "flags": [
+    "separate_panel"
+   ]
+  },
+  {
+   "seat": "gpt-5.3-codex-high",
+   "task": "FIX-01",
+   "run": 1,
+   "date": "2026-11-25",
+   "metrics": {
+    "score": 98.8,
+    "rubric": 100.0,
+    "score_claude": 97.7,
+    "score_gpt": 100.0,
+    "judge_sd": 1.7,
+    "bonus": 0.0,
+    "cost_usd": 17.737,
+    "wall_min": 101.0,
+    "gates_ok": false,
+    "builds": true,
+    "hidden_pass": 0.5
    },
    "flags": [
     "separate_panel"
