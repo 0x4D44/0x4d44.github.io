@@ -167,7 +167,9 @@ export function pickChar(chars, pool, filter, rng, local, global = IN_USE) {
 // camel and dark navy); adult_casual2 and ya_ginger_lad one sweatshirt; teen_skirt and woman_mini one top (woman_mini's goes blue; her tartan was turned green at build)
 /** garments whose asset left the body's skin in under them: the skin comes out through the cloth wherever the two are skinned differently. What the garment covers is not drawn
  *  (_hideSkinUnder). Review 68: ya_ginger_long's blouse showed a 4 cm patch of skin at the right shoulder blade and specks down the back */
-const SKIN_UNDER = { ya_ginger_long: /lace_up_blouse/i };
+const SKIN_UNDER = { ya_ginger_long: /lace_up_blouse/i,
+  // review 78: skin triangles through the tee over the shoulder with the arm raised to the ear (phone_call) - the shoulder band, front and back, clear of the neckline and the sleeves
+  adult_tattoo_muscle: { re: /^cloth_toptex1/i, back: { z: -9, y0: 1.38, y1: 1.53, r: 0.05, x0: 0.07, x1: 0.19 } } };
 // One garment texture can carry two garments (MakeHuman's casualsuit: a T-shirt above, jeans below). { region: [u0, v0, u1, v1], rgb }
 // re-dyes the texels inside that UV box: their brightness kept, their hue replaced, so the jeans and the shirt can differ.
 function regionTint(mat, o) {
@@ -309,7 +311,7 @@ export class AnimCrowd {
     f.underTop = !sk && /trousers|shorts|trews|leggings/.test(c.outfit) ? trimUnderTop(T, n) : null;
     f.under = !sk && /trousers|shorts|trews|leggings/.test(c.outfit) ? trimUnderTrousers(T, n) : null;   // no skin left under trousers to come through the seat
     f.web = trimWebbing(T, n);
-    f.skinHid = SKIN_UNDER[c.id] ? this._hideSkinUnder(n, SKIN_UNDER[c.id]) : 0;
+    f.skinHid = SKIN_UNDER[c.id] ? this._hideSkinUnder(n, SKIN_UNDER[c.id].re || SKIN_UNDER[c.id], SKIN_UNDER[c.id].back) : 0;
     f.shoes = fitShoes(T, n);   // a stiff shoe that bends at the ball of the foot (the full-detail model only: the simplified one's few big faces gain nothing from it, and it is seen from beyond ~11 m)
   }
   /** the fits of the simplified model (people_lod.glb). Its cloth is made of far bigger flat faces, so its hidden skin gives way more; its own skin is too coarse to
@@ -329,7 +331,7 @@ export class AnimCrowd {
     f.underTopLod = !sk && /trousers|shorts|trews|leggings/.test(c.outfit) ? trimUnderTop(T, n) : null;
     f.underLod = !sk && /trousers|shorts|trews|leggings/.test(c.outfit) ? trimUnderTrousers(T, n) : null;
     f.webLod = trimWebbing(T, n);
-    f.skinHidLod = SKIN_UNDER[c.id] ? this._hideSkinUnder(n, SKIN_UNDER[c.id]) : 0;   // the simplified body has a few triangles joining a hand to a thigh
+    f.skinHidLod = SKIN_UNDER[c.id] ? this._hideSkinUnder(n, SKIN_UNDER[c.id].re || SKIN_UNDER[c.id], SKIN_UNDER[c.id].back) : 0;   // the simplified body has a few triangles joining a hand to a thigh
     f.puffLod = this._puffOuter(n);
   }
   /** A garment the simplification all but destroyed (the kilted children's and man_kilt_casual's jumpers: 39 - 42 triangles for the full model's 1440) hung from the
@@ -423,7 +425,7 @@ export class AnimCrowd {
     const near = (M, x, y, z, r) => { const R = Math.ceil(r / C), bx = Math.floor(x / C), by = Math.floor(y / C), bz = Math.floor(z / C); for (let i = -R; i <= R; i++) for (let j = -R; j <= R; j++) for (let k = -R; k <= R; k++) { const a = M.get((bx + i) + ',' + (by + j) + ',' + (bz + k)); if (a) for (let u = 0; u < a.length; u += 3) { const dx = a[u] - x, dy = a[u + 1] - y, dz = a[u + 2] - z; if (dx * dx + dy * dy + dz * dz < r * r) return true; } } return false; };
     let n = 0;
     for (const o of sk) { const g = o.geometry, idx = g.index, P = g.attributes.position; if (!idx) continue; if (g.userData.skinHid != null) { n += g.userData.skinHid; continue; }
-      const cov = new Uint8Array(P.count); for (let i = 0; i < P.count; i++) { const x = P.getX(i), y = P.getY(i), z = P.getZ(i); cov[i] = z > back.z && y > back.y0 && y < back.y1 && near(H, x, y, z, back.r) && !near(EH, x, y, z, 0.006) ? 1 : 0; }
+      const cov = new Uint8Array(P.count); for (let i = 0; i < P.count; i++) { const x = P.getX(i), y = P.getY(i), z = P.getZ(i); cov[i] = z > back.z && y > back.y0 && y < back.y1 && (back.x0 == null || Math.abs(x) > back.x0) && (back.x1 == null || Math.abs(x) < back.x1) && near(H, x, y, z, back.r) && !near(EH, x, y, z, 0.006) ? 1 : 0; }
       const keep = []; for (let t = 0; t < idx.count; t += 3) { const a = idx.getX(t), b = idx.getX(t + 1), c = idx.getX(t + 2); if (!(cov[a] && cov[b] && cov[c])) keep.push(a, b, c); }
       g.userData.skinHid = (idx.count - keep.length) / 3; n += g.userData.skinHid; if (keep.length < idx.count) g.setIndex(new this.THREE.BufferAttribute(P.count > 65535 ? new Uint32Array(keep) : new Uint16Array(keep), 1)); }
     return n;
