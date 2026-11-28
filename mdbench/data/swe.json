@@ -251,7 +251,7 @@
    "title": "Keyboard and interrupts",
    "description": "Write tests for an emulated keyboard controller and its interrupt path. Graded by how many planted bugs the tests catch.",
    "tags": [],
-   "note": "Opus 4.5 wrote its 61 tests into an existing test file rather than a new one. The brief says only new test files there are run, so none of its tests ran and it caught none of the planted bugs. The four seats added on 19 Nov (GPT-6.2 Astra xhigh, GPT-6.2 Sol ultra, Opus 4.8 high and GPT-5 high) were judged in a separate panel with four of the published seats as anchors. The anchors moved by up to 10.1 points against their published scores, all upward; these scores probably read high by a similar margin, so compare them with the anchors in that panel rather than with this table. They have no panel rank. In the separate panel, Opus 4.5 high and GPT-5 high score within 3 points of each other; their order is within judge noise."
+   "note": "Opus 4.5 wrote its 61 tests into an existing test file rather than a new one. The brief says only new test files there are run, so none of its tests ran and it caught none of the planted bugs. The four seats added on 19 Nov (GPT-6.2 Astra xhigh, GPT-6.2 Sol ultra, Opus 4.8 high and GPT-5 high) were judged in a separate panel with four of the published seats as anchors. The anchors moved by up to 10.1 points against their published scores, all upward; these scores probably read high by a similar margin, so compare them with the anchors in that panel rather than with this table. They have no panel rank. In the separate panel, Opus 4.5 high and GPT-5 high score within 3 points of each other; their order is within judge noise. The three seats added on 25 Nov (GPT-5.6 Sol high, GPT-5.3-Codex high and GPT-4.1) were judged in a separate panel with four of the published seats as anchors. The anchors moved by up to 8.1 points against their published scores, all upward; these scores probably read high by a similar margin, so compare them with the anchors in that panel rather than with this table. They have no panel rank."
   },
   {
    "id": "TST-02",
@@ -2790,6 +2790,69 @@
     "bonus": 0.2,
     "cost_usd": 9.055,
     "wall_min": 18.7,
+    "gates_ok": true,
+    "builds": true
+   },
+   "flags": [
+    "separate_panel"
+   ]
+  },
+  {
+   "seat": "gpt-4.1",
+   "task": "TST-01",
+   "run": 1,
+   "date": "2026-11-25",
+   "metrics": {
+    "score": 2.3,
+    "rubric": 15.0,
+    "score_claude": 4.7,
+    "score_gpt": 0.0,
+    "judge_sd": 2.9,
+    "bonus": 0.0,
+    "cost_usd": 1.087,
+    "wall_min": 2.2,
+    "gates_ok": false,
+    "builds": true
+   },
+   "flags": [
+    "separate_panel"
+   ]
+  },
+  {
+   "seat": "gpt-5.6-sol-high",
+   "task": "TST-01",
+   "run": 1,
+   "date": "2026-11-25",
+   "metrics": {
+    "score": 73.5,
+    "rubric": 69.4,
+    "score_claude": 69.7,
+    "score_gpt": 77.3,
+    "judge_sd": 3.9,
+    "bonus": 0.2,
+    "cost_usd": 3.724,
+    "wall_min": 12.4,
+    "gates_ok": true,
+    "builds": true
+   },
+   "flags": [
+    "separate_panel"
+   ]
+  },
+  {
+   "seat": "gpt-5.3-codex-high",
+   "task": "TST-01",
+   "run": 1,
+   "date": "2026-11-25",
+   "metrics": {
+    "score": 40.5,
+    "rubric": 41.2,
+    "score_claude": 40.0,
+    "score_gpt": 41.0,
+    "judge_sd": 0.5,
+    "bonus": 0.0,
+    "cost_usd": 2.605,
+    "wall_min": 11.0,
     "gates_ok": true,
     "builds": true
    },
